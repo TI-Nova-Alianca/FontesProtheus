@@ -126,7 +126,7 @@
 // 02/06/2023 - Robert  - Passa a permitir exclusao de eventos com origem WpnAdicionarEventosAssociado
 // 21/07/2023 - Robert  - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra() - GLPI 13956
 // 18/08/2023 - Claudia - Casting  da quantidade na rotina _TrEstGrid . GLPI 13656
-//
+// 24/08/2023 - Claudia - Criada a Ação GravaTituloPgUnimed. GLPI: 13948 
 //
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -172,7 +172,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 
 	// Validacoes gerais e extracoes de dados basicos.
 	U_ValReqWS (GetClassName (::Self), ::XmlRcv, @_sErroWS, @_sWS_Empr, @_sWS_Filia, @_sAcao)
-	
+
 	if empty (_sErroWS)
 		_aUsuario = {__cUserId, cUserName}  // Guarda para uso posterior, pois o PREPARE ENVIRONMENT limpa essas variaveis.
 	endif
@@ -204,100 +204,100 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 		U_UsoRot ('I', _sAcao, '')
 
 		do case
-			case _sAcao == 'ExecutaBatch'
-				_ExecBatch ()
-			case _sAcao == 'GravaInspecao'
-				_GrvInsp ()
-			case _sAcao == 'RastrearLote'
-				_RastLt ()
-			case _sAcao == 'ZAM'
-				_ZAM ()
+		case _sAcao == 'ExecutaBatch'
+			_ExecBatch ()
+		case _sAcao == 'GravaInspecao'
+			_GrvInsp ()
+		case _sAcao == 'RastrearLote'
+			_RastLt ()
+		case _sAcao == 'ZAM'
+			_ZAM ()
 			// nunca consegui fazer funcionar ---> case _sAcao == 'Executar'
 			// nunca consegui fazer funcionar ---> _Exec ()
-			case _sAcao == 'RefazSaldoAtual'
-				_SaldoAtu ()
-			case _sAcao == 'AtuEstru'
-				_AtuEstru ()
-			case _sAcao == 'TransfEstqInsere'
-				_TrEstq ('INS')
-			case _sAcao == 'TransfEstqAutoriza'
-				_TrEstq ('AUT')
-			case _sAcao == 'TransfEstqDeleta'
-				_TrEstq ('DEL')
-			case _sAcao == 'TransfEstqExecuta'
-				_TrEstq ('EXE')
-			case _sAcao == 'TransfEstqNegar'
-				_TrEstq ('NEG')
-			case _sAcao == 'TransfEstqInformarEndDest'
-				_TrEstq ('IED')
-			case _sAcao == 'TransfEstqInsereGrid'
-				_TrEstGrid ()
-			case _sAcao == 'OndeSeUsa'
-				_OndeSeUsa ()
-			case _sAcao == 'IncluiCliente'
-				_IncCli ()
-			case _sAcao == 'AlteraCliente'
-				_AltCli ()
-			case _sAcao == 'IncluiEvento'
-				_IncEvt ()
-			case _sAcao == 'ExcluiEvento'
-				_DelEvt ()
-			case _sAcao == 'IncluiProduto'
-				_IncProd ()
-			case _sAcao == 'ConsultaDeOrcamentos'
-				_ExecConsOrc ()
-			case _sAcao == 'IncluiCargaSafra'
-				_IncCarSaf ()
-			case _sAcao == 'CancelaCargaSafra'
-				_CanCarSaf ()
-			case _sAcao == 'ConsultaKardex'
-				_ExecKardex ()
-			case _sAcao == 'ConsultaKardexLote'
-				_KardexLt ()
-			case _sAcao == 'MonitorProtheus'
-				_MonitProt ()
-			case _sAcao == 'CapitalSocialAssoc'
-				_ExecCapAssoc ()
-			case _sAcao == 'AgendaEntregaFaturamento'
-				_AgEntFat ()
-			case _sAcao == 'EntregaFaturamento'
-				_DtEntFat ()
-			case _sAcao == 'ApontarProducao'
-				_ApontProd ()
-			case _sAcao == 'ApontarProducaoEtqCodBar'
-				_ApPrEtqCB ()
-			case _sAcao == 'BuscaPedidosBloqueados'
-				_PedidosBloq ()
-			case _sAcao == 'GravaBloqueioGerencial'
-				_GrvLibPed ()
-			case _sAcao == 'BuscaMargemContrib'
-				_EnvMargem ()
-			case _sAcao == 'ImprimeTicketCargaSafra'
-				_ITkCarSaf ()
-			case _sAcao == 'ConsultaFechamentoSafraAssoc'
-				_AsFecSaf ()
-			case _sAcao == 'ConsultaCapitalSocialAssoc'
-				_AsCapSoc ()
-			case _sAcao == 'AlteraDadosAssociado'
-				_AltAssoc ()
-			case _sAcao == 'ImprimeEtiqueta'
-				_ImpEtiq ()
-			case _sAcao == 'ImprimeEtiquetaZAG'
-				_ImpEtiqZAG ()
-			case _sAcao == 'InutilizaEtiqueta'
-				_InutEtiq ()
-			case _sAcao == 'ZZUVincularUsuario'
-				_ZZU ('VincularUsuario')
-			case _sAcao == 'ConsultaEstruturaComCustos'
-				_EstrCust ()
-			case _sAcao == 'TesteRobert'
-				_TstRobert ()
-			case _sAcao == 'InsereSolicManut'
-				_IncManut()
-			//case _sAcao == 'GravaTituloPgUnimed'
-			//	_GrvTituloUnimed ()
-			otherwise
-				_SomaErro ("A acao especificada no XML eh invalida: " + _sAcao)
+		case _sAcao == 'RefazSaldoAtual'
+			_SaldoAtu ()
+		case _sAcao == 'AtuEstru'
+			_AtuEstru ()
+		case _sAcao == 'TransfEstqInsere'
+			_TrEstq ('INS')
+		case _sAcao == 'TransfEstqAutoriza'
+			_TrEstq ('AUT')
+		case _sAcao == 'TransfEstqDeleta'
+			_TrEstq ('DEL')
+		case _sAcao == 'TransfEstqExecuta'
+			_TrEstq ('EXE')
+		case _sAcao == 'TransfEstqNegar'
+			_TrEstq ('NEG')
+		case _sAcao == 'TransfEstqInformarEndDest'
+			_TrEstq ('IED')
+		case _sAcao == 'TransfEstqInsereGrid'
+			_TrEstGrid ()
+		case _sAcao == 'OndeSeUsa'
+			_OndeSeUsa ()
+		case _sAcao == 'IncluiCliente'
+			_IncCli ()
+		case _sAcao == 'AlteraCliente'
+			_AltCli ()
+		case _sAcao == 'IncluiEvento'
+			_IncEvt ()
+		case _sAcao == 'ExcluiEvento'
+			_DelEvt ()
+		case _sAcao == 'IncluiProduto'
+			_IncProd ()
+		case _sAcao == 'ConsultaDeOrcamentos'
+			_ExecConsOrc ()
+		case _sAcao == 'IncluiCargaSafra'
+			_IncCarSaf ()
+		case _sAcao == 'CancelaCargaSafra'
+			_CanCarSaf ()
+		case _sAcao == 'ConsultaKardex'
+			_ExecKardex ()
+		case _sAcao == 'ConsultaKardexLote'
+			_KardexLt ()
+		case _sAcao == 'MonitorProtheus'
+			_MonitProt ()
+		case _sAcao == 'CapitalSocialAssoc'
+			_ExecCapAssoc ()
+		case _sAcao == 'AgendaEntregaFaturamento'
+			_AgEntFat ()
+		case _sAcao == 'EntregaFaturamento'
+			_DtEntFat ()
+		case _sAcao == 'ApontarProducao'
+			_ApontProd ()
+		case _sAcao == 'ApontarProducaoEtqCodBar'
+			_ApPrEtqCB ()
+		case _sAcao == 'BuscaPedidosBloqueados'
+			_PedidosBloq ()
+		case _sAcao == 'GravaBloqueioGerencial'
+			_GrvLibPed ()
+		case _sAcao == 'BuscaMargemContrib'
+			_EnvMargem ()
+		case _sAcao == 'ImprimeTicketCargaSafra'
+			_ITkCarSaf ()
+		case _sAcao == 'ConsultaFechamentoSafraAssoc'
+			_AsFecSaf ()
+		case _sAcao == 'ConsultaCapitalSocialAssoc'
+			_AsCapSoc ()
+		case _sAcao == 'AlteraDadosAssociado'
+			_AltAssoc ()
+		case _sAcao == 'ImprimeEtiqueta'
+			_ImpEtiq ()
+		case _sAcao == 'ImprimeEtiquetaZAG'
+			_ImpEtiqZAG ()
+		case _sAcao == 'InutilizaEtiqueta'
+			_InutEtiq ()
+		case _sAcao == 'ZZUVincularUsuario'
+			_ZZU ('VincularUsuario')
+		case _sAcao == 'ConsultaEstruturaComCustos'
+			_EstrCust ()
+		case _sAcao == 'TesteRobert'
+			_TstRobert ()
+		case _sAcao == 'InsereSolicManut'
+			_IncManut()
+		case _sAcao == 'GravaTituloPgUnimed'
+			_GrvTituloUnimed ()
+		otherwise
+			_SomaErro ("A acao especificada no XML eh invalida: " + _sAcao)
 		endcase
 		U_UsoRot ('F', _sAcao, '')
 	else
@@ -748,71 +748,71 @@ static function _IncEvt ()
 //	U_Log2 ('info', 'Iniciando ' + procname ())
 	_oEvento := ClsEvent ():New ()
 	_oEvento:Filial  = cFilAnt
-	
+
 	// Data e hora: se nao informadas no XML, assume o momento da gravacao.
 	if empty (_sErroWS) ; _dDtEvt = _ExtraiTag ("_oXML:_WSAlianca:_DtEvento", .F., .T.) ; endif
-	if empty (_sErroWS)
-		if empty (_dDtEvt)
-			_oEvento:DtEvento = date ()
-		else
-			if len (_dDtEvt) != 8
-				_SomaErro ("Data do evento deve ser informada no formato AAAAMMDD")
+		if empty (_sErroWS)
+			if empty (_dDtEvt)
+				_oEvento:DtEvento = date ()
 			else
-				_oEvento:DtEvento = stod (_dDtEvt)
+				if len (_dDtEvt) != 8
+					_SomaErro ("Data do evento deve ser informada no formato AAAAMMDD")
+				else
+					_oEvento:DtEvento = stod (_dDtEvt)
+				endif
 			endif
 		endif
-	endif
-	if empty (_sErroWS) ; _oEvento:HrEvento   = _ExtraiTag ("_oXML:_WSAlianca:_HrEvento", .F., .F.) ;   endif
-	if empty (_sErroWS)
-		if empty (_oEvento:HrEvento)
-			_oEvento:HrEvento = time ()
-		else
-			if len (_oEvento:HrEvento) != 8 .or. substr (_oEvento:HrEvento, 3, 1) != ':' .or. substr (_oEvento:HrEvento, 6, 1) != ':'
-				_SomaErro ("Hora do evento deve ser informada no formato HH:MM:SS")
+		if empty (_sErroWS) ; _oEvento:HrEvento   = _ExtraiTag ("_oXML:_WSAlianca:_HrEvento", .F., .F.) ;   endif
+			if empty (_sErroWS)
+				if empty (_oEvento:HrEvento)
+					_oEvento:HrEvento = time ()
+				else
+					if len (_oEvento:HrEvento) != 8 .or. substr (_oEvento:HrEvento, 3, 1) != ':' .or. substr (_oEvento:HrEvento, 6, 1) != ':'
+						_SomaErro ("Hora do evento deve ser informada no formato HH:MM:SS")
+					endif
+				endif
 			endif
-		endif
-	endif
-	if empty (_sErroWS) ; _oEvento:CodEven    = _ExtraiTag ("_oXML:_WSAlianca:_CodEven",      .T., .F.) ;   endif
-	if empty (_sErroWS) .and. ! U_ExistZX5 ('54', _oEvento:CodEven)
-		_SomaErro ("Codigo do evento " + _oEvento:CodEven + " nao cadastrado na tabela 54 do arquivo ZX5.")
-	endif
-	if empty (_sErroWS) ; _oEvento:Origem     = _ExtraiTag ("_oXML:_WSAlianca:_Origem",         .T., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Texto      = _ExtraiTag ("_oXML:_WSAlianca:_Texto",          .T., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:NFSaida    = _ExtraiTag ("_oXML:_WSAlianca:_NFSaida",        .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:SerieSaid  = _ExtraiTag ("_oXML:_WSAlianca:_SerieSaid",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:ParcTit    = _ExtraiTag ("_oXML:_WSAlianca:_ParcTit",        .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:NFEntrada  = _ExtraiTag ("_oXML:_WSAlianca:_NFEntrada",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:SerieEntr  = _ExtraiTag ("_oXML:_WSAlianca:_SerieEntr",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Produto    = _ExtraiTag ("_oXML:_WSAlianca:_Produto",        .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:PedVenda   = _ExtraiTag ("_oXML:_WSAlianca:_PedVenda",       .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Cliente    = _ExtraiTag ("_oXML:_WSAlianca:_Cliente",        .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:LojaCli    = _ExtraiTag ("_oXML:_WSAlianca:_LojaCli",        .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Fornece    = _ExtraiTag ("_oXML:_WSAlianca:_Fornece",        .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:LojaFor    = _ExtraiTag ("_oXML:_WSAlianca:_LojaFor",        .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:MailTo     = _ExtraiTag ("_oXML:_WSAlianca:_MailTo",         .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:MailToZZU  = _ExtraiTag ("_oXML:_WSAlianca:_MailToZZU",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Alias      = _ExtraiTag ("_oXML:_WSAlianca:_Alias",          .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_Recno",     .F., .F.)) ;  endif
-	if empty (_sErroWS) ; _oEvento:CodAlias   = _ExtraiTag ("_oXML:_WSAlianca:_CodAlias",       .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Chave      = _ExtraiTag ("_oXML:_WSAlianca:_Chave",          .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:OP         = _ExtraiTag ("_oXML:_WSAlianca:_OP",             .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Etiqueta   = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",       .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:CodProceda = _ExtraiTag ("_oXML:_WSAlianca:_CodProceda",     .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Transp     = _ExtraiTag ("_oXML:_WSAlianca:_Transp",         .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:TranspReds = _ExtraiTag ("_oXML:_WSAlianca:_TranspReds",     .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:DiasValid  = val (_ExtraiTag ("_oXML:_WSAlianca:_DiasValid", .F., .F.)) ;  endif
-	if empty (_sErroWS) ; _oEvento:ChaveNFe   = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFe",       .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:MotProrTit = _ExtraiTag ("_oXML:_WSAlianca:_MotProrrogTit",  .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Safra      = _ExtraiTag ("_oXML:_WSAlianca:_Safra",          .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:CargaSafra = _ExtraiTag ("_oXML:_WSAlianca:_CargaSafra",     .F., .F.) ;   endif
-	if empty (_sErroWS)
-		if ! _oEvento:Grava ()
-			_SomaErro ("Erro na gravacao do objeto evento")
-		else
-			_sMsgRetWS = "Evento gravado com sucesso"
-		endif
-	endif
-Return
+			if empty (_sErroWS) ; _oEvento:CodEven    = _ExtraiTag ("_oXML:_WSAlianca:_CodEven",      .T., .F.) ;   endif
+				if empty (_sErroWS) .and. ! U_ExistZX5 ('54', _oEvento:CodEven)
+					_SomaErro ("Codigo do evento " + _oEvento:CodEven + " nao cadastrado na tabela 54 do arquivo ZX5.")
+				endif
+				if empty (_sErroWS) ; _oEvento:Origem     = _ExtraiTag ("_oXML:_WSAlianca:_Origem",         .T., .F.) ;   endif
+					if empty (_sErroWS) ; _oEvento:Texto      = _ExtraiTag ("_oXML:_WSAlianca:_Texto",          .T., .F.) ;   endif
+						if empty (_sErroWS) ; _oEvento:NFSaida    = _ExtraiTag ("_oXML:_WSAlianca:_NFSaida",        .F., .F.) ;   endif
+							if empty (_sErroWS) ; _oEvento:SerieSaid  = _ExtraiTag ("_oXML:_WSAlianca:_SerieSaid",      .F., .F.) ;   endif
+								if empty (_sErroWS) ; _oEvento:ParcTit    = _ExtraiTag ("_oXML:_WSAlianca:_ParcTit",        .F., .F.) ;   endif
+									if empty (_sErroWS) ; _oEvento:NFEntrada  = _ExtraiTag ("_oXML:_WSAlianca:_NFEntrada",      .F., .F.) ;   endif
+										if empty (_sErroWS) ; _oEvento:SerieEntr  = _ExtraiTag ("_oXML:_WSAlianca:_SerieEntr",      .F., .F.) ;   endif
+											if empty (_sErroWS) ; _oEvento:Produto    = _ExtraiTag ("_oXML:_WSAlianca:_Produto",        .F., .F.) ;   endif
+												if empty (_sErroWS) ; _oEvento:PedVenda   = _ExtraiTag ("_oXML:_WSAlianca:_PedVenda",       .F., .F.) ;   endif
+													if empty (_sErroWS) ; _oEvento:Cliente    = _ExtraiTag ("_oXML:_WSAlianca:_Cliente",        .F., .F.) ;   endif
+														if empty (_sErroWS) ; _oEvento:LojaCli    = _ExtraiTag ("_oXML:_WSAlianca:_LojaCli",        .F., .F.) ;   endif
+															if empty (_sErroWS) ; _oEvento:Fornece    = _ExtraiTag ("_oXML:_WSAlianca:_Fornece",        .F., .F.) ;   endif
+																if empty (_sErroWS) ; _oEvento:LojaFor    = _ExtraiTag ("_oXML:_WSAlianca:_LojaFor",        .F., .F.) ;   endif
+																	if empty (_sErroWS) ; _oEvento:MailTo     = _ExtraiTag ("_oXML:_WSAlianca:_MailTo",         .F., .F.) ;   endif
+																		if empty (_sErroWS) ; _oEvento:MailToZZU  = _ExtraiTag ("_oXML:_WSAlianca:_MailToZZU",      .F., .F.) ;   endif
+																			if empty (_sErroWS) ; _oEvento:Alias      = _ExtraiTag ("_oXML:_WSAlianca:_Alias",          .F., .F.) ;   endif
+																				if empty (_sErroWS) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_Recno",     .F., .F.)) ;  endif
+																					if empty (_sErroWS) ; _oEvento:CodAlias   = _ExtraiTag ("_oXML:_WSAlianca:_CodAlias",       .F., .F.) ;   endif
+																						if empty (_sErroWS) ; _oEvento:Chave      = _ExtraiTag ("_oXML:_WSAlianca:_Chave",          .F., .F.) ;   endif
+																							if empty (_sErroWS) ; _oEvento:OP         = _ExtraiTag ("_oXML:_WSAlianca:_OP",             .F., .F.) ;   endif
+																								if empty (_sErroWS) ; _oEvento:Etiqueta   = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",       .F., .F.) ;   endif
+																									if empty (_sErroWS) ; _oEvento:CodProceda = _ExtraiTag ("_oXML:_WSAlianca:_CodProceda",     .F., .F.) ;   endif
+																										if empty (_sErroWS) ; _oEvento:Transp     = _ExtraiTag ("_oXML:_WSAlianca:_Transp",         .F., .F.) ;   endif
+																											if empty (_sErroWS) ; _oEvento:TranspReds = _ExtraiTag ("_oXML:_WSAlianca:_TranspReds",     .F., .F.) ;   endif
+																												if empty (_sErroWS) ; _oEvento:DiasValid  = val (_ExtraiTag ("_oXML:_WSAlianca:_DiasValid", .F., .F.)) ;  endif
+																													if empty (_sErroWS) ; _oEvento:ChaveNFe   = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFe",       .F., .F.) ;   endif
+																														if empty (_sErroWS) ; _oEvento:MotProrTit = _ExtraiTag ("_oXML:_WSAlianca:_MotProrrogTit",  .F., .F.) ;   endif
+																															if empty (_sErroWS) ; _oEvento:Safra      = _ExtraiTag ("_oXML:_WSAlianca:_Safra",          .F., .F.) ;   endif
+																																if empty (_sErroWS) ; _oEvento:CargaSafra = _ExtraiTag ("_oXML:_WSAlianca:_CargaSafra",     .F., .F.) ;   endif
+																																	if empty (_sErroWS)
+																																		if ! _oEvento:Grava ()
+																																			_SomaErro ("Erro na gravacao do objeto evento")
+																																		else
+																																			_sMsgRetWS = "Evento gravado com sucesso"
+																																		endif
+																																	endif
+																																	Return
 
 
 // --------------------------------------------------------------------------
@@ -821,20 +821,20 @@ static function _DelEvt ()
 	local _oEvento := NIL
 	local _nRegSZN := 0
 	if empty (_sErroWS) ; _nRegSZN = val (_ExtraiTag ("_oXML:_WSAlianca:_RecnoSZN",      .T., .F.)) ;   endif
-	if empty (_sErroWS)
-		_oEvento := ClsEvent ():New (_nRegSZN)
+		if empty (_sErroWS)
+			_oEvento := ClsEvent ():New (_nRegSZN)
 
-		// Permitirei exclusao somente de algumas origens de eventos (GLPI 9161).
-	//	if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA')
-	//	if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA/WPNMARCARPRESENCAS/WPNFOLLOWUPNOTASFISCAIS')
-		if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA/WPNMARCARPRESENCAS/WPNFOLLOWUPNOTASFISCAIS/WpnAdicionarEventosAssociado')
-			_SomaErro ("Eventos com esta origem nao podem ser excluidos manualmente.")
+			// Permitirei exclusao somente de algumas origens de eventos (GLPI 9161).
+			//	if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA')
+			//	if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA/WPNMARCARPRESENCAS/WPNFOLLOWUPNOTASFISCAIS')
+			if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA/WPNMARCARPRESENCAS/WPNFOLLOWUPNOTASFISCAIS/WpnAdicionarEventosAssociado')
+				_SomaErro ("Eventos com esta origem nao podem ser excluidos manualmente.")
+			endif
 		endif
-	endif
-	if empty (_sErroWS)
-		_oEvento:Exclui ()
-	endif
-Return
+		if empty (_sErroWS)
+			_oEvento:Exclui ()
+		endif
+		Return
 
 
 // --------------------------------------------------------------------------
@@ -849,88 +849,88 @@ static function _TrEstq (_sQueFazer)
 	case _sQueFazer == 'INS'  // Inserir
 		_oTrEstq := ClsTrEstq ():New ()
 		if empty (_sErroWS) ; _oTrEstq:FilOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .T., .F.), 2) ;  endif
-		if empty (_sErroWS) ; _oTrEstq:FilDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .T., .F.), 2) ;  endif
-		if empty (_sErroWS) ; _oTrEstq:ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoOrigem",   .T., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq:ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoDestino",  .T., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq:AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxOrigem",     .T., .F.), 2) ;  endif
-		if empty (_sErroWS) ; _oTrEstq:AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxDestino",    .T., .F.), 2) ;  endif
-		if empty (_sErroWS) ; _oTrEstq:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteOrigem",      .F., .F.), 10) ; endif
-		if empty (_sErroWS) ; _oTrEstq:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteDestino",     .F., .F.), 10) ; endif
-		if empty (_sErroWS) ; _oTrEstq:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoOrigem",  .F., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoDestino", .F., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_QtdSolic",        .T., .F.)) ;     endif
-		if empty (_sErroWS) ; _oTrEstq:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",          .T., .F.) ;      endif
-		if empty (_sErroWS) ; _oTrEstq:OP       = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .F., .F.), 14) ; endif
-		if empty (_sErroWS) ; _oTrEstq:ImprEtq  =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .F., .F.) ;      endif
-		if empty (_sErroWS)
-			_oTrEstq:UsrIncl = cUserName
-			_oTrEstq:DtEmis  = date ()
-			if _oTrEstq:Grava ()
-				u_log2 ('INFO', 'Gravou ZAG. ' + _oTrEstq:UltMsg)
-				_sMsgRetWS = _oTrEstq:UltMsg
-			else
-				u_log2 ('erro', 'Nao gravou ZAG. ' + _oTrEstq:UltMsg)
-				_SomaErro ("Erro na gravacao.")
-				_sMsgRetWS = _oTrEstq:UltMsg
-			endif
-		endif
-	case _sQueFazer $ 'AUT/DEL/EXE/NEG'  // [A]utorizar;[D]eletar;[E]xecutar;[N]egar
-		if empty (_sErroWS) ; _sDocZAG = _ExtraiTag ("_oXML:_WSAlianca:_DocTransf", .T., .F.) ; endif
-		if empty (_sErroWS)
-			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
-			if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-				_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
-			else
-				_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-				if empty (_oTrEstq:Docto)
-					_SomaErro ("Nao foi possivel instanciar objeto _oTrEstq")
-				else
-					do case
-					case _sQueFazer == 'AUT'  // Autorizar
-						_oTrEstq:Libera ()
-						_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
-						_sMsgRetWS = _oTrEstq:UltMsg
-					case _sQueFazer == 'DEL'  // Deletar
-						if ! _oTrEstq:Exclui ()
-							_SomaErro (_oTrEstq:UltMsg)
-						else
-							_sMsgRetWS = _oTrEstq:UltMsg
-						endif
-					case _sQueFazer == 'EXE'  // Executar (pode ter dado erro na tentativa anterior)
-						if ! _oTrEstq:Executa (.T.)
-							_SomaErro (_oTrEstq:UltMsg)
-						else
-							_sMsgRetWS = _oTrEstq:UltMsg
-						endif
-					case _sQueFazer == 'NEG'  // Negar (usuario nao aceitou a transferencia)
-						_sMotZAG = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .T., .F.)
-						if empty (_sErroWS)
-							if ! _oTrEstq:Negar (_sMotZAG)
-								_SomaErro (_oTrEstq:UltMsg)
-							else
-								_sMsgRetWS = _oTrEstq:UltMsg
-							endif
-						endif
-					case _sQueFazer == 'IED'  // Informar Endereco Destino
-						_sNEndDst = _ExtraiTag ("_oXML:_WSAlianca:_NovoEndDest", .T., .F.)
-						if empty (_sErroWS)
-							if ! _oTrEstq:NovoEndDst (_sNEndDst)
-								_SomaErro (_oTrEstq:UltMsg)
-							else
-								_sMsgRetWS = _oTrEstq:UltMsg
-							endif
-						endif
-					otherwise
-						_SomaErro ("Opcao desconhecida na rotina " + procname ())
-					endcase
-				endif
+			if empty (_sErroWS) ; _oTrEstq:FilDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .T., .F.), 2) ;  endif
+				if empty (_sErroWS) ; _oTrEstq:ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoOrigem",   .T., .F.), 15) ; endif
+					if empty (_sErroWS) ; _oTrEstq:ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoDestino",  .T., .F.), 15) ; endif
+						if empty (_sErroWS) ; _oTrEstq:AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxOrigem",     .T., .F.), 2) ;  endif
+							if empty (_sErroWS) ; _oTrEstq:AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxDestino",    .T., .F.), 2) ;  endif
+								if empty (_sErroWS) ; _oTrEstq:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteOrigem",      .F., .F.), 10) ; endif
+									if empty (_sErroWS) ; _oTrEstq:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteDestino",     .F., .F.), 10) ; endif
+										if empty (_sErroWS) ; _oTrEstq:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoOrigem",  .F., .F.), 15) ; endif
+											if empty (_sErroWS) ; _oTrEstq:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoDestino", .F., .F.), 15) ; endif
+												if empty (_sErroWS) ; _oTrEstq:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_QtdSolic",        .T., .F.)) ;     endif
+													if empty (_sErroWS) ; _oTrEstq:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",          .T., .F.) ;      endif
+														if empty (_sErroWS) ; _oTrEstq:OP       = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .F., .F.), 14) ; endif
+															if empty (_sErroWS) ; _oTrEstq:ImprEtq  =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .F., .F.) ;      endif
+																if empty (_sErroWS)
+																	_oTrEstq:UsrIncl = cUserName
+																	_oTrEstq:DtEmis  = date ()
+																	if _oTrEstq:Grava ()
+																		u_log2 ('INFO', 'Gravou ZAG. ' + _oTrEstq:UltMsg)
+																		_sMsgRetWS = _oTrEstq:UltMsg
+																	else
+																		u_log2 ('erro', 'Nao gravou ZAG. ' + _oTrEstq:UltMsg)
+																		_SomaErro ("Erro na gravacao.")
+																		_sMsgRetWS = _oTrEstq:UltMsg
+																	endif
+																endif
+															case _sQueFazer $ 'AUT/DEL/EXE/NEG'  // [A]utorizar;[D]eletar;[E]xecutar;[N]egar
+																if empty (_sErroWS) ; _sDocZAG = _ExtraiTag ("_oXML:_WSAlianca:_DocTransf", .T., .F.) ; endif
+																	if empty (_sErroWS)
+																		zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
+																		if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+																			_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
+																		else
+																			_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+																			if empty (_oTrEstq:Docto)
+																				_SomaErro ("Nao foi possivel instanciar objeto _oTrEstq")
+																			else
+																				do case
+																				case _sQueFazer == 'AUT'  // Autorizar
+																					_oTrEstq:Libera ()
+																					_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
+																					_sMsgRetWS = _oTrEstq:UltMsg
+																				case _sQueFazer == 'DEL'  // Deletar
+																					if ! _oTrEstq:Exclui ()
+																						_SomaErro (_oTrEstq:UltMsg)
+																					else
+																						_sMsgRetWS = _oTrEstq:UltMsg
+																					endif
+																				case _sQueFazer == 'EXE'  // Executar (pode ter dado erro na tentativa anterior)
+																					if ! _oTrEstq:Executa (.T.)
+																						_SomaErro (_oTrEstq:UltMsg)
+																					else
+																						_sMsgRetWS = _oTrEstq:UltMsg
+																					endif
+																				case _sQueFazer == 'NEG'  // Negar (usuario nao aceitou a transferencia)
+																					_sMotZAG = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .T., .F.)
+																					if empty (_sErroWS)
+																						if ! _oTrEstq:Negar (_sMotZAG)
+																							_SomaErro (_oTrEstq:UltMsg)
+																						else
+																							_sMsgRetWS = _oTrEstq:UltMsg
+																						endif
+																					endif
+																				case _sQueFazer == 'IED'  // Informar Endereco Destino
+																					_sNEndDst = _ExtraiTag ("_oXML:_WSAlianca:_NovoEndDest", .T., .F.)
+																					if empty (_sErroWS)
+																						if ! _oTrEstq:NovoEndDst (_sNEndDst)
+																							_SomaErro (_oTrEstq:UltMsg)
+																						else
+																							_sMsgRetWS = _oTrEstq:UltMsg
+																						endif
+																					endif
+																				otherwise
+																					_SomaErro ("Opcao desconhecida na rotina " + procname ())
+																				endcase
+																			endif
 
-			endif
-		endif
-	otherwise
-		_SomaErro ("Acao desconhecida na rotina " + procname ())
-	endcase
-Return
+																		endif
+																	endif
+																otherwise
+																	_SomaErro ("Acao desconhecida na rotina " + procname ())
+																endcase
+																Return
 
 
 // --------------------------------------------------------------------------
@@ -947,135 +947,135 @@ static function _TrEstGrid ()
 
 	// Algumas tags serao unicas, como se fosse um cabecalho de tela.
 	if empty (_sErroWS) ; _sFilOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .t., .F.), 2)  ; endif
-	if empty (_sErroWS) ; _sFilDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .t., .F.), 2)  ; endif
-	if empty (_sErroWS) ; _sOP      = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .f., .F.), 14) ; endif
-	if empty (_sErroWS) ; _sImprEtq =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .f., .F.)      ; endif
-	if empty (_sErroWS) .and. type ("_oXML:_WSAlianca:_TransfEstqItens") != 'O'
-		_SomaErro ("Tag '_oXML:_WSAlianca:_TransfEstqItens' deve estar presente no XML.")
-	endif
+		if empty (_sErroWS) ; _sFilDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .t., .F.), 2)  ; endif
+			if empty (_sErroWS) ; _sOP      = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .f., .F.), 14) ; endif
+				if empty (_sErroWS) ; _sImprEtq =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .f., .F.)      ; endif
+					if empty (_sErroWS) .and. type ("_oXML:_WSAlianca:_TransfEstqItens") != 'O'
+						_SomaErro ("Tag '_oXML:_WSAlianca:_TransfEstqItens' deve estar presente no XML.")
+					endif
 
-	// Se eu tiver recebido mais de um item (a tag <item> pode se repetir), o
-	// o tipo do objeto vai ser 'array'. Para trabalhar mais adiante com um
-	// soh trecho de programa, usarei nomes de objetos _oTrEstq1, _oTrEstq2, ...
-	// Tentei trabalhar com uma array e guardar objetos nela, mas comecei a ter
-	// problemas de misturar dados entre os objetos. Entao achei melhor criar
-	// um objeto para cada item do XML recebido. O acesso a cada objeto fica
-	// chato de fazer por que preciso do '&', mas posso criar quantos objetos
-	// forem necessarios.
-	if type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'A'  // Mais de um item no XML
-		if len (_oXML:_WSAlianca:_TransfEstqItens:_Item) > 99
-			_SomaErro ("Limite maximo de 99 itens.")  // Na verdade, espero ficar abaixo de 10
-		endif
-		_nItem = 1
-		do while empty (_sErroWS) .and. _nItem <= len (_oXML:_WSAlianca:_TransfEstqItens:_Item)
-			U_Log2 ('debug', '[' + procname () + ']Lendo item ' + cvaltochar (_nItem) + ' do XML')
-			&('_oTrEstq' + cvaltochar (_nItem)) := ClsTrEstq ():New ()
-			&('_oTrEstq' + cvaltochar (_nItem)):FilOrig  = _sFilOrig
-			&('_oTrEstq' + cvaltochar (_nItem)):FilDest  = _sFilDest
-			&('_oTrEstq' + cvaltochar (_nItem)):OP       = _sOP
-			&('_oTrEstq' + cvaltochar (_nItem)):ImprEtq  = _sImprEtq
-			&('_oTrEstq' + cvaltochar (_nItem)):UsrIncl  = cUserName
-			&('_oTrEstq' + cvaltochar (_nItem)):DtEmis   = date ()
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ItemId",          .T., .F.)      ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoOrigem",   .T., .F.), 15) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoDestino",  .T., .F.), 15) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxOrigem",     .T., .F.), 2)  ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxDestino",    .T., .F.), 2)  ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteOrigem",      .F., .F.), 10) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteDestino",     .F., .F.), 10) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",  .F., .F.), 15) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino", .F., .F.), 15) ; endif
-			//if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",        .T., .F.))     ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",  .T., .F.),",","."))      ; endif
+					// Se eu tiver recebido mais de um item (a tag <item> pode se repetir), o
+					// o tipo do objeto vai ser 'array'. Para trabalhar mais adiante com um
+					// soh trecho de programa, usarei nomes de objetos _oTrEstq1, _oTrEstq2, ...
+					// Tentei trabalhar com uma array e guardar objetos nela, mas comecei a ter
+					// problemas de misturar dados entre os objetos. Entao achei melhor criar
+					// um objeto para cada item do XML recebido. O acesso a cada objeto fica
+					// chato de fazer por que preciso do '&', mas posso criar quantos objetos
+					// forem necessarios.
+					if type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'A'  // Mais de um item no XML
+						if len (_oXML:_WSAlianca:_TransfEstqItens:_Item) > 99
+							_SomaErro ("Limite maximo de 99 itens.")  // Na verdade, espero ficar abaixo de 10
+						endif
+						_nItem = 1
+						do while empty (_sErroWS) .and. _nItem <= len (_oXML:_WSAlianca:_TransfEstqItens:_Item)
+							U_Log2 ('debug', '[' + procname () + ']Lendo item ' + cvaltochar (_nItem) + ' do XML')
+							&('_oTrEstq' + cvaltochar (_nItem)) := ClsTrEstq ():New ()
+							&('_oTrEstq' + cvaltochar (_nItem)):FilOrig  = _sFilOrig
+							&('_oTrEstq' + cvaltochar (_nItem)):FilDest  = _sFilDest
+							&('_oTrEstq' + cvaltochar (_nItem)):OP       = _sOP
+							&('_oTrEstq' + cvaltochar (_nItem)):ImprEtq  = _sImprEtq
+							&('_oTrEstq' + cvaltochar (_nItem)):UsrIncl  = cUserName
+							&('_oTrEstq' + cvaltochar (_nItem)):DtEmis   = date ()
+							if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ItemId",          .T., .F.)      ; endif
+								if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoOrigem",   .T., .F.), 15) ; endif
+									if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoDestino",  .T., .F.), 15) ; endif
+										if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxOrigem",     .T., .F.), 2)  ; endif
+											if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxDestino",    .T., .F.), 2)  ; endif
+												if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteOrigem",      .F., .F.), 10) ; endif
+													if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteDestino",     .F., .F.), 10) ; endif
+														if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",  .F., .F.), 15) ; endif
+															if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino", .F., .F.), 15) ; endif
+																//if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",        .T., .F.))     ; endif
+																if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",  .T., .F.),",","."))      ; endif
 
-			
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.)      ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Obs",             .F., .F.)      ; endif
-			_nItem ++
-		enddo
-	elseif type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'O'  // Um item apenas no XML
-		_oTrEstq1 := ClsTrEstq ():New ()
-		_oTrEstq1:FilOrig  = _sFilOrig
-		_oTrEstq1:FilDest  = _sFilDest
-		_oTrEstq1:OP       = _sOP
-		_oTrEstq1:ImprEtq  = _sImprEtq
-		_oTrEstq1:UsrIncl  = cUserName
-		_oTrEstq1:DtEmis   = date ()
-		if empty (_sErroWS) ; _oTrEstq1:IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ItemId",          .T., .F.)      ; endif
-		if empty (_sErroWS) ; _oTrEstq1:ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoOrigem",   .T., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoDestino",  .T., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxOrigem",     .T., .F.), 2)  ; endif
-		if empty (_sErroWS) ; _oTrEstq1:AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxDestino",    .T., .F.), 2)  ; endif
-		if empty (_sErroWS) ; _oTrEstq1:LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteOrigem",      .F., .F.), 10) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteDestino",     .F., .F.), 10) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",  .F., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino", .F., .F.), 15) ; endif
-		//if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.))     ; endif
-		if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.),",","."))    ; endif
-		if empty (_sErroWS) ; _oTrEstq1:CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.)      ; endif
-		if empty (_sErroWS) ; _oTrEstq1:Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Obs",             .F., .F.)      ; endif
-	endif
 
-	// Se nao consegui ler as tags do XML, nem adianta prosseguir.
-	if empty (_sErroWS)
+																	if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.)      ; endif
+																		if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Obs",             .F., .F.)      ; endif
+																			_nItem ++
+																		enddo
+																	elseif type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'O'  // Um item apenas no XML
+																		_oTrEstq1 := ClsTrEstq ():New ()
+																		_oTrEstq1:FilOrig  = _sFilOrig
+																		_oTrEstq1:FilDest  = _sFilDest
+																		_oTrEstq1:OP       = _sOP
+																		_oTrEstq1:ImprEtq  = _sImprEtq
+																		_oTrEstq1:UsrIncl  = cUserName
+																		_oTrEstq1:DtEmis   = date ()
+																		if empty (_sErroWS) ; _oTrEstq1:IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ItemId",          .T., .F.)      ; endif
+																			if empty (_sErroWS) ; _oTrEstq1:ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoOrigem",   .T., .F.), 15) ; endif
+																				if empty (_sErroWS) ; _oTrEstq1:ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoDestino",  .T., .F.), 15) ; endif
+																					if empty (_sErroWS) ; _oTrEstq1:AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxOrigem",     .T., .F.), 2)  ; endif
+																						if empty (_sErroWS) ; _oTrEstq1:AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxDestino",    .T., .F.), 2)  ; endif
+																							if empty (_sErroWS) ; _oTrEstq1:LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteOrigem",      .F., .F.), 10) ; endif
+																								if empty (_sErroWS) ; _oTrEstq1:LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteDestino",     .F., .F.), 10) ; endif
+																									if empty (_sErroWS) ; _oTrEstq1:EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",  .F., .F.), 15) ; endif
+																										if empty (_sErroWS) ; _oTrEstq1:EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino", .F., .F.), 15) ; endif
+																											//if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.))     ; endif
+																											if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.),",","."))    ; endif
+																												if empty (_sErroWS) ; _oTrEstq1:CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.)      ; endif
+																													if empty (_sErroWS) ; _oTrEstq1:Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Obs",             .F., .F.)      ; endif
+																													endif
 
-		// Antes de gravar qualquer coisa, preciso ver se todos os itens podem ser aceitos.
-		_lTodosOK = .T.
-		_nItem = 1
-	//	do while empty (_sErroWS) .and. type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
-		do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O'
-			if ! &('_oTrEstq' + cvaltochar (_nItem)):PodeIncl ()
-				U_Log2 ('aviso', '[' + procname () + ']A solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML) nao vai ser aceita:')
-				u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
-				_lTodosOK = .F.
-			endif
-			_nItem ++
-		enddo
+																													// Se nao consegui ler as tags do XML, nem adianta prosseguir.
+																													if empty (_sErroWS)
 
-		// Prepara variavel para dar retorno de cada item. Como quero dar o retorno
-		// para todos os itens, limparei mensagens previas de erro.
-		_sErroWS = ''
-		_sRetGrid = '<RetornoSolicitacao>'
-		_nItem = 1
-		do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
-			_sRetGrid += '<Itens>'
-			_sRetGrid += '<ItemId>' + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + '</ItemId>'
-			
-			// Situacao que nao deverah ocorrer.
-			if ascan (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid) > 0
-				&('_oTrEstq' + cvaltochar (_nItem)):UltMsg = "Tag ItemID (" + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + ") ja informada anteriormente."
-				_lTodosOK = .F.
-			else
-				aadd (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid)
-			endif
+																														// Antes de gravar qualquer coisa, preciso ver se todos os itens podem ser aceitos.
+																														_lTodosOK = .T.
+																														_nItem = 1
+																														//	do while empty (_sErroWS) .and. type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+																														do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O'
+																															if ! &('_oTrEstq' + cvaltochar (_nItem)):PodeIncl ()
+																																U_Log2 ('aviso', '[' + procname () + ']A solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML) nao vai ser aceita:')
+																																u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+																																_lTodosOK = .F.
+																															endif
+																															_nItem ++
+																														enddo
 
-			// Se todos estao ok (deverao ser aceitos), jah posso grava-los.
-			if _lTodosOK
-				if ! &('_oTrEstq' + cvaltochar (_nItem)):Grava ()
-					_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
-					U_Log2 ('erro', '[' + procname () + ']Erro ao gravar a solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML):')
-					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
-				else
-			//		_sRetGrid += "<Retorno>OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq + "</Retorno>"
-					_sRetGrid += "<Retorno>OK</Retorno>"
-					U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
-					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
-				endif
-			else  // Vou apenas retornar se os itens seriam ou nao aceitos
-				if ! empty (&('_oTrEstq' + cvaltochar (_nItem)):UltMsg)
-					_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
-				else
-					_sRetGrid += "<Retorno>OK</Retorno>"
-				endif
-			endif
-			_sRetGrid += '</Itens>'
-			_nItem ++
-		enddo
-		_sRetGrid += '</RetornoSolicitacao>'
-		_sMsgRetWS = _sRetGrid
-	endif
-	U_Log2 ('debug', '[' + procname () + ']' + _sMsgRetWS)
-return
+																														// Prepara variavel para dar retorno de cada item. Como quero dar o retorno
+																														// para todos os itens, limparei mensagens previas de erro.
+																														_sErroWS = ''
+																														_sRetGrid = '<RetornoSolicitacao>'
+																														_nItem = 1
+																														do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+																															_sRetGrid += '<Itens>'
+																															_sRetGrid += '<ItemId>' + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + '</ItemId>'
+
+																															// Situacao que nao deverah ocorrer.
+																															if ascan (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid) > 0
+																																&('_oTrEstq' + cvaltochar (_nItem)):UltMsg = "Tag ItemID (" + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + ") ja informada anteriormente."
+																																_lTodosOK = .F.
+																															else
+																																aadd (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid)
+																															endif
+
+																															// Se todos estao ok (deverao ser aceitos), jah posso grava-los.
+																															if _lTodosOK
+																																if ! &('_oTrEstq' + cvaltochar (_nItem)):Grava ()
+																																	_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
+																																	U_Log2 ('erro', '[' + procname () + ']Erro ao gravar a solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML):')
+																																	u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+																																else
+																																	//		_sRetGrid += "<Retorno>OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq + "</Retorno>"
+																																	_sRetGrid += "<Retorno>OK</Retorno>"
+																																	U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
+																																	u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+																																endif
+																															else  // Vou apenas retornar se os itens seriam ou nao aceitos
+																																if ! empty (&('_oTrEstq' + cvaltochar (_nItem)):UltMsg)
+																																	_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
+																																else
+																																	_sRetGrid += "<Retorno>OK</Retorno>"
+																																endif
+																															endif
+																															_sRetGrid += '</Itens>'
+																															_nItem ++
+																														enddo
+																														_sRetGrid += '</RetornoSolicitacao>'
+																														_sMsgRetWS = _sRetGrid
+																													endif
+																													U_Log2 ('debug', '[' + procname () + ']' + _sMsgRetWS)
+																													return
 
 
 // --------------------------------------------------------------------------
@@ -1208,11 +1208,11 @@ static function _IncCli ()
 
 		//Monta array de dados para inclusao do cadastro.
 		oSA1Mod:= oModel:getModel("MATA030_SA1")
-		oSA1Mod:SetValue("A1_NOME"		, _wnome 			)	
-		oSA1Mod:SetValue("A1_PESSOA"	, _wtipo 			)	
-		oSA1Mod:SetValue("A1_TIPO"		, "F"				)	
-		oSA1Mod:SetValue("A1_NREDUZ"	, _wnome			)	
-		oSA1Mod:SetValue("A1_END"		, _wend 			)			
+		oSA1Mod:SetValue("A1_NOME"		, _wnome 			)
+		oSA1Mod:SetValue("A1_PESSOA"	, _wtipo 			)
+		oSA1Mod:SetValue("A1_TIPO"		, "F"				)
+		oSA1Mod:SetValue("A1_NREDUZ"	, _wnome			)
+		oSA1Mod:SetValue("A1_END"		, _wend 			)
 		oSA1Mod:SetValue("A1_EST"		, _west				)
 		oSA1Mod:SetValue("A1_MUN"		, _wcidade			)
 		oSA1Mod:SetValue("A1_COD_MUN"	, _wcodmun			)
@@ -1224,7 +1224,7 @@ static function _IncCli ()
 		oSA1Mod:SetValue("A1_LOJA"		, "01"				)
 		oSA1Mod:SetValue("A1_VEND"		, "001"				)
 		oSA1Mod:SetValue("A1_MALA"		, "S"				)
-		oSA1Mod:SetValue("A1_CGC"		, _wcgc				)	
+		oSA1Mod:SetValue("A1_CGC"		, _wcgc				)
 		oSA1Mod:SetValue("A1_BCO1"		, "CX1"				)
 		oSA1Mod:SetValue("A1_RISCO"		, "E"				)
 		oSA1Mod:SetValue("A1_PAIS"		, "105"				)
@@ -1233,7 +1233,7 @@ static function _IncCli ()
 		oSA1Mod:SetValue("A1_EMAIL"		, _wemail			)
 		oSA1Mod:SetValue("A1_VAMDANF"	, _wemail			)
 		oSA1Mod:SetValue("A1_CODPAIS"	, "01058"			)
-		oSA1Mod:SetValue("A1_MSBLQL"	, "2"				)			
+		oSA1Mod:SetValue("A1_MSBLQL"	, "2"				)
 		oSA1Mod:SetValue("A1_SIMPNAC"	, "2"				)
 		oSA1Mod:SetValue("A1_VABARAP"	, "0"				)
 		oSA1Mod:SetValue("A1_CONTA"		, "101020201001" 	)
@@ -1245,10 +1245,10 @@ static function _IncCli ()
 		oSA1Mod:SetValue("A1_GRPTRIB"	, "003"				)
 		oSA1Mod:SetValue("A1_FORMA"		, "3"				)
 		oSA1Mod:SetValue("A1_LOJAS"		, "S"				)
-		oSA1Mod:SetValue("A1_VADTINC"	, date()			)	
-		oSA1Mod:SetValue("A1_VAEMLF"	, _wemail			)  		
-		oSA1Mod:SetValue("A1_VACGCFI"	, _wcgc				) 
-		oSA1Mod:SetValue("A1_SAVBLQ"	, 'S'				) 
+		oSA1Mod:SetValue("A1_VADTINC"	, date()			)
+		oSA1Mod:SetValue("A1_VAEMLF"	, _wemail			)
+		oSA1Mod:SetValue("A1_VACGCFI"	, _wcgc				)
+		oSA1Mod:SetValue("A1_SAVBLQ"	, 'S'				)
 
 		If oModel:VldData() 	// Tenta realizar o Commit
 			If oModel:CommitData()
@@ -1257,7 +1257,7 @@ static function _IncCli ()
 				u_log('NÃO GRAVOU')
 
 				aErro := oModel:GetErrorMessage()
-				
+
 				//Monta o Texto que será mostrado na tela
 				u_log("Id do formulário de origem:"  + ' [' + AllToChar(aErro[01]) + ']')
 				u_log("Id do campo de origem: "      + ' [' + AllToChar(aErro[02]) + ']')
@@ -1268,11 +1268,11 @@ static function _IncCli ()
 				u_log("Mensagem da solução: "        + ' [' + AllToChar(aErro[07]) + ']')
 				u_log("Valor atribuído: "            + ' [' + AllToChar(aErro[08]) + ']')
 				u_log("Valor anterior: "             + ' [' + AllToChar(aErro[09]) + ']')
-			endif			      
+			endif
 		Else 					// Se não conseguir validar as informações, altera a variável para false
 			u_log('Erro na rotina automatica')
 			aErro := oModel:GetErrorMessage()
-				
+
 			//Monta o Texto que será mostrado na tela
 			u_log("Id do formulário de origem:"  + ' [' + AllToChar(aErro[01]) + ']')
 			u_log("Id do campo de origem: "      + ' [' + AllToChar(aErro[02]) + ']')
@@ -1411,36 +1411,36 @@ Static function _ExecConsOrc()
 			_oSQL:_sQuery +=  " ORDER BY CHAVE_ORDENACAO_1, CHAVE_ORDENACAO_2, CONTA"
 		elseif _sModelo == '2020'
 		*/
-			_oSQL:_sQuery += "with C AS ("
-			_oSQL:_sQuery +=  " SELECT ORDEM, DESC_N1, DESC_N2, NIVEL, CONTA, DESCRICAO,"
-			_oSQL:_sQuery +=         " SUM (ORC_ANO)    AS ORC_ANO,"
-			_oSQL:_sQuery +=         " MAX (ORC_ANO_FP) AS ORC_ANO_FP,"
-			_oSQL:_sQuery +=         " SUM (ORC_ANO_AV) AS ORC_ANO_AV,"
-			_oSQL:_sQuery +=         " SUM (ORC_PER)    AS ORC_PER,"
-			_oSQL:_sQuery +=         " MAX (ORC_PER_FP) AS ORC_PER_FP,"
-			_oSQL:_sQuery +=         " SUM (ORC_PER_AV) AS ORC_PER_AV,"
-			_oSQL:_sQuery +=         " SUM (REA_MES)    AS REA_MES,"
-			_oSQL:_sQuery +=         " MAX (REA_MES_FP) AS REA_MES_FP,"
-			_oSQL:_sQuery +=         " SUM (REA_MES_AV) AS REA_MES_AV,"
-			_oSQL:_sQuery +=         " SUM (REA_PER)    AS REA_PER,"
-			_oSQL:_sQuery +=         " MAX (REA_PER_FP) AS REA_PER_FP,"
-			_oSQL:_sQuery +=         " SUM (REA_PER_AV) AS REA_PER_AV,"
-			_oSQL:_sQuery +=         " SUM (REA_ANT)    AS REA_ANT,"
-			_oSQL:_sQuery +=         " MAX (REA_ANT_FP) AS REA_ANT_FP,"
-			_oSQL:_sQuery +=         " SUM (REA_ANT_AV) AS REA_ANT_AV,"
-			_oSQL:_sQuery +=         " DESTACAR, FILTRACC"
-			_oSQL:_sQuery +=  " FROM VA_FCONS_ORCAMENTO_525 "
-			_oSQL:_sQuery +=  " ('" + _wFilialIni + "'"
-			_oSQL:_sQuery +=   ",'" + _wFilialFin + "'"
-			_oSQL:_sQuery +=   ",'" + _wAno       + "'"
-			_oSQL:_sQuery +=   ",'" + substr (_wDataInicial, 5, 2) + "'"
-			_oSQL:_sQuery +=   ",'" + substr (_wDataFinal, 5, 2) + "'"
-			_oSQL:_sQuery +=   "," + _aPerfNA [1] + "," + _aPerfNA [2] + "," + _aPerfNA [3] + "," + _aPerfNA [4] + "," + _aPerfNA [5] + ")"
-			//_oSQL:_sQuery += " WHERE ORDEM != 3"  // Nao queremos mais visualizar esta ordem, mas ela eh usada nos calculos.
-			_oSQL:_sQuery += " GROUP BY ORDEM,DESC_N1,DESC_N2,NIVEL,CONTA,DESCRICAO, DESTACAR, FILTRACC"
-			_oSQL:_sQuery += ")"
-			_oSQL:_sQuery += " SELECT * FROM C"		
-			_oSQL:_sQuery += " ORDER BY ORDEM, DESC_N1, DESC_N2, 999999999999999 - SUM(REA_PER) OVER (PARTITION BY DESC_N1, DESC_N2), CONTA"
+		_oSQL:_sQuery += "with C AS ("
+		_oSQL:_sQuery +=  " SELECT ORDEM, DESC_N1, DESC_N2, NIVEL, CONTA, DESCRICAO,"
+		_oSQL:_sQuery +=         " SUM (ORC_ANO)    AS ORC_ANO,"
+		_oSQL:_sQuery +=         " MAX (ORC_ANO_FP) AS ORC_ANO_FP,"
+		_oSQL:_sQuery +=         " SUM (ORC_ANO_AV) AS ORC_ANO_AV,"
+		_oSQL:_sQuery +=         " SUM (ORC_PER)    AS ORC_PER,"
+		_oSQL:_sQuery +=         " MAX (ORC_PER_FP) AS ORC_PER_FP,"
+		_oSQL:_sQuery +=         " SUM (ORC_PER_AV) AS ORC_PER_AV,"
+		_oSQL:_sQuery +=         " SUM (REA_MES)    AS REA_MES,"
+		_oSQL:_sQuery +=         " MAX (REA_MES_FP) AS REA_MES_FP,"
+		_oSQL:_sQuery +=         " SUM (REA_MES_AV) AS REA_MES_AV,"
+		_oSQL:_sQuery +=         " SUM (REA_PER)    AS REA_PER,"
+		_oSQL:_sQuery +=         " MAX (REA_PER_FP) AS REA_PER_FP,"
+		_oSQL:_sQuery +=         " SUM (REA_PER_AV) AS REA_PER_AV,"
+		_oSQL:_sQuery +=         " SUM (REA_ANT)    AS REA_ANT,"
+		_oSQL:_sQuery +=         " MAX (REA_ANT_FP) AS REA_ANT_FP,"
+		_oSQL:_sQuery +=         " SUM (REA_ANT_AV) AS REA_ANT_AV,"
+		_oSQL:_sQuery +=         " DESTACAR, FILTRACC"
+		_oSQL:_sQuery +=  " FROM VA_FCONS_ORCAMENTO_525 "
+		_oSQL:_sQuery +=  " ('" + _wFilialIni + "'"
+		_oSQL:_sQuery +=   ",'" + _wFilialFin + "'"
+		_oSQL:_sQuery +=   ",'" + _wAno       + "'"
+		_oSQL:_sQuery +=   ",'" + substr (_wDataInicial, 5, 2) + "'"
+		_oSQL:_sQuery +=   ",'" + substr (_wDataFinal, 5, 2) + "'"
+		_oSQL:_sQuery +=   "," + _aPerfNA [1] + "," + _aPerfNA [2] + "," + _aPerfNA [3] + "," + _aPerfNA [4] + "," + _aPerfNA [5] + ")"
+		//_oSQL:_sQuery += " WHERE ORDEM != 3"  // Nao queremos mais visualizar esta ordem, mas ela eh usada nos calculos.
+		_oSQL:_sQuery += " GROUP BY ORDEM,DESC_N1,DESC_N2,NIVEL,CONTA,DESCRICAO, DESTACAR, FILTRACC"
+		_oSQL:_sQuery += ")"
+		_oSQL:_sQuery += " SELECT * FROM C"
+		_oSQL:_sQuery += " ORDER BY ORDEM, DESC_N1, DESC_N2, 999999999999999 - SUM(REA_PER) OVER (PARTITION BY DESC_N1, DESC_N2), CONTA"
 		//else
 		//	_SomaErro ("Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento no web service.")
 		//endif
@@ -1474,28 +1474,28 @@ Static function _ExecConsOrc()
 				_XmlRet += 			"<RealizadoAnt>" + IIf(Empty(alltrim(str((_sAliasQ) -> rea_ant)))   ,'0' 		, alltrim(str((_sAliasQ) -> rea_ant)))	+ "</RealizadoAnt>"
 			elseif _sModelo == '2020'
 			*/
-				_XmlRet += 			"<Ordem>" 			 + IIf(Empty(alltrim((_sAliasQ) -> ordem))				,'-' 	, alltrim((_sAliasQ) -> ordem))				+ "</Ordem>"
-				_XmlRet += 			"<DescN1>"			 + IIf(Empty(alltrim((_sAliasQ) -> desc_n1))			,'-' 	, alltrim((_sAliasQ) -> desc_n1))			+ "</DescN1>"
-				_XmlRet += 			"<DescN2>"			 + IIf(Empty(alltrim((_sAliasQ) -> desc_n2))			,'-' 	, alltrim((_sAliasQ) -> desc_n2))			+ "</DescN2>"
-				_XmlRet += 			"<Conta>"			 + IIf(Empty(alltrim((_sAliasQ) -> conta))				,'0' 	, alltrim((_sAliasQ) -> conta))				+ "</Conta>"
-				_XmlRet += 			"<CtiDesc01>"		 + IIf(Empty(alltrim((_sAliasQ) -> descricao))			,'-' 	, alltrim((_sAliasQ) -> descricao))			+ "</CtiDesc01>"
-				_XmlRet += 			"<OrcadoAno>"		 + alltrim (Transform (                                                 (_sAliasQ) -> orc_ano,     "999999999999.99")) + "</OrcadoAno>"
-				_XmlRet += 			"<OrcadoAnoFP>"		 +                                                                      (_sAliasQ) -> orc_ano_fp                       + "</OrcadoAnoFP>"
-				_XmlRet += 			"<OrcadoAnoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> orc_ano_AV) > 999999, 0, (_sAliasQ) -> orc_ano_AV), "999999999999.99")) + "</OrcadoAnoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
-				_XmlRet += 			"<Orcado>"			 + alltrim (Transform (                                                 (_sAliasQ) -> orc_per,     "999999999999.99")) + "</Orcado>"
-				_XmlRet += 			"<OrcadoFP>"		 +                                                                      (_sAliasQ) -> orc_per_fp                       + "</OrcadoFP>"
-				_XmlRet += 			"<OrcadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> orc_per_AV) > 999999, 0, (_sAliasQ) -> orc_per_AV), "999999999999.99")) + "</OrcadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
-				_XmlRet += 			"<RealizadoNoMes>"	 + alltrim (Transform (                                                 (_sAliasQ) -> rea_mes,     "999999999999.99")) + "</RealizadoNoMes>"
-				_XmlRet += 			"<RealizadoNoMesFP>" +                                                                      (_sAliasQ) -> rea_mes_fp                       + "</RealizadoNoMesFP>"
-				_XmlRet += 			"<RealizadoNoMesAV>" + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_mes_AV) > 999999, 0, (_sAliasQ) -> rea_mes_AV), "999999999999.99")) + "</RealizadoNoMesAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
-				_XmlRet += 			"<Realizado>"		 + alltrim (Transform (                                                 (_sAliasQ) -> rea_per,     "999999999999.99")) + "</Realizado>"
-				_XmlRet += 			"<RealizadoFP>"		 +                                                                      (_sAliasQ) -> rea_per_fp                       + "</RealizadoFP>"
-				_XmlRet += 			"<RealizadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_per_AV) > 999999, 0, (_sAliasQ) -> rea_per_AV), "999999999999.99")) + "</RealizadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
-				_XmlRet += 			"<RealizadoAnt>"	 + alltrim (Transform (                                                 (_sAliasQ) -> rea_ant,     "999999999999.99")) + "</RealizadoAnt>"
-				_XmlRet += 			"<RealizadoAntFP>"	 +                                                                      (_sAliasQ) -> rea_ant_fp                       + "</RealizadoAntFP>"
-				_XmlRet += 			"<RealizadoAntAV>"	 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_ant_AV) > 999999, 0, (_sAliasQ) -> rea_ant_AV), "999999999999.99")) + "</RealizadoAntAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
-				_XmlRet += 			"<Destacar>"		 + (_sAliasQ) -> destacar + "</Destacar>"
-				_XmlRet += 			"<FilCC>"			 + alltrim ((_sAliasQ) -> FiltraCC) + "</FilCC>"
+			_XmlRet += 			"<Ordem>" 			 + IIf(Empty(alltrim((_sAliasQ) -> ordem))				,'-' 	, alltrim((_sAliasQ) -> ordem))				+ "</Ordem>"
+			_XmlRet += 			"<DescN1>"			 + IIf(Empty(alltrim((_sAliasQ) -> desc_n1))			,'-' 	, alltrim((_sAliasQ) -> desc_n1))			+ "</DescN1>"
+			_XmlRet += 			"<DescN2>"			 + IIf(Empty(alltrim((_sAliasQ) -> desc_n2))			,'-' 	, alltrim((_sAliasQ) -> desc_n2))			+ "</DescN2>"
+			_XmlRet += 			"<Conta>"			 + IIf(Empty(alltrim((_sAliasQ) -> conta))				,'0' 	, alltrim((_sAliasQ) -> conta))				+ "</Conta>"
+			_XmlRet += 			"<CtiDesc01>"		 + IIf(Empty(alltrim((_sAliasQ) -> descricao))			,'-' 	, alltrim((_sAliasQ) -> descricao))			+ "</CtiDesc01>"
+			_XmlRet += 			"<OrcadoAno>"		 + alltrim (Transform (                                                 (_sAliasQ) -> orc_ano,     "999999999999.99")) + "</OrcadoAno>"
+			_XmlRet += 			"<OrcadoAnoFP>"		 +                                                                      (_sAliasQ) -> orc_ano_fp                       + "</OrcadoAnoFP>"
+			_XmlRet += 			"<OrcadoAnoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> orc_ano_AV) > 999999, 0, (_sAliasQ) -> orc_ano_AV), "999999999999.99")) + "</OrcadoAnoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
+			_XmlRet += 			"<Orcado>"			 + alltrim (Transform (                                                 (_sAliasQ) -> orc_per,     "999999999999.99")) + "</Orcado>"
+			_XmlRet += 			"<OrcadoFP>"		 +                                                                      (_sAliasQ) -> orc_per_fp                       + "</OrcadoFP>"
+			_XmlRet += 			"<OrcadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> orc_per_AV) > 999999, 0, (_sAliasQ) -> orc_per_AV), "999999999999.99")) + "</OrcadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
+			_XmlRet += 			"<RealizadoNoMes>"	 + alltrim (Transform (                                                 (_sAliasQ) -> rea_mes,     "999999999999.99")) + "</RealizadoNoMes>"
+			_XmlRet += 			"<RealizadoNoMesFP>" +                                                                      (_sAliasQ) -> rea_mes_fp                       + "</RealizadoNoMesFP>"
+			_XmlRet += 			"<RealizadoNoMesAV>" + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_mes_AV) > 999999, 0, (_sAliasQ) -> rea_mes_AV), "999999999999.99")) + "</RealizadoNoMesAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
+			_XmlRet += 			"<Realizado>"		 + alltrim (Transform (                                                 (_sAliasQ) -> rea_per,     "999999999999.99")) + "</Realizado>"
+			_XmlRet += 			"<RealizadoFP>"		 +                                                                      (_sAliasQ) -> rea_per_fp                       + "</RealizadoFP>"
+			_XmlRet += 			"<RealizadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_per_AV) > 999999, 0, (_sAliasQ) -> rea_per_AV), "999999999999.99")) + "</RealizadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
+			_XmlRet += 			"<RealizadoAnt>"	 + alltrim (Transform (                                                 (_sAliasQ) -> rea_ant,     "999999999999.99")) + "</RealizadoAnt>"
+			_XmlRet += 			"<RealizadoAntFP>"	 +                                                                      (_sAliasQ) -> rea_ant_fp                       + "</RealizadoAntFP>"
+			_XmlRet += 			"<RealizadoAntAV>"	 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_ant_AV) > 999999, 0, (_sAliasQ) -> rea_ant_AV), "999999999999.99")) + "</RealizadoAntAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
+			_XmlRet += 			"<Destacar>"		 + (_sAliasQ) -> destacar + "</Destacar>"
+			_XmlRet += 			"<FilCC>"			 + alltrim ((_sAliasQ) -> FiltraCC) + "</FilCC>"
 			//else
 			//	_SomaErro ("Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento na montagem do XML")
 			//endif
@@ -1506,13 +1506,13 @@ Static function _ExecConsOrc()
 
 		_XmlRet += 		"</Orcamento>"
 		_XmlRet += "</ConsultaDeOrcamento>"
-		
+
 		(_sAliasQ) -> (dbclosearea ())
-		
+
 		_sMsgRetWS := _XmlRet
 	endif
 //	u_logFim ()
-Return 
+Return
 
 
 // --------------------------------------------------------------------------
@@ -1550,103 +1550,103 @@ static function _IncCarSaf ()
 //	U_PerfMon ('I', 'WSGerarCargaSafra')  // Para metricas de performance
 
 	if empty (_sErroWS) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
-	if empty (_sErroWS) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
-	if empty (_sErroWS) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",              .F., .F.) ; endif
-	if empty (_sErroWS) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",                   .F., .F.) ; endif
-	if empty (_sErroWS) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",                    .F., .F.) ; endif
-	if empty (_sErroWS) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                     .F., .F.) ; endif
-	if empty (_sErroWS) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",        .T., .F.) ; endif
-	if empty (_sErroWS) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",       .T., .F.) ; endif
-	if empty (_sErroWS) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",              .F., .F.) ; endif
-	if empty (_sErroWS) ; _sTombador = _ExtraiTag ("_oXML:_WSAlianca:_Tombador",               .T., .F.) ; endif
-	if empty (_sErroWS) ; _sPlacaVei = _ExtraiTag ("_oXML:_WSAlianca:_PlacaVeiculo",           .T., .F.) ; endif
-	if empty (_sErroWS) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra", .T., .F.)) == 'S') ; endif
-	if empty (_sErroWS) ; _sObs      = _ExtraiTag ("_oXML:_WSAlianca:_Obs",                    .F., .F.) ; endif
-	if empty (_sErroWS) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",                  .F., .F.) ; endif
-	if empty (_sErroWS) ; _sCargaC1  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada1",    .f., .F.) ; endif
-	if empty (_sErroWS) ; _sCargaC2  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada2",    .f., .F.) ; endif
+		if empty (_sErroWS) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
+			if empty (_sErroWS) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",              .F., .F.) ; endif
+				if empty (_sErroWS) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",                   .F., .F.) ; endif
+					if empty (_sErroWS) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",                    .F., .F.) ; endif
+						if empty (_sErroWS) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                     .F., .F.) ; endif
+							if empty (_sErroWS) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",        .T., .F.) ; endif
+								if empty (_sErroWS) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",       .T., .F.) ; endif
+									if empty (_sErroWS) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",              .F., .F.) ; endif
+										if empty (_sErroWS) ; _sTombador = _ExtraiTag ("_oXML:_WSAlianca:_Tombador",               .T., .F.) ; endif
+											if empty (_sErroWS) ; _sPlacaVei = _ExtraiTag ("_oXML:_WSAlianca:_PlacaVeiculo",           .T., .F.) ; endif
+												if empty (_sErroWS) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra", .T., .F.)) == 'S') ; endif
+													if empty (_sErroWS) ; _sObs      = _ExtraiTag ("_oXML:_WSAlianca:_Obs",                    .F., .F.) ; endif
+														if empty (_sErroWS) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",                  .F., .F.) ; endif
+															if empty (_sErroWS) ; _sCargaC1  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada1",    .f., .F.) ; endif
+																if empty (_sErroWS) ; _sCargaC2  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada2",    .f., .F.) ; endif
 
-	// A partir de 2021 o app de safra manda tambem CPF e inscricao, para os casos em que foi gerado 'lote de entrega'
-	// pelo caderno de campo, e lah identifica apenas o grupo familiar. A inscricao e o CPF serao conhecidos somente
-	// no momento em que o associado chegar aqui com o talao de produtor.
-	if empty (_sErroWS)
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT A2_COD, A2_LOJA"
-		_oSQL:_sQuery += " FROM " + RetSQLName ("SA2") + " SA2 "
-		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery += " AND A2_FILIAL = '" + xfilial ("SA2") + "'"
-		if ! empty (_sAssoc)
-			_oSQL:_sQuery += " AND A2_COD    = '" + _sAssoc + "'"
-		endif
-		if ! empty (_sLoja)
-			_oSQL:_sQuery += " AND A2_LOJA   = '" + _sLoja + "'"
-		endif
-		if ! empty (_sCPFCarg)
-			_oSQL:_sQuery += " AND A2_CGC   = '" + _sCPFCarg + "'"
-		endif
-		if ! empty (_sInscCarg)
-			_oSQL:_sQuery += " AND A2_INSCR = '" + _sInscCarg + "'"
-		endif
-		_oSQL:Log ()
-		_aRegSA2 = aclone (_oSQL:Qry2Array (.F., .F.))
-		if len (_aRegSA2) == 0
-			_SomaErro ("Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)")
-		elseif len (_aRegSA2) > 1
-			_SomaErro ("Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)")
-		else
-			_oAssoc := ClsAssoc ():New (_aRegSA2 [1, 1], _aRegSA2 [1, 2])
-			if valtype (_oAssoc) != 'O'
-				_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
-			endif
-		endif
-	endif
+																	// A partir de 2021 o app de safra manda tambem CPF e inscricao, para os casos em que foi gerado 'lote de entrega'
+																	// pelo caderno de campo, e lah identifica apenas o grupo familiar. A inscricao e o CPF serao conhecidos somente
+																	// no momento em que o associado chegar aqui com o talao de produtor.
+																	if empty (_sErroWS)
+																		_oSQL := ClsSQL ():New ()
+																		_oSQL:_sQuery := ""
+																		_oSQL:_sQuery += " SELECT A2_COD, A2_LOJA"
+																		_oSQL:_sQuery += " FROM " + RetSQLName ("SA2") + " SA2 "
+																		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+																		_oSQL:_sQuery += " AND A2_FILIAL = '" + xfilial ("SA2") + "'"
+																		if ! empty (_sAssoc)
+																			_oSQL:_sQuery += " AND A2_COD    = '" + _sAssoc + "'"
+																		endif
+																		if ! empty (_sLoja)
+																			_oSQL:_sQuery += " AND A2_LOJA   = '" + _sLoja + "'"
+																		endif
+																		if ! empty (_sCPFCarg)
+																			_oSQL:_sQuery += " AND A2_CGC   = '" + _sCPFCarg + "'"
+																		endif
+																		if ! empty (_sInscCarg)
+																			_oSQL:_sQuery += " AND A2_INSCR = '" + _sInscCarg + "'"
+																		endif
+																		_oSQL:Log ()
+																		_aRegSA2 = aclone (_oSQL:Qry2Array (.F., .F.))
+																		if len (_aRegSA2) == 0
+																			_SomaErro ("Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)")
+																		elseif len (_aRegSA2) > 1
+																			_SomaErro ("Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)")
+																		else
+																			_oAssoc := ClsAssoc ():New (_aRegSA2 [1, 1], _aRegSA2 [1, 2])
+																			if valtype (_oAssoc) != 'O'
+																				_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
+																			endif
+																		endif
+																	endif
 
-	// Leitura dos itens de forma repetitiva (tentei ler em array mas nao funcionou e tenho pouco tempo pra ficar testando...)
-	if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola1", .T., .F.)), 5) ; endif
-	if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade1",        .T., .F.) ; endif
-	if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .F., .F.) ; endif
-	if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote1",             .F., .F.) ; endif
-	if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe1",           .F., .F.) ; endif
-	if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante1",        .F., .F.) ; endif
-	if empty (_sErroWS)
-		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
-	endif
-	//
-	if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola2", .F., .F.)), 5) ; endif
-	if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade2",        .F., .F.) ; endif
-	if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem2",        .F., .F.) ; endif
-	if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote2",             .F., .F.) ; endif
-	if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe2",           .F., .F.) ; endif
-	if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
-	if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 2 itens na carga
-		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
-	endif
-	//
-	if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola3", .F., .F.)), 5) ; endif
-	if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade3",        .F., .F.) ; endif
-	if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem3",        .F., .F.) ; endif
-	if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif
-	if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe3",           .F., .F.) ; endif
-	if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
-	if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
-		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
-	endif
-	//u_log2 ('info', 'Itens da carga:')
-	//u_log2 ('info', _aItensCar)
-	if empty (_sErroWS)
-		if len (_aItensCar) == 0
-			_SomaErro ("Nenhum item informado para gerar carga.")
-		else
-			_sCompart = _sCargaC1 + iif (! empty (_sCargaC2), '/', '') + _sCargaC2
+																	// Leitura dos itens de forma repetitiva (tentei ler em array mas nao funcionou e tenho pouco tempo pra ficar testando...)
+																	if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola1", .T., .F.)), 5) ; endif
+																		if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade1",        .T., .F.) ; endif
+																			if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .F., .F.) ; endif
+																				if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote1",             .F., .F.) ; endif
+																					if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe1",           .F., .F.) ; endif
+																						if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante1",        .F., .F.) ; endif
+																							if empty (_sErroWS)
+																								aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
+																							endif
+																							//
+																							if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola2", .F., .F.)), 5) ; endif
+																								if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade2",        .F., .F.) ; endif
+																									if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem2",        .F., .F.) ; endif
+																										if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote2",             .F., .F.) ; endif
+																											if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe2",           .F., .F.) ; endif
+																												if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
+																													if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 2 itens na carga
+																														aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
+																													endif
+																													//
+																													if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola3", .F., .F.)), 5) ; endif
+																														if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade3",        .F., .F.) ; endif
+																															if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem3",        .F., .F.) ; endif
+																																if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif
+																																	if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe3",           .F., .F.) ; endif
+																																		if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
+																																			if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
+																																				aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
+																																			endif
+																																			//u_log2 ('info', 'Itens da carga:')
+																																			//u_log2 ('info', _aItensCar)
+																																			if empty (_sErroWS)
+																																				if len (_aItensCar) == 0
+																																					_SomaErro ("Nenhum item informado para gerar carga.")
+																																				else
+																																					_sCompart = _sCargaC1 + iif (! empty (_sCargaC2), '/', '') + _sCargaC2
 //			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCargaC1, _sCargaC2)
-			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCompart)
-		endif
-	endif
+																																					U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCompart)
+																																				endif
+																																			endif
 
 //	U_PerfMon ('F', 'WSGerarCargaSafra')  // Para metricas de performance
-	u_log2 ('info', 'Finalizando web service de geracao de carga.')
-Return
+																																			u_log2 ('info', 'Finalizando web service de geracao de carga.')
+																																			Return
 //
 
 
@@ -1661,17 +1661,17 @@ static function _CanCarSaf ()
 	u_log2 ('info', 'Iniciando web service de cancelamento de carga de safra.')
 
 	if empty (_sErroWS) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",  .T., .F.) ; endif
-	if empty (_sErroWS) ; _sCarga    = _ExtraiTag ("_oXML:_WSAlianca:_Carga",  .T., .F.) ; endif
-	if empty (_sErroWS) ; _sMotCanWS = _ExtraiTag ("_oXML:_WSAlianca:_MotivoCancCarga", .T., .F.) ; endif
-	if empty (_sErroWS)
-		sze -> (dbsetorder (1))  // ZE_FILIAL, ZE_SAFRA, ZE_CARGA, R_E_C_N_O_, D_E_L_E_T_
-		if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
-			_SomaErro ("Carga '" + _sCarga + "' nao encontrada para a safra '" + _sSafra + "' na filial '" + xfilial ("SZE") + "'.")
-		else
-			U_VA_RUS2 (5, .F.)
-		endif
-	endif
-Return
+		if empty (_sErroWS) ; _sCarga    = _ExtraiTag ("_oXML:_WSAlianca:_Carga",  .T., .F.) ; endif
+			if empty (_sErroWS) ; _sMotCanWS = _ExtraiTag ("_oXML:_WSAlianca:_MotivoCancCarga", .T., .F.) ; endif
+				if empty (_sErroWS)
+					sze -> (dbsetorder (1))  // ZE_FILIAL, ZE_SAFRA, ZE_CARGA, R_E_C_N_O_, D_E_L_E_T_
+					if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
+						_SomaErro ("Carga '" + _sCarga + "' nao encontrada para a safra '" + _sSafra + "' na filial '" + xfilial ("SZE") + "'.")
+					else
+						U_VA_RUS2 (5, .F.)
+					endif
+				endif
+				Return
 
 
 // --------------------------------------------------------------------------
@@ -1681,46 +1681,46 @@ static function _ITkCarSaf ()
 	local _sCarga    := ''
 
 	if empty (_sErroWS) ; _sSafra = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
-	if empty (_sErroWS) ; _sCarga = _ExtraiTag ("_oXML:_WSAlianca:_Carga",               .T., .F.) ; endif
-	if empty (_sErroWS)
-		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
-		if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
-			_SomaErro ('Carga ' + sze -> ze_carga + ' nao localizada na filial ' + cFilAnt + ' / safra ' + _sSafra + '.')
-		endif
-		if empty (_sErroWS) .and. sze -> ze_status = 'C'
-			_SomaErro ('Carga ' + sze -> ze_carga + ' cancelada.')
-		endif
-		if empty (_sErroWS)
-			// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
-			if type ("_oCarSaf") != 'O'
-				private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+		if empty (_sErroWS) ; _sCarga = _ExtraiTag ("_oXML:_WSAlianca:_Carga",               .T., .F.) ; endif
+			if empty (_sErroWS)
+				sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
+				if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
+					_SomaErro ('Carga ' + sze -> ze_carga + ' nao localizada na filial ' + cFilAnt + ' / safra ' + _sSafra + '.')
+				endif
+				if empty (_sErroWS) .and. sze -> ze_status = 'C'
+					_SomaErro ('Carga ' + sze -> ze_carga + ' cancelada.')
+				endif
+				if empty (_sErroWS)
+					// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+					if type ("_oCarSaf") != 'O'
+						private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+					endif
+					if empty (_oCarSaf:Carga)
+						u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+						_SomaErro ('Objeto CARGA SAFRA invalido.')
+					endif
+				endif
 			endif
-			if empty (_oCarSaf:Carga)
-				u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
-				_SomaErro ('Objeto CARGA SAFRA invalido.')
-			endif
-		endif
-	endif
 
-	if empty (_sErroWS)
+			if empty (_sErroWS)
 
-		// Deixa prontas variaveis usadas pelo programa de impressao do ticket
+				// Deixa prontas variaveis usadas pelo programa de impressao do ticket
 //		private _lImpTick  := .T.
 //		private _sPortTick := ''
 //		private _nQViasTk1 := 1
 //		private _nQViasTk2 := 2
 
-		// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
-		//U_VA_RusDI (cFilAnt)
-		_oCarSaf:DefImprTk ()
-		if _oCarSaf:ImprimeTk (1)
+				// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
+				//U_VA_RusDI (cFilAnt)
+				_oCarSaf:DefImprTk ()
+				if _oCarSaf:ImprimeTk (1)
 
 //				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
-				_sMsgRetWS += 'Ticket enviado para ' + _oCarSaf:PortImpTk
+					_sMsgRetWS += 'Ticket enviado para ' + _oCarSaf:PortImpTk
 //			endif
-		endif
-	endif
-Return
+				endif
+			endif
+			Return
 
 
 // --------------------------------------------------------------------------
@@ -1734,7 +1734,7 @@ Static function _ExecKardex()
 	local _oSQL      	:= NIL
 	local _sAliasQ   	:= ""
 	local _XmlRet       := ""
-	
+
 	// busca valores de entrada
 	if empty (_sErroWS)
 		_wFilial      = 	_ExtraiTag ("_oXML:_WSAlianca:_Filial"		, .T., .F.)
@@ -1743,83 +1743,83 @@ Static function _ExecKardex()
 		_wDataInicial = 	_ExtraiTag ("_oXML:_WSAlianca:_DataInicial"	, .T., .F.)
 		_wDataFinal   = 	_ExtraiTag ("_oXML:_WSAlianca:_DataFinal"	, .T., .F.)
 	endif
-	
+
 	if empty(_wFilial)		; _SomaErro ("Campo <filial> não preenchido")       ;endif
-	if empty(_wProduto)		; _SomaErro ("Campo <produto> não preenchido")      ;endif
-	if empty(_wAlmox)		; _SomaErro ("Campo <almoxarifado> não preenchido") ;endif
-	if empty(_wDataInicial)	; _SomaErro ("Campo <data inicial> não preenchido") ;endif
-	if empty(_wDataFinal)	; _SomaErro ("Campo <data final> não preenchido")	;endif
+		if empty(_wProduto)		; _SomaErro ("Campo <produto> não preenchido")      ;endif
+			if empty(_wAlmox)		; _SomaErro ("Campo <almoxarifado> não preenchido") ;endif
+				if empty(_wDataInicial)	; _SomaErro ("Campo <data inicial> não preenchido") ;endif
+					if empty(_wDataFinal)	; _SomaErro ("Campo <data final> não preenchido")	;endif
 
-	// Faz um teste inicial para verificar se pode gerar muitos registros,
-	// pois tinhamos usuarios listando 100 anos de movimentacao!
-	_oSQL := ClsSQL():New ()  
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT count (*)"
-	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
-	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND D3_FILIAL = '" + _wFilial + "'"
-	_oSQL:_sQuery += " AND D3_COD    = '" + _wProduto + "'"
-	_oSQL:_sQuery += " AND D3_LOCAL  = '" + _wAlmox + "'"
-	_oSQL:_sQuery += " AND D3_EMISSAO BETWEEN '" + _wDataInicial + "' AND '" + _wDataFinal + "'"
-	_oSQL:Log ('[' + procname () + ']')
-	if _osql:RetQry (1, .f.) > 2000
-		_sErroWS := "Este item possui muita movimentacao. Selecione um periodo menor!"
-	endif
-	
-	If empty(_sErroWS)
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT *"
-		_oSQL:_sQuery +=  " FROM dbo.VA_FKARDEX('" + _wFilial + "', '" + _wProduto + "', '" + _wAlmox + "', '" + _wDataInicial + "', '" + _wDataFinal + "') "
-		_oSQL:Log ('[' + procname () + ']')
-		_sAliasQ = _oSQL:Qry2Trb (.F.)
-		(_sAliasQ) -> (dbgotop ())
+						// Faz um teste inicial para verificar se pode gerar muitos registros,
+						// pois tinhamos usuarios listando 100 anos de movimentacao!
+						_oSQL := ClsSQL():New ()
+						_oSQL:_sQuery := ""
+						_oSQL:_sQuery += " SELECT count (*)"
+						_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
+						_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+						_oSQL:_sQuery += " AND D3_FILIAL = '" + _wFilial + "'"
+						_oSQL:_sQuery += " AND D3_COD    = '" + _wProduto + "'"
+						_oSQL:_sQuery += " AND D3_LOCAL  = '" + _wAlmox + "'"
+						_oSQL:_sQuery += " AND D3_EMISSAO BETWEEN '" + _wDataInicial + "' AND '" + _wDataFinal + "'"
+						_oSQL:Log ('[' + procname () + ']')
+						if _osql:RetQry (1, .f.) > 2000
+							_sErroWS := "Este item possui muita movimentacao. Selecione um periodo menor!"
+						endif
 
-		_XmlRet += "<ConsultaKardex>"
-		_XmlRet += 		"<DataInicial>"+ _wDataInicial +"</DataInicial>"
-		_XmlRet += 		"<DataFinal>"+ _wDataFinal +"</DataFinal>"
-		_XmlRet += 		"<Registro>"
+						If empty(_sErroWS)
+							_oSQL := ClsSQL():New ()
+							_oSQL:_sQuery := ""
+							_oSQL:_sQuery += "SELECT *"
+							_oSQL:_sQuery +=  " FROM dbo.VA_FKARDEX('" + _wFilial + "', '" + _wProduto + "', '" + _wAlmox + "', '" + _wDataInicial + "', '" + _wDataFinal + "') "
+							_oSQL:Log ('[' + procname () + ']')
+							_sAliasQ = _oSQL:Qry2Trb (.F.)
+							(_sAliasQ) -> (dbgotop ())
 
-		While (_sAliasQ)->(!Eof())	
-			_sNome := StrTran((_sAliasQ) -> Nome , '&', '' )  
-			_XmlRet += "<RegistroItem>"
-				
-			_XmlRet += 		"<Linha>" 		  + alltrim(str((_sAliasQ) -> Linha))														+ "</Linha>"
-			_XmlRet += 		"<Data>"		  + IIf((alltrim((_sAliasQ) -> data))=='//'	,'', alltrim((_sAliasQ) -> data)) 				+ "</Data>"
-			_XmlRet += 		"<Doc>"		 	  + alltrim((_sAliasQ) -> Doc)																+ "</Doc>"
-			_XmlRet += 		"<Serie>"		  + alltrim((_sAliasQ) -> Serie)															+ "</Serie>"
-			_XmlRet += 		"<Qt_Entrada>"	  + alltrim(str((_sAliasQ) -> Qt_Entrada))													+ "</Qt_Entrada>"
-			_XmlRet += 		"<Qt_Saida>"	  + alltrim(str((_sAliasQ) -> Qt_Saida))													+ "</Qt_Saida>"
-			_XmlRet += 		"<Saldo>"		  + alltrim(str((_sAliasQ) -> Saldo))														+ "</Saldo>"
-			_XmlRet += 		"<NumSeq>"	 	  + alltrim((_sAliasQ) -> NumSeq)															+ "</NumSeq>"
-			_XmlRet += 		"<Movimento>"	  + alltrim((_sAliasQ) -> Movimento)														+ "</Movimento>"
-			_XmlRet += 		"<OP>"	 		  + alltrim((_sAliasQ) -> OP)																+ "</OP>"
-			_XmlRet += 		"<TES>" 		  + alltrim((_sAliasQ) -> TES)																+ "</TES>"
-			_XmlRet += 		"<CFOP>" 		  + alltrim((_sAliasQ) -> CFOP)																+ "</CFOP>"
-			_XmlRet += 		"<Lote>" 		  + alltrim((_sAliasQ) -> Lote)																+ "</Lote>"
-			_XmlRet += 		"<Etiqueta>" 	  + alltrim((_sAliasQ) -> Etiqueta)															+ "</Etiqueta>"
-			_XmlRet += 		"<Usuario>" 	  + alltrim((_sAliasQ) -> Usuario)															+ "</Usuario>"
-			_XmlRet += 		"<CliFor>" 		  + alltrim((_sAliasQ) -> CliFor)															+ "</CliFor>"
-			_XmlRet += 		"<Loja>" 		  + alltrim((_sAliasQ) -> Loja)																+ "</Loja>"
-			_XmlRet += 		"<Nome>" 		  + alltrim (_sNome)																		+ "</Nome>"
-			_XmlRet += 		"<Motivo>" 		  + alltrim((_sAliasQ) -> Motivo)															+ "</Motivo>"
-			_XmlRet += 		"<Nf_Orig>" 	  + alltrim((_sAliasQ) -> Nf_Orig)															+ "</Nf_Orig>"
-			_XmlRet += 		"<Data_Inclusao>" + IIf((alltrim((_sAliasQ)->Data_Inclusao))=='//' ,'', alltrim((_sAliasQ)->Data_Inclusao)) + "</Data_Inclusao>"
-			_XmlRet += 		"<Hora_Inclusao>" + alltrim((_sAliasQ) -> Hora_Inclusao)													+ "</Hora_Inclusao>"
-			_XmlRet += 		"<Sequencia>" 	  + alltrim((_sAliasQ) -> Sequencia)														+ "</Sequencia>"
-			_XmlRet += 		"</RegistroItem>"
-			
-			(_sAliasQ) -> (dbskip ())
-		EndDo
+							_XmlRet += "<ConsultaKardex>"
+							_XmlRet += 		"<DataInicial>"+ _wDataInicial +"</DataInicial>"
+							_XmlRet += 		"<DataFinal>"+ _wDataFinal +"</DataFinal>"
+							_XmlRet += 		"<Registro>"
 
-		_XmlRet += 		"</Registro>"
-		_XmlRet += "</ConsultaKardex>"
-		
-		(_sAliasQ) -> (dbclosearea ())
-		
-		_sMsgRetWS := _XmlRet
-	endif
-Return 
+							While (_sAliasQ)->(!Eof())
+								_sNome := StrTran((_sAliasQ) -> Nome , '&', '' )
+								_XmlRet += "<RegistroItem>"
+
+								_XmlRet += 		"<Linha>" 		  + alltrim(str((_sAliasQ) -> Linha))														+ "</Linha>"
+								_XmlRet += 		"<Data>"		  + IIf((alltrim((_sAliasQ) -> data))=='//'	,'', alltrim((_sAliasQ) -> data)) 				+ "</Data>"
+								_XmlRet += 		"<Doc>"		 	  + alltrim((_sAliasQ) -> Doc)																+ "</Doc>"
+								_XmlRet += 		"<Serie>"		  + alltrim((_sAliasQ) -> Serie)															+ "</Serie>"
+								_XmlRet += 		"<Qt_Entrada>"	  + alltrim(str((_sAliasQ) -> Qt_Entrada))													+ "</Qt_Entrada>"
+								_XmlRet += 		"<Qt_Saida>"	  + alltrim(str((_sAliasQ) -> Qt_Saida))													+ "</Qt_Saida>"
+								_XmlRet += 		"<Saldo>"		  + alltrim(str((_sAliasQ) -> Saldo))														+ "</Saldo>"
+								_XmlRet += 		"<NumSeq>"	 	  + alltrim((_sAliasQ) -> NumSeq)															+ "</NumSeq>"
+								_XmlRet += 		"<Movimento>"	  + alltrim((_sAliasQ) -> Movimento)														+ "</Movimento>"
+								_XmlRet += 		"<OP>"	 		  + alltrim((_sAliasQ) -> OP)																+ "</OP>"
+								_XmlRet += 		"<TES>" 		  + alltrim((_sAliasQ) -> TES)																+ "</TES>"
+								_XmlRet += 		"<CFOP>" 		  + alltrim((_sAliasQ) -> CFOP)																+ "</CFOP>"
+								_XmlRet += 		"<Lote>" 		  + alltrim((_sAliasQ) -> Lote)																+ "</Lote>"
+								_XmlRet += 		"<Etiqueta>" 	  + alltrim((_sAliasQ) -> Etiqueta)															+ "</Etiqueta>"
+								_XmlRet += 		"<Usuario>" 	  + alltrim((_sAliasQ) -> Usuario)															+ "</Usuario>"
+								_XmlRet += 		"<CliFor>" 		  + alltrim((_sAliasQ) -> CliFor)															+ "</CliFor>"
+								_XmlRet += 		"<Loja>" 		  + alltrim((_sAliasQ) -> Loja)																+ "</Loja>"
+								_XmlRet += 		"<Nome>" 		  + alltrim (_sNome)																		+ "</Nome>"
+								_XmlRet += 		"<Motivo>" 		  + alltrim((_sAliasQ) -> Motivo)															+ "</Motivo>"
+								_XmlRet += 		"<Nf_Orig>" 	  + alltrim((_sAliasQ) -> Nf_Orig)															+ "</Nf_Orig>"
+								_XmlRet += 		"<Data_Inclusao>" + IIf((alltrim((_sAliasQ)->Data_Inclusao))=='//' ,'', alltrim((_sAliasQ)->Data_Inclusao)) + "</Data_Inclusao>"
+								_XmlRet += 		"<Hora_Inclusao>" + alltrim((_sAliasQ) -> Hora_Inclusao)													+ "</Hora_Inclusao>"
+								_XmlRet += 		"<Sequencia>" 	  + alltrim((_sAliasQ) -> Sequencia)														+ "</Sequencia>"
+								_XmlRet += 		"</RegistroItem>"
+
+								(_sAliasQ) -> (dbskip ())
+							EndDo
+
+							_XmlRet += 		"</Registro>"
+							_XmlRet += "</ConsultaKardex>"
+
+							(_sAliasQ) -> (dbclosearea ())
+
+							_sMsgRetWS := _XmlRet
+						endif
+						Return
 
 
 // --------------------------------------------------------------------------
@@ -1833,7 +1833,7 @@ Static function _KardexLt()
 	local _oSQL      	:= NIL
 	local _sAliasQ   	:= ""
 	local _XmlRet       := ""
-	
+
 	// busca valores de entrada
 	if empty (_sErroWS)
 		_wFilial      = 	_ExtraiTag ("_oXML:_WSAlianca:_Filial"		, .T., .F.)
@@ -1842,12 +1842,12 @@ Static function _KardexLt()
 		_wDataInicial = 	_ExtraiTag ("_oXML:_WSAlianca:_DataInicial"	, .T., .T.)
 		_wDataFinal   = 	_ExtraiTag ("_oXML:_WSAlianca:_DataFinal"	, .T., .T.)
 	endif
-	
+
 	If empty(_sErroWS)
 
 		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""		
-		_oSQL:_sQuery += " SELECT * FROM dbo.VA_FKARDEX_LOTE('" + _wFilial + "', '" + _wProduto + "', '" + _sLote + "', '" + _wDataInicial + "', '" + _wDataFinal + "') "	
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT * FROM dbo.VA_FKARDEX_LOTE('" + _wFilial + "', '" + _wProduto + "', '" + _sLote + "', '" + _wDataInicial + "', '" + _wDataFinal + "') "
 		_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.F.)
 		(_sAliasQ) -> (dbgotop ())
@@ -1857,7 +1857,7 @@ Static function _KardexLt()
 		_XmlRet += 		"<DataFinal>"+ _wDataFinal +"</DataFinal>"
 		_XmlRet += 		"<Registro>"
 
-		While (_sAliasQ)->(!Eof())	
+		While (_sAliasQ)->(!Eof())
 			_sNome := StrTran((_sAliasQ) -> Nome , '&', '' )
 			_XmlRet += "<RegistroItem>"
 
@@ -1887,18 +1887,18 @@ Static function _KardexLt()
 			_XmlRet += 		"<Hora_Inclusao>" + alltrim((_sAliasQ) -> Hora_Inclusao)													+ "</Hora_Inclusao>"	//+ chr (13) + chr (10)
 			_XmlRet += 		"<Sequencia>" 	  + alltrim((_sAliasQ) -> Sequencia)														+ "</Sequencia>"		//+ chr (13) + chr (10)
 			_XmlRet += 		"</RegistroItem>"
-			
+
 			(_sAliasQ) -> (dbskip ())
 		EndDo
 
 		_XmlRet += 		"</Registro>" 	//+ chr (13) + chr (10)
 		_XmlRet += "</ConsultaKardexLote>" 	//+ chr (13) + chr (10)
-		
+
 		(_sAliasQ) -> (dbclosearea ())
-		
+
 		_sMsgRetWS := _XmlRet
 	endif
-Return 
+Return
 
 
 // --------------------------------------------------------------------------
@@ -1920,63 +1920,63 @@ Static function _MonitProt ()
 		_aServicos = {}
 		//nao precisa, pois estou indo em cada um dos slaves --> aadd (_aServicos, {'Master', 1290, 'ALIANCA'})
 		if empty (_sAmbs) .or. 'SLAVE1' $ upper (_sAmbs); aadd (_aServicos, {'slave1', 1291, 'ALIANCA'}) ; endif
-		if empty (_sAmbs) .or. 'SLAVE2' $ upper (_sAmbs); aadd (_aServicos, {'slave2', 1292, 'ALIANCA'}) ; endif
-		if empty (_sAmbs) .or. 'SLAVE3' $ upper (_sAmbs); aadd (_aServicos, {'slave3', 1293, 'ALIANCA'}) ; endif
-		if empty (_sAmbs) .or. 'SLAVE4' $ upper (_sAmbs); aadd (_aServicos, {'slave4', 1294, 'ALIANCA'}) ; endif
-		if empty (_sAmbs) .or. 'SLAVE5' $ upper (_sAmbs); aadd (_aServicos, {'slave5', 1295, 'ALIANCA'}) ; endif
-		if empty (_sAmbs) .or. 'EXTERNO' $ upper (_sAmbs); aadd (_aServicos, {'externo', 1298, 'ALIANCA'}) ; endif
-		if empty (_sAmbs) .or. 'LOJAS' $ upper (_sAmbs); aadd (_aServicos, {'lojas', 1247, 'ALIANCA'}) ; endif
-		if empty (_sAmbs) .or. 'TESTE' $ upper (_sAmbs); aadd (_aServicos, {'Teste', 1280, 'TESTE'}) ; endif
-		if empty (_sAmbs) .or. 'TESTEFISCAL' $ upper (_sAmbs); aadd (_aServicos, {'TesteFiscal', 1281, 'TESTEFISCAL'}) ; endif
-		if empty (_sAmbs) .or. 'TESTEMEDIO' $ upper (_sAmbs); aadd (_aServicos, {'TesteMedio', 1282, 'TESTEMEDIO'}) ; endif
+			if empty (_sAmbs) .or. 'SLAVE2' $ upper (_sAmbs); aadd (_aServicos, {'slave2', 1292, 'ALIANCA'}) ; endif
+				if empty (_sAmbs) .or. 'SLAVE3' $ upper (_sAmbs); aadd (_aServicos, {'slave3', 1293, 'ALIANCA'}) ; endif
+					if empty (_sAmbs) .or. 'SLAVE4' $ upper (_sAmbs); aadd (_aServicos, {'slave4', 1294, 'ALIANCA'}) ; endif
+						if empty (_sAmbs) .or. 'SLAVE5' $ upper (_sAmbs); aadd (_aServicos, {'slave5', 1295, 'ALIANCA'}) ; endif
+							if empty (_sAmbs) .or. 'EXTERNO' $ upper (_sAmbs); aadd (_aServicos, {'externo', 1298, 'ALIANCA'}) ; endif
+								if empty (_sAmbs) .or. 'LOJAS' $ upper (_sAmbs); aadd (_aServicos, {'lojas', 1247, 'ALIANCA'}) ; endif
+									if empty (_sAmbs) .or. 'TESTE' $ upper (_sAmbs); aadd (_aServicos, {'Teste', 1280, 'TESTE'}) ; endif
+										if empty (_sAmbs) .or. 'TESTEFISCAL' $ upper (_sAmbs); aadd (_aServicos, {'TesteFiscal', 1281, 'TESTEFISCAL'}) ; endif
+											if empty (_sAmbs) .or. 'TESTEMEDIO' $ upper (_sAmbs); aadd (_aServicos, {'TesteMedio', 1282, 'TESTEMEDIO'}) ; endif
 
-		_sRetMon := '<monitorProtheus>'
-		for _nServico = 1 to len (_aServicos)
-			u_log ("Vou verificar ", _aServicos [_nServico, 1], _aServicos [_nServico, 2])
-			_oRPCSrv := TRpc ():New (_aServicos [_nServico, 3])
-			if valtype (_oRPCSrv) != "O"
-				u_log ("Protheus: Nao foi possivel instanciar objeto RPC para comunicacao com o servico " + _aServicos [_nServico, 1] + ' na porta ' + cvaltochar (_aServicos [_nServico, 2]))
-			else
-				if ! _oRPCSrv:Connect ('192.168.1.3', _aServicos [_nServico, 2])
-					u_log ("Protheus: Nao foi possivel estabelecer conexao RPC com o servico solicitado: " + _aServicos [_nServico, 1] + ' na porta ' + cvaltochar (_aServicos [_nServico, 2]))
-				else
-					_aRPCRet := _oRPCSrv:CallProc ('GetUserInfoArray ()')
-					if len (_aRPCRet) == 0
-						u_log ("Servidor RPC retornou dados em formato desconhecido.")
-					else
-						for _nRPCRet = 1 to len (_aRPCRet)
-							_sRetMon += '<sessao>'
-							_sRetMon += '<servico>'          + _aServicos [_nServico, 1]            + '</servico>'
-							_sRetMon += '<usuario>'          +             _aRPCRet [_nRPCRet,  1]  + '</usuario>'
-							_sRetMon += '<computador>'       +             _aRPCRet [_nRPCRet,  2]  + '</computador>'
-							_sRetMon += '<thread>'           + cvaltochar (_aRPCRet [_nRPCRet,  3]) + '</thread>'
-							_sRetMon += '<server>'           +             _aRPCRet [_nRPCRet,  4]  + '</server>'
-							_sRetMon += '<funcao>'           +             _aRPCRet [_nRPCRet,  5]  + '</funcao>'
-							_sRetMon += '<ambiente>'         +             _aRPCRet [_nRPCRet,  6]  + '</ambiente>'
-							_sRetMon += '<inicio>'           +    strtran (_aRPCRet [_nRPCRet,  7], chr (10), '')  + '</inicio>'
-							_sRetMon += '<instrucoes>'       + cvaltochar (_aRPCRet [_nRPCRet,  9]) + '</instrucoes>'
-							_sRetMon += '<instrPorSegundo>'  + cvaltochar (_aRPCRet [_nRPCRet, 10]) + '</instrPorSegundo>'
-							_sRetMon += '<obs>'              +    strtran (strtran (alltrim (_aRPCRet [_nRPCRet, 11]), '  ', ' '), '  ', ' ') + '</obs>'
-							_sRetMon += '<memoria>'          + cvaltochar (_aRPCRet [_nRPCRet, 12]) + '</memoria>'
-							_sRetMon += '<id_DbAccess>'      +             _aRPCRet [_nRPCRet, 13]  + '</id_DbAccess>'
-							_sRetMon += '<id_CTree>'         + cvaltochar (_aRPCRet [_nRPCRet, 14]) + '</id_CTree>'
-							_sRetMon += '<tipoThread>'       +             _aRPCRet [_nRPCRet, 15]  + '</tipoThread>'
-							_sRetMon += '<tempoInatividade>' +             _aRPCRet [_nRPCRet, 16]  + '</tempoInatividade>'
-							_sRetMon += '</sessao>'
-						next
-					endif
-				endif
-			endif
-		next
-		_sRetMon += '</monitorProtheus>'
-	endif
+												_sRetMon := '<monitorProtheus>'
+												for _nServico = 1 to len (_aServicos)
+													u_log ("Vou verificar ", _aServicos [_nServico, 1], _aServicos [_nServico, 2])
+													_oRPCSrv := TRpc ():New (_aServicos [_nServico, 3])
+													if valtype (_oRPCSrv) != "O"
+														u_log ("Protheus: Nao foi possivel instanciar objeto RPC para comunicacao com o servico " + _aServicos [_nServico, 1] + ' na porta ' + cvaltochar (_aServicos [_nServico, 2]))
+													else
+														if ! _oRPCSrv:Connect ('192.168.1.3', _aServicos [_nServico, 2])
+															u_log ("Protheus: Nao foi possivel estabelecer conexao RPC com o servico solicitado: " + _aServicos [_nServico, 1] + ' na porta ' + cvaltochar (_aServicos [_nServico, 2]))
+														else
+															_aRPCRet := _oRPCSrv:CallProc ('GetUserInfoArray ()')
+															if len (_aRPCRet) == 0
+																u_log ("Servidor RPC retornou dados em formato desconhecido.")
+															else
+																for _nRPCRet = 1 to len (_aRPCRet)
+																	_sRetMon += '<sessao>'
+																	_sRetMon += '<servico>'          + _aServicos [_nServico, 1]            + '</servico>'
+																	_sRetMon += '<usuario>'          +             _aRPCRet [_nRPCRet,  1]  + '</usuario>'
+																	_sRetMon += '<computador>'       +             _aRPCRet [_nRPCRet,  2]  + '</computador>'
+																	_sRetMon += '<thread>'           + cvaltochar (_aRPCRet [_nRPCRet,  3]) + '</thread>'
+																	_sRetMon += '<server>'           +             _aRPCRet [_nRPCRet,  4]  + '</server>'
+																	_sRetMon += '<funcao>'           +             _aRPCRet [_nRPCRet,  5]  + '</funcao>'
+																	_sRetMon += '<ambiente>'         +             _aRPCRet [_nRPCRet,  6]  + '</ambiente>'
+																	_sRetMon += '<inicio>'           +    strtran (_aRPCRet [_nRPCRet,  7], chr (10), '')  + '</inicio>'
+																	_sRetMon += '<instrucoes>'       + cvaltochar (_aRPCRet [_nRPCRet,  9]) + '</instrucoes>'
+																	_sRetMon += '<instrPorSegundo>'  + cvaltochar (_aRPCRet [_nRPCRet, 10]) + '</instrPorSegundo>'
+																	_sRetMon += '<obs>'              +    strtran (strtran (alltrim (_aRPCRet [_nRPCRet, 11]), '  ', ' '), '  ', ' ') + '</obs>'
+																	_sRetMon += '<memoria>'          + cvaltochar (_aRPCRet [_nRPCRet, 12]) + '</memoria>'
+																	_sRetMon += '<id_DbAccess>'      +             _aRPCRet [_nRPCRet, 13]  + '</id_DbAccess>'
+																	_sRetMon += '<id_CTree>'         + cvaltochar (_aRPCRet [_nRPCRet, 14]) + '</id_CTree>'
+																	_sRetMon += '<tipoThread>'       +             _aRPCRet [_nRPCRet, 15]  + '</tipoThread>'
+																	_sRetMon += '<tempoInatividade>' +             _aRPCRet [_nRPCRet, 16]  + '</tempoInatividade>'
+																	_sRetMon += '</sessao>'
+																next
+															endif
+														endif
+													endif
+												next
+												_sRetMon += '</monitorProtheus>'
+											endif
 
-	if empty (_sErroWS)
-		_sMsgRetWS := _sRetMon
-	endif
+											if empty (_sErroWS)
+												_sMsgRetWS := _sRetMon
+											endif
 
-	u_logFim ()
-return
+											u_logFim ()
+											return
 //
 // -------------------------------------------------------------------------------------------------
 // Associados - retorna texto do capital social
@@ -1989,26 +1989,26 @@ Static Function _ExecCapAssoc ()
 	//u_logIni ()
 
 	if empty (_sErroWS) ; _sAssoc = _ExtraiTag ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
-	if empty (_sErroWS) ; _sLoja  = _ExtraiTag ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
+		if empty (_sErroWS) ; _sLoja  = _ExtraiTag ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
 
-	if empty (_sErroWS)
-		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
-		if valtype (_oAssoc) != 'O'
-			_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
-		endif
-	endif
+			if empty (_sErroWS)
+				_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
+				if valtype (_oAssoc) != 'O'
+					_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
+				endif
+			endif
 
-	if empty (_sErroWS)
-		_sRet = _oAssoc:SldQuotCap (dDataBase, .T.) [.QtCapRetTXT]
+			if empty (_sErroWS)
+				_sRet = _oAssoc:SldQuotCap (dDataBase, .T.) [.QtCapRetTXT]
 
-		if empty (_sRet)
-			_SomaErro ("Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg)
-		else
-			_sMsgRetWS = _sRet
-		endif
-	endif
-	//u_logFim ()
-Return _sMsgRetWS
+				if empty (_sRet)
+					_SomaErro ("Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg)
+				else
+					_sMsgRetWS = _sRet
+				endif
+			endif
+			//u_logFim ()
+			Return _sMsgRetWS
 //
 // --------------------------------------------------------------------------
 // Grava agendamento de entrega de faturamento.
@@ -2018,20 +2018,20 @@ Static function _AgEntFat ()
 	local _dDtAgend := ctod ('')
 
 	if empty (_sErroWS) ; _sNF      = _ExtraiTag ("_oXML:_WSAlianca:_NF", .T., .F.) ; endif
-	if empty (_sErroWS) ; _sSerie   = _ExtraiTag ("_oXML:_WSAlianca:_Serie", .T., .F.) ; endif
-	if empty (_sErroWS) ; _dDtAgend = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtAgend", .T., .T.)) ; endif
-	if empty (_sErroWS)
-		sf2 -> (dbsetorder (1))
-		if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
-			_SomaErro ("NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.')
-		else
-			reclock ("SF2", .F.)
-			sf2 -> f2_vadagen = _dDtAgend
-			msunlock ()
-			_sMsgRetWS = 'Registro atualizado.' 
-		endif
-	endif
-return
+		if empty (_sErroWS) ; _sSerie   = _ExtraiTag ("_oXML:_WSAlianca:_Serie", .T., .F.) ; endif
+			if empty (_sErroWS) ; _dDtAgend = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtAgend", .T., .T.)) ; endif
+				if empty (_sErroWS)
+					sf2 -> (dbsetorder (1))
+					if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
+						_SomaErro ("NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.')
+					else
+						reclock ("SF2", .F.)
+						sf2 -> f2_vadagen = _dDtAgend
+						msunlock ()
+						_sMsgRetWS = 'Registro atualizado.'
+					endif
+				endif
+				return
 //
 // --------------------------------------------------------------------------
 // Gera apontamento de producao.
@@ -2046,120 +2046,120 @@ static function _ApontProd ()
 	local _sMsgEtiq  := ''
 
 	if empty (_sErroWS) ; _sTnoProd  = _ExtraiTag ("_oXML:_WSAlianca:_Turno", .T., .F.) ; endif
-	if empty (_sErroWS) ; _dDtProd   = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtProd", .T., .T.)) ; endif
-	if empty (_sErroWS) ; _sMotProd  = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .F., .F.) ; endif
+		if empty (_sErroWS) ; _dDtProd   = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtProd", .T., .T.)) ; endif
+			if empty (_sErroWS) ; _sMotProd  = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .F., .F.) ; endif
 
-	_sMsgRetWS += '<ApontaProd>'
+				_sMsgRetWS += '<ApontaProd>'
 
-	// Loop de repeticao para o caso de haver mais de uma OP ou mais de uma etiqueta.
-	_sSeqEtiq = '01'
-	do while _sSeqEtiq <= '99'  // Mais que isso jah tah de brincadeira, neh ?
-		U_Log2 ('debug', 'Iniciando com _sSeqEtiq = ' + _sSeqEtiq)
-		_lEtiqOK  = .T.
-		_sMsgEtiq = ''
-		if empty (_sErroWS)
-			_sEtqApont = _ExtraiTag ("_oXML:_WSAlianca:_Etiq" + _sSeqEtiq, .F., .F.)
-		endif
-		U_Log2 ('debug', '_sEtqApont = ' + _sEtqApont)
-		if empty (_sErroWS) .and. empty (_sEtqApont)
-			// Se eu ainda estava na primeira etiqueta e a tag encontra-se vazia, eh por que nao veio nenhuma etiqueta.
-			if _sSeqEtiq == '01'
-				_SomaErro ("Nao foi informado nenhum numero de etiqueta.")
-				exit
-			else
-				// Jah processei todas as etiquetas e posso sair do loop
-				U_Log2 ('debug', 'Jah processei todas as etiquetas e posso sair do loop')
-				exit
-			endif
-		endif
-
-		// Validacoes etiqueta.
-		if empty (_sErroWS) .and. ! empty (_sEtqApont)
-			za1 -> (dbsetorder (1))  // ZA1_FILIAL, ZA1_CODIGO, R_E_C_N_O_, D_E_L_E_T_
-			if ! za1 -> (dbseek (xfilial ("ZA1") + _sEtqApont, .F.))
-				_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' nao encontrada."
-				_lEtiqOK = .F.
-			else
-				if za1 -> za1_apont == 'S'
-					_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' ja gerou apontamento de producao."
-					_lEtiqOK = .F.
-				endif
-				if za1 -> za1_apont == 'E'
-					_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' ja foi apontada e ESTORNADA. Nao pode ser apontada novamente. Gere nova etiqueta."
-					_lEtiqOK = .F.
-				endif
-				if za1 -> za1_impres != 'S'
-					_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' ainda nao impressa."
-					_lEtiqOK = .F.
-				endif
-				if empty (za1 -> za1_op)
-					_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' nao relacionada com nenhuma OP."
-					_lEtiqOK = .F.
-				else
-					sc2 -> (dbsetorder (1))  // C2_FILIAL, C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD, R_E_C_N_O_, D_E_L_E_T_
-					if ! sc2 -> (dbseek (xfilial ("SC2") + za1 -> za1_op, .F.))
-						_sMsgEtiq += "OP '" + alltrim (za1 -> za1_op) + "' (relacionada com a etiqueta '" + _sEtqApont + "') nao foi localizada."
-						_lEtiqOK = .F.
-					else
-						if ! empty (sc2 -> c2_datrf)
-							_sMsgEtiq += "OP '" + alltrim (za1 -> za1_op) + "' (relacionada com a etiqueta '" + _sEtqApont + "') ja encontra-se encerrada."
-							_lEtiqOK = .F.
+				// Loop de repeticao para o caso de haver mais de uma OP ou mais de uma etiqueta.
+				_sSeqEtiq = '01'
+				do while _sSeqEtiq <= '99'  // Mais que isso jah tah de brincadeira, neh ?
+					U_Log2 ('debug', 'Iniciando com _sSeqEtiq = ' + _sSeqEtiq)
+					_lEtiqOK  = .T.
+					_sMsgEtiq = ''
+					if empty (_sErroWS)
+						_sEtqApont = _ExtraiTag ("_oXML:_WSAlianca:_Etiq" + _sSeqEtiq, .F., .F.)
+					endif
+					U_Log2 ('debug', '_sEtqApont = ' + _sEtqApont)
+					if empty (_sErroWS) .and. empty (_sEtqApont)
+						// Se eu ainda estava na primeira etiqueta e a tag encontra-se vazia, eh por que nao veio nenhuma etiqueta.
+						if _sSeqEtiq == '01'
+							_SomaErro ("Nao foi informado nenhum numero de etiqueta.")
+							exit
+						else
+							// Jah processei todas as etiquetas e posso sair do loop
+							U_Log2 ('debug', 'Jah processei todas as etiquetas e posso sair do loop')
+							exit
 						endif
 					endif
-				endif
-			endif
-		endif
 
-		if _lEtiqOK
-			if empty (_sErroWS)
-				_aAutoSD3 = {}
-				aadd (_aAutoSD3, {"D3_OP",      za1 -> za1_op,  NIL})
-				aadd (_aAutoSD3, {"D3_VAETIQ",  za1 -> za1_codigo, NIL})
-				aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
-				aadd (_aAutoSD3, {"D3_VATURNO", _sTnoProd,  NIL})
-				if ! empty (_sMotProd)
-					aadd (_aAutoSD3, {"D3_VAMOTIV", _sMotProd,  NIL})
-				endif
-				aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
-				_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
-				//U_Log2 ('debug', _aAutoSD3)
-				lMsErroAuto  := .F.
-				_sErroAuto := ''
-				U_Log2 ('info', 'Executando MATA250')
-				MATA250 (_aAutoSD3, 3)
-				If lMsErroAuto
-					if ! empty (_sErroAuto)
-						_sMsgEtiq += _sErroAuto + '; '
-						_lEtiqOK = .F.
+					// Validacoes etiqueta.
+					if empty (_sErroWS) .and. ! empty (_sEtqApont)
+						za1 -> (dbsetorder (1))  // ZA1_FILIAL, ZA1_CODIGO, R_E_C_N_O_, D_E_L_E_T_
+						if ! za1 -> (dbseek (xfilial ("ZA1") + _sEtqApont, .F.))
+							_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' nao encontrada."
+							_lEtiqOK = .F.
+						else
+							if za1 -> za1_apont == 'S'
+								_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' ja gerou apontamento de producao."
+								_lEtiqOK = .F.
+							endif
+							if za1 -> za1_apont == 'E'
+								_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' ja foi apontada e ESTORNADA. Nao pode ser apontada novamente. Gere nova etiqueta."
+								_lEtiqOK = .F.
+							endif
+							if za1 -> za1_impres != 'S'
+								_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' ainda nao impressa."
+								_lEtiqOK = .F.
+							endif
+							if empty (za1 -> za1_op)
+								_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' nao relacionada com nenhuma OP."
+								_lEtiqOK = .F.
+							else
+								sc2 -> (dbsetorder (1))  // C2_FILIAL, C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD, R_E_C_N_O_, D_E_L_E_T_
+								if ! sc2 -> (dbseek (xfilial ("SC2") + za1 -> za1_op, .F.))
+									_sMsgEtiq += "OP '" + alltrim (za1 -> za1_op) + "' (relacionada com a etiqueta '" + _sEtqApont + "') nao foi localizada."
+									_lEtiqOK = .F.
+								else
+									if ! empty (sc2 -> c2_datrf)
+										_sMsgEtiq += "OP '" + alltrim (za1 -> za1_op) + "' (relacionada com a etiqueta '" + _sEtqApont + "') ja encontra-se encerrada."
+										_lEtiqOK = .F.
+									endif
+								endif
+							endif
+						endif
 					endif
-					if ! empty (NomeAutoLog ())
-						_sMsgEtiq += U_LeErro (memoread (NomeAutoLog ())) + '; '
-						_lEtiqOK = .F.
+
+					if _lEtiqOK
+						if empty (_sErroWS)
+							_aAutoSD3 = {}
+							aadd (_aAutoSD3, {"D3_OP",      za1 -> za1_op,  NIL})
+							aadd (_aAutoSD3, {"D3_VAETIQ",  za1 -> za1_codigo, NIL})
+							aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
+							aadd (_aAutoSD3, {"D3_VATURNO", _sTnoProd,  NIL})
+							if ! empty (_sMotProd)
+								aadd (_aAutoSD3, {"D3_VAMOTIV", _sMotProd,  NIL})
+							endif
+							aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
+							_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
+							//U_Log2 ('debug', _aAutoSD3)
+							lMsErroAuto  := .F.
+							_sErroAuto := ''
+							U_Log2 ('info', 'Executando MATA250')
+							MATA250 (_aAutoSD3, 3)
+							If lMsErroAuto
+								if ! empty (_sErroAuto)
+									_sMsgEtiq += _sErroAuto + '; '
+									_lEtiqOK = .F.
+								endif
+								if ! empty (NomeAutoLog ())
+									_sMsgEtiq += U_LeErro (memoread (NomeAutoLog ())) + '; '
+									_lEtiqOK = .F.
+								endif
+								u_log2 ('erro', 'Rotina automatica retornou erro: ' + _sErroWS)
+								// Se a variavel _sErroWS tiver dados, o processo vai ser abortado.
+								// Vou limpar por garantia, por que ela eh atualizada dentro da funcao U_Help, que muitas vezes eh
+								// usada em pontos de entrada e validacoes de campo.
+								_sErroWS = ''
+							else
+								_sMsgEtiq += "Apontamento gerado com sucesso (seq." + sd3 -> d3_numseq + ")"
+							endif
+						endif
 					endif
-					u_log2 ('erro', 'Rotina automatica retornou erro: ' + _sErroWS)
-					// Se a variavel _sErroWS tiver dados, o processo vai ser abortado.
-					// Vou limpar por garantia, por que ela eh atualizada dentro da funcao U_Help, que muitas vezes eh
-					// usada em pontos de entrada e validacoes de campo.
-					_sErroWS = ''
-				else
-					_sMsgEtiq += "Apontamento gerado com sucesso (seq." + sd3 -> d3_numseq + ")"
-				endif
-			endif
-		endif
 
-		U_Log2 ('debug', _sMsgEtiq)
+					U_Log2 ('debug', _sMsgEtiq)
 
-		// Monta trecho da mensagem de retorno referente a etiqueta atual.
-		_sMsgRetWS += '<ApontaProdtem>'
-		_sMsgRetWS += '<Etiq>' + _sEtqApont + '</Etiq>'
-		_sMsgRetWS += '<result>' + iif (_lEtiqOK, 'OK', 'ERRO') + '</result>'
-		_sMsgRetWS += '<msg>' + _sMsgEtiq + '</msg>'
-		_sMsgRetWS += '</ApontaProdtem>'
+					// Monta trecho da mensagem de retorno referente a etiqueta atual.
+					_sMsgRetWS += '<ApontaProdtem>'
+					_sMsgRetWS += '<Etiq>' + _sEtqApont + '</Etiq>'
+					_sMsgRetWS += '<result>' + iif (_lEtiqOK, 'OK', 'ERRO') + '</result>'
+					_sMsgRetWS += '<msg>' + _sMsgEtiq + '</msg>'
+					_sMsgRetWS += '</ApontaProdtem>'
 
-		_sSeqEtiq = soma1 (_sSeqEtiq)
-	enddo
-	_sMsgRetWS += '</ApontaProd>'
-return
+					_sSeqEtiq = soma1 (_sSeqEtiq)
+				enddo
+				_sMsgRetWS += '</ApontaProd>'
+				return
 
 
 // --------------------------------------------------------------------------
@@ -2175,18 +2175,18 @@ static function _ApPrEtqCB ()
 	local _sCodBarAp := ''
 
 	if empty (_sErroWS) ; _sEtqApont =       _ExtraiTag ("_oXML:_WSAlianca:_Etiq",     .T., .F.)  ; endif
-	if empty (_sErroWS) ; _sCodBarAp =       _ExtraiTag ("_oXML:_WSAlianca:_CodBarra", .T., .F.)  ; endif
-	if empty (_sErroWS) ; _sTnoProd  =       _ExtraiTag ("_oXML:_WSAlianca:_Turno",    .T., .F.)  ; endif
-	if empty (_sErroWS) ; _dDtProd   = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtProd",   .T., .T.)) ; endif
-	if empty (_sErroWS) ; _sMotProd  =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",   .T., .F.)  ; endif
+		if empty (_sErroWS) ; _sCodBarAp =       _ExtraiTag ("_oXML:_WSAlianca:_CodBarra", .T., .F.)  ; endif
+			if empty (_sErroWS) ; _sTnoProd  =       _ExtraiTag ("_oXML:_WSAlianca:_Turno",    .T., .F.)  ; endif
+				if empty (_sErroWS) ; _dDtProd   = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtProd",   .T., .T.)) ; endif
+					if empty (_sErroWS) ; _sMotProd  =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",   .T., .F.)  ; endif
 
-	// Validacao inicial do numero da etiqueta.
-	if empty (_sErroWS)
-		_oEtiq := ClsEtiq ():New (_sEtqApont)
-		if _oEtiq:Codigo != _sEtqApont
-			_SomaErro ("Numero de etiqueta invalido.")
-		endif
-	endif
+						// Validacao inicial do numero da etiqueta.
+						if empty (_sErroWS)
+							_oEtiq := ClsEtiq ():New (_sEtqApont)
+							if _oEtiq:Codigo != _sEtqApont
+								_SomaErro ("Numero de etiqueta invalido.")
+							endif
+						endif
 
 	/*
 	// Valida se o codigo de barras pertence ao produto da etiqueta
@@ -2207,49 +2207,49 @@ static function _ApPrEtqCB ()
 		endif
 	endif
 */
-	// Valida codigo de barras lido na embalagem coletiva.
-	if empty (_sErroWS)
-		if ! _oEtiq:ValCbEmb (_sCodBarAp)
-			_SomaErro (_oEtiq:UltMsg)
-		endif
-	endif
+						// Valida codigo de barras lido na embalagem coletiva.
+						if empty (_sErroWS)
+							if ! _oEtiq:ValCbEmb (_sCodBarAp)
+								_SomaErro (_oEtiq:UltMsg)
+							endif
+						endif
 
-	if empty (_sErroWS)
-		if ! _oEtiq:PodeApont (_oEtiq:Quantidade, 0)
-			// Dentro do metodo PodeApont() jah deve estar sendo chamada a
-			// funcao U_Help(), que deve alimentar a variavel _sErroWS.
-			// Apenas para garantir, vou acrescentar algum conteudo a ela.
-			_SomaErro ('.')
-		endif
-	endif
+						if empty (_sErroWS)
+							if ! _oEtiq:PodeApont (_oEtiq:Quantidade, 0)
+								// Dentro do metodo PodeApont() jah deve estar sendo chamada a
+								// funcao U_Help(), que deve alimentar a variavel _sErroWS.
+								// Apenas para garantir, vou acrescentar algum conteudo a ela.
+								_SomaErro ('.')
+							endif
+						endif
 
-	// Gera oapontamento de producao
-	if empty (_sErroWS)
-		_aAutoSD3 = {}
-		aadd (_aAutoSD3, {"D3_OP",      za1 -> za1_op,  NIL})
-		aadd (_aAutoSD3, {"D3_VAETIQ",  za1 -> za1_codigo, NIL})
-		aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
-		aadd (_aAutoSD3, {"D3_VATURNO", _sTnoProd,  NIL})
-		aadd (_aAutoSD3, {"D3_VAMOTIV", _sMotProd,  NIL})
-		aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
-		_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
-		U_Log2 ('debug', _aAutoSD3)
-		lMsErroAuto  := .F.
-		_sErroAuto := ''
-		U_Log2 ('info', 'Executando MATA250')
-		MATA250 (_aAutoSD3, 3)
-		If lMsErroAuto
-			if ! empty (_sErroAuto)
-				_SomaErro (_sErroAuto)
-			elseif ! empty (NomeAutoLog ())
-				_SomaErro (U_LeErro (memoread (NomeAutoLog ())))
-			endif
-			u_log2 ('erro', 'Rotina automatica retornou erro: ' + _sErroWS)
-		else
-			_sMsgRetWS += "Apontamento gerado com sucesso (d3_numseq = " + sd3 -> d3_numseq + ")"
-		endif
-	endif
-return
+						// Gera oapontamento de producao
+						if empty (_sErroWS)
+							_aAutoSD3 = {}
+							aadd (_aAutoSD3, {"D3_OP",      za1 -> za1_op,  NIL})
+							aadd (_aAutoSD3, {"D3_VAETIQ",  za1 -> za1_codigo, NIL})
+							aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
+							aadd (_aAutoSD3, {"D3_VATURNO", _sTnoProd,  NIL})
+							aadd (_aAutoSD3, {"D3_VAMOTIV", _sMotProd,  NIL})
+							aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
+							_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
+							U_Log2 ('debug', _aAutoSD3)
+							lMsErroAuto  := .F.
+							_sErroAuto := ''
+							U_Log2 ('info', 'Executando MATA250')
+							MATA250 (_aAutoSD3, 3)
+							If lMsErroAuto
+								if ! empty (_sErroAuto)
+									_SomaErro (_sErroAuto)
+								elseif ! empty (NomeAutoLog ())
+									_SomaErro (U_LeErro (memoread (NomeAutoLog ())))
+								endif
+								u_log2 ('erro', 'Rotina automatica retornou erro: ' + _sErroWS)
+							else
+								_sMsgRetWS += "Apontamento gerado com sucesso (d3_numseq = " + sd3 -> d3_numseq + ")"
+							endif
+						endif
+						return
 
 
 // --------------------------------------------------------------------------
@@ -2261,11 +2261,11 @@ Static Function _PedidosBloq()
 	local _aItem    := {}
 	local _x        := 0
 	local _y        := 0
-	
+
 //	u_logIni ()
 
-	_oSQL := ClsSQL():New ()  
-	_oSQL:_sQuery := ""		
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
 	_oSQL:_sQuery += " 	   C5_FILIAL "
 	_oSQL:_sQuery += "    ,C5_NUM "
@@ -2306,32 +2306,32 @@ Static Function _PedidosBloq()
 	For _x:= 1 to Len(_aPed)
 		_sBloq := _aPed[_x,12]
 		Do Case
-			Case 'X'$_sBloq
-				_sDescLgd := 'Liberacao negada'
+		Case 'X'$_sBloq
+			_sDescLgd := 'Liberacao negada'
 
-			Case !'X'$_sBloq.and.'M'$_sBloq.and.'P'$_sBloq
-				_sDescLgd := 'Bloq.por margem e preco'
+		Case !'X'$_sBloq.and.'M'$_sBloq.and.'P'$_sBloq
+			_sDescLgd := 'Bloq.por margem e preco'
 
-			Case !'X'$_sBloq.and.'F'$_sBloq 
-				_sDescLgd := 'Bonif.sem faturamento'
+		Case !'X'$_sBloq.and.'F'$_sBloq
+			_sDescLgd := 'Bonif.sem faturamento'
 
-			Case !'X'$_sBloq.and.'P'$_sBloq
-				_sDescLgd := 'Bloq.por preco'		
+		Case !'X'$_sBloq.and.'P'$_sBloq
+			_sDescLgd := 'Bloq.por preco'
 
-			Case !'X'$_sBloq.and.'M'$_sBloq					
-				_sDescLgd := 'Bloq.por margem'	
+		Case !'X'$_sBloq.and.'M'$_sBloq
+			_sDescLgd := 'Bloq.por margem'
 
-			Case !'X'$_sBloq.and.'A'$_sBloq
-				_sDescLgd := 'Bloq.%reajuste'	
-					
-			Case !'X'$_sBloq.and.'B'$_sBloq				
-				_sDescLgd := 'Bloq.bonificação'	
-			otherwise
-				_sDescLgd := " "
+		Case !'X'$_sBloq.and.'A'$_sBloq
+			_sDescLgd := 'Bloq.%reajuste'
+
+		Case !'X'$_sBloq.and.'B'$_sBloq
+			_sDescLgd := 'Bloq.bonificação'
+		otherwise
+			_sDescLgd := " "
 		EndCase
 
 		_sNome    := strtran(U_NoAcento(_aPed[_x, 6]), '&', 'e')
-		_sUsuario := strtran(U_NoAcento(_aPed[_x,14]), '&', 'e')  
+		_sUsuario := strtran(U_NoAcento(_aPed[_x,14]), '&', 'e')
 
 		_XmlRet += "		<RegistroItem>"
 		_XmlRet += "			<Filial>"			+ _aPed[_x, 1] 					+ "</Filial>"
@@ -2353,8 +2353,8 @@ Static Function _PedidosBloq()
 		_XmlRet += "			<PedidoCliente>"	+ _aPed[_x,17] 					+ "</PedidoCliente>"
 		_XmlRet += "			<DescBloqueio>"	    + _sDescLgd    					+ "</DescBloqueio>"
 
-		_oSQL := ClsSQL():New ()  
-		_oSQL:_sQuery := "" 		
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT "
 		_oSQL:_sQuery += " 	   C6_FILIAL "
 		_oSQL:_sQuery += "    ,C6_ITEM "
@@ -2394,8 +2394,8 @@ Static Function _PedidosBloq()
 			_XmlRet += "			<Tes>"			+ _aItem[_y,10] 				+ "</Tes>"
 			_XmlRet += "		</ItensPedidoItem> "
 		Next
-		_XmlRet += "		</ItensPedido>"	
-		_XmlRet += "		</RegistroItem>"	
+		_XmlRet += "		</ItensPedido>"
+		_XmlRet += "		</RegistroItem>"
 	Next
 	_XmlRet += "	</Registro>"
 	_XmlRet += "</BuscaPedidosBloqueados>"
@@ -2449,8 +2449,8 @@ Static Function _GrvLibPed ()
 				endif
 			endif
 		Else
-			_sErroWS := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja 		
-		endif		
+			_sErroWS := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja
+		endif
 	endif
 
 //	u_logFim ()
@@ -2481,7 +2481,7 @@ Static Function _EnvMargem ()
 	If empty(_sErroWS)
 		sa1 -> (dbsetorder(1)) 		// A1_FILIAL + A1_COD + A1_LOJA
 		DbSelectArea("SA1")
-		
+
 		If ! dbseek(xFilial("SA1") + PADR(_wCliente, 6,' ') + _wLoja, .F.)
 			_sErroWS := " Cliente " + _wCliente +"/"+ _wLoja +" não encontrado. Verifique!"
 		Else
@@ -2492,10 +2492,10 @@ Static Function _EnvMargem ()
 	If empty(_sErroWS)
 		sc5 -> (dbsetorder(3)) // C5_FILIAL + C5_CLIENTE + C5_LOJACLI + C5_NUM
 		DbSelectArea("SC5")
-		
+
 		If dbseek(_wFilial + _wCliente + _wLoja + _wPedido, .F.)
-			_oSQL := ClsSQL():New ()  
-			_oSQL:_sQuery := "" 		
+			_oSQL := ClsSQL():New ()
+			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " SELECT "
 			_oSQL:_sQuery += " 	 	DESCRITIVO "
 			_oSQL:_sQuery += " FROM VA_VEVENTOS "
@@ -2504,7 +2504,7 @@ Static Function _EnvMargem ()
 			_oSQL:_sQuery += " AND CLIENTE      = '" + _wCliente + "' "
 			_oSQL:_sQuery += " AND LOJA_CLIENTE = '" + _wLoja    + "' "
 			_oSQL:_sQuery += " AND PEDVENDA     = '" + _wPedido  + "' "
-			_oSQL:_sQuery += " ORDER BY HORA, DESCRITIVO" 
+			_oSQL:_sQuery += " ORDER BY HORA, DESCRITIVO"
 			_aItem := aclone (_oSQL:Qry2Array ())
 
 			_XmlRet := "<BuscaItensPedBloq>"
@@ -2514,9 +2514,9 @@ Static Function _EnvMargem ()
 				_XmlRet += "<BuscaItensPedBloqItem>"
 				_XmlRet += "<Filial>"        + _wFilial 	  + "</Filial>"
 				_XmlRet += "<Pedido>"		 + _wPedido       + "</Pedido>"
-				_XmlRet += "<Cliente>" 		 + _wCliente 	  + "</Cliente>" 
-				_XmlRet += "<Nome>"			 + _wNomeCli	  + "</Nome>"   
-				_XmlRet += "<Loja>"			 + _wLoja 		  + "</Loja>"	 
+				_XmlRet += "<Cliente>" 		 + _wCliente 	  + "</Cliente>"
+				_XmlRet += "<Nome>"			 + _wNomeCli	  + "</Nome>"
+				_XmlRet += "<Loja>"			 + _wLoja 		  + "</Loja>"
 				_XmlRet += "<Produto>" 		 + alltrim(_aNaWeb[ 2]) + "</Produto>"
 				_XmlRet += "<Quantidade>" 	 + alltrim(_aNaWeb[ 3]) + "</Quantidade>"
 				_XmlRet += "<PrcVenda>" 	 + alltrim(_aNaWeb[ 4]) + "</PrcVenda>"
@@ -2534,8 +2534,8 @@ Static Function _EnvMargem ()
 			_XmlRet += "</BuscaItensPedBloq>"
 			u_log2 ('info', _XmlRet)
 		Else
-			_sErroWS := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja 		
-		endif		
+			_sErroWS := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja
+		endif
 	endif
 	_sMsgRetWS := _XmlRet
 //	u_logFim ()
@@ -2551,34 +2551,34 @@ Static function _DtEntFat ()
 	local _dDtEntr := ctod ('')
 
 	if empty (_sErroWS) ; _sNF     = _ExtraiTag ("_oXML:_WSAlianca:_NF", .T., .F.) ; endif
-	if empty (_sErroWS) ; _sSerie  = _ExtraiTag ("_oXML:_WSAlianca:_Serie", .T., .F.) ; endif
-	if empty (_sErroWS) ; _dDtEntr = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtEntrega", .T., .T.)) ; endif
-	if empty (_sErroWS)
-		sf2 -> (dbsetorder (1))
-		if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
-			_SomaErro ("NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.')
-		else
+		if empty (_sErroWS) ; _sSerie  = _ExtraiTag ("_oXML:_WSAlianca:_Serie", .T., .F.) ; endif
+			if empty (_sErroWS) ; _dDtEntr = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtEntrega", .T., .T.)) ; endif
+				if empty (_sErroWS)
+					sf2 -> (dbsetorder (1))
+					if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
+						_SomaErro ("NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.')
+					else
 
-			// Grava evento temporario (nao estou descobrindo em que momento este campo eh atualizado)
-			_oEvento := ClsEvent():new ()
-			_oEvento:Filial     = SF2 -> F2_FILIAL
-			_oEvento:Texto     := 'Atualizando campo F2_DTENTR de ' + dtoc (sf2 -> f2_DtEntr) + ' para ' + dtoc (_dDtEntr)
-			_oEvento:Texto     += " Pilha: " + U_LogPCham ()
-			_oEvento:CodEven    = "DEBUG"
-			_oEvento:NFSaida    = sf2 -> f2_doc
-			_oEvento:SerieSaid  = sf2 -> f2_Serie
-			_oEvento:Cliente    = sf2 -> f2_cliente
-			_oEvento:LojaCli    = sf2 -> f2_loja
-			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
-			_oEvento:Grava ()
+						// Grava evento temporario (nao estou descobrindo em que momento este campo eh atualizado)
+						_oEvento := ClsEvent():new ()
+						_oEvento:Filial     = SF2 -> F2_FILIAL
+						_oEvento:Texto     := 'Atualizando campo F2_DTENTR de ' + dtoc (sf2 -> f2_DtEntr) + ' para ' + dtoc (_dDtEntr)
+						_oEvento:Texto     += " Pilha: " + U_LogPCham ()
+						_oEvento:CodEven    = "DEBUG"
+						_oEvento:NFSaida    = sf2 -> f2_doc
+						_oEvento:SerieSaid  = sf2 -> f2_Serie
+						_oEvento:Cliente    = sf2 -> f2_cliente
+						_oEvento:LojaCli    = sf2 -> f2_loja
+						_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+						_oEvento:Grava ()
 
-			reclock ("SF2", .F.)
-			sf2 -> f2_DtEntr = _dDtEntr
-			msunlock ()
-			_sMsgRetWS = 'Registro atualizado.' 
-		endif
-	endif
-return
+						reclock ("SF2", .F.)
+						sf2 -> f2_DtEntr = _dDtEntr
+						msunlock ()
+						_sMsgRetWS = 'Registro atualizado.'
+					endif
+				endif
+				return
 
 
 // --------------------------------------------------------------------------
@@ -2593,40 +2593,40 @@ static function _AsFecSaf ()
 
 	U_Log2 ('debug', '[' + procname () + ']iniciando...')
 	if empty (_sErroWS) ; _sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
-	if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja",  .T., .F.) ; endif
-	if empty (_sErroWS) ; _sSafra = U_ExTagXML ("_oXML:_WSAlianca:_Safra", .T., .F.) ; endif
-	if empty (_sErroWS)
-		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
-		if valtype (_oAssoc) != 'O'
-			_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
-		endif
-	endif
-	if empty (_sErroWS)
-		U_Log2 ('debug', '[' + procname () + ']parametrizando...')
-		if empty (_sErroWS) ; _oAssoc:FSDFunrur    = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_descontoFUNRURAL",  .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSFrete      = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_freteSafra",        .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSLctosCC    = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_lctoCC",            .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSNFEntrada  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfEntrada",         .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSNFCompra   = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfCompra",          .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSNFComplem  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfComplemento",     .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSNFPrdProp  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfProdPropria",     .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSPrevPagto  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_faturaPagamento",   .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSRegraPagto = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_regraPagamento",    .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSResVaried  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_resumoVariedade",   .F., .F.) == 'S') ; endif
-		if empty (_sErroWS) ; _oAssoc:FSResVarGC   = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_resumoVarGrauClas", .F., .F.) == 'S') ; endif
-		_oAssoc:FSSafra      = _sSafra
+		if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja",  .T., .F.) ; endif
+			if empty (_sErroWS) ; _sSafra = U_ExTagXML ("_oXML:_WSAlianca:_Safra", .T., .F.) ; endif
+				if empty (_sErroWS)
+					_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
+					if valtype (_oAssoc) != 'O'
+						_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
+					endif
+				endif
+				if empty (_sErroWS)
+					U_Log2 ('debug', '[' + procname () + ']parametrizando...')
+					if empty (_sErroWS) ; _oAssoc:FSDFunrur    = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_descontoFUNRURAL",  .F., .F.) == 'S') ; endif
+						if empty (_sErroWS) ; _oAssoc:FSFrete      = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_freteSafra",        .F., .F.) == 'S') ; endif
+							if empty (_sErroWS) ; _oAssoc:FSLctosCC    = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_lctoCC",            .F., .F.) == 'S') ; endif
+								if empty (_sErroWS) ; _oAssoc:FSNFEntrada  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfEntrada",         .F., .F.) == 'S') ; endif
+									if empty (_sErroWS) ; _oAssoc:FSNFCompra   = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfCompra",          .F., .F.) == 'S') ; endif
+										if empty (_sErroWS) ; _oAssoc:FSNFComplem  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfComplemento",     .F., .F.) == 'S') ; endif
+											if empty (_sErroWS) ; _oAssoc:FSNFPrdProp  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfProdPropria",     .F., .F.) == 'S') ; endif
+												if empty (_sErroWS) ; _oAssoc:FSPrevPagto  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_faturaPagamento",   .F., .F.) == 'S') ; endif
+													if empty (_sErroWS) ; _oAssoc:FSRegraPagto = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_regraPagamento",    .F., .F.) == 'S') ; endif
+														if empty (_sErroWS) ; _oAssoc:FSResVaried  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_resumoVariedade",   .F., .F.) == 'S') ; endif
+															if empty (_sErroWS) ; _oAssoc:FSResVarGC   = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_resumoVarGrauClas", .F., .F.) == 'S') ; endif
+																_oAssoc:FSSafra      = _sSafra
 
-	//	//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur
-	//	_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .t.,        .t.)
-		_sRet = _oAssoc:FechSafra ()
-		U_Log2 ('debug', '[' + procname () + ']' + _sRet)
-		if empty (_sRet)
-			_SomaErro ("Retorno invalido metodo FechSafra " + _oAssoc:UltMsg)
-		else
-			_sMsgRetWS = _sRet
-		endif
-	endif
-return
+																//	//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur
+																//	_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .t.,        .t.)
+																_sRet = _oAssoc:FechSafra ()
+																U_Log2 ('debug', '[' + procname () + ']' + _sRet)
+																if empty (_sRet)
+																	_SomaErro ("Retorno invalido metodo FechSafra " + _oAssoc:UltMsg)
+																else
+																	_sMsgRetWS = _sRet
+																endif
+															endif
+															return
 
 
 // --------------------------------------------------------------------------
@@ -2638,22 +2638,22 @@ static function _AsCapSoc ()
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
 	if empty (_sErroWS) ; _sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
-	if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
-	if empty (_sErroWS)
-		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
-		if valtype (_oAssoc) != 'O'
-			_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
-		endif
-	endif
-	if empty (_sErroWS)
-		_sRet = _oAssoc:SldQuotCap (date ()) [.QtCapRetXML]
-		if empty (_sRet)
-			_SomaErro ("Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg)
-		else
-			_sMsgRetWS = _sRet
-		endif
-	endif
-return
+		if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
+			if empty (_sErroWS)
+				_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
+				if valtype (_oAssoc) != 'O'
+					_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
+				endif
+			endif
+			if empty (_sErroWS)
+				_sRet = _oAssoc:SldQuotCap (date ()) [.QtCapRetXML]
+				if empty (_sRet)
+					_SomaErro ("Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg)
+				else
+					_sMsgRetWS = _sRet
+				endif
+			endif
+			return
 
 
 // --------------------------------------------------------------------------
@@ -2679,46 +2679,46 @@ static function _AltAssoc ()
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
 	if empty (_sErroWS) ; _sCPF       = U_ExTagXML ("_oXML:_WSAlianca:_CPF",             .T., .F.) ; endif
-	if empty (_sErroWS) ; _sCodigo    = U_ExTagXML ("_oXML:_WSAlianca:_CodProtheus",     .T., .F.) ; endif
-	if empty (_sErroWS) ; _sLoja      = U_ExTagXML ("_oXML:_WSAlianca:_Loja",            .T., .F.) ; endif
-	if empty (_sErroWS) ; _sInscr     = U_ExTagXML ("_oXML:_WSAlianca:_InscEstadual",    .T., .F.) ; endif
-	if empty (_sErroWS) ; _sNome      = U_ExTagXML ("_oXML:_WSAlianca:_Nome",            .F., .F.) ; endif
-	if empty (_sErroWS) ; _sRG        = U_ExTagXML ("_oXML:_WSAlianca:_RG",              .F., .F.) ; endif
-	if empty (_sErroWS) ; _sTelPref   = U_ExTagXML ("_oXML:_WSAlianca:_telPreferencial", .F., .F.) ; endif
-	if empty (_sErroWS) ; _sTelef2    = U_ExTagXML ("_oXML:_WSAlianca:_telefone2",       .F., .F.) ; endif
-	if empty (_sErroWS) ; _dDtNasc    = U_ExTagXML ("_oXML:_WSAlianca:_dtnasc",          .F., .T.) ; endif
-	if empty (_sErroWS) ; _sEMail     = U_ExTagXML ("_oXML:_WSAlianca:_email",           .F., .F.) ; endif
-	if empty (_sErroWS) ; _sEndereco  = U_ExTagXML ("_oXML:_WSAlianca:_endereco",        .T., .F.) ; endif
-	if empty (_sErroWS) ; _sCEP       = U_ExTagXML ("_oXML:_WSAlianca:_CEP",             .F., .F.) ; endif
-	if empty (_sErroWS)
-		//U_Log2 ('debug', '[' + procname () + ']Pesquisando SA2 com o CPF >>' + _sCPF + '<<')
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT A2_COD, A2_LOJA"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SA2") + " SA2"
-		_oSQL:_sQuery += " WHERE SA2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
-		_oSQL:_sQuery +=   " AND SA2.A2_COD     = '" + _sCodigo + "'"
-		_oSQL:_sQuery +=   " AND SA2.A2_LOJA    = '" + _sLoja   + "'"
-		_oSQL:_sQuery +=   " AND SA2.A2_INSC    = '" + _sInscr  + "'"
-		_oSQL:_sQuery +=   " AND SA2.A2_VARG    = '" + _sCPF    + "'"
-		_oSQL:Log ()
-		_aRegSA2 := _oSQL:RetFixo (1, 'ao procurar associado pelo cod+loja+CPF+insc.est.', .F.)
-		if len (_aRegSA2) == 1
-			_oAssoc := ClsAssoc ():New (sa2 -> a2_cod, sa2 -> a2_loja)
-			if valtype (_oAssoc) != 'O'
-				_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
-			else
-				u_logobj (_oAssoc)
-			endif
-		else
-			_SomaErro ("Impossivel identificar associado.")
-		endif
-	endif
-	if empty (_sErroWS)
-		_sMsgRetWS = _sMsgRet
-	endif
-return
+		if empty (_sErroWS) ; _sCodigo    = U_ExTagXML ("_oXML:_WSAlianca:_CodProtheus",     .T., .F.) ; endif
+			if empty (_sErroWS) ; _sLoja      = U_ExTagXML ("_oXML:_WSAlianca:_Loja",            .T., .F.) ; endif
+				if empty (_sErroWS) ; _sInscr     = U_ExTagXML ("_oXML:_WSAlianca:_InscEstadual",    .T., .F.) ; endif
+					if empty (_sErroWS) ; _sNome      = U_ExTagXML ("_oXML:_WSAlianca:_Nome",            .F., .F.) ; endif
+						if empty (_sErroWS) ; _sRG        = U_ExTagXML ("_oXML:_WSAlianca:_RG",              .F., .F.) ; endif
+							if empty (_sErroWS) ; _sTelPref   = U_ExTagXML ("_oXML:_WSAlianca:_telPreferencial", .F., .F.) ; endif
+								if empty (_sErroWS) ; _sTelef2    = U_ExTagXML ("_oXML:_WSAlianca:_telefone2",       .F., .F.) ; endif
+									if empty (_sErroWS) ; _dDtNasc    = U_ExTagXML ("_oXML:_WSAlianca:_dtnasc",          .F., .T.) ; endif
+										if empty (_sErroWS) ; _sEMail     = U_ExTagXML ("_oXML:_WSAlianca:_email",           .F., .F.) ; endif
+											if empty (_sErroWS) ; _sEndereco  = U_ExTagXML ("_oXML:_WSAlianca:_endereco",        .T., .F.) ; endif
+												if empty (_sErroWS) ; _sCEP       = U_ExTagXML ("_oXML:_WSAlianca:_CEP",             .F., .F.) ; endif
+													if empty (_sErroWS)
+														//U_Log2 ('debug', '[' + procname () + ']Pesquisando SA2 com o CPF >>' + _sCPF + '<<')
+														_oSQL := ClsSQL ():New ()
+														_oSQL:_sQuery := ""
+														_oSQL:_sQuery += "SELECT A2_COD, A2_LOJA"
+														_oSQL:_sQuery +=  " FROM " + RetSQLName ("SA2") + " SA2"
+														_oSQL:_sQuery += " WHERE SA2.D_E_L_E_T_ = ''"
+														_oSQL:_sQuery +=   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
+														_oSQL:_sQuery +=   " AND SA2.A2_COD     = '" + _sCodigo + "'"
+														_oSQL:_sQuery +=   " AND SA2.A2_LOJA    = '" + _sLoja   + "'"
+														_oSQL:_sQuery +=   " AND SA2.A2_INSC    = '" + _sInscr  + "'"
+														_oSQL:_sQuery +=   " AND SA2.A2_VARG    = '" + _sCPF    + "'"
+														_oSQL:Log ()
+														_aRegSA2 := _oSQL:RetFixo (1, 'ao procurar associado pelo cod+loja+CPF+insc.est.', .F.)
+														if len (_aRegSA2) == 1
+															_oAssoc := ClsAssoc ():New (sa2 -> a2_cod, sa2 -> a2_loja)
+															if valtype (_oAssoc) != 'O'
+																_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
+															else
+																u_logobj (_oAssoc)
+															endif
+														else
+															_SomaErro ("Impossivel identificar associado.")
+														endif
+													endif
+													if empty (_sErroWS)
+														_sMsgRetWS = _sMsgRet
+													endif
+													return
 
 
 // --------------------------------------------------------------------------
@@ -2729,29 +2729,29 @@ static function _ImpEtiq ()
 	local _sCBProd  := ''
 
 	if empty (_sErroWS) ; _sEtiq    = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",          .T., .F.) ; endif
-	if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora",     .T., .F.) ; endif
-	if empty (_sErroWS) ; _sCBProd  = _ExtraiTag ("_oXML:_WSAlianca:_ObrigarBarrasProd", .F., .F.) ; endif
+		if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora",     .T., .F.) ; endif
+			if empty (_sErroWS) ; _sCBProd  = _ExtraiTag ("_oXML:_WSAlianca:_ObrigarBarrasProd", .F., .F.) ; endif
 
-	// Validacao inicial do numero da etiqueta.
-	if empty (_sErroWS)
-		_oEtiq := ClsEtiq ():New (_sEtiq)
-		if _oEtiq:Codigo != _sEtiq
-			_SomaErro ("Numero de etiqueta invalido.")
-		else
-			
-			// Eventualmente posso obrigar a listar as barras do produto.
-			if _sCBProd == 'S'
-				_oEtiq:ImprCBProd = 'S'
-			endif
-			
-			if ! _oEtiq:Imprime (_sCodImpr)
-				_SomaErro ('Erro na rotina de impressao')
-			else
-				_sMsgRetWS += _oEtiq:UltMsg
-			endif
-		endif
-	endif
-return
+				// Validacao inicial do numero da etiqueta.
+				if empty (_sErroWS)
+					_oEtiq := ClsEtiq ():New (_sEtiq)
+					if _oEtiq:Codigo != _sEtiq
+						_SomaErro ("Numero de etiqueta invalido.")
+					else
+
+						// Eventualmente posso obrigar a listar as barras do produto.
+						if _sCBProd == 'S'
+							_oEtiq:ImprCBProd = 'S'
+						endif
+
+						if ! _oEtiq:Imprime (_sCodImpr)
+							_SomaErro ('Erro na rotina de impressao')
+						else
+							_sMsgRetWS += _oEtiq:UltMsg
+						endif
+					endif
+				endif
+				return
 
 
 // --------------------------------------------------------------------------
@@ -2763,49 +2763,49 @@ static function _ImpEtiqZAG ()
 	local _oEtiq    := NIL
 
 	if empty (_sErroWS) ; _sDocZAG  = _ExtraiTag ("_oXML:_WSAlianca:_DocZAG",        .T., .F.) ; endif
-	if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora", .T., .F.) ; endif
+		if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora", .T., .F.) ; endif
 
-	// Validacao inicial do numero da etiqueta.
-	if empty (_sErroWS)
-		zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
-		if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-			_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
-		else
-			_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-			
-			// Se nao tem etiqueta, eh possivel que tenha dado problema na
-			// geracao da mesma. Vou tentar gerar novamente.
-			if empty (_oTrEstq:Etiqueta)
-				U_Log2 ('debug', '[' + procname () + ']nao tem etiq.ainda. Vou gerar.')
-				_oTrEstq:ImprEtq = _sCodImpr
-				if ! _oTrEstq:GeraEtiq (.T.)
-					_SomaErro (_oTrEstq:UltMsg)
+			// Validacao inicial do numero da etiqueta.
+			if empty (_sErroWS)
+				zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
+				if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+					_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
 				else
-					_sMsgRetWS += _oTrEstq:UltMsg
-				endif
-			else
-				U_Log2 ('debug', '[' + procname () + ']jah tem a etiq ' + _oTrEstq:Etiqueta + ' Vou imprimir.')
-				_oEtiq := ClsEtiq ():New (_oTrEstq:Etiqueta)
-				if _oEtiq:Codigo != _oTrEstq:Etiqueta
-					_SomaErro ("Numero de etiqueta invalido.")
-				else
-				//	U_Log2 ('debug', '[' + procname () + ']_sCodImpr = ' + _sCodImpr)
-					if ! _oEtiq:Imprime (_sCodImpr)
-						_SomaErro ('Erro na impressao.' + _oEtiq:UltMsg)
+					_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+
+					// Se nao tem etiqueta, eh possivel que tenha dado problema na
+					// geracao da mesma. Vou tentar gerar novamente.
+					if empty (_oTrEstq:Etiqueta)
+						U_Log2 ('debug', '[' + procname () + ']nao tem etiq.ainda. Vou gerar.')
+						_oTrEstq:ImprEtq = _sCodImpr
+						if ! _oTrEstq:GeraEtiq (.T.)
+							_SomaErro (_oTrEstq:UltMsg)
+						else
+							_sMsgRetWS += _oTrEstq:UltMsg
+						endif
 					else
-						// Como tive casos de falta de algum cadastro, o pessoal
-						// apenas atualizou cadastro e tentou reimprimir a
-						// etiqueta, na esperanca de que jah fosse reenviada para
-						// o FullWMS. Nao custa nada dar uma maozinha...
-						_oEtiq:EnviaFull (.f.)
+						U_Log2 ('debug', '[' + procname () + ']jah tem a etiq ' + _oTrEstq:Etiqueta + ' Vou imprimir.')
+						_oEtiq := ClsEtiq ():New (_oTrEstq:Etiqueta)
+						if _oEtiq:Codigo != _oTrEstq:Etiqueta
+							_SomaErro ("Numero de etiqueta invalido.")
+						else
+							//	U_Log2 ('debug', '[' + procname () + ']_sCodImpr = ' + _sCodImpr)
+							if ! _oEtiq:Imprime (_sCodImpr)
+								_SomaErro ('Erro na impressao.' + _oEtiq:UltMsg)
+							else
+								// Como tive casos de falta de algum cadastro, o pessoal
+								// apenas atualizou cadastro e tentou reimprimir a
+								// etiqueta, na esperanca de que jah fosse reenviada para
+								// o FullWMS. Nao custa nada dar uma maozinha...
+								_oEtiq:EnviaFull (.f.)
 
-						_sMsgRetWS += _oEtiq:UltMsg
+								_sMsgRetWS += _oEtiq:UltMsg
+							endif
+						endif
 					endif
 				endif
 			endif
-		endif
-	endif
-return
+			return
 
 
 // --------------------------------------------------------------------------
@@ -2815,20 +2815,20 @@ static function _InutEtiq ()
 
 	if empty (_sErroWS) ; _sEtiq    = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",      .T., .F.) ; endif
 
-	// Validacao inicial do numero da etiqueta.
-	if empty (_sErroWS)
-		_oEtiq := ClsEtiq ():New (_sEtiq)
-		if _oEtiq:Codigo != _sEtiq
-			_SomaErro ("Numero de etiqueta invalido.")
-		else
-			if ! _oEtiq:Inutiliza (.F.)
-				_SomaErro (_oEtiq:UltMsg)
+		// Validacao inicial do numero da etiqueta.
+		if empty (_sErroWS)
+			_oEtiq := ClsEtiq ():New (_sEtiq)
+			if _oEtiq:Codigo != _sEtiq
+				_SomaErro ("Numero de etiqueta invalido.")
 			else
-				_sMsgRetWS += _oEtiq:UltMsg
+				if ! _oEtiq:Inutiliza (.F.)
+					_SomaErro (_oEtiq:UltMsg)
+				else
+					_sMsgRetWS += _oEtiq:UltMsg
+				endif
 			endif
 		endif
-	endif
-return
+		return
 
 
 // --------------------------------------------------------------------------
@@ -2837,22 +2837,22 @@ static function _ZZU (_sQueFazer)
 	local _sCodZZU   := ''
 
 	if empty (_sErroWS) ; _sCodZZU = _ExtraiTag ("_oXML:_WSAlianca:_GrupoZZU", .T., .F.) ; endif
-	if empty (_sErroWS)
+		if empty (_sErroWS)
 // usar isto quando criar function para o ZX5		_oTabGen := ClsTabGen ():New (_sCodZZU)
 // usar isto quando criar function para o ZX5		if empty (_oTabGen:CodTabela)
 // usar isto quando criar function para o ZX5			_SomaErro (_oTabGen:UltMsg)
 // usar isto quando criar function para o ZX5		endif
-	endif
-	if empty (_sErroWS)
-		do case
-		case _sQueFazer == 'VincularUsuario'
-			_SomaErro ('Metodo ainda nao 100% implementado')
-			// _sMsgRetWS += _oTabGen:UltMsg
-		otherwise
-			_SomaErro ('Operacao ' + _sQueFazer + ' desconhecida na rotina ' + procname ())
-		endcase
-	endif
-return
+		endif
+		if empty (_sErroWS)
+			do case
+			case _sQueFazer == 'VincularUsuario'
+				_SomaErro ('Metodo ainda nao 100% implementado')
+				// _sMsgRetWS += _oTabGen:UltMsg
+			otherwise
+				_SomaErro ('Operacao ' + _sQueFazer + ' desconhecida na rotina ' + procname ())
+			endcase
+		endif
+		return
 
 
 // --------------------------------------------------------------------------
@@ -2867,44 +2867,44 @@ static function _EstrCust ()
 	local _sLComFim  := ''
 
 	if empty (_sErroWS) ; _sProdIni  = _ExtraiTag ("_oXML:_WSAlianca:_ProdutoInicial",        .F., .F.) ; endif
-	if empty (_sErroWS) ; _sProdFim  = _ExtraiTag ("_oXML:_WSAlianca:_ProdutoFinal",          .F., .F.) ; endif
-	if empty (_sErroWS) ; _sTpPrdIni = _ExtraiTag ("_oXML:_WSAlianca:_TipoProdutoInicial",    .F., .F.) ; endif
-	if empty (_sErroWS) ; _sTpPrdFim = _ExtraiTag ("_oXML:_WSAlianca:_TipoProdutoFinal",      .F., .F.) ; endif
-	if empty (_sErroWS) ; _sLComIni  = _ExtraiTag ("_oXML:_WSAlianca:_LinhaComercialInicial", .F., .F.) ; endif
-	if empty (_sErroWS) ; _sLComFim  = _ExtraiTag ("_oXML:_WSAlianca:_LinhaComercialFinal",   .F., .F.) ; endif
-	
-	// Verifica se vai gerar muitos produtos
-	if empty (_sErroWS)
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT count (*)"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
-		_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-		_oSQL:_sQuery +=   " AND SB1.B1_TIPO    BETWEEN '" + _sTpPrdIni + "' AND '" + _sTpPrdFim + "'"
-		_oSQL:_sQuery +=   " AND SB1.B1_COD     BETWEEN '" + _sProdIni  + "' AND '" + _sProdFim  + "'"
-		_oSQL:_sQuery +=   " AND SB1.B1_CODLIN  BETWEEN '" + _sLComIni  + "' AND '" + _sLComFim  + "'"
-		_oSQL:_sQuery +=   " AND EXISTS (SELECT *"  // Quero conat somente itens que tenham estrutura.
-		_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SG1") + " SG1"
-		_oSQL:_sQuery +=                " WHERE SG1.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=                  " AND SG1.G1_FILIAL  = '" + xfilial ("SG1") + "'"
-		_oSQL:_sQuery +=                  " AND SG1.G1_COD     = SB1.B1_COD)"
-		_oSQL:Log ('[' + procname () + ']')
-		if _oSQL:RetQry (1, .f.) > 10
-			_SomaErro ("A selecao feita buscaria " + cvaltochar (_oSQL:_xRetQry) + " produtos, um processamento muito grande. Mude a selecao de modo a retornar menos produtos.")
-		endif
-	endif
-	if empty (_sErroWS)
-		U_GravaSX1 ('VA_CCR2', '01', U_TamFixo (_sProdIni,  tamsx3 ("B1_COD")[1]))
-		U_GravaSX1 ('VA_CCR2', '02', U_TamFixo (_sProdFim,  tamsx3 ("B1_COD")[1]))
-		U_GravaSX1 ('VA_CCR2', '03', U_TamFixo (_sTpPrdIni, tamsx3 ("B1_TIPO")[1]))
-		U_GravaSX1 ('VA_CCR2', '04', U_TamFixo (_sTpPrdFim, tamsx3 ("B1_TIPO")[1]))
-		U_GravaSX1 ('VA_CCR2', '05', 1)  // 1=apenas pais ativos; 2=todos
-		U_GravaSX1 ('VA_CCR2', '06', U_TamFixo (_sLComIni,  tamsx3 ("B1_CODLIN")[1]))
-		U_GravaSX1 ('VA_CCR2', '07', U_TamFixo (_sLComFim,  tamsx3 ("B1_CODLIN")[1]))
-		_sMsgRetWS += u_va_ccr2 (.t., .t.)
-	endif
-return
+		if empty (_sErroWS) ; _sProdFim  = _ExtraiTag ("_oXML:_WSAlianca:_ProdutoFinal",          .F., .F.) ; endif
+			if empty (_sErroWS) ; _sTpPrdIni = _ExtraiTag ("_oXML:_WSAlianca:_TipoProdutoInicial",    .F., .F.) ; endif
+				if empty (_sErroWS) ; _sTpPrdFim = _ExtraiTag ("_oXML:_WSAlianca:_TipoProdutoFinal",      .F., .F.) ; endif
+					if empty (_sErroWS) ; _sLComIni  = _ExtraiTag ("_oXML:_WSAlianca:_LinhaComercialInicial", .F., .F.) ; endif
+						if empty (_sErroWS) ; _sLComFim  = _ExtraiTag ("_oXML:_WSAlianca:_LinhaComercialFinal",   .F., .F.) ; endif
+
+							// Verifica se vai gerar muitos produtos
+							if empty (_sErroWS)
+								_oSQL := ClsSQL ():New ()
+								_oSQL:_sQuery := ""
+								_oSQL:_sQuery += "SELECT count (*)"
+								_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
+								_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
+								_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+								_oSQL:_sQuery +=   " AND SB1.B1_TIPO    BETWEEN '" + _sTpPrdIni + "' AND '" + _sTpPrdFim + "'"
+								_oSQL:_sQuery +=   " AND SB1.B1_COD     BETWEEN '" + _sProdIni  + "' AND '" + _sProdFim  + "'"
+								_oSQL:_sQuery +=   " AND SB1.B1_CODLIN  BETWEEN '" + _sLComIni  + "' AND '" + _sLComFim  + "'"
+								_oSQL:_sQuery +=   " AND EXISTS (SELECT *"  // Quero conat somente itens que tenham estrutura.
+								_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SG1") + " SG1"
+								_oSQL:_sQuery +=                " WHERE SG1.D_E_L_E_T_ = ''"
+								_oSQL:_sQuery +=                  " AND SG1.G1_FILIAL  = '" + xfilial ("SG1") + "'"
+								_oSQL:_sQuery +=                  " AND SG1.G1_COD     = SB1.B1_COD)"
+								_oSQL:Log ('[' + procname () + ']')
+								if _oSQL:RetQry (1, .f.) > 10
+									_SomaErro ("A selecao feita buscaria " + cvaltochar (_oSQL:_xRetQry) + " produtos, um processamento muito grande. Mude a selecao de modo a retornar menos produtos.")
+								endif
+							endif
+							if empty (_sErroWS)
+								U_GravaSX1 ('VA_CCR2', '01', U_TamFixo (_sProdIni,  tamsx3 ("B1_COD")[1]))
+								U_GravaSX1 ('VA_CCR2', '02', U_TamFixo (_sProdFim,  tamsx3 ("B1_COD")[1]))
+								U_GravaSX1 ('VA_CCR2', '03', U_TamFixo (_sTpPrdIni, tamsx3 ("B1_TIPO")[1]))
+								U_GravaSX1 ('VA_CCR2', '04', U_TamFixo (_sTpPrdFim, tamsx3 ("B1_TIPO")[1]))
+								U_GravaSX1 ('VA_CCR2', '05', 1)  // 1=apenas pais ativos; 2=todos
+								U_GravaSX1 ('VA_CCR2', '06', U_TamFixo (_sLComIni,  tamsx3 ("B1_CODLIN")[1]))
+								U_GravaSX1 ('VA_CCR2', '07', U_TamFixo (_sLComFim,  tamsx3 ("B1_CODLIN")[1]))
+								_sMsgRetWS += u_va_ccr2 (.t., .t.)
+							endif
+							return
 
 
 // --------------------------------------------------------------------------
@@ -2942,7 +2942,7 @@ static function _IncManut()
 	local _sTpServ   	:= ""
 	local _sNomeServ 	:= ""
 	local _sCodSolic 	:= ""
-	local _sNomeSolic  	:= "" 
+	local _sNomeSolic  	:= ""
 	local _sEmailSolic 	:= ""
 	local _sBemParado  	:= ""
 	local _sOrigem      := ""
@@ -2953,43 +2953,43 @@ static function _IncManut()
 
 	If empty(_sErroWS)
 
-		_sFilial   	:= _ExtraiTag ("_oXML:_WSAlianca:_Filial"			, .T., .F.) 
-		_sCodBem   	:= _ExtraiTag ("_oXML:_WSAlianca:_CodBem"			, .T., .F.) 
-		_sNomeBem  	:= _ExtraiTag ("_oXML:_WSAlianca:_NomeBem"			, .T., .F.) 
-		_sCC       	:= _ExtraiTag ("_oXML:_WSAlianca:_CentroCusto"		, .T., .F.) 
-		_sData     	:= _ExtraiTag ("_oXML:_WSAlianca:_DataAbertura"		, .T., .F.) 
-		_sHora     	:= _ExtraiTag ("_oXML:_WSAlianca:_HoraAbertura"		, .T., .F.) 
-		_sUsuario  	:= _ExtraiTag ("_oXML:_WSAlianca:_Usuario"			, .T., .F.) 
-		_sRamal    	:= _ExtraiTag ("_oXML:_WSAlianca:_Ramal"			, .T., .F.) 
-		_sSituacao 	:= _ExtraiTag ("_oXML:_WSAlianca:_Situacao"			, .T., .F.) 
-		_sServico  	:= _ExtraiTag ("_oXML:_WSAlianca:_ServicoAExecutar"	, .T., .F.) 
-		_sTpServ   	:= _ExtraiTag ("_oXML:_WSAlianca:_TipoServico"		, .T., .F.) 
-		_sNomeServ 	:= _ExtraiTag ("_oXML:_WSAlianca:_NomeServico"		, .T., .F.) 
-		_sCodSolic 	:= _ExtraiTag ("_oXML:_WSAlianca:_CodSolicitante"	, .T., .F.) 
-		_sNomeSolic := _ExtraiTag ("_oXML:_WSAlianca:_NomeSolicitante"	, .T., .F.)  
-		_sEmailSolic:= _ExtraiTag ("_oXML:_WSAlianca:_EmailSolicitante"	, .T., .F.) 
-		_sBemParado := _ExtraiTag ("_oXML:_WSAlianca:_BemParado"		, .T., .F.) 
-		_sOrigem    := _ExtraiTag ("_oXML:_WSAlianca:_Origem"			, .T., .F.) 
+		_sFilial   	:= _ExtraiTag ("_oXML:_WSAlianca:_Filial"			, .T., .F.)
+		_sCodBem   	:= _ExtraiTag ("_oXML:_WSAlianca:_CodBem"			, .T., .F.)
+		_sNomeBem  	:= _ExtraiTag ("_oXML:_WSAlianca:_NomeBem"			, .T., .F.)
+		_sCC       	:= _ExtraiTag ("_oXML:_WSAlianca:_CentroCusto"		, .T., .F.)
+		_sData     	:= _ExtraiTag ("_oXML:_WSAlianca:_DataAbertura"		, .T., .F.)
+		_sHora     	:= _ExtraiTag ("_oXML:_WSAlianca:_HoraAbertura"		, .T., .F.)
+		_sUsuario  	:= _ExtraiTag ("_oXML:_WSAlianca:_Usuario"			, .T., .F.)
+		_sRamal    	:= _ExtraiTag ("_oXML:_WSAlianca:_Ramal"			, .T., .F.)
+		_sSituacao 	:= _ExtraiTag ("_oXML:_WSAlianca:_Situacao"			, .T., .F.)
+		_sServico  	:= _ExtraiTag ("_oXML:_WSAlianca:_ServicoAExecutar"	, .T., .F.)
+		_sTpServ   	:= _ExtraiTag ("_oXML:_WSAlianca:_TipoServico"		, .T., .F.)
+		_sNomeServ 	:= _ExtraiTag ("_oXML:_WSAlianca:_NomeServico"		, .T., .F.)
+		_sCodSolic 	:= _ExtraiTag ("_oXML:_WSAlianca:_CodSolicitante"	, .T., .F.)
+		_sNomeSolic := _ExtraiTag ("_oXML:_WSAlianca:_NomeSolicitante"	, .T., .F.)
+		_sEmailSolic:= _ExtraiTag ("_oXML:_WSAlianca:_EmailSolicitante"	, .T., .F.)
+		_sBemParado := _ExtraiTag ("_oXML:_WSAlianca:_BemParado"		, .T., .F.)
+		_sOrigem    := _ExtraiTag ("_oXML:_WSAlianca:_Origem"			, .T., .F.)
 
 	endif
 
 	If empty(_sErroWS)
-		 
-		_aSolic := {{"TQB_FILIAL", _sFilial		,Nil},;  
-					{"TQB_CODBEM", _sCodBem		,Nil},; 
-					{"TQB_CCUSTO", _sCC			,Nil},; 
-					{"TQB_DTABER", date()		,Nil},; 
-					{"TQB_HOABER", _sHora		,Nil},; 
-					{"TQB_USUARI", _sUsuario	,Nil},; 
-					{"TQB_RAMAL ", _sRamal		,Nil},; 
-					{"TQB_SOLUCA", _sSituacao	,Nil},; 
-					{"TQB_DESCSS", _sServico	,Nil},; 
-					{"TQB_CDSERV", _sTpServ		,Nil},; 
-					{"TQB_NMSERV", _sNomeServ	,Nil},; 
-					{"TQB_CDSOLI", _sCodSolic	,Nil},; 
-					{"TQB_EMSOLI", _sEmailSolic ,Nil},; 
-					{"TQB_ORIGEM", _sOrigem		,Nil},; 
-					{"TQB_PARADA", _sBemParado	,Nil} } 
+
+		_aSolic := {{"TQB_FILIAL", _sFilial		,Nil},;
+			{"TQB_CODBEM", _sCodBem		,Nil},;
+			{"TQB_CCUSTO", _sCC			,Nil},;
+			{"TQB_DTABER", date()		,Nil},;
+			{"TQB_HOABER", _sHora		,Nil},;
+			{"TQB_USUARI", _sUsuario	,Nil},;
+			{"TQB_RAMAL ", _sRamal		,Nil},;
+			{"TQB_SOLUCA", _sSituacao	,Nil},;
+			{"TQB_DESCSS", _sServico	,Nil},;
+			{"TQB_CDSERV", _sTpServ		,Nil},;
+			{"TQB_NMSERV", _sNomeServ	,Nil},;
+			{"TQB_CDSOLI", _sCodSolic	,Nil},;
+			{"TQB_EMSOLI", _sEmailSolic ,Nil},;
+			{"TQB_ORIGEM", _sOrigem		,Nil},;
+			{"TQB_PARADA", _sBemParado	,Nil} }
 
 		Private lMSHelpAuto := .t. // Nao apresenta erro em tela
 		Private lMSErroAuto := .f. // Caso a variavel torne-se .T. apos MsExecAuto, apresenta erro em tela
@@ -2997,7 +2997,7 @@ static function _IncManut()
 		MSExecAuto( {|x,z,y,w| MNTA280(x,z,y,w)}, , , _aSolic )
 
 		If lMsErroAuto
-		 	_sMsgRetWS	+= memoread (NomeAutoLog())
+			_sMsgRetWS	+= memoread (NomeAutoLog())
 		else
 			_sMsgRetWS	+= 'Registro gravado com sucesso!'
 		Endif
@@ -3045,3 +3045,83 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 		endif
 	endif
 return _sRet
+
+// --------------------------------------------------------------------------
+// Grava Titulo referente a unimed - associados
+Static Function _GrvTituloUnimed()
+	local _oCtaCorr := NIL
+	local _sUsuario := ""
+	local _sFilial  := ""
+	local _sFornece := ""
+	local _sLoja    := ""
+	local _sDtEmi   := ""
+	local _sDtVenc  := ""
+	local _sOBS     := ""
+
+	u_logIni ()
+
+	/* 	<WSAlianca>
+			<User>daiana.ribas</User>
+			<IDAplicacao>gg2gj256y5f2c5b89</IDAplicacao>
+			<Empresa>01</Empresa>
+			<Filial>07</Filial>
+			<Fornecedor>002382</Fornecedor>
+			<Loja>01</Loja>
+			<Sequencial>02</Sequencial>
+			<MesReferencia>032023</MesReferencia>
+			<DtEmissao>20230824</DtEmissao>
+			<DtVencimento>20230831</DtVencimento>
+			<Valor>394,43</Valor>
+			<OBs>UNIMED 03/2023 - ADELAR PARISOTTO</OBs>
+			<Acao>GravaTituloPgUnimed</Acao>
+		</WSAlianca> */
+		
+	If empty(_sErroWS)
+		_sUsuario   := _ExtraiTag ("_oXML:_WSAlianca:_User"				, .T., .F.)
+		_sFilial   	:= _ExtraiTag ("_oXML:_WSAlianca:_Filial"			, .T., .F.)
+		_sFornece   := _ExtraiTag ("_oXML:_WSAlianca:_Fornecedor"		, .T., .F.)
+		_sLoja  	:= _ExtraiTag ("_oXML:_WSAlianca:_Loja"				, .T., .F.)
+		_sSeq       := _ExtraiTag ("_oXML:_WSAlianca:_Sequencial"		, .T., .F.)
+		_sDtEmi     := _ExtraiTag ("_oXML:_WSAlianca:_DtEmissao"		, .T., .F.)
+		_sDtVenc    := _ExtraiTag ("_oXML:_WSAlianca:_DtVencimento"		, .T., .F.)
+		_sOBS     	:= _ExtraiTag ("_oXML:_WSAlianca:_OBs"				, .T., .F.)
+		_sMesRef  	:= _ExtraiTag ("_oXML:_WSAlianca:_MesReferencia"	, .T., .F.)
+		_nValor     := Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_Valor", .T., .F.),",","."))
+
+		_sNumero 	:= alltrim(_sMesRef) + alltrim(_sSeq)
+	EndIf
+
+	If empty(_sErroWS)
+
+		_oCtaCorr:= ClsCtaCorr():New ()
+		_oCtaCorr:Assoc    = _sFornece
+		_oCtaCorr:Loja     = _sLoja
+		_oCtaCorr:TM       = '29'
+		_oCtaCorr:DtMovto  = stod(_sDtEmi)
+		_oCtaCorr:Valor    = _nValor
+		_oCtaCorr:SaldoAtu = _nValor
+		_oCtaCorr:Usuario  = _sUsuario
+		_oCtaCorr:Histor   = _sOBS
+		_oCtaCorr:MesRef   = _sMesRef
+		_oCtaCorr:Doc      = _sNumero
+		_oCtaCorr:Serie    = 'UNJ'
+		_oCtaCorr:Origem   = "NAWEB"
+		_oCtaCorr:Parcela  = ''
+
+		if _oCtaCorr:PodeIncl ()
+			if ! _oCtaCorr:Grava (.F., .F.)
+				_sMsgRetWS += 'Titulo Nº ' + _sNumero + ' não gravado!' + _oCtaCorr:UltMsg
+				_sErroWS   += 'Titulo Nº ' + _sNumero + ' não gravado!' + _oCtaCorr:UltMsg
+			else
+				if empty(_sErroWS)
+					_sMsgRetWS += 'Titulo Nº ' + _sNumero + ' gravado com sucesso!' + _oCtaCorr:UltMsg
+				endif
+			endif
+		else
+			_sMsgRetWS += "Atualização da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'" + " não permitido. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg
+			_sErroWS   += "Atualização da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'" + " não permitido. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg
+		endif
+	EndIf
+
+	u_logFim ()
+Return
