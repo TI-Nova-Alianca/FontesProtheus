@@ -3110,7 +3110,7 @@ Static Function _GrvTituloUnimed()
 
 		if _oCtaCorr:PodeIncl ()
 			if ! _oCtaCorr:Grava (.F., .F.)
-				_sMsgRetWS += 'Titulo Nº ' + _sNumero + ' não gravado!' + _oCtaCorr:UltMsg
+				//_sMsgRetWS += 'Titulo Nº ' + _sNumero + ' não gravado!' + _oCtaCorr:UltMsg
 				_sErroWS   += 'Titulo Nº ' + _sNumero + ' não gravado!' + _oCtaCorr:UltMsg
 			else
 				if empty(_sErroWS)
@@ -3118,7 +3118,7 @@ Static Function _GrvTituloUnimed()
 				endif
 			endif
 		else
-			_sMsgRetWS += "Atualização da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'" + " não permitido. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg
+			//_sMsgRetWS += "Atualização da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'" + " não permitido. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg
 			_sErroWS   += "Atualização da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'" + " não permitido. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg
 		endif
 	EndIf
