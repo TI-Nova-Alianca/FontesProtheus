@@ -91,7 +91,9 @@
 // 24/05/2023 - Robert  - Metodo Executa() recebe parametro indicando se retorna nomes das colunas no inicio.
 // 30/05/2023 - Robert  - Criadas verificacoes 96 e 97.
 // 30/06/2023 - Robert  - Melhoria geral verificacao 4 (permite mais de 1 mes; filtro por produto)
-// 08/08/2023 - Robert  - Nao limpava array 
+// 08/08/2023 - Robert  - Nao limpava array AColsF3 antes de gerar a consulta.
+// 14/08/2023 - Robert  - Inativada verificacao 85 (procedure VA_SP_VERIFICA_ETIQ_PRODUCAO nunca ficou funcional).
+//
 
 #include "protheus.ch"
 
@@ -3537,6 +3539,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 
 	case ::Numero == 85
+		::Ativa     = .F.  // A procedure VA_SP_VERIFICA_ETIQ_PRODUCAO nunca ficou boa. Vou elimina-la.
 		::Setores   = 'PCP/PROD/LOG'
 		::Descricao = 'Problemas em etiquetas de producao'
 		::Sugestao  = 'Verificar movimentacao da etiqueta. Possivelmente falte algum processo.'

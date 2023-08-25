@@ -41,7 +41,8 @@
 // 14/04/2023 - Robert  - Em versoes anteriores a 2020, listava titulos futuros na previsao de pagamento.
 // 02/06/2023 - Robert  - Modelo resumido passa a listar tags do <valoresEfetivos> em vez de <resumoVarGrauClas> - GLPI 13532
 // 21/07/2023 - Robert  - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra() - GLPI 13956
-// 03/08/2023 - Robert  - Removido parametro de filtragem por 'nucleo' do associado.
+// 05/08/2023 - Robert  - Removido parametro de filtragem por 'nucleo' do associado.
+//                      - Removidas opcoes 'detalhado' e 'somente NF compra'
 //
 
 #include "protheus.ch"
@@ -119,15 +120,15 @@ User Function ML_FECHASAFRA (_lAutomat)
 	if mv_par01 < '2020'  // Metodo original
 		processa ({|| RptDetail ()})
 	else  // Busca da classe ClsAssoc.
-		if mv_par06 == 1  // Detalhado
-			processa ({|| _Modelo2 (.f.)})
-		elseif mv_par06 == 2  // Resumido
+//		if mv_par06 == 1  // Detalhado
+//			processa ({|| _Modelo2 (.f.)})
+//		elseif mv_par06 == 2  // Resumido
 			processa ({|| _Modelo3 ()})
-		elseif mv_par06 == 3  // Resumido (apenas NF compra)
-			processa ({|| _Modelo2 (.T.)})
-		else
-			u_help ("Modelo sem tratamento.",, .t.)
-		endif
+//		elseif mv_par06 == 3  // Resumido (apenas NF compra)
+//			processa ({|| _Modelo2 (.T.)})
+//		else
+//			u_help ("Modelo sem tratamento.",, .t.)
+//		endif
 	endif
 
 	Set Printer TO
@@ -460,7 +461,7 @@ Static Function RptDetail()
 					endif
 				endif
 				// imprime saldo conta corrente
-				if mv_par05 == 1				 
+				if mv_par04 == 1
 					_oSQL := ClsSQL():New ()
 					_oSQL:_sQuery := ""
 					_oSQL:_sQuery += "SELECT SZI.ZI_DATA, ZI_TM, ZI_DOC, ZI_HISTOR, ZX5_10DC, ZI_SALDO"
@@ -932,7 +933,7 @@ Static Function RptDetail()
 	endif
 	
 	// imprime saldo conta corrente
-	if mv_par05 == 1
+	if mv_par04 == 1
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT SZI.ZI_DATA, ZI_TM, ZI_DOC, ZI_HISTOR, ZX5_10DC, ZI_SALDO"
@@ -1002,614 +1003,613 @@ Static Function RptDetail()
 	endif
 return
 
+// // --------------------------------------------------------------------------
+// // Modelo a partir da safra 2020, onde busca dados da classe ClsAssoc para
+// // manter consistencia web service que atende APP de associados.
+// static function _Modelo2 (_lSohCompr)
+// 	local _aAssoc    := {}
+// 	local _nAssoc    := 0
+// 	local _oAssoc    := NIL
+// 	local _oSQL      := NIL
+// 	local _sXmlFech  := ''
+// 	local _sError    := ''
+// 	local _sWarning  := ''
+// 	local _nNota     := 0
+// 	local _nFatPag   := 0
+// 	local _nRegraPag := 0
+// 	local _nVlEfetiv := 0
+// 	local _nLctoCC   := 0
+// 	local _sLinImp   := ''
+// 	local _sNFFilial := ''
+// 	local _sNFDoc    := ''
+// 	local _sNFEmis   := ''
+// 	local _sNFProd   := ''
+// 	local _sNFDescr  := ''
+// 	local _sNFGrau   := ''
+// 	local _sNFClas   := ''
+// 	local _nNFPeso   := 0
+// 	local _nNFVUnit  := 0
+// 	local _nNFVTot   := 0
+// 	local _sNFObs    := ''
+// 	local _nItFunr   := 0
+// 	private _aTAsEnt   := {}  // Totais (qt/valor) de notas de entrada (associado)
+// 	private _aTAsPro   := {}  // Totais (qt/valor) de notas de producao propria (associado)
+// 	private _aTAsCom   := {}  // Totais (qt/valor) de notas de compra (associado)
+// 	private _aTAsCpl   := {}  // Totais (qt/valor) de notas de complemento (associado)
+// 	private _aTGerEnt  := {}  // Totais (qt/valor) de notas de entrada (geral)
+// 	private _aTGerPro  := {}  // Totais (qt/valor) de notas de producao propria (geral)
+// 	private _aTGerCom  := {}  // Totais (qt/valor) de notas de compra (geral)
+// 	private _aTGerCpl  := {}  // Totais (qt/valor) de notas de complemento (geral)
+// 	private _sMascPeso := "@E 9,999,999,999"
+// 	private _sMascVUni := "@E 9,999.9999"
+// 	private _sMascVTot := "@E 9,999,999,999.99"
+// 	private _oXMLFech  := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
+// 
+// 	// Variaveis padrao para relatorios.
+// 	private nTipo    := IIF(aReturn[4]==1,15,18)
+// 	private li       := 80
+// 	private m_pag    := 1
+// 	private cabec1   := "FILIAL  NF/SERIE   DT EMISSAO  PRODUTO    DESCRICAO                                 GRAU/CLAS        PESO    VLR UNIT        VLR TOTAL  OBSERVACOES"
+// 	private cabec2   := ""
+// 	private _nMaxLin := 68
+// 	li = _nMaxLin + 1
+// 
+// 	U_Log2 ('debug', 'Gerando rel.fechto.safra pela funcao ' + procname ())
+// 
+// 	_aTGerEnt := {0, 0}
+// 	_aTGerPro := {0, 0}
+// 	_aTGerCom := {0, 0}
+// 	_aTGerCpl := {0, 0}
+// 
+// 	// Gera lista de associados a imprimir.
+// 	_oSQL := ClsSQL ():New ()
+// 	_oSQL:_sQuery += "SELECT DISTINCT ASSOCIADO, LOJA_ASSOC, NOME_ASSOC"
+// 	_oSQL:_sQuery += "  FROM VA_VNOTAS_SAFRA"
+// 	_oSQL:_sQuery += " WHERE SAFRA      = '" + mv_par01 + "'"
+// 	if ! empty (mv_par02)
+// 		_oSQL:_sQuery += "   AND ASSOCIADO  = '" + mv_par02 + "'"
+// 		_oSQL:_sQuery += "   AND LOJA_ASSOC = '" + mv_par03 + "'"
+// 	endif
+// 	_oSQL:_sQuery += " ORDER BY NOME_ASSOC"
+// 	_oSQL:Log ()
+// 	_aAssoc = _oSQL:Qry2Array ()
+// 
+// 	procRegua (len (_aAssoc))
+// 
+// 	for _nAssoc = 1 to len (_aAssoc)
+// 		incproc (_aAssoc [_nAssoc, 3])
+// 		U_LOG (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+// 
+// 		// Instancia objeto 'associado' para gerar seu fechamento de safra.
+// 		_oAssoc := ClsAssoc ():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+// 		if valtype (_oAssoc) != 'O'
+// 			u_help ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados: ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2],, .t.)
+// 			loop
+// 		endif
+// 
+// 		// Filtra por nucleo do associado
+// 	//	if ! empty (mv_par04) .and. _oAssoc:Nucleo != mv_par04
+// 	//		u_log ('outro nucleo')
+// 	//		loop
+// 	//	endif
+// 
+// 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
+// 		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
+// 		if _lSohCompr
+// 		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .f.,      .f.,      .f.,        .f.,      .f.,      .F.,      .f.)
+// 			_oAssoc:FSSafra      = mv_par01
+// 			_oAssoc:FSNFEntrada  = .f.
+// 			_oAssoc:FSNFCompra   = .t.
+// 			_oAssoc:FSNFComplem  = .f.
+// 			_oAssoc:FSNFPrdProp  = .f.
+// 			_oAssoc:FSPrevPagto  = .f.
+// 			_oAssoc:FSRegraPagto = .f.
+// 			_oAssoc:FSResValEfet = .f.
+// 			_oAssoc:FSResVaried  = .f.
+// 			_oAssoc:FSFrete      = .f.
+// 			_oAssoc:FSLctosCC    = .f.
+// 			_oAssoc:FSResVarGC   = .f.
+// 			_oAssoc:FSDFunrur    = .f.
+// 			_sXmlFech = _oAssoc:FechSafra ()
+// 		else
+// 		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.,      .t.)
+// 			_oAssoc:FSSafra      = mv_par01
+// 			_oAssoc:FSNFEntrada  = .t.
+// 			_oAssoc:FSNFCompra   = .t.
+// 			_oAssoc:FSNFComplem  = .t.
+// 			_oAssoc:FSNFPrdProp  = .t.
+// 			_oAssoc:FSPrevPagto  = .t.
+// 			_oAssoc:FSRegraPagto = .t.
+// 			_oAssoc:FSResValEfet = .t.
+// 			_oAssoc:FSResVaried  = .t.
+// 			_oAssoc:FSFrete      = .t.
+// 			_oAssoc:FSLctosCC    = .t.
+// 			_oAssoc:FSResVarGC   = .f.
+// 			_oAssoc:FSDFunrur    = .t.
+// 			_sXmlFech = _oAssoc:FechSafra ()
+// 		endif
+// 		//	u_log2 ('debug', _sXmlFech)
+// 		if empty (_sXmlFech)
+// 			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
+// 			loop
+// 		endif
+// 
+// 		// Converte de texto para XML
+// 		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+// 		if ! empty (_sError) .or. ! empty (_sWarning)
+// 			u_help ("Erro ao decodificar retorno: " + _sError + _sWarning,, .t.)
+// 			loop
+// 		endif
+// 
+// 		IF m_pag >1
+// 			_roda()
+// 		endif
+// 
+// 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 		@ li, 00 PSAY "Associado: " + _oAssoc:Codigo + '-' + _oAssoc:Loja + ' ' + _oAssoc:Nome
+// 		li += 2
+// 
+// 		_aTAsEnt := {0, 0}
+// 		_aTAsPro := {0, 0}
+// 		_aTAsCom := {0, 0}
+// 		_aTAsCpl := {0, 0}
+// 
+// 		// Verifica se tem este tipo de nota no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem')
+// 		//if type ('_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem') == 'A'  // Array com mais de uma nota
+// 		If _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+// 			If li > _nMaxLin - 4
+// 			IF m_pag >1
+// 				_roda()
+// 			endif
+// 
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			@li, 09 PSAY "NF's de ENTREGA de Uva"
+// 			li ++
+// 			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem)
+// 				_sNFFilial = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_filial:TEXT
+// 				_sNFDoc    = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_doc:TEXT
+// 				_sNFEmis   = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_emissao:TEXT
+// 				_sNFProd   = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_varied:TEXT
+// 				_sNFDescr  = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_desc:TEXT
+// 				_sNFGrau   = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_grau:TEXT
+// 				_sNFClas   = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_clas:TEXT
+// 				_nNFPeso   = val (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_peso:TEXT)
+// 				_nNFVUnit  = val (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_valunit:TEXT)
+// 				_nNFVTot   = val (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_valtot:TEXT)
+// 				_sNFObs    = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_obs:TEXT
+// 				_ImprNota ('E', _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
+// 				li ++
+// 			next
+// 			li ++
+// 		endif
+// 		
+// 
+// 		// Verifica se tem este tipo de nota no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem')
+// 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+// 			If li > _nMaxLin - 4
+// 			IF m_pag >1
+// 				_roda()
+// 			endif
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			@li, 09 PSAY "NF's de PRODUCAO PROPRIA de Uva"
+// 			li ++
+// 			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem)
+// 				_sNFFilial = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_filial:TEXT
+// 				_sNFDoc    = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_doc:TEXT
+// 				_sNFEmis   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_emissao:TEXT
+// 				_sNFProd   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_varied:TEXT
+// 				_sNFDescr  = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_desc:TEXT
+// 				_sNFGrau   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_grau:TEXT
+// 				_sNFClas   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_clas:TEXT
+// 				_nNFPeso   = val (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_peso:TEXT)
+// 				_nNFVUnit  = val (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_valunit:TEXT)
+// 				_nNFVTot   = val (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_valtot:TEXT)
+// 				_sNFObs    = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_obs:TEXT
+// 				_ImprNota ('P', _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
+// 				li ++
+// 			next
+// 			li ++
+// 		endif
+// 
+// 
+// 		// Verifica se tem este tipo de nota no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem')
+// 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+// 			If li > _nMaxLin - 4
+// 			IF m_pag >1
+// 				_roda()
+// 			endif
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			@li, 09 PSAY "NF's de COMPRA de Uva"
+// 			li ++
+// 			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem)
+// 				_sNFFilial = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_filial:TEXT
+// 				_sNFDoc    = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_doc:TEXT
+// 				_sNFEmis   = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_emissao:TEXT
+// 				_sNFProd   = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_varied:TEXT
+// 				_sNFDescr  = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_desc:TEXT
+// 				_sNFGrau   = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_grau:TEXT
+// 				_sNFClas   = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_clas:TEXT
+// 				_nNFPeso   = val (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_peso:TEXT)
+// 				_nNFVUnit  = val (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_valunit:TEXT)
+// 				_nNFVTot   = val (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_valtot:TEXT)
+// 				_sNFObs    = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_obs:TEXT
+// 				_ImprNota ('C', _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
+// 				li ++
+// 			next
+// 			li ++
+// 		endif
+// 
+// 
+// 		// Verifica se tem este tipo de nota no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem')
+// 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+// 			If li > _nMaxLin - 4
+// 			IF m_pag >1
+// 				_roda()
+// 			endif
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			@li, 09 PSAY "NF's de COMPLEMENTO Vlr"
+// 			li ++
+// 			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem)
+// 				_sNFFilial = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_filial:TEXT
+// 				_sNFDoc    = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_doc:TEXT
+// 				_sNFEmis   = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_emissao:TEXT
+// 				_sNFProd   = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_varied:TEXT
+// 				_sNFDescr  = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_desc:TEXT
+// 				_sNFGrau   = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_grau:TEXT
+// 				_sNFClas   = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_clas:TEXT
+// 				_nNFPeso   = val (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_peso:TEXT)
+// 				_nNFVUnit  = val (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_valunit:TEXT)
+// 				_nNFVTot   = val (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_valtot:TEXT)
+// 				_sNFObs    = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_obs:TEXT
+// 				_ImprNota ('V', _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
+// 				li ++
+// 			next
+// 			li ++
+// 		endif
+// 
+// 
+// 		// Imprime totais do associado por tipo de nota.
+// 		if ! _lSohCompr
+// 			li ++
+// 			_ImprTot ('Totais do associado', _aTAsEnt, _aTAsPro, _aTAsCom, _aTAsCpl)
+// 			li ++
+// 		endif
+// 
+// 		// Acumula totais gerais
+// 		_aTGerEnt [1] += _aTAsEnt [1]
+// 		_aTGerEnt [2] += _aTAsEnt [2]
+// 		_aTGerPro [1] += _aTAsPro [1]
+// 		_aTGerPro [2] += _aTAsPro [2]
+// 		_aTGerCom [1] += _aTAsCom [1]
+// 		_aTGerCom [2] += _aTAsCom [2]
+// 		_aTGerCpl [1] += _aTAsCpl [1]
+// 		_aTGerCpl [2] += _aTAsCpl [2]
+// 		
+// 		
+// 		// Verifica se tem este tipo de tag no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem') 
+// 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+// 			If li > _nMaxLin - 4
+// 			IF m_pag >1
+// 				_roda()
+// 			endif
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			@li, 0 PSAY 'Previsao de pagamento:                FATURA             VENCIMENTO              VALOR              SALDO  HISTORICO'
+// 			li ++
+// 			for _nFatPag = 1 to len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem)
+// 				If li > _nMaxLin
+// 				IF m_pag >1
+// 					_roda()
+// 				endif
+// 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 				Endif
+// 				_sLinImp := ''
+// 				if _oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_doc:TEXT != 'TOTAIS'
+// 					_sLinImp += space (35)
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_doc:TEXT, 15) + '       '
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_vencto:TEXT, 10) + '   '
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_hist:TEXT, 110) + '  '
+// 				else
+// 					@ li, 0 psay space (74) + '------------       ------------'
+// 					li ++
+// 					_sLinImp += space (70)
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
+// 				endif
+// 				@ li, 0 psay _sLinImp
+// 				li ++
+// 			next
+// 			li ++
+// 		endif
+// 
+// 
+// 		// Verifica se tem este tipo de tag no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem')
+// 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+// 			If li > _nMaxLin - 4
+// 				IF m_pag >1
+// 					_roda()
+// 				endif
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			@li, 0 PSAY 'Descontos FUNRURAL:       FILIAL   NF                                            VALOR'
+// 			li ++
+// 			for _nItFunr = 1 to len (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem)
+// 				If li > _nMaxLin
+// 					IF m_pag >1
+// 						_roda()
+// 					endif
+// 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 				Endif
+// 				_sLinImp := ''
+// 				if _oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_doc:TEXT != 'TOTAIS'
+// 					_sLinImp += space (26)
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_filial:TEXT, 2) + '       '
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_doc:TEXT, 10) + '                         '
+// 					//_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlTitulo:TEXT), _sMascVTot) + '   '
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlFunru:TEXT), _sMascVTot)
+// 				else
+// 					@ li, 0 psay space (74) + '------------'
+// 					li ++
+// 					_sLinImp += space (70)
+// 					//_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlTitulo:TEXT), _sMascVTot) + '   '
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlFunru:TEXT), _sMascVTot) + '  '
+// 				endif
+// 				@ li, 0 psay _sLinImp
+// 				li ++
+// 			next
+// 			li ++
+// 		endif
+// 
+// 
+// 		// Verifica se tem este tipo de tag no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem')
+// 		if _ValType == 'A'  // Enquanto tivermos mais de um grupo de pagamentos, vai funcionar...
+// 			If li > _nMaxLin - 4
+// 			IF m_pag >1
+// 				_roda()
+// 			endif
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			@li, 0 PSAY 'Regras para pagamento:'
+// 			li ++
+// 			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
+// 				If li > _nMaxLin
+// 				IF m_pag >1
+// 					_roda()
+// 				endif
+// 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 				Endif
+// 				_sLinImp := space (35)
+// 				_sLinImp += _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_descComParc:TEXT
+// 				@ li, 0 psay _sLinImp
+// 				li ++
+// 			next
+// 			li ++
+// 		endif
+// 
+// 
+// 		// Verifica se tem este tipo de tag no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem')
+// 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+// 			If li > _nMaxLin - 4
+// 			IF m_pag >1
+// 				_roda()
+// 			endif
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			@li, 0 PSAY 'Valores efetivos:                                GRAU/CLAS              PESO    VLR UNIT         VLR TOTAL'
+// 			li ++
+// 			for _nVlEfetiv = 1 to len (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem)
+// 				If li > _nMaxLin
+// 				IF m_pag >1
+// 					_roda()
+// 				endif
+// 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 				Endif
+// 				_sLinImp := space (7)
+// 				_sLinImp += U_TamFixo (ALLTRIM(_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_varied:TEXT) + ' - ' + alltrim (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_desc:TEXT), 40, ' ') + '  '
+// 				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_grau:TEXT, 4) + '  '
+// 				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_clasLatada:TEXT, 2) + '  '
+// 				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_clasEspaldeira:TEXT, 2) + '  '
+// 				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_peso:TEXT), _sMascPeso) + '  '
+// 				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valunit:TEXT), _sMascVUni) + '  '
+// 				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valtot:TEXT), _sMascVTot) + '  '
+// 				@ li, 0 psay _sLinImp
+// 				li ++
+// 			next
+// 			li ++
+// 		endif
+// 
+// 
+// 		// Verifica se tem este tipo de tag no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem')
+// 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 titulo + 1 linha de totais)
+// 			If li > _nMaxLin - 4
+// 			IF m_pag >1
+// 				_roda()
+// 			endif
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			li ++
+// 			@li, 0 PSAY 'Auxilio combustivel:                  TITULO             VENCIMENTO              VALOR              SALDO  HISTORICO'
+// 			li ++
+// 			for _nFatPag = 1 to len (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem)
+// 				If li > _nMaxLin
+// 				IF m_pag >1
+// 					_roda()
+// 				endif
+// 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 				Endif
+// 				_sLinImp := ''
+// 				if _oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_doc:TEXT != 'TOTAIS'
+// 					_sLinImp += space (35)
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_doc:TEXT, 15) + '       '
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_vencto:TEXT, 10) + '   '
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_hist:TEXT, 110) + '  '
+// 				else
+// 					@ li, 0 psay space (74) + '------------       ------------'
+// 					li ++
+// 					_sLinImp += space (70)
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
+// 				endif
+// 				@ li, 0 psay _sLinImp
+// 				li ++
+// 			next
+// 			li ++
+// 		endif
+// 
+// 
+// 		// Verifica se tem este tipo de tag no XML
+// 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem')
+// 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+// 			If li > _nMaxLin - 4
+// 			IF m_pag >1
+// 				_roda()
+// 			endif
+// 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 			Endif
+// 			// @li, 0 PSAY 'Lctos conta corrente:'
+// 			@li, 0 PSAY 'Lctos em aberto na conta corrente:'
+// 			li ++
+// 			for _nLctoCC = 1 to len (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem)
+// 				If li > _nMaxLin
+// 				IF m_pag >1
+// 					_roda()
+// 				endif
+// 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 				Endif
+// 				if _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT != 'TOTAIS'
+// 					_sLinImp := space (9)
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dtMovto:TEXT, 10) + '  '
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT, 15) + '  '
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_hist:TEXT, 50) + '  '
+// 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT), '@E 999,999,999.99') + ' '
+// 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dc:TEXT, 1)
+// 				else
+// 					@ li, 0 psay space (90) + '--------------'
+// 					li ++
+// 					_sLinImp := space (90) + transform (val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT), '@E 999,999,999.99')
+// 				endif
+// 				@ li, 0 psay _sLinImp
+// 				li ++
+// 			next
+// 			li ++
+// 
+// 
+// 		endif
+// 	next
+// 
+// 
+// 	IF m_pag >1
+// 		_roda()
+// 	endif
+// 	cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 	_ImprTot ('TOTAIS GERAIS', _aTGerEnt, _aTGerPro, _aTGerCom, _aTGerCpl)
+// 	li ++
+// return
 
-// --------------------------------------------------------------------------
-// Modelo a partir da safra 2020, onde busca dados da classe ClsAssoc para
-// manter consistencia web service que atende APP de associados.
-static function _Modelo2 (_lSohCompr)
-	local _aAssoc    := {}
-	local _nAssoc    := 0
-	local _oAssoc    := NIL
-	local _oSQL      := NIL
-	local _sXmlFech  := ''
-	local _sError    := ''
-	local _sWarning  := ''
-	local _nNota     := 0
-	local _nFatPag   := 0
-	local _nRegraPag := 0
-	local _nVlEfetiv := 0
-	local _nLctoCC   := 0
-	local _sLinImp   := ''
-	local _sNFFilial := ''
-	local _sNFDoc    := ''
-	local _sNFEmis   := ''
-	local _sNFProd   := ''
-	local _sNFDescr  := ''
-	local _sNFGrau   := ''
-	local _sNFClas   := ''
-	local _nNFPeso   := 0
-	local _nNFVUnit  := 0
-	local _nNFVTot   := 0
-	local _sNFObs    := ''
-	local _nItFunr   := 0
-	private _aTAsEnt   := {}  // Totais (qt/valor) de notas de entrada (associado)
-	private _aTAsPro   := {}  // Totais (qt/valor) de notas de producao propria (associado)
-	private _aTAsCom   := {}  // Totais (qt/valor) de notas de compra (associado)
-	private _aTAsCpl   := {}  // Totais (qt/valor) de notas de complemento (associado)
-	private _aTGerEnt  := {}  // Totais (qt/valor) de notas de entrada (geral)
-	private _aTGerPro  := {}  // Totais (qt/valor) de notas de producao propria (geral)
-	private _aTGerCom  := {}  // Totais (qt/valor) de notas de compra (geral)
-	private _aTGerCpl  := {}  // Totais (qt/valor) de notas de complemento (geral)
-	private _sMascPeso := "@E 9,999,999,999"
-	private _sMascVUni := "@E 9,999.9999"
-	private _sMascVTot := "@E 9,999,999,999.99"
-	private _oXMLFech  := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
+//IF m_pag >1
+//			_roda()
+//		endif
 
-	// Variaveis padrao para relatorios.
-	private nTipo    := IIF(aReturn[4]==1,15,18)
-	private li       := 80
-	private m_pag    := 1
-	private cabec1   := "FILIAL  NF/SERIE   DT EMISSAO  PRODUTO    DESCRICAO                                 GRAU/CLAS        PESO    VLR UNIT        VLR TOTAL  OBSERVACOES"
-	private cabec2   := ""
-	private _nMaxLin := 68
-	li = _nMaxLin + 1
+// // --------------------------------------------------------------------------
+// // Imprime valores de contranotas formatados.
+// static function _ImprNota (_sTipoNota, _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
+// 	local _sLinImp := ''
+// 
+// 	If li > _nMaxLin
+// 	IF m_pag >1
+// 		_roda()
+// 	endif
+// 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 	Endif
+// 	if _sNFDoc != 'TOTAIS'
+// 		_sLinImp += '  ' + U_TamFixo (_sNFFilial, 2) + '    '
+// 		_sLinImp += U_TamFixo (_sNFDoc, 9) + '  '
+// 		_sLinImp += U_TamFixo (_sNFEmis, 10) + '  '
+// 		_sLinImp += U_TamFixo (_sNFProd, 10) + ' '
+// 		_sLinImp += U_TamFixo (_sNFDescr, 40) + '  '
+// 		_sLinImp += U_TamFixo (_sNFGrau, 4) + ' '
+// 		_sLinImp += U_TamFixo (_sNFClas, 2) + ' '
+// 		_sLinImp += transform (_nNFPeso, _sMascPeso) + '  '
+// 		_sLinImp += transform (_nNFVUnit, _sMascVUni) + ' '
+// 		_sLinImp += transform (_nNFVTot, _sMascVTot) + '  '
+// 		_sLinImp += U_TamFixo (_sNFObs, 90)
+// 	else
+// 		@ li, 0 psay space (93) + '------------              ---------------'
+// 		li ++
+// 		_sLinImp += space (92)
+// 		_sLinImp += transform (_nNFPeso, _sMascPeso) + '  '
+// 		_sLinImp += space (11)
+// 		_sLinImp += transform (_nNFVTot, _sMascVTot) + '  '
+// 		if _sTipoNota == 'E'
+// 			_aTAsEnt [1] += _nNFPeso
+// 			_aTAsEnt [2] += _nNFVTot
+// 		elseif _sTipoNota == 'P'
+// 			_aTAsPro [1] += _nNFPeso
+// 			_aTAsPro [2] += _nNFVTot
+// 		elseif _sTipoNota == 'C'
+// 			_aTAsCom [1] += _nNFPeso
+// 			_aTAsCom [2] += _nNFVTot
+// 		elseif _sTipoNota == 'V'
+// 			_aTAsCpl [1] += _nNFPeso
+// 			_aTAsCpl [2] += _nNFVTot
+// 		endif
+// 	endif
+// 	@ li, 0 psay _sLinImp
+// return
+// 
+// 
+// 	IF m_pag >1
+// 		_roda()
+// 	endif
+// return
 
-	U_Log2 ('debug', 'Gerando rel.fechto.safra pela funcao ' + procname ())
-
-	_aTGerEnt := {0, 0}
-	_aTGerPro := {0, 0}
-	_aTGerCom := {0, 0}
-	_aTGerCpl := {0, 0}
-
-	// Gera lista de associados a imprimir.
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery += "SELECT DISTINCT ASSOCIADO, LOJA_ASSOC, NOME_ASSOC"
-	_oSQL:_sQuery += "  FROM VA_VNOTAS_SAFRA"
-	_oSQL:_sQuery += " WHERE SAFRA      = '" + mv_par01 + "'"
-	if ! empty (mv_par02)
-		_oSQL:_sQuery += "   AND ASSOCIADO  = '" + mv_par02 + "'"
-		_oSQL:_sQuery += "   AND LOJA_ASSOC = '" + mv_par03 + "'"
-	endif
-	_oSQL:_sQuery += " ORDER BY NOME_ASSOC"
-	_oSQL:Log ()
-	_aAssoc = _oSQL:Qry2Array ()
-
-	procRegua (len (_aAssoc))
-
-	for _nAssoc = 1 to len (_aAssoc)
-		incproc (_aAssoc [_nAssoc, 3])
-		U_LOG (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
-
-		// Instancia objeto 'associado' para gerar seu fechamento de safra.
-		_oAssoc := ClsAssoc ():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
-		if valtype (_oAssoc) != 'O'
-			u_help ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados: ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2],, .t.)
-			loop
-		endif
-
-		// Filtra por nucleo do associado
-	//	if ! empty (mv_par04) .and. _oAssoc:Nucleo != mv_par04
-	//		u_log ('outro nucleo')
-	//		loop
-	//	endif
-
-		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
-		if _lSohCompr
-		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .f.,      .f.,      .f.,        .f.,      .f.,      .F.,      .f.)
-			_oAssoc:FSSafra      = mv_par01
-			_oAssoc:FSNFEntrada  = .f.
-			_oAssoc:FSNFCompra   = .t.
-			_oAssoc:FSNFComplem  = .f.
-			_oAssoc:FSNFPrdProp  = .f.
-			_oAssoc:FSPrevPagto  = .f.
-			_oAssoc:FSRegraPagto = .f.
-			_oAssoc:FSResValEfet = .f.
-			_oAssoc:FSResVaried  = .f.
-			_oAssoc:FSFrete      = .f.
-			_oAssoc:FSLctosCC    = .f.
-			_oAssoc:FSResVarGC   = .f.
-			_oAssoc:FSDFunrur    = .f.
-			_sXmlFech = _oAssoc:FechSafra ()
-		else
-		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.,      .t.)
-			_oAssoc:FSSafra      = mv_par01
-			_oAssoc:FSNFEntrada  = .t.
-			_oAssoc:FSNFCompra   = .t.
-			_oAssoc:FSNFComplem  = .t.
-			_oAssoc:FSNFPrdProp  = .t.
-			_oAssoc:FSPrevPagto  = .t.
-			_oAssoc:FSRegraPagto = .t.
-			_oAssoc:FSResValEfet = .t.
-			_oAssoc:FSResVaried  = .t.
-			_oAssoc:FSFrete      = .t.
-			_oAssoc:FSLctosCC    = .t.
-			_oAssoc:FSResVarGC   = .f.
-			_oAssoc:FSDFunrur    = .t.
-			_sXmlFech = _oAssoc:FechSafra ()
-		endif
-		//	u_log2 ('debug', _sXmlFech)
-		if empty (_sXmlFech)
-			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
-			loop
-		endif
-
-		// Converte de texto para XML
-		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
-		if ! empty (_sError) .or. ! empty (_sWarning)
-			u_help ("Erro ao decodificar retorno: " + _sError + _sWarning,, .t.)
-			loop
-		endif
-
-		IF m_pag >1
-			_roda()
-		endif
-
-		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-		@ li, 00 PSAY "Associado: " + _oAssoc:Codigo + '-' + _oAssoc:Loja + ' ' + _oAssoc:Nome
-		li += 2
-
-		_aTAsEnt := {0, 0}
-		_aTAsPro := {0, 0}
-		_aTAsCom := {0, 0}
-		_aTAsCpl := {0, 0}
-
-		// Verifica se tem este tipo de nota no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem')
-		//if type ('_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem') == 'A'  // Array com mais de uma nota
-		If _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
-			If li > _nMaxLin - 4
-			IF m_pag >1
-				_roda()
-			endif
-
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			@li, 09 PSAY "NF's de ENTREGA de Uva"
-			li ++
-			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem)
-				_sNFFilial = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_filial:TEXT
-				_sNFDoc    = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_doc:TEXT
-				_sNFEmis   = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_emissao:TEXT
-				_sNFProd   = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_varied:TEXT
-				_sNFDescr  = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_desc:TEXT
-				_sNFGrau   = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_grau:TEXT
-				_sNFClas   = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_clas:TEXT
-				_nNFPeso   = val (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_peso:TEXT)
-				_nNFVUnit  = val (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_valunit:TEXT)
-				_nNFVTot   = val (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_valtot:TEXT)
-				_sNFObs    = _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_obs:TEXT
-				_ImprNota ('E', _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
-				li ++
-			next
-			li ++
-		endif
-		
-
-		// Verifica se tem este tipo de nota no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem')
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
-			If li > _nMaxLin - 4
-			IF m_pag >1
-				_roda()
-			endif
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			@li, 09 PSAY "NF's de PRODUCAO PROPRIA de Uva"
-			li ++
-			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem)
-				_sNFFilial = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_filial:TEXT
-				_sNFDoc    = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_doc:TEXT
-				_sNFEmis   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_emissao:TEXT
-				_sNFProd   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_varied:TEXT
-				_sNFDescr  = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_desc:TEXT
-				_sNFGrau   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_grau:TEXT
-				_sNFClas   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_clas:TEXT
-				_nNFPeso   = val (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_peso:TEXT)
-				_nNFVUnit  = val (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_valunit:TEXT)
-				_nNFVTot   = val (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_valtot:TEXT)
-				_sNFObs    = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_obs:TEXT
-				_ImprNota ('P', _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
-				li ++
-			next
-			li ++
-		endif
-
-
-		// Verifica se tem este tipo de nota no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem')
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
-			If li > _nMaxLin - 4
-			IF m_pag >1
-				_roda()
-			endif
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			@li, 09 PSAY "NF's de COMPRA de Uva"
-			li ++
-			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem)
-				_sNFFilial = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_filial:TEXT
-				_sNFDoc    = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_doc:TEXT
-				_sNFEmis   = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_emissao:TEXT
-				_sNFProd   = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_varied:TEXT
-				_sNFDescr  = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_desc:TEXT
-				_sNFGrau   = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_grau:TEXT
-				_sNFClas   = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_clas:TEXT
-				_nNFPeso   = val (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_peso:TEXT)
-				_nNFVUnit  = val (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_valunit:TEXT)
-				_nNFVTot   = val (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_valtot:TEXT)
-				_sNFObs    = _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_obs:TEXT
-				_ImprNota ('C', _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
-				li ++
-			next
-			li ++
-		endif
-
-
-		// Verifica se tem este tipo de nota no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem')
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
-			If li > _nMaxLin - 4
-			IF m_pag >1
-				_roda()
-			endif
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			@li, 09 PSAY "NF's de COMPLEMENTO Vlr"
-			li ++
-			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem)
-				_sNFFilial = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_filial:TEXT
-				_sNFDoc    = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_doc:TEXT
-				_sNFEmis   = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_emissao:TEXT
-				_sNFProd   = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_varied:TEXT
-				_sNFDescr  = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_desc:TEXT
-				_sNFGrau   = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_grau:TEXT
-				_sNFClas   = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_clas:TEXT
-				_nNFPeso   = val (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_peso:TEXT)
-				_nNFVUnit  = val (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_valunit:TEXT)
-				_nNFVTot   = val (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_valtot:TEXT)
-				_sNFObs    = _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_obs:TEXT
-				_ImprNota ('V', _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
-				li ++
-			next
-			li ++
-		endif
-
-
-		// Imprime totais do associado por tipo de nota.
-		if ! _lSohCompr
-			li ++
-			_ImprTot ('Totais do associado', _aTAsEnt, _aTAsPro, _aTAsCom, _aTAsCpl)
-			li ++
-		endif
-
-		// Acumula totais gerais
-		_aTGerEnt [1] += _aTAsEnt [1]
-		_aTGerEnt [2] += _aTAsEnt [2]
-		_aTGerPro [1] += _aTAsPro [1]
-		_aTGerPro [2] += _aTAsPro [2]
-		_aTGerCom [1] += _aTAsCom [1]
-		_aTGerCom [2] += _aTAsCom [2]
-		_aTGerCpl [1] += _aTAsCpl [1]
-		_aTGerCpl [2] += _aTAsCpl [2]
-		
-		
-		// Verifica se tem este tipo de tag no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem') 
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
-			If li > _nMaxLin - 4
-			IF m_pag >1
-				_roda()
-			endif
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			@li, 0 PSAY 'Previsao de pagamento:                FATURA             VENCIMENTO              VALOR              SALDO  HISTORICO'
-			li ++
-			for _nFatPag = 1 to len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem)
-				If li > _nMaxLin
-				IF m_pag >1
-					_roda()
-				endif
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-				Endif
-				_sLinImp := ''
-				if _oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_doc:TEXT != 'TOTAIS'
-					_sLinImp += space (35)
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_doc:TEXT, 15) + '       '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_vencto:TEXT, 10) + '   '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_hist:TEXT, 110) + '  '
-				else
-					@ li, 0 psay space (74) + '------------       ------------'
-					li ++
-					_sLinImp += space (70)
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
-				endif
-				@ li, 0 psay _sLinImp
-				li ++
-			next
-			li ++
-		endif
-
-
-		// Verifica se tem este tipo de tag no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem')
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
-			If li > _nMaxLin - 4
-				IF m_pag >1
-					_roda()
-				endif
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			@li, 0 PSAY 'Descontos FUNRURAL:       FILIAL   NF                                            VALOR'
-			li ++
-			for _nItFunr = 1 to len (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem)
-				If li > _nMaxLin
-					IF m_pag >1
-						_roda()
-					endif
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-				Endif
-				_sLinImp := ''
-				if _oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_doc:TEXT != 'TOTAIS'
-					_sLinImp += space (26)
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_filial:TEXT, 2) + '       '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_doc:TEXT, 10) + '                         '
-					//_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlTitulo:TEXT), _sMascVTot) + '   '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlFunru:TEXT), _sMascVTot)
-				else
-					@ li, 0 psay space (74) + '------------'
-					li ++
-					_sLinImp += space (70)
-					//_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlTitulo:TEXT), _sMascVTot) + '   '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlFunru:TEXT), _sMascVTot) + '  '
-				endif
-				@ li, 0 psay _sLinImp
-				li ++
-			next
-			li ++
-		endif
-
-
-		// Verifica se tem este tipo de tag no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem')
-		if _ValType == 'A'  // Enquanto tivermos mais de um grupo de pagamentos, vai funcionar...
-			If li > _nMaxLin - 4
-			IF m_pag >1
-				_roda()
-			endif
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			@li, 0 PSAY 'Regras para pagamento:'
-			li ++
-			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
-				If li > _nMaxLin
-				IF m_pag >1
-					_roda()
-				endif
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-				Endif
-				_sLinImp := space (35)
-				_sLinImp += _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_descComParc:TEXT
-				@ li, 0 psay _sLinImp
-				li ++
-			next
-			li ++
-		endif
-
-
-		// Verifica se tem este tipo de tag no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem')
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
-			If li > _nMaxLin - 4
-			IF m_pag >1
-				_roda()
-			endif
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			@li, 0 PSAY 'Valores efetivos:                                GRAU/CLAS              PESO    VLR UNIT         VLR TOTAL'
-			li ++
-			for _nVlEfetiv = 1 to len (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem)
-				If li > _nMaxLin
-				IF m_pag >1
-					_roda()
-				endif
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-				Endif
-				_sLinImp := space (7)
-				_sLinImp += U_TamFixo (ALLTRIM(_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_varied:TEXT) + ' - ' + alltrim (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_desc:TEXT), 40, ' ') + '  '
-				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_grau:TEXT, 4) + '  '
-				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_clasLatada:TEXT, 2) + '  '
-				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_clasEspaldeira:TEXT, 2) + '  '
-				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_peso:TEXT), _sMascPeso) + '  '
-				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valunit:TEXT), _sMascVUni) + '  '
-				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valtot:TEXT), _sMascVTot) + '  '
-				@ li, 0 psay _sLinImp
-				li ++
-			next
-			li ++
-		endif
-
-
-		// Verifica se tem este tipo de tag no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem')
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 titulo + 1 linha de totais)
-			If li > _nMaxLin - 4
-			IF m_pag >1
-				_roda()
-			endif
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			li ++
-			@li, 0 PSAY 'Auxilio combustivel:                  TITULO             VENCIMENTO              VALOR              SALDO  HISTORICO'
-			li ++
-			for _nFatPag = 1 to len (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem)
-				If li > _nMaxLin
-				IF m_pag >1
-					_roda()
-				endif
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-				Endif
-				_sLinImp := ''
-				if _oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_doc:TEXT != 'TOTAIS'
-					_sLinImp += space (35)
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_doc:TEXT, 15) + '       '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_vencto:TEXT, 10) + '   '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_hist:TEXT, 110) + '  '
-				else
-					@ li, 0 psay space (74) + '------------       ------------'
-					li ++
-					_sLinImp += space (70)
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
-				endif
-				@ li, 0 psay _sLinImp
-				li ++
-			next
-			li ++
-		endif
-
-
-		// Verifica se tem este tipo de tag no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem')
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
-			If li > _nMaxLin - 4
-			IF m_pag >1
-				_roda()
-			endif
-				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-			Endif
-			// @li, 0 PSAY 'Lctos conta corrente:'
-			@li, 0 PSAY 'Lctos em aberto na conta corrente:'
-			li ++
-			for _nLctoCC = 1 to len (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem)
-				If li > _nMaxLin
-				IF m_pag >1
-					_roda()
-				endif
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-				Endif
-				if _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT != 'TOTAIS'
-					_sLinImp := space (9)
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dtMovto:TEXT, 10) + '  '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT, 15) + '  '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_hist:TEXT, 50) + '  '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT), '@E 999,999,999.99') + ' '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dc:TEXT, 1)
-				else
-					@ li, 0 psay space (90) + '--------------'
-					li ++
-					_sLinImp := space (90) + transform (val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT), '@E 999,999,999.99')
-				endif
-				@ li, 0 psay _sLinImp
-				li ++
-			next
-			li ++
-
-
-		endif
-	next
-
-
-	IF m_pag >1
-		_roda()
-	endif
-	cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-	_ImprTot ('TOTAIS GERAIS', _aTGerEnt, _aTGerPro, _aTGerCom, _aTGerCpl)
-	li ++
-return
-
-IF m_pag >1
-			_roda()
-		endif
-
-// --------------------------------------------------------------------------
-// Imprime valores de contranotas formatados.
-static function _ImprNota (_sTipoNota, _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
-	local _sLinImp := ''
-
-	If li > _nMaxLin
-	IF m_pag >1
-		_roda()
-	endif
-		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-	Endif
-	if _sNFDoc != 'TOTAIS'
-		_sLinImp += '  ' + U_TamFixo (_sNFFilial, 2) + '    '
-		_sLinImp += U_TamFixo (_sNFDoc, 9) + '  '
-		_sLinImp += U_TamFixo (_sNFEmis, 10) + '  '
-		_sLinImp += U_TamFixo (_sNFProd, 10) + ' '
-		_sLinImp += U_TamFixo (_sNFDescr, 40) + '  '
-		_sLinImp += U_TamFixo (_sNFGrau, 4) + ' '
-		_sLinImp += U_TamFixo (_sNFClas, 2) + ' '
-		_sLinImp += transform (_nNFPeso, _sMascPeso) + '  '
-		_sLinImp += transform (_nNFVUnit, _sMascVUni) + ' '
-		_sLinImp += transform (_nNFVTot, _sMascVTot) + '  '
-		_sLinImp += U_TamFixo (_sNFObs, 90)
-	else
-		@ li, 0 psay space (93) + '------------              ---------------'
-		li ++
-		_sLinImp += space (92)
-		_sLinImp += transform (_nNFPeso, _sMascPeso) + '  '
-		_sLinImp += space (11)
-		_sLinImp += transform (_nNFVTot, _sMascVTot) + '  '
-		if _sTipoNota == 'E'
-			_aTAsEnt [1] += _nNFPeso
-			_aTAsEnt [2] += _nNFVTot
-		elseif _sTipoNota == 'P'
-			_aTAsPro [1] += _nNFPeso
-			_aTAsPro [2] += _nNFVTot
-		elseif _sTipoNota == 'C'
-			_aTAsCom [1] += _nNFPeso
-			_aTAsCom [2] += _nNFVTot
-		elseif _sTipoNota == 'V'
-			_aTAsCpl [1] += _nNFPeso
-			_aTAsCpl [2] += _nNFVTot
-		endif
-	endif
-	@ li, 0 psay _sLinImp
-return
-
-
-	IF m_pag >1
-		_roda()
-	endif
-return
-
-// --------------------------------------------------------------------------
-// Imprime totais (por associado ou gerais) formatados.
-static function _ImprTot (_sTitTot, _aEntradas, _aPropria, _aCompra, _aComplem)
-	If li > _nMaxLin - 4
-	IF m_pag >1
-		_roda()
-	endif
-		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-	Endif
-	@ li, 0 psay U_TamFixo (_sTitTot, 72, ' ') + 'Entrega          ' + transform (_aEntradas [1], "@E 9,999,999,999.99") + '             ' + transform (_aEntradas [2], "@E 9,999,999,999.99")
-	li ++
-	// Lista somente se tiver dados, pois somente as filiais possuem producao propria (salvo alguma negociacao muito especifica com associado)
-	if _aPropria [1] != 0 .or. _aPropria [2] != 0
-		@ li, 0 psay space (72) + 'Producao propria ' + transform (_aPropria [1], "@E 9,999,999,999.99") + '             ' + transform (_aPropria [2], "@E 9,999,999,999.99")
-		li ++
-	endif
-	@ li, 0 psay space (72) + 'Compra           ' + transform (_aCompra [1], "@E 9,999,999,999.99") + '             ' + transform (_aCompra [2], "@E 9,999,999,999.99")
-	li ++
-	@ li, 0 psay space (72) + 'Compl.Vlr        ' + transform (_aComplem [1], "@E 9,999,999,999.99") + '             ' + transform (_aComplem [2], "@E 9,999,999,999.99")
-	li ++
-	@ li, 0 psay space (72) + 'Total a receber                               ' + transform (_aCompra [2] + _aComplem [2], "@E 9,999,999,999.99")
-	li += 2
-
-	IF m_pag >1
-			_roda()
-		endif
-
-Return
-
-return
+// // --------------------------------------------------------------------------
+// // Imprime totais (por associado ou gerais) formatados.
+// static function _ImprTot (_sTitTot, _aEntradas, _aPropria, _aCompra, _aComplem)
+// 	If li > _nMaxLin - 4
+// 	IF m_pag >1
+// 		_roda()
+// 	endif
+// 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+// 	Endif
+// 	@ li, 0 psay U_TamFixo (_sTitTot, 72, ' ') + 'Entrega          ' + transform (_aEntradas [1], "@E 9,999,999,999.99") + '             ' + transform (_aEntradas [2], "@E 9,999,999,999.99")
+// 	li ++
+// 	// Lista somente se tiver dados, pois somente as filiais possuem producao propria (salvo alguma negociacao muito especifica com associado)
+// 	if _aPropria [1] != 0 .or. _aPropria [2] != 0
+// 		@ li, 0 psay space (72) + 'Producao propria ' + transform (_aPropria [1], "@E 9,999,999,999.99") + '             ' + transform (_aPropria [2], "@E 9,999,999,999.99")
+// 		li ++
+// 	endif
+// 	@ li, 0 psay space (72) + 'Compra           ' + transform (_aCompra [1], "@E 9,999,999,999.99") + '             ' + transform (_aCompra [2], "@E 9,999,999,999.99")
+// 	li ++
+// 	@ li, 0 psay space (72) + 'Compl.Vlr        ' + transform (_aComplem [1], "@E 9,999,999,999.99") + '             ' + transform (_aComplem [2], "@E 9,999,999,999.99")
+// 	li ++
+// 	@ li, 0 psay space (72) + 'Total a receber                               ' + transform (_aCompra [2] + _aComplem [2], "@E 9,999,999,999.99")
+// 	li += 2
+// 
+// 	IF m_pag >1
+// 			_roda()
+// 		endif
+// 
+// Return
+// 
+// return
 
 // --------------------------------------------------------------------------
 // Retorno do type - type em looling nao é permitido da R25 
@@ -1622,7 +1622,7 @@ Return _type
 // --------------------------------------------------------------------------
 // Modelo (resumido) a partir da safra 2020, onde busca dados da classe ClsAssoc para
 // manter consistencia web service que atende APP de associados.
-static function _Modelo3 (_lSohCompr)
+static function _Modelo3 ()
 	local _aAssoc    := {}
 	local _nAssoc    := 0
 	local _oAssoc    := NIL
@@ -1693,23 +1693,23 @@ static function _Modelo3 (_lSohCompr)
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
 		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
-		if _lSohCompr
-		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.,      .t.)
-			_oAssoc:FSSafra      = mv_par01
-			_oAssoc:FSNFEntrada  = .f.
-			_oAssoc:FSNFCompra   = .t.
-			_oAssoc:FSNFComplem  = .f.
-			_oAssoc:FSNFPrdProp  = .f.
-			_oAssoc:FSPrevPagto  = .f.
-			_oAssoc:FSRegraPagto = .t.
-			_oAssoc:FSResValEfet = .f.
-			_oAssoc:FSResVaried  = .f.
-			_oAssoc:FSFrete      = .f.
-			_oAssoc:FSLctosCC    = .f.
-			_oAssoc:FSResVarGC   = .f.
-			_oAssoc:FSDFunrur    = .t.
-			_sXmlFech = _oAssoc:FechSafra ()
-		else
+//		if _lSohCompr
+//		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.,      .t.)
+//			_oAssoc:FSSafra      = mv_par01
+//			_oAssoc:FSNFEntrada  = .f.
+//			_oAssoc:FSNFCompra   = .t.
+//			_oAssoc:FSNFComplem  = .f.
+//			_oAssoc:FSNFPrdProp  = .f.
+//			_oAssoc:FSPrevPagto  = .f.
+//			_oAssoc:FSRegraPagto = .t.
+//			_oAssoc:FSResValEfet = .f.
+//			_oAssoc:FSResVaried  = .f.
+//			_oAssoc:FSFrete      = .f.
+//			_oAssoc:FSLctosCC    = .f.
+//			_oAssoc:FSResVarGC   = .f.
+//			_oAssoc:FSDFunrur    = .t.
+//			_sXmlFech = _oAssoc:FechSafra ()
+//		else
 		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .f.,        .t.,      .t.,      .t.,      .t.)
 			_oAssoc:FSSafra      = mv_par01
 			_oAssoc:FSNFEntrada  = .t.
@@ -1721,11 +1721,11 @@ static function _Modelo3 (_lSohCompr)
 			_oAssoc:FSResValEfet = .t.
 			_oAssoc:FSResVaried  = .f.
 			_oAssoc:FSFrete      = .t.
-			_oAssoc:FSLctosCC    = .t.
+			_oAssoc:FSLctosCC    = (mv_par04 == 1)
 			_oAssoc:FSResVarGC   = .t.
 			_oAssoc:FSDFunrur    = .t.
 			_sXmlFech = _oAssoc:FechSafra ()
-		endif
+//		endif
 		//u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
 			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
@@ -1870,7 +1870,8 @@ static function _Modelo3 (_lSohCompr)
 				endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
-			@li, 0 PSAY 'Resumo pagamento:      Mes/ano                 Valor             Saldo  Obs.'
+			_sLinImp = 'Resumo pagamento:      Mes/ano                 Valor             Saldo  Obs.'
+			@li, 0 PSAY _sLinImp
 			li ++
 			// Monta array resumida, acumulando os pagamentos de cada mes. Nao posso aproveitar a linha
 			// de totais que vem no XML por que vou agrupar as faturas por mes.
@@ -2043,9 +2044,10 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {01, "Safra                         ", "C", 4,  0,  "",   "   ", {},                        ""})
 	aadd (_aRegsPerg, {02, "Associado                     ", "C", 6,  0,  "",   "SA2", {},                        ""})
 	aadd (_aRegsPerg, {03, "Loja                          ", "C", 2,  0,  "",   "",    {},                        ""})
-	aadd (_aRegsPerg, {04, "PARAMETRO EM DESUSO           ", "C", 2,  0,  "",   "   ", {},                        ""})
-	aadd (_aRegsPerg, {05, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}           , ""})	
-	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Detalhado", "Resumido", "Apenas NF compra"}, ""})
+//	aadd (_aRegsPerg, {04, "PARAMETRO EM DESUSO           ", "C", 2,  0,  "",   "   ", {},                        ""})
+//	aadd (_aRegsPerg, {05, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}           , ""})	
+	aadd (_aRegsPerg, {04, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}           , ""})	
+//	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Detalhado", "Resumido", "Apenas NF compra"}, ""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
