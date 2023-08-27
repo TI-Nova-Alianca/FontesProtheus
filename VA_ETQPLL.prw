@@ -759,7 +759,8 @@ User Function EtqPllCT (_sCodigo)
 				endif
 				exit
 			enddo
-	
+
+			// Campo 'status': seria bom manter compatibilidade com o programa BatFullW
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " update tb_wms_entrada"
