@@ -8,6 +8,7 @@
 // 15/05/2017 - Robert - Passa a verificar etiquetas pendentes somente para filial 01 e a partir de 01/05/2017.
 // 05/01/2021 - Robert - Desabilitados logs desnecessarios.
 // 22/05/2023 - Robert - Funcao F3Array passou a exigir array de definicao de colunas - GLPI 13616
+// 15/08/2023 - Robert - Grava lista de etiq.nao guardadas no arquivo de log (GLPI 14112)
 //
 
 // --------------------------------------------------------------------------
@@ -43,10 +44,15 @@ static function _VerEtiq ()
 			_oVerif:SetParam ('03', SD3->D3_COD)
 			_oVerif:SetParam ('04', SD3->D3_COD)
 			_oVerif:Executa ()
-		//	u_log (_oVerif:Result)
+
+		//	U_Log2 ('debug', '[' + procname () + ']Resultado da verificacao:')
+		//	U_Log2 ('debug', _oVerif:Result)
+
 			_oEtiq := ClsAUtil ():New (_oVerif:Result)
-		//	u_log (_oEtiq:_aArray)
-			
+
+		//	U_Log2 ('debug', '[' + procname () + ']Convertido para ClaAUtil')
+		//	U_Log2 ('debug', _oEtiq:_aArray)
+
 			// A primeira linha contem nomes de colunas, mas quero usar a funcao F3Array, que nao vai gostar disso.
 			_oEtiq:Del (1)
 
@@ -56,11 +62,15 @@ static function _VerEtiq ()
 					_oEtiq:Del (_nEtiq)
 				endif
 			next
-		//	u_log (_oEtiq:_aArray)
+
+		//	U_Log2 ('debug', '[' + procname () + ']Apaguei linhas canceladas')
+		//	U_Log2 ('debug', _oEtiq:_aArray)
+
 			if len (_oEtiq:_aArray) > 1  // Primeira linha contem os cabecalhos de colunas.
 				_lRet = .F.
 				_sMsgSup = "As seguintes etiquetas geraram apontamentos para esta OP, mas ainda nao foram guardadas (transferidas do almoxarifado " + sd3 -> d3_local + "):"
 				U_F3Array (_oEtiq:_aArray, "Etiquetas nao guardadas", _oVerif:aColsF3, , , _sMsgSup, '', .T., 'C')
+				U_Log2 ('aviso', _oEtiq:_aArray)
 			endif
 		endif
 	endif

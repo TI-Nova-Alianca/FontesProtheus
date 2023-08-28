@@ -66,6 +66,7 @@
 // 12/04/2023 - Robert - Inclusao manual (via tela) passada para funcao ZA1Inc() no fonte ZA1.PRW
 //                     - Passa a usar semaforo na geracao de etiquetas por grupo.
 // 12/05/2023 - Robert - Criado botao p/impr.avulsa com cod.barras (GLPI 13561).
+// 25/08/2023 - Robert - Grava tb_wms_entrada.status_protheus = 'C-Cancelado no ERP' e nao mais 'C' (GLPI 14112)
 //
 
 #include "rwmake.ch"
@@ -758,11 +759,12 @@ User Function EtqPllCT (_sCodigo)
 				endif
 				exit
 			enddo
-	
+
+			// Campo 'status': seria bom manter compatibilidade com o programa BatFullW
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " update tb_wms_entrada"
-			_oSQL:_sQuery +=    " set status_protheus = 'C'"
+			_oSQL:_sQuery +=    " set status_protheus = 'C-Cancelado no ERP'"
 			_oSQL:_sQuery +=  " where codfor     = '" + _sCodigo + "'"
 			_oSQL:_sQuery +=    " and entrada_id = '" + _sEntr_ID + "'"
 			_oSQL:Log ()
