@@ -78,7 +78,9 @@
 // 31/03/2023 - Claudia - Ajuste em LPAD 520 002/ 527 002. GLPI: 12812
 // 10/04/2023 - Robert  - Acrescentado tratamento para CC *1101 e *1102 no LPAD 666005.
 // 24/07/2023 - Claudia - Incluído LPAD's para pagar.me. GLPI: 12280
+// 30/08/2023 - Robert  - Criado tratamento para LPAD 650/040 e 651/001 (GLPI 14099)
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -572,8 +574,83 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
      		endif
      	endif
      	
+
 	case _sLPad + _sSeq == '640014'  // DEVOLUÇÃO DE RAPEL
 		_xRet := _BuscaZC0()
+
+
+	case _sLPad + _sSeq == '650002'  // Compras sem estoque
+		_xRet = NIL
+		if _sQueRet = "VL"
+			_xRet = SD1->D1_TOTAL+SD1->D1_VALIPI+SD1->D1_DESPESA-SD1->D1_VALDESC+SD1->D1_VALFRE+SD1->D1_ICMSCOM-IF(SF4->F4_CREDICM='S',SD1->D1_VALICM,0)-(SD1->D1_VALIMP6+SD1->D1_VALIMP5)
+		endif
+
+
+	case _sLPad + _sSeq == '650040'  // Compras de servicos em geral SEM rateio. Manter compatibilidade com 651/001
+		_xRet = NIL
+		if _sQueRet = "CDEB"
+			do case
+			case alltrim (sd1 -> d1_cod) == 'S0201' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0701' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0720' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0721' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S0802' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301031', '403010201035')
+			case alltrim (sd1 -> d1_cod) == 'S0901' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301028', '403010201014')
+			case alltrim (sd1 -> d1_cod) == 'S0902' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301028', '403010201014')
+			case alltrim (sd1 -> d1_cod) == 'S1001' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010204003', '403010104003')
+			case alltrim (sd1 -> d1_cod) == 'S1102' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301029', '403010201007')
+			case alltrim (sd1 -> d1_cod) == 'S1104' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010501006', '403010201045')
+			case alltrim (sd1 -> d1_cod) == 'S1401' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1402' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1403' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1404' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301030', '403010201013')
+			case alltrim (sd1 -> d1_cod) == 'S1405' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1406' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1412' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1413' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1601' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010204004', '403010104004')
+			case alltrim (sd1 -> d1_cod) == 'S1701' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1702' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1703' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1712' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301022', '403010201009')
+			otherwise
+				_xRet = sd1 -> d1_conta
+			endcase
+		endif
+
+
+	case _sLPad + _sSeq == '651001'  // Compras de servicos em geral COM rateio. Manter compatibilidade com 650/040
+		_xRet = NIL
+		if _sQueRet = "CDEB"
+			do case
+			case alltrim (sd1 -> d1_cod) == 'S0201' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0701' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0720' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0721' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S0802' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301031', '403010201035')
+			case alltrim (sd1 -> d1_cod) == 'S0901' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301028', '403010201014')
+			case alltrim (sd1 -> d1_cod) == 'S0902' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301028', '403010201014')
+			case alltrim (sd1 -> d1_cod) == 'S1001' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010204003', '403010104003')
+			case alltrim (sd1 -> d1_cod) == 'S1102' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301029', '403010201007')
+			case alltrim (sd1 -> d1_cod) == 'S1104' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010501006', '403010201045')
+			case alltrim (sd1 -> d1_cod) == 'S1401' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1402' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1403' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1404' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301030', '403010201013')
+			case alltrim (sd1 -> d1_cod) == 'S1405' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1406' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1412' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1413' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1601' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010204004', '403010104004')
+			case alltrim (sd1 -> d1_cod) == 'S1701' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1702' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1703' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1712' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301022', '403010201009')
+			otherwise
+				_xRet = sde -> de_conta
+			endcase
+		endif
+
 
 	case _sLPad + _sSeq == '666005'  // Custeio MO + GGF + apoio.
 		_xRet   = ""

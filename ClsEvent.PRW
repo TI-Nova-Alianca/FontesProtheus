@@ -63,6 +63,7 @@
 // 22/02/2023 - Robert  - Criados atributos Safra e CargaSafra.
 // 24/02/2023 - Robert  - Gera aviso quando receber chave antiga para evento de carga/safra.
 // 28/04/2023 - Robert  - Erro na leitura do campo ZN_DIASVLD
+// 30/08/2023 - Robert  - Nao envia mais e-mail de alter.cadastro para grupo 015 (auditoria) - GLPI 14099
 //
 
 #include "protheus.ch"
@@ -487,7 +488,7 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 		// Alguns cadastros sao monitorados.
 		if ::Alias $ "SB1/SA1/SA2/SF4/SA3/ZZ2/CT5"
 			if _lNotif
-				aadd (::MailToZZU, '015')  // Controladoria
+				// Liane disse (via Teams em 30/08/2023) que nao precisa mais  ---> aadd (::MailToZZU, '015')  // Controladoria
 			endif
 			if ::Alias == 'SF4'
 				if _lNotif
