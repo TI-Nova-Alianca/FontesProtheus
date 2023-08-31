@@ -25,14 +25,14 @@ user function NxtZA1 (_sProduto, _lSemafExt)
 	// Se a funcao chamadora jah implementou um semaforo de gravacao, nao
 	// preciso mais me preocupar aqui.
 	if _lContinua .and. ! _lSemafExt  // Semaforo nao foi criado externamente.
-		U_Log2 ('debug', '[' + procname () + ']Semaforo externo: ainda nao tem. Vou criar um agora.')
+//		U_Log2 ('debug', '[' + procname () + ']Semaforo externo: ainda nao tem. Vou criar um agora.')
 		_nLock := U_Semaforo ('GeraNumeroZA1', .T.)  // Usar a mesma chave em todas as chamadas!
 		if _nLock == 0
 			u_help ("Bloqueio de semaforo na geracao de numero de etiqueta.",, .t.)
 			_lContinua = .F.
 		endif
-	else
-		U_Log2 ('debug', '[' + procname () + ']Semaforo externo: jah tem.')
+//	else
+//		U_Log2 ('debug', '[' + procname () + ']Semaforo externo: jah tem.')
 	endif
 
 	if _lContinua

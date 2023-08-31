@@ -25,6 +25,7 @@
 //                     - Pede confirmacao antes de gerar etiquetas, quando OP 'em terceiros'.
 //                     - Chama rotina de impressao das etiquetas geradas.
 // 31/05/2023 - Robert - Removidas linhas comentariadas.
+// 30/08/2023 - Robert - Ajuste do local dos empenhos migrado para U_A650AltD4() - GLPI 14146
 //
 
 // --------------------------------------------------------------------------
@@ -33,10 +34,10 @@ User Function MTA650I ()
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _lGeraEtq := .T.
 
-	// Verifica necessidade de alterar empenhos.
-	if sc2 -> c2_item != 'OS'
-		_AtuEmp ()
-	endif
+	// Migrado para U_A650AltD4() ---> // Verifica necessidade de alterar empenhos.
+	// Migrado para U_A650AltD4() ---> if sc2 -> c2_item != 'OS'
+	// Migrado para U_A650AltD4() ---> 	_AtuEmp ()
+	// Migrado para U_A650AltD4() ---> endif
 
 	// Gera etiquetas para pallets (somente na filial 01)
 	if cFilAnt == '01' .and. sc2 -> c2_item != 'OS' .and. sc2 -> c2_tpop == 'F'
@@ -59,9 +60,9 @@ User Function MTA650I ()
 	U_ML_SRArea (_aAreaAnt)
 Return
 
-
 // ----------------------------------------------------------------------
 static function _AtuEmp ()
+/* Migrado para U_A650AltD4()
 	local cQuery    := ""
 
 	// Seleciona empenhos das OPs geradas pelo MRP.
@@ -88,6 +89,7 @@ static function _AtuEmp ()
 	EndDo
 	trb -> (dbclosearea())
 	dbselectarea ("SC2")
+*/
 return
 
 

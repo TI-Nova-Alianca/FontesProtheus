@@ -21,14 +21,16 @@
 //                     - Gera aviso em caso de erro na alteracao de empenhos.
 // 23/03/2023 - Robert - Passa a gravar evento e nao mais aviso em caso de erro nos empenhos.
 // 10/05/2023 - Robert - Variavel _sOP nao inicializada na gravacao de evento de erro.
+// 30/08/2023 - Robert - Ajuste local dos empenhos migrado para U_A650AltD4() - GLPI 14146
 //
 
 // ------------------------------------------------------------------------------------
 User Function mtagrsd4()
 	local _aAreaAnt := U_ML_SRArea ()
-	local _oSQL     := NIL
-	local _sLocEmp  := ""
+//	local _oSQL     := NIL
+//	local _sLocEmp  := ""
 
+/* Migrado para U_A650AltD4()
 	// Altera armazem dos empenhos.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := "SELECT dbo.VA_FLOC_EMP_OP ('" + cFilAnt + "', D4_COD) AS LOCEMP"
@@ -38,6 +40,7 @@ User Function mtagrsd4()
 	if _sLocEmp != sd4 -> d4_local
 		U_AjLocEmp (_sLocEmp)
 	endif
+*/
 
 	// Altera centro de custo da mao de obra conforme a filial.
 	_AltCC ()
@@ -61,7 +64,7 @@ static function _AltCC ()
 	local _sOP       := sd4 -> d4_op
 	private _sErroAuto := ''
 
-	if cEmpAnt == '01' .and. left (sd4 -> d4_cod, 3) == 'MMM' .and. substr (sd4 -> d4_cod, 4, 2) != cFilAnt
+	if cEmpAnt == '01' .and. len (alltrim (sd4 -> d4_cod)) == 9 .and. left (sd4 -> d4_cod, 3) == 'MMM' .and. substr (sd4 -> d4_cod, 4, 2) != cFilAnt
 
 		// Monta o cabeçalho com o número da OP que será alterada.
 		// Necessário utilizar o índice 2 para efetuar a alteração.
@@ -96,6 +99,8 @@ static function _AltCC ()
 		//
 		// Preciso excluir a linha do empenho.
 		aAdd(_aLinha,{"AUTDELETA","S",Nil})
+		
+		U_Log2 ('debug', '[' + procname () + ']Empenho do CC errado que preciso deletar:')
 		U_Log2 ('debug', _aLinha)
 		//
 		//Adiciona as informações do empenho no array de itens.
@@ -136,6 +141,8 @@ static function _AltCC ()
 						aadd (_aLinha, {"D4_DATA",    FBuscaCpo ("SC2", 1, xfilial ("SC2") + sd4 -> d4_op, "C2_DATPRI"), NIL})
 						aadd (_aLinha, {"D4_QUANT",   sd4 -> d4_quant,   NIL})
 						aadd (_aLinha, {"D4_QTDEORI", sd4 -> d4_qtdeori, NIL})
+
+						U_Log2 ('debug', '[' + procname () + ']Novo CC a ser empenhado:')
 						U_Log2 ('debug', _aLinha)
 						aAdd(_aItens,_aLinha)
 					endif

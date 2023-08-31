@@ -113,7 +113,7 @@ user function robert ()
 		// _sFuncao = '_GLPI13674 ()'
 		// _sFuncao = '_GLPI13773 ()'
 		// _sFuncao = '_GLPI14020 ()'
-		//_sFuncao = '_GLPI14034 ()'
+		// _sFuncao = '_GLPI14034 ()'
 		// _sFuncao = '_ImpGPC ()'
 		// _sFuncao = '_memoria ()'
 		// _sFuncao = '_metaf ()'
@@ -123,7 +123,7 @@ user function robert ()
 		// _sFuncao = '_reginv ()'
 		// _sFuncao = '_recmail ()'
 		// _sFuncao = '_RevCH ()'
-		_sFuncao = '_RelAssoc ()'
+		// _sFuncao = '_RelAssoc ()'
 		// _sFuncao = '_SF1()'
 		// _sFuncao = '_SimCtb ()'
 		// _sFuncao = '_SimSafr23 ()'
@@ -153,12 +153,12 @@ return
 static function _AjLoteEnd ()
 	// Deixo desabilitado pra me obrigar a revisar sempre --->
 	local _sFilial   := '01'
-	//local _sDocto    := 'GLPI13872'
-	local _sProduto  := '2739'
-	local _sAlmox    := '07'
-	local _nQuant    := 0.0003  // qt positiva=gerar entrada
+	// local _sDocto    := 'GLPI14111'
+	local _sProduto  := '30560'
+	local _sAlmox    := '02'
+	local _nQuant    := -1  // qt positiva=gerar entrada
 	local _sEndereco := ''
-	local _sLote     := '09239801  '
+	local _sLote     := '2210830   '
 	local _oSQL      := NIL
 
 	if _sFilial != cFilAnt
@@ -174,25 +174,30 @@ static function _AjLoteEnd ()
 			_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + _sLote + "'"
 			_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + _sProduto + "'"
 			_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + _sAlmox + "'"
-			reclock ("SD5", .t.)
-			sd5 -> d5_filial  = _sFilial
-			sd5 -> d5_produto = _sProduto
-			sd5 -> d5_local   = _sAlmox
-			sd5 -> d5_doc     = _sDocto
-			sd5 -> d5_data    = date ()
-			sd5 -> d5_origlan = iif (_nQuant > 0, '499', '999')
-			sd5 -> d5_quant   = abs (_nQuant)
-			sd5 -> d5_lotectl = _sLote
-			sd5 -> d5_dtvalid = stod (_oSQL:RetQry (1, .f.))
-			msunlock ()
-			U_Log2 ('debug', '[' + procname () + ']Movimento gravado na tabela SD5:')
-			U_Log2 ('debug', '[' + procname () + ']D5_FILIAL  = ' + sd5 -> d5_filial)
-			U_Log2 ('debug', '[' + procname () + ']D5_DOC     = ' + sd5 -> d5_doc)
-			U_Log2 ('debug', '[' + procname () + ']D5_PRODUTO = ' + sd5 -> d5_produto)
-			U_Log2 ('debug', '[' + procname () + ']D5_LOTECTL = ' + sd5 -> d5_lotectl)
-			U_Log2 ('debug', '[' + procname () + ']D5_LOCAL   = ' + sd5 -> d5_local)
-			U_Log2 ('debug', '[' + procname () + ']D5_DATA    = ' + dtoc (sd5 -> d5_data))
-			U_Log2 ('debug', '[' + procname () + ']D5_QUANT   = ' + cvaltochar (sd5 -> d5_quant))
+			if empty (_oSQL:RetQry (1, .f.))
+				u_help ("Nao consegui buscar data de validade para o lote.",, .t.)
+			else
+				_dVldLote = stod (_oSQL:RetQry (1, .f.))
+				reclock ("SD5", .t.)
+				sd5 -> d5_filial  = _sFilial
+				sd5 -> d5_produto = _sProduto
+				sd5 -> d5_local   = _sAlmox
+				sd5 -> d5_doc     = _sDocto
+				sd5 -> d5_data    = date ()
+				sd5 -> d5_origlan = iif (_nQuant > 0, '499', '999')
+				sd5 -> d5_quant   = abs (_nQuant)
+				sd5 -> d5_lotectl = _sLote
+				sd5 -> d5_dtvalid = _dVldLote
+				msunlock ()
+				U_Log2 ('debug', '[' + procname () + ']Movimento gravado na tabela SD5:')
+				U_Log2 ('debug', '[' + procname () + ']D5_FILIAL  = ' + sd5 -> d5_filial)
+				U_Log2 ('debug', '[' + procname () + ']D5_DOC     = ' + sd5 -> d5_doc)
+				U_Log2 ('debug', '[' + procname () + ']D5_PRODUTO = ' + sd5 -> d5_produto)
+				U_Log2 ('debug', '[' + procname () + ']D5_LOTECTL = ' + sd5 -> d5_lotectl)
+				U_Log2 ('debug', '[' + procname () + ']D5_LOCAL   = ' + sd5 -> d5_local)
+				U_Log2 ('debug', '[' + procname () + ']D5_DATA    = ' + dtoc (sd5 -> d5_data))
+				U_Log2 ('debug', '[' + procname () + ']D5_QUANT   = ' + cvaltochar (sd5 -> d5_quant))
+			endif
 		endif
 		if ! empty (_sEndereco)
 			reclock ("SDB", .t.)
@@ -1670,9 +1675,9 @@ static function _GLPI14020 ()
 	local _nDado     := 0
 	local _nCustD    := 0
 
-	_aDados = U_LeCSV ('\GLPI_14020.csv', ';')
+	_aDados = U_LeCSV ('c:\temp\GLPI_14020_2.csv', ';')
 	u_log (_aDados)
-	U_MudaLog ('GLPI14020_B1_CUSTD.log')
+
 	sb1 -> (dbsetorder (1))
 	sb5 -> (dbsetorder (1))
 	for _nDado = 1 to len (_aDados)
@@ -1690,26 +1695,35 @@ static function _GLPI14020 ()
 					_nCustD = val (strtran (_aDados [_nDado, 3], ',', '.'))
 				//	U_Log2 ('debug', '[' + procname () + '] >>' + _aDados [_nDado, 3] + '<< para >>' + cvaltochar (_nCustD) + '<<')
 
-					if sb1 -> b1_custd != _nCustD
+					if _nCustD == 0
+						U_Log2 ('aviso', '[' + procname () + ']'+ sb1 -> b1_cod + SB1 -> B1_DESC + ' custo zerado na planilha. Nao vou alterar.')
+					else
+						if sb1 -> b1_custd != _nCustD .or. sb1 -> B1_DATREF != STOD ('20230801')
 
-						u_log2 ('info', 'Alterando custo ' + sb1 -> b1_cod + SB1 -> B1_DESC + ' de ' + transform (sb1 -> b1_custd, '@E 999,999.9999') + ' para ' + transform (_nCustD, '@E 999,999.9999'))
+							u_log2 ('info', 'Alterando custo ' + sb1 -> b1_cod + SB1 -> B1_DESC + ' de ' + transform (sb1 -> b1_custd, '@E 999,999.9999') + ' para ' + transform (_nCustD, '@E 999,999.9999'))
 
-						// Cria variaveis para uso na gravacao do evento de alteracao
-						regtomemory ("SB1", .F., .F.)
-						//regtomemory ("SB5", .F., .F.)
-						//m->b5_vasisde = 'S'
-						m->b1_custd = _nCustD
+							// Cria variaveis para uso na gravacao do evento de alteracao
+							regtomemory ("SB1", .F., .F.)
+							//regtomemory ("SB5", .F., .F.)
+							//m->b5_vasisde = 'S'
+							m->b1_custd  = _nCustD
+							m->B1_DATREF = STOD ('20230801')
 
-						// Grava evento de alteracao
-						_oEvento := ClsEvent():new ()
-						_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 14020 - ajustar B1_CUSTD', .F.)
-						reclock ("SB1", .f.)
-						sb1 -> B1_custd = m->b1_custd
-						msunlock ()
-						U_AtuMerc ("SB1", sb1 -> (recno ()))
+							// Grava evento de alteracao
+							_oEvento := ClsEvent():new ()
+							_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 14020 - ajustar B1_CUSTD', .F.)
+							reclock ("SB1", .f.)
+							sb1 -> B1_custd  = m->b1_custd
+							SB1 -> B1_DATREF = m->B1_DATREF
+							msunlock ()
+							U_AtuMerc ("SB1", sb1 -> (recno ()))
 
-						// Cai fora no primeiro, para testes.
-						// exit
+							// Cai fora no primeiro, para testes.
+							// exit
+
+						else
+							U_Log2 ('debug', '[' + procname () + ']Dados jah estavam corretos')
+						endif
 					endif
 				endif
 			endif
@@ -3187,8 +3201,29 @@ return _type
 static function _Rast()
 	local _aLotes := {}
 	local _nLote  := 0
-	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
+//	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
 	_aLotes := {}
+	//aadd (_aLotes, {'01','1193', '09033601'  
+	//aadd (_aLotes, {'01','2203', '09071401'})  // pequeno (3 OP + 2 tr.lote)  
+	//aadd (_aLotes, {'01','2203', '09071501  '})  // grande, com transf. para filial 09 + laudo  
+	//aadd (_aLotes, {'01','1193', '09163601'  // gigante, com recursividade
+	//aadd (_aLotes, {'01','1193', '09166101'  // muito grande
+	//aadd (_aLotes, {'01','2444', 'N000012947'  // Pequeno, um nivel abaixo + transf. da filial 09
+	//aadd (_aLotes, {'01','2445', '09120801  '  // Pequeno, teve venda e transf para filial 13  
+	//aadd (_aLotes, {'01','1180', '000001A   '  
+	//aadd (_aLotes, {'01','2445', '000001    '
+	//aadd (_aLotes, {'01','0345', '09166101'  // Gigante
+	//aadd (_aLotes, {'01', '2763', '09245501'})  // NECTAR MACA           
+	//aadd (_aLotes, {'01', '1370', '09272501'})  // VINHO TTO BORDO
+	//aadd (_aLotes, {'01', '2385', '09248401'})  // NECTAR LARANJA
+	//aadd (_aLotes, {'01', '0247', '09264801'})  // Vinho pinot
+	//aadd (_aLotes, {'01', '0431', '09269601'})  // gigante - suco bag tto
+	//aadd (_aLotes, {'01', '0328', '09260601'})  // filtrado bco
+	//aadd (_aLotes, {'01', '2448', '09249201'})  // mosto bco
+	//aadd (_aLotes, {'01', '4225', '09214501'})  // monstro - suco tto tetra 200
+	//aadd (_aLotes, {'01', '9901', '01166401'})  // CARGA DE UVA 2018
+	//aadd (_aLotes, {'01', '9925', '01001201'})  // CARGA DE UVA 2018
+	//aadd (_aLotes, {'01', '9909', '01012901'})  // CARGA DE UVA 2018
 	//aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12101401'  , 0, 14660})  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01
 	//aadd (_aLotes, {'01', U_TamFixo ('1274', 15, ' '), 'AUTO009215', 0, 1})      // enzima (arvore grande)
 	//aadd (_aLotes, {'01', U_TamFixo ('2444', 15, ' '), 'AUTO009238', 0, 24200})  // lado 1 do par
@@ -3200,12 +3235,29 @@ static function _Rast()
 	//aadd (_aLotes, {'09', U_TamFixo ('1181', 15, ' '), '009159', 0, 1})      // Transferido da F09 para para F01 (origem bem grande, diversas transf. entre filiais)
 	//aadd (_aLotes, {'07', U_TamFixo ('1180', 15, ' '), '001970001x', 0, 1})      // Transferido da F07 para para F01 (origem muito grande, 16 niveis, nem esperei terminar)
 	//aadd (_aLotes, {'03', U_TamFixo ('3779', 15, ' '), '00229201  ', 0, 1})      // 
-	aadd (_aLotes, {'01', U_TamFixo ('3084', 15, ' '), '13171401  ', 0, 1})      // 
+	//aadd (_aLotes, {'01', U_TamFixo ('3084', 15, ' '), '13171401  ', 0, 1})      // 
+
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13125901  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13135501  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13135601  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13141401  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13103701  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13149001  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13141501  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13131401  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13107701  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13155001  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13163901  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13169801  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13165101  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13155201  ', 0, 1})
+	aadd (_aLotes, {'01', U_TamFixo ('2580', 15, ' '), '13170101  ', 0, 1})
+
 	for _nLote = 1 to len (_aLotes)
 		u_perfmon ('I', 'RastLt')
 		_sMapa := U_RastLT (_aLotes [_nLote, 1], _aLotes [_nLote, 2], _aLotes [_nLote, 3], _aLotes [_nLote, 4], NIL, _aLotes [_nLote, 5], 'A')
 		_nTmpExec = u_perfmon ('L', 'RastLt')
-		_sArq := 'c:\temp\rast_F' + _aLotes [_nLote, 1] + '_' + alltrim (_aLotes [_nLote, 2]) + '_' + alltrim (_aLotes [_nLote, 3]) + '_tempo' + cvaltochar (round (_nTmpExec, 0)) + 's.mm'
+		_sArq := 'c:\temp\rast_F' + _aLotes [_nLote, 1] + '_' + alltrim (_aLotes [_nLote, 2]) + '_' + alltrim (_aLotes [_nLote, 3]) + '.mm'  //'_tempo' + cvaltochar (round (_nTmpExec, 0)) + 's.mm'
 		delete file (_sArq)
 		if file (_sArq)
 			_nHdl = fopen(_sArq, 1)
@@ -3215,10 +3267,10 @@ static function _Rast()
 		fwrite (_nHdl, _sMapa)
 		fclose (_nHdl)
 		ShellExecute ("Open", _sArq, "", "", 1)
-		u_log (_aLtXLS58)
-		_oLtXLS58 := CLsAUtil ():New ()
-		_oLtXLS58:_aArray := aclone (_aLtXLS58)
-		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
+//		u_log (_aLtXLS58)
+//		_oLtXLS58 := CLsAUtil ():New ()
+//		_oLtXLS58:_aArray := aclone (_aLtXLS58)
+//		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
 	next
 return
 
@@ -3471,8 +3523,20 @@ return
 // --------------------------------------------------------------------------
 // Testes relatorios associados que devem trazer totais consistentes entre si
 static function _RelAssoc ()
-	local _aAssoc := {}
-	local _nAssoc := 0
+	local _aAssoc  := {}
+	local _nAssoc  := 0
+
+	local _nFatPag := 0
+	local _nSldPagto := 0
+	local _nAbatim := 0
+	local _aLinImp := {}
+	local _nLinImp := 0
+
+	private _oXMLFech := NIL  // Deixar private, senao ele nao consegue gerar objeto XML...   :(
+	private _sXMLFech := ''  // Deixar private, senao ele nao consegue gerar objeto XML...   :(
+	private _sMascPeso := "@E 9,999,999,999"
+	private _sMascVUni := "@E 9,999.9999"
+	private _sMascVTot := "@E 9,999,999,999.99"
 
 	// Testes metodos associados.
 	_oSQL := ClsSQL ():New ()
@@ -3480,15 +3544,104 @@ static function _RelAssoc ()
 	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
 	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
 	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '000161' and '003000'" //'012351' and '012360'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '012722' and '012722'" //'012351' and '012360'"
 	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
 	_aAssoc = _oSQL:Qry2Array ()
 	_sResult = ''
 	for _nAssoc = 1 to len (_aAssoc)
 		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
-		_oAssoc:BuscarDAP ()
-	//	u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:GrpFam(), _oAssoc:Nucleo(), _oAssoc:Subnucleo())
-		u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:DAPNumero + ' ' + dtoc (_oAssoc:DAPValidad) + ' ' + _oAssoc:DAPMotivo)
+		u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome)
+		_oAssoc:FSSafra      = '2023'
+		_oAssoc:FSPrevPagto  = .t.
+		_sXmlFech = _oAssoc:FechSafra ()
+		U_LogXML (_sXMLFech, .t.)
+		if empty (_sXmlFech)
+			u_help ("Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
+			loop
+		endif
+		_sError    := ''
+		_sWarning  := ''
+		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+		if ! empty (_sError) .or. ! empty (_sWarning)
+			u_help ("Erro ao decodificar retorno: " + _sError + _sWarning,, .t.)
+			loop
+		endif
+		_aLinImp = {}
+		aadd (_aLinImp, 'Mes/ano            Valor   Observacoes')
+		aadd (_aLinImp, '-------     ------------   ----------------------------------------------------------------')
+		if type ('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem') == 'A'
+	//		U_Log2 ('debug', '[' + procname () + ']Vou ler itens')
+			_nFatPag = 1
+			do while _nFatPag <= len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem)
+	//			U_Log2 ('debug', '[' + procname () + ']Item ' + cvaltochar (_nFatPag))
+				// O XML vem jah ordenado por data de vencimento, mas aberto por
+				// documento. Como quero listar um resumo mensal, tenho que varrer
+				// os documentos e acumular em arrays.
+				_sMesPagto = substr (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_vencto:TEXT, 4)
+				_aAbatim = {}  // Array para guardar os possiveis abatimentos do mes
+				_aResPag = {_sMesPagto, 0, 0}  // Array para guardar totais do mes
+				do while _nFatPag <= len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem) ;
+				.and. substr (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_vencto:TEXT, 4) == _sMesPagto
+					_sPrefLog = _oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_doc:TEXT
+				//	U_Log2 ('debug', '[' + procname () + ']Lendo valor ' + _oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT)
+					_aResPag [2] += val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT)
+					_aResPag [3] += val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT)
+
+					// Se tiver a tag de abatimentos, preciso le-la.
+					if type ('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[' + cvaltochar (_nFatPag) + ']:_FatPagAbatItem') == 'A'
+						U_Log2 ('debug', '[' + procname () + ']Tem abatimentos')
+						_nAbatim = 1
+						do while _nAbatim <= len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem)
+							aadd (_aAbatim, {_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem [_nAbatim]:_abatData:TEXT, ;
+							                 _oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem [_nAbatim]:_abatHist:TEXT, ;
+							            val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem [_nAbatim]:_abatValor:TEXT)})
+							_nAbatim ++
+						enddo
+						U_Log2 ('debug', _aAbatim)
+					endif
+
+					_nFatPag ++
+				enddo
+				U_Log2 ('debug', _aResPag)
+				_nSldPagto = _aResPag [2]
+				U_Log2 ('debug', '[' + procname () + ']Saldo inicial: ' + cvaltochar (_nSldPagto))
+				_sLinImp := _aResPag [1] + ' '
+				_sLinImp += transform (_aResPag [2], _sMascVTot) + '   Valor safra'
+				aadd (_aLinImp, _sLinImp)
+				_sLinImp = ''
+				for _nAbatim = 1 to len (_aAbatim)
+					_sLinImp := '        '
+					_sLinImp += transform (_aAbatim [_nAbatim, 3], _sMascVTot) + '-  '
+					_sLinImp += dtoc (stod (_aAbatim [_nAbatim, 1])) + '  '
+					_sLinImp += U_TamFixo (_aAbatim [_nAbatim, 2], 60, ' ') + '  '
+					aadd (_aLinImp, _sLinImp)
+					_sLinImp = ''
+					_nSldPagto -= _aAbatim [_nAbatim, 3]
+				next
+
+				// Se nao teve nenhum abatimento para imprimir, tambem nao ha
+				// necessidade de listar o saldo, que vai ser igual ao vl.orig.
+				if len (_aAbatim) > 0
+					// Confere se o saldo calculado aqui bate com o que veio no XML
+					if _nSldPagto != _aResPag [3]
+						u_help ("Problema no calculo do saldo!", .t.)
+					endif
+					_sLinImp := '            ------------'
+					aadd (_aLinImp, _sLinImp)
+					_sLinImp = ''
+					_sLinImp := 'Saldo   '
+					_sLinImp += transform (_nSldPagto, _sMascVTot)
+					aadd (_aLinImp, _sLinImp)
+					_sLinImp = ''
+					aadd (_aLinImp, _sLinImp)
+					_sLinImp = ''
+				endif
+			enddo
+		endif
+	//	U_Log (_aLinImp)
+		for _nLinImp = 1 to len (_aLinImp)
+			u_log (_aLinImp [_nLinImp])
+		next
 	next
 return
 
@@ -3506,10 +3659,10 @@ return
 	// FECHOU aadd (_aAssoc, '002932')  // Joel Panizzon
 	// FECHOU aadd (_aAssoc, '002486')  // Fernando Valentin Busetti
 	// FECHOU aadd (_aAssoc, '002517')  // Santo Jose Busetti (diversas variedades de uva)
-	 aadd (_aAssoc, '003621')  // Dejair Betlinski
+	// aadd (_aAssoc, '003621')  // Dejair Betlinski
 	// DIF aadd (_aAssoc, '010637')  // Cristiano Adilio de Souza - premio 2022 duplicado
 	// DIF aadd (_aAssoc, '002911')  // Honorino - premio 2022 duplicado - saiu em 2022
-	 aadd (_aAssoc, '005212')  // Heleno Facchin - estaria faltando matade dos valores no demonatrativo de IR ano base 2022
+	// aadd (_aAssoc, '005212')  // Heleno Facchin - estaria faltando matade dos valores no demonatrativo de IR ano base 2022
 	// FECHOU aadd (_aAssoc, '010601')  // Joel Salton - conferencia IR 2022
 	// FECHOU aadd (_aAssoc, '010602')  // Jorge Salton - conferencia IR 2022
 	// FECHOU aadd (_aAssoc, '010599')  // Joemir Salton - conferencia IR 2022
@@ -3518,22 +3671,20 @@ return
 	// CONTINUA FECHANDO aadd (_aAssoc, '033490')  // Grasiela Parisotto - conferencia IR 2022
 	// aadd (_aAssoc, '003026')  // Marcos Parisotto  - conferencia IR 2022
 	// AGORA FECHOU aadd (_aAssoc, '018409')  // Marcelo Avelino Parisotto  - conferencia IR 2022
-	 aadd (_aAssoc, '002653')  // Balduino Parisotto - conferencia IR 2022
+	// aadd (_aAssoc, '002653')  // Balduino Parisotto - conferencia IR 2022
 	// Patricia Turella e o Edgar Schiavenin
 	// aadd (_aAssoc, '002924')  // Ivo Boldrin - fech.safra 2022 parece trazer R$ 79,79 a mais (deve ser funrural)
 	// aadd (_aAssoc, '002832')  // Alex Boldrin - fech.safra 2022 resumo pagto nao bate com notas de safra
 	// aadd (_aAssoc, '003587')  // Marisa Guisso Possa - safra 2018 aparecem movtos de 2023 !!!
-	 aadd (_aAssoc, '023824')  // EMA SOSTER BOFF
-	 aadd (_aAssoc, '023827')  // MERCELO BOFF
+	// aadd (_aAssoc, '023824')  // EMA SOSTER BOFF
+	// aadd (_aAssoc, '023827')  // MERCELO BOFF
 	aadd (_aAssoc, '002480')  // DANIEL SGANZERLA
 	for _nAssoc = 1 to len (_aAssoc)
 		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc])
-		U_GravaSX1 ("ML_FECHASA", '01', '2022')  // safra
+		U_GravaSX1 ("ML_FECHASA", '01', '2023')  // safra
 		U_GravaSX1 ("ML_FECHASA", '02', _aAssoc [_nAssoc])
 		U_GravaSX1 ("ML_FECHASA", '03', '01')  // loja
-		U_GravaSX1 ("ML_FECHASA", '04', '  ')  // nucleo
-		U_GravaSX1 ("ML_FECHASA", '05', 2)  // lista saldo CC 1=sim;2=nao
-		U_GravaSX1 ("ML_FECHASA", '06', 2 )  // 1=detalhado;2=resumido;3=apenas NF compra
+		U_GravaSX1 ("ML_FECHASA", '04', 2)  // lista saldo CC 1=sim;2=nao
 		U_ml_fechasafra (.T.)
 		//
 		// U_GravaSX1 ("IRASSOC", '01', '')  // CPF ini
@@ -3936,8 +4087,8 @@ return
 static function _Sisdevin ()
 	// Gera arq. Sisdeclara.
 	cPerg := "ML_DEC"
-	U_GravaSX1 (cPerg, "01", stod ("20220601"))
-	U_GravaSX1 (cPerg, "02", stod ("20220630"))
+	U_GravaSX1 (cPerg, "01", stod ("20230701"))
+	U_GravaSX1 (cPerg, "02", stod ("20230730"))
 	U_GravaSX1 (cPerg, "03", 1)  // 1=mov.mensal;2=entradas uvas
 	U_GravaSX1 (cPerg, "04", 'teste robert')  // Nome diretor empresa
 	U_GravaSX1 (cPerg, "05", '????????')  // CRQ - '05404198' = Hugo    '05403148' = Flavio
@@ -7079,90 +7230,6 @@ return
 	next
 	u_log (_aPrecos)
 //	u_acolsxls (_aPrecos)
-return
-*/
-/*
-	// Testes visualizacao rastreabilidade
-	_aRast := {}
-	// aadd (_aRast, {'01','1193', '09033601'  
-	//aadd (_aRast, {'01','2203', '09071401'})  // pequeno (3 OP + 2 tr.lote)  
-	// aadd (_aRast, {'01','2203', '09071501  '})  // grande, com transf. para filial 09 + laudo  
-	// aadd (_aRast, {'01','1193', '09163601'  // gigante, com recursividade
-	// aadd (_aRast, {'01','1193', '09166101'  // muito grande
-	// aadd (_aRast, {'01','2444', 'N000012947'  // Pequeno, um nivel abaixo + transf. da filial 09
-	// aadd (_aRast, {'01','2445', '09120801  '  // Pequeno, teve venda e transf para filial 13  
-	// aadd (_aRast, {'01','1180', '000001A   '  
-	// aadd (_aRast, {'01','2445', '000001    '
-	// aadd (_aRast, {'01','0345', '09166101'  // Gigante
-	// aadd (_aRast, {'01', '2763', '09245501'})  // NECTAR MACA           
-	//aadd (_aRast, {'01', '1370', '09272501'})  // VINHO TTO BORDO
-	//aadd (_aRast, {'01', '2385', '09248401'})  // NECTAR LARANJA
-	//aadd (_aRast, {'01', '0247', '09264801'})  // Vinho pinot
-	//aadd (_aRast, {'01', '0431', '09269601'})  // gigante - suco bag tto
-	//aadd (_aRast, {'01', '0328', '09260601'})  // filtrado bco
-	//aadd (_aRast, {'01', '2448', '09249201'})  // mosto bco
-	//aadd (_aRast, {'01', '4225', '09214501'})  // monstro - suco tto tetra 200
-	//aadd (_aRast, {'01', '9901', '01166401'})  // CARGA DE UVA 2018
-	//aadd (_aRast, {'01', '9925', '01001201'})  // CARGA DE UVA 2018
-	//aadd (_aRast, {'01', '9909', '01012901'})  // CARGA DE UVA 2018
-
-	// Rastreia cargas de uva
-	private _sCargaUva := ""
-	private _aTodasCar := {}
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := " SELECT D1_FILIAL, D1_COD, D1_LOTECTL, CARGA"
-	_oSQL:_sQuery += " FROM SD1010 SD1, VA_VCARGAS_SAFRA V"
-	_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' AND D1_FILIAL = V.FILIAL AND  D1_FORNECE = V.ASSOCIADO AND D1_LOJA = V.LOJA_ASSOC AND D1_DOC = V.CONTRANOTA AND D1_SERIE = V.SERIE_CONTRANOTA"
-	_oSQL:_sQuery += " AND V.SAFRA  = '2018'" 
-	_oSQL:_sQuery += " AND V.FILIAL = '" + cFilAnt + "'" 
-	_oSQL:_sQuery += " AND V.FILIAL + V.CARGA in ('010204','010250','010283','010330','010333','010356','010360','010379','010381','010456','010645','010679','010759','010835','010852','010943','010978','011098','011423','011461','011464','011496','011559','011587','011591','011637','011651','011704','011767','011770','011791','011801','011837','011852','011884','011943',"
-	_oSQL:_sQuery +=                             "'011978','011994','012003','012073','012155','012177','012346','012426','012542','012600','012638','012691','012772','012797','012803','012906','012997','013010','013058','013151','013181','013219','013261','013342','013355','013378','013456','013531','013533','013548','013646','013659','013670','013770','013817','013870',"
-	_oSQL:_sQuery +=                             "'013881','013940','013965','014012','014016','014073','014120','014166','014191','014204','070002','070012','070044','070068','071000','070112','070129','070139','070259','070270','070314','070373','070413','070527','070692','070877','070895','070918','070984','071018','071020','071036','071053','071058','071068','071121',"
-	_oSQL:_sQuery +=                             "'071129','071145','071149','071152','071186','071189','071196','071211','071213','071226','071229','071255','071266','071268','071271','071289','071302','071320','071347','071355','071377','071379','071380','071391','071407','071413','071445','071447','071468','071469','071493','071517','071520','071527','071530','071549',"
-	_oSQL:_sQuery +=                             "'071552','071561','071591','071601','071627','071646','071679','071692','071711','071736','071743','071788','071798','071819','071843','071875','071884','071943','071958','071982','071990','071996','072011','072050','072070','072077','072080','072136','072145','072167','072185','072206','072379','072442','072445','072451',"
-	_oSQL:_sQuery +=                             "'072517','072559','072579','072671','072710','072764','072811','072855','072885','072914','072956','090050','090067','090124','090125','090143','090146','090161','090165','090197','090242','090283','090377','090405','090425','090431','012151','013085')" 
-	_oSQL:_sQuery += " AND V.PESO_LIQ >= 7000" 
-	_oSQL:_sQuery += " AND D1_LOTECTL != ''" 
-//	_oSQL:_sQuery += " AND ((V.FILIAL = '01' AND V.CARGA IN ('1664','0075','0146','0194','0266','0310','0339','0358','0592','0595','0597','0700','1012','1197','1353','1623','1972','1999','2326','0056','0452','0472','0697','1036','1157','2752','3323','1587','1496','1637','0679','0852','0456','0645','0204','0250','0283','0330','0333','0356','0360','0379','0381','0759','0835'"
-	_oSQL:_sQuery +=                                       ",'0943','0978','1098','1423','1461','1464','1559','1591','1651','1704','1767','1770','1791','1801','1837','1852','1884','1943','1978','1994','2003','2073','2155','2177','2346','2426','2542','2600','2638','2691','2772','2797','2803','2906','2997','3010','3058','3151','3181','3219','3261','3342','3355','3378','3456'"
-	_oSQL:_sQuery +=                                       ",'3531','3533','3548','3646','3659','3670','3770','3817','3870','3881','3940','3965','4012','4016','4073','4120','4166','4191','4204','2151','3085','0070','0512','0868','1245','1333','1447','1565','1685','1690','1692','1696','1697','1699','1708','1752','1776','1827','1831','1840','1920','1934','1944','1950','1985'"
-	_oSQL:_sQuery +=                                       ",'2025','2147','2150','2163','2185','2288','2415','2467','2469','2470','2480','2481','2558','2571','2579','2583','2587','2669','2732','2749','2773','2884','2991','3011','3030','3036','3236','3250','3255','3292','3300','3400','3417','3457','3461','3466','3540','3559','3726','3787','4011','4049','4078','4180','4189'"
-	_oSQL:_sQuery +=                                       ",'0358','1491','0975','1157','0692','0413','1020','1068','1129','1211','1255','1320','1355','1391','1469','1530','1601','1646','1711','1788','1743','1990','1058','1268','1377','1413','1517','1996','0259','0314','0373','0895','0984','0002','1552','2451','0012','0044','0068','0100','0112','0129','0139','0270','0527'"
-	_oSQL:_sQuery +=                                       ",'0877','0918','1018','1036','1053','1121','1145','1149','1152','1186','1189','1196','1213','1226','1229','1266','1271','1289','1302','1347','1379','1380','1407','1445','1447','1468','1493','1520','1527','1549','1561','1591','1627','1679','1692','1736','1798','1819','1843','1875','1884','1943','1958','1982','2011'"
-	_oSQL:_sQuery +=                                       ",'2050','2070','2077','2080','2136','2145','2167','2185','2206','2379','2442','2445','2517','2559','2579','2671','2710','2764','2811','2855','2885','2914','2956')"
-//	_oSQL:_sQuery += " ) OR (V.FILIAL = '09' AND V.CARGA IN ('0013','0067','0143','0161','0165','0197','0124','0125','0146','0050','0242','0283','0377','0405','0425','0431','0003','0063','0076','0136','0145','0147','0154','0155','0159','0160','0175','0215','0218','0222','0277','0307','0482')"
-//	_oSQL:_sQuery += " ))"
-	_oSQL:_sQuery += " ORDER BY FILIAL, CARGA, D1_COD"
-	_aRast := aclone (_oSQL:Qry2Array ())
-
-	for _nRast = 1 to len (_aRast)
-		u_log ('#####################')
-		//_sCargaUva = _aRast [_nRast, 4]
-		_sMapa := U_RastLT (_aRast [_nRast, 1], U_TamFixo (_aRast [_nRast, 2], 15, ' '), _aRast [_nRast, 3], 0, NIL, 1, 'A')
-		//_sArq := 'c:\temp\rastLT_' + alltrim (_aRast [_nRast, 2]) + '_' + alltrim (_aRast [_nRast, 3]) + '.mm'
-		_sArq := 'c:\temp\rast_carga_' + _aRast [_nRast, 4] + '.mm'
-		delete file (_sArq)
-		if file (_sArq)
-			_nHdl = fopen(_sArq, 1)
-		else
-			_nHdl = fcreate(_sArq, 0)
-		endif
-		fwrite (_nHdl, _sMapa)
-		fclose (_nHdl)
-		ShellExecute ("Open", _sArq, "", "", 1)
-	next
-	u_log (_aTodasCar)
-	_aRet = {}
-	for _nCarga = 1 to len (_aTodasCar)
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery = "select BF_LOCALIZ, BF_QUANT FROM SBF010 WHERE D_E_L_E_T_ = '' AND BF_FILIAL = '" + _aTodasCar [_nCarga, 2] + "' AND BF_PRODUTO = '" + _aTodasCar [_nCarga, 3] + "' AND BF_LOTECTL = '" + _aTodasCar [_nCarga, 4] + "' AND BF_QUANT > 0"
-		_aSBF = aclone (_oSQL:Qry2Array ())
-		for _nSBF = 1 to len (_aSBF)
-			aadd (_aRet, {cFilAnt, _aTodasCar [_nCarga, 1], _aTodasCar [_nCarga, 2], _aTodasCar [_nCarga, 3], _aTodasCar [_nCarga, 4], _aSBF [_nSBF, 1], _aSBF [_nSBF, 2]})
-		next
-	next
-	u_log (_aTodasCar)
-	u_acolsxls (_aRet)
 return
 */
 /*
