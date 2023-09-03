@@ -21,8 +21,8 @@ user function A650AltD4 ()
 // Nao pude ativar esta parte ainda... Robert, 30/08/23 --->	local _sCCNovo  := ''
 // Nao pude ativar esta parte ainda... Robert, 30/08/23 --->	local _sMMMNovo := ''
 
-	U_Log2 ('debug', '[' + procname () + ']aCols antes:')
-	U_LogACols ()
+//	U_Log2 ('debug', '[' + procname () + ']aCols antes:')
+//	U_LogACols ()
 	//U_Log2 ('debug', aCols)
 	
 	// Altera local dos empenhos.
@@ -95,7 +95,7 @@ da linha deletada. Robert, 30/08/23
 	endif
 */
 
-	U_Log2 ('debug', '[' + procname () + ']aCols depois:')
-	U_LogACols ()
+//	U_Log2 ('debug', '[' + procname () + ']aCols depois:')
+//	U_LogACols ()
 	U_ML_SRArea (_aAreaAnt)
 return
