@@ -25,6 +25,7 @@
 // 28/09/2020 - Robert - Inseridas tags para catalogo de fontes.
 //                     - Inseridos alguns logs para validar quanto deste programa ainda eh usado.
 // 15/05/2023 - Robert - Alterados alguns logs de INFO para DEBUG e vice-versa.
+// 05/09/2023 - Robert - Comentariados alguns logs que estavam em desuso.
 //
 
 #include "VA_Inclu.prw"
@@ -51,15 +52,15 @@ User Function FrtNFE (_sIncExc)
 		U_LOG2 ('debug', '[' + procname () + '] Inclusao')
 		if type ("_oClsFrtFr") == "O"
 
-			U_LOG2 ('debug', '---------dados para GLPI 12330:')
-			U_LOG2 ('debug', 'U_ImpConh na pilha: ' + cvaltochar (isincallstack ("U_IMPCONH")))
-			U_LOG2 ('debug', 'U_EDIConh na pilha: ' + cvaltochar (isincallstack ("U_EDICONH")))
-			U_LOG2 ('debug', 'U_ZZXG na pilha: ' + cvaltochar (isincallstack ("U_ZZXG")))
-			U_LOG2 ('debug', '[' + procname () + '] Notas previstas:')
-			U_LOG2 ('debug', _oClsFrtFr:_aRegsZZ1)
-			U_LOG2 ('debug', '[' + procname () + '] Notas nao previstas:')
-			U_LOG2 ('debug', _oClsFrtFr:_aNaoPrev)
-			U_LOG2 ('debug', '---------dados para GLPI 12330')
+	//		U_LOG2 ('debug', '---------dados para GLPI 12330:')
+	//		U_LOG2 ('debug', 'U_ImpConh na pilha: ' + cvaltochar (isincallstack ("U_IMPCONH")))
+	//		U_LOG2 ('debug', 'U_EDIConh na pilha: ' + cvaltochar (isincallstack ("U_EDICONH")))
+	//		U_LOG2 ('debug', 'U_ZZXG na pilha: ' + cvaltochar (isincallstack ("U_ZZXG")))
+	//		U_LOG2 ('debug', '[' + procname () + '] Notas previstas:')
+	//		U_LOG2 ('debug', _oClsFrtFr:_aRegsZZ1)
+	//		U_LOG2 ('debug', '[' + procname () + '] Notas nao previstas:')
+	//		U_LOG2 ('debug', _oClsFrtFr:_aNaoPrev)
+	//		U_LOG2 ('debug', '---------dados para GLPI 12330')
 
 			// Busca o valor do frete para posterior rateio sobre os itens da venda (por peso)
 			_sQuery := ""

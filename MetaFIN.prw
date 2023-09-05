@@ -36,6 +36,7 @@
 // 13/07/2022 - Robert - Melhoria fluxo execucao; teste cadastro fornecedor (GLPI 12337)
 // 10/03/2023 - Robert - Criado tratamento para comecar a importar titulos de IRF (GLPI 9047)
 // 17/04/2023 - Robert - Busca valores em separado para IRF 'do mes' e 'do mes futuro'.
+// 05/09/2023 - Robert - Melhorada msg ao usuario quando a remessa vier sem fornecedor.
 //
 
 #include "colors.ch"
@@ -228,8 +229,10 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 			sa2 -> (dbsetorder (1))
 			if ! sa2 -> (dbseek (xfilial ("SA2") + _sFornece + '01', .F.))  // Metadados nao me manda a 'loja'.
 				_sMsgForn := "Codigo de fornecedor '" + _sFornece + "'"
-				_sMsgForn += " informado pelo Metadados não existe no cadastro do Protheus."
-				_sMsgForn += " Verifique se poderia ser o campo de 'nome reduzido' no cadastro do fornecedor."
+				_sMsgForn += " informado pelo Metadados nao existe no cadastro do Protheus."
+				_sMsgForn += " Verifique o campo 'nome reduzido' no cadastro do fornecedor NO METADADOS"
+				_sMsgForn += " (esse 'fornecedor' pode estar amarrado a um pensionista)."
+				_sMsgForn += " Esse 'nome reduzido' deve ter um codigo de fornecedor existente no Protheus."
 				_sMsgForn += " Dados adicionais: Sequencia: " + cvaltochar (_nSeqMeta)
 				_sMsgForn += " " + alltrim (U_NoAcento (_sHistSE2))
 				_lIncOk = .F.
