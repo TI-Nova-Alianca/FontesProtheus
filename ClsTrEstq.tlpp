@@ -46,6 +46,7 @@
 // 20/04/2023 - Robert  - Criado atributo CodMotivo
 // 12/06/2023 - Robert  - Melhorado teste de gravacao do SD3 no metodo GeraSD3() - GLPI 13677
 // 25/07/2023 - Robert  - Verifica se tem saldo e se tem inconsistencia entre tabelas antes de gravar a solicitacao.
+// 05/09/2023 - Robert  - Melhorados testes de ter/nao ter lotes quando envolve FullWMS
 //
 
 // ------------------------------------------------------------------------------------
@@ -1123,11 +1124,13 @@ METHOD PodeIncl () Class ClsTrEstq
 			_lContinua = .F.
 		endif
 		if ! empty (::LoteOrig) .and. ! ::CtrLotOrig
-			if ! (::FWProdOrig .and. ::AlmUsaFull (::AlmDest))  // Se vai para FullWMS tenho que informar algm lote para ele.
+			
+			// Se vai sair do FullWMS, posso especificar o lote
+			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig)
+				// ok
+			else
 				::SomaMsg ("Lote origem nao deve ser informado pois o produto '" + alltrim (::ProdOrig) + "' nao controla lote.")
 				_lContinua = .F.
-			else
-				U_Log2 ('debug', '[' + procname () + ']Vou aceitar lote origem por que preciso ter algum lote para informar ao FullWMS.')
 			endif
 		endif
 		if ! empty (::EndOrig) .and. ! ::CtrLocOrig
@@ -1246,6 +1249,7 @@ METHOD PodeIncl () Class ClsTrEstq
 
 	// Verifica possiveis inconsistencias entre tabelas e disponibilidade de saldos 
 	if _lContinua
+		U_Log2 ('debug', '[' + procname () + ']Vou validar estoque')
 		_sMsgEstq = U_VerEstq ("5", ::ProdOrig, '', ::AlmOrig, ::QtdSolic, '', ::EndOrig, ::LoteOrig, '')
 		if ! empty (_sMsgEstq)
 			::SomaMsg (_sMsgEstq)
@@ -1280,9 +1284,6 @@ return _lContinua
 // Concatena (sem repeticao) mensagens do objeto.
 METHOD SomaMsg (_sMsg) Class ClsTrEstq
 	local _sMsgAux := alltrim (cvaltochar (_sMsg))
-//	if ! _sMsgAux $ ::UltMsg
-//		::UltMsg += iif (empty (::UltMsg), '', '; ') + _sMsgAux
-//	endif
 	if ! alltrim (_sMsgAux) $ ::UltMsg
 		::UltMsg = alltrim (_sMsgAux) + '; ' + ::UltMsg
 	endif

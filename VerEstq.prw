@@ -35,6 +35,8 @@
 // 16/02/2017 - Robert  - Desconsidera B2_QEMP.
 // 05/04/2021 - Claudia - Declaração da variável _nMyReserv e inclusão de tags de pesquisa.
 // 14/07/2023 - Robert  - Melhorado tratamento para situacoes que nao tem TES (nao eh ped.venda) - GLPI 13047)
+// 06/09/2023 - Robert  - Grava log de aviso quando retornar alguma mensagem de problema ao programa chamador.
+//                      - Passa a validar estoque tambem no FullWMS.
 //
 
 // -----------------------------------------------------------------------------------------------------------
@@ -81,7 +83,7 @@ user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _s
 		endif
 	endif
 
-	if _lContinua  // .and. sf4 -> f4_estoque == "S"
+	if _lContinua
 		
 		// Verifica quanto da reserva refere-se a este mesmo pedido de venda.
 		if sb2 -> b2_reserva > 0 .and. ! empty (_sPedido)
@@ -117,55 +119,111 @@ user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _s
 			        "A enderecar: " + cvaltochar (sb2 -> b2_qaclass) + chr (13) + chr (10) + ;
 			        "Empenhado em OP: " + cvaltochar (sb2 -> b2_qemp) //"Bloqueado: " + cvaltochar (_aRetQry [1, 5])
 		endif
+	endif
 
-		// Se ainda nao tem msg de erro, mas foi informado endereco, verifica seu saldo.
-		if empty (_sRet) .and. ! empty (_sLocaliz)
-			_sQuery := ""
-			_sQuery += " select sum (BF_QUANT) AS BF_QUANT, SUM (BF_EMPENHO) AS BF_EMPENHO "
-			_sQuery +=   " from " + RetSQLName ("SBF") + " SBF, "
-			_sQuery +=              RetSQLName ("SBE") + " SBE"
-			_sQuery +=  " where SBF.BF_FILIAL  = '" + xfilial ("SBF") + "'"
-			_sQuery +=    " and SBF.D_E_L_E_T_ = ''"
-			_sQuery +=    " and SBF.BF_PRODUTO = '" + _sProduto + "'"
-			_sQuery +=    " and SBF.BF_LOCAL   = '" + _sLocal   + "'"
-			_sQuery +=    " and SBF.BF_LOCALIZ = '" + _sLocaliz + "'"
-			_sQuery +=    " AND SBE.D_E_L_E_T_ = ''"  
-			_sQuery +=    " AND SBE.BE_FILIAL  = SBF.BF_FILIAL"  
-			_sQuery +=    " AND SBE.BE_LOCAL   = SBF.BF_LOCAL"  
-			_sQuery +=    " AND SBE.BE_LOCALIZ = SBF.BF_LOCALIZ"
-			//u_log (_sQuery)
-			_aRetQry := aclone (U_Qry2Array (_sQuery))
-			if len (_aRetQry) > 0
-				if _nQtdVen > (_aRetQry [1, 1] - (_aRetQry [1, 2] - _nQtdVen))
-					_sRet = "Sld.insuf.prod. '" + alltrim (_sProduto) + "' endereco '" + _sLocaliz + "'. Sld.atual: " + cvaltochar (_aRetQry [1, 1]) + "  Reservado: " + cvaltochar (_aRetQry [1, 2])
-				endif
-			else
-				_sRet = "Produto '" + alltrim (_sProduto) + "' nao existe no endereco '" + _sLocaliz + "'."
+	// Se ainda nao tem msg de erro, mas foi informado endereco, verifica seu saldo.
+	if _lContinua .and. empty (_sRet) .and. ! empty (_sLocaliz)
+		_sQuery := ""
+		_sQuery += " select sum (BF_QUANT) AS BF_QUANT, SUM (BF_EMPENHO) AS BF_EMPENHO "
+		_sQuery +=   " from " + RetSQLName ("SBF") + " SBF, "
+		_sQuery +=              RetSQLName ("SBE") + " SBE"
+		_sQuery +=  " where SBF.BF_FILIAL  = '" + xfilial ("SBF") + "'"
+		_sQuery +=    " and SBF.D_E_L_E_T_ = ''"
+		_sQuery +=    " and SBF.BF_PRODUTO = '" + _sProduto + "'"
+		_sQuery +=    " and SBF.BF_LOCAL   = '" + _sLocal   + "'"
+		_sQuery +=    " and SBF.BF_LOCALIZ = '" + _sLocaliz + "'"
+		_sQuery +=    " AND SBE.D_E_L_E_T_ = ''"  
+		_sQuery +=    " AND SBE.BE_FILIAL  = SBF.BF_FILIAL"  
+		_sQuery +=    " AND SBE.BE_LOCAL   = SBF.BF_LOCAL"  
+		_sQuery +=    " AND SBE.BE_LOCALIZ = SBF.BF_LOCALIZ"
+		//u_log (_sQuery)
+		_aRetQry := aclone (U_Qry2Array (_sQuery))
+		if len (_aRetQry) > 0
+			if _nQtdVen > (_aRetQry [1, 1] - (_aRetQry [1, 2] - _nQtdVen))
+				_sRet = "Sld.insuf.prod. '" + alltrim (_sProduto) + "' endereco '" + _sLocaliz + "'. Sld.atual: " + cvaltochar (_aRetQry [1, 1]) + "  Reservado: " + cvaltochar (_aRetQry [1, 2])
 			endif
+		else
+			_sRet = "Produto '" + alltrim (_sProduto) + "' nao existe no endereco '" + _sLocaliz + "'."
 		endif
+	endif
 
-		// Se ainda nao tem msg de erro, mas foi informado lote, verifica seu saldo.
-		if empty (_sRet) .and. ! empty (_sLote)
-			_sQuery := ""
-			_sQuery += " select B8_SALDO, B8_EMPENHO"
-			_sQuery +=   " from " + RetSQLName ("SB8") + " SB8 "
-			_sQuery +=  " where SB8.B8_FILIAL  = '" + xfilial ("SB8") + "'"
-			_sQuery +=    " and SB8.D_E_L_E_T_ = ''"
-			_sQuery +=    " and SB8.B8_PRODUTO = '" + _sProduto + "'"
-			_sQuery +=    " and SB8.B8_LOCAL   = '" + _sLocal   + "'"
-			_sQuery +=    " and SB8.B8_LOTECTL = '" + _sLote    + "'"
-			//u_log (_sQuery)
-			_aRetQry := aclone (U_Qry2Array (_sQuery))
-			if len (_aRetQry) == 0
-				_sRet = "Lote '" + _sLote + "' nao encontrado para o produto/almox solicitado."
-			else
-				if _nQtdVen > (_aRetQry [1, 1] - (_aRetQry [1, 2] - _nQtdVen))
-					_sRet = "Sld.insuf.lote '" + _sLote + "' produto '" + alltrim (_sProduto)
-				endif
+	// Se ainda nao tem msg de erro, mas foi informado lote, verifica seu saldo.
+	if _lContinua .and. empty (_sRet) .and. ! empty (_sLote) .and. sb1 -> b1_localiz == 'L'
+		_sQuery := ""
+		_sQuery += " select B8_SALDO, B8_EMPENHO"
+		_sQuery +=   " from " + RetSQLName ("SB8") + " SB8 "
+		_sQuery +=  " where SB8.B8_FILIAL  = '" + xfilial ("SB8") + "'"
+		_sQuery +=    " and SB8.D_E_L_E_T_ = ''"
+		_sQuery +=    " and SB8.B8_PRODUTO = '" + _sProduto + "'"
+		_sQuery +=    " and SB8.B8_LOCAL   = '" + _sLocal   + "'"
+		_sQuery +=    " and SB8.B8_LOTECTL = '" + _sLote    + "'"
+		//u_log (_sQuery)
+		_aRetQry := aclone (U_Qry2Array (_sQuery))
+		if len (_aRetQry) == 0
+			_sRet = "Lote '" + _sLote + "' nao encontrado para o produto/almox solicitado."
+		else
+			if _nQtdVen > (_aRetQry [1, 1] - (_aRetQry [1, 2] - _nQtdVen))
+				_sRet = "Sld.insuf.lote '" + _sLote + "' produto '" + alltrim (_sProduto)
 			endif
 		endif
 	endif
 
+	// Se for uma solicitacao de transferencia de estoques, preciso
+	// validar a possibilidade de estar solicitando um produto que nao
+	// controla lotes no Protheus, mas, se estiver saindo do ax.01,
+	// certamente vai ter controle de lotes no FullWMS.
+	if _lContinua .and. empty (_sRet) .and. _sOnde == '5' .and. _sLocal == '01' .and. sb1 -> b1_vafullw == 'S'
+		_sRet = _VerFull (_sProduto, _nQtdVen, _sLote)
+	endif
+
+	if ! empty (_sRet)
+		U_Log2 ('aviso', '[' + procname () + ']Retornando: ' + cvaltochar (_sRet))
+	endif
+
 	U_ML_SRArea (_aAreaAnt)
-//	U_Log2 ('debug', '[' + procname () + ']Retornando: ' + cvaltochar (_sRet))
+return _sRet
+
+
+// --------------------------------------------------------------------------
+static function _VerFull (_sProduto, _nQtdVen, _sLote)
+	local _sRet      := ''
+	local _sLinkSrv  := ''
+	local _oSQL      := NIL
+	local _aEstqFull := {}
+	local _nDispFull := 0
+
+	_sLinkSrv = U_LkServer ('FULLWMS_AX01')
+	if empty (_sLinkSrv)
+		u_help ("Impossivel verificar saldos no sistema FullWMS. Verifique parametrizacao para que o Protheus acesse o banco de dados do FullWMS.",, .t.)
+	else
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select *"
+		_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
+		_oSQL:_sQuery += " 'select sum (qtd) as total"
+		_oSQL:_sQuery +=        ", sum (case when situacao_rua  like ''9%'' then qtd else 0 end) as indisp"
+		_oSQL:_sQuery +=        ", sum (case when situacao_lote like ''B%'' then qtd else 0 end) as bloq"
+		_oSQL:_sQuery +=        ", sum (case when num_reserva   is not null then qtd else 0 end) as reserva"
+		_oSQL:_sQuery +=    " from v_alianca_estoques"
+		_oSQL:_sQuery +=   " where empr_codemp       = 1"
+		_oSQL:_sQuery +=     " and item_cod_item_log = ''" + alltrim (_sProduto) + "''"
+		if ! empty (_sLote)
+			_oSQL:_sQuery += " and lote = ''" + alltrim (_sLote) + "''"
+		endif
+		_oSQL:_sQuery += " ')"
+		_oSQL:Log ('[' + procname () + ']')
+		_aEstqFull := aclone (_oSQL:Qry2Array (.f., .f.) [1])
+		U_Log2 ('debug', _aEstqFull)
+		_nDispFull = _aEstqFull [1] - _aEstqFull [2] - _aEstqFull [3] - _aEstqFull [4]
+		if _nDispFull < _nQtdVen
+			_sRet := "Saldo insuficiente (" + cvaltochar (_nDispFull) + ") no FullWMS."
+			_sRet += " Prod:" + alltrim (_sProduto)
+			if ! empty (_sLote)
+				_sRet += " Lote:" + alltrim (_sLote)
+			endif
+			_sRet += " Estq:" + cvaltochar (_aEstqFull [1])
+			_sRet += " Indisp:" + cvaltochar (_aEstqFull [2])
+			_sRet += " Bloq:" + cvaltochar (_aEstqFull [3])
+			_sRet += " Reserv:" + cvaltochar (_aEstqFull [4])
+		endif
+	endif
 return _sRet
