@@ -11,7 +11,8 @@
 // #Modulos           #FAT
 //
 //  Historico de alterações
-// 06/09/2022 - Claudia - Retirada a coluna de saldos de titulos. GLPI:
+// 06/09/2022 - Claudia - Retirada a coluna de saldos de titulos. 
+// 06/09/2023 - Claudia - Incluida impressão de taxas. GLPI: 14150
 //
 // ----------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
