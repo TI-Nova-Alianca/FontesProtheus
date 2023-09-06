@@ -78,7 +78,9 @@
 // 31/03/2023 - Claudia - Ajuste em LPAD 520 002/ 527 002. GLPI: 12812
 // 10/04/2023 - Robert  - Acrescentado tratamento para CC *1101 e *1102 no LPAD 666005.
 // 24/07/2023 - Claudia - Incluído LPAD's para pagar.me. GLPI: 12280
+// 30/08/2023 - Robert  - Criado tratamento para LPAD 650/040 e 651/001 (GLPI 14099)
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -90,6 +92,11 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 	local _oAviso   := NIL
 
 	_sQueRet = alltrim (upper (_sQueRet))
+
+	U_Log2 ('debug', '[' + procname () + ']_sLPad   = ' + _sLPad)
+	U_Log2 ('debug', '[' + procname () + ']_sSeq    = ' + _sSeq)
+	U_Log2 ('debug', '[' + procname () + ']_sQueRet = ' + _sQueRet)
+
 	do case
 	case _sLPad == '500' .and. _sSeq='004' .and. IsInCallStack ("U_VA_ZA4")// Inclusao contas a receber
 		// seta as contas corretas para contabilizacao da NCC do controle de verbas
@@ -461,56 +468,56 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		endif		
 		
 	case _sLPad == '597' .and. _sSeq='005' // Compensacao contas a pagar
-	   _wtipo := "NORMAL
-	   
-	    // Testa se é ASSOCIADO
-	    if left (se5 -> e5_vachvex, 3) == "SZI"
-           _sQuery := ""
-           _sQuery += "SELECT ZI_TM, ZI_HISTOR"
-           _sQuery +=   " FROM " + RetSQLName ("SZI") + " SZI"
-           _sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-           _sQuery +=    " AND SZI.ZI_FILIAL   = '" + xfilial ("SZI") + "'"
-           _sQuery +=    " AND SZI.ZI_ASSOC    = '" + se5 -> e5_clifor + "'"
-           _sQuery +=    " AND SZI.ZI_LOJASSO  = '" + se5 -> e5_loja + "'"
-           _sQuery +=    " AND SZI.ZI_SEQ      = '" + substr (se5 -> e5_vachvex, 12, 6) + "'"
-           _aRetQry = U_Qry2Array (_sQuery)
-           if len(_aRetQry) > 0
-              _wtipo := "ASSOCIADO"
-           endif
-       endif
-       // testa se é OBRA
-       if _EhObra()
-            _wtipo = "OBRA" 
-       endif
-	   // atribui contas
-	   do case 
-	       case _wtipo = "OBRA"
-	           if _sQueRet == 'CDEB'
-	               _xRet = "201090101001" // Obrigações Obras em Andamento
-	           else     
-	               _xRet = "101020801001" // Adiantamentos Obra Nova Unidade Flores
-	           endif
-	       case _wtipo = "ASSOCIADO"
-	           if _sQueRet == 'CDEB'
-	               // Se foi setado no programa do conta corrente uma conta debito
-	               // usa essa, senão usa "Produtos a Liquidas Associados"
-	               // essas contas são setadas no SZI
-	               _xRet = iif( type ("_SZI_Deb") == 'C', _SZI_Deb,  "201030101001" )	               
-               else 
-                  // Se foi setado no programa do conta corrente uma conta debito
-                  // usa essa, senão usa "Adiantamentos Associados"
-                  // essas contas são setadas no SZI
-                  _xRet = iif( type ("_SZI_Cred") == 'C', _SZI_Cred, "101020101002" )
-				  // Aqui deveria levar em consideracao o tipo de movimento da conta corrente (ou seja, so quero movtos originados via cta corrente associados. Compra de lenha nao entra aqui)
-				  // Seria bom abrir um lcto padrao separado do 'fornecedores normais'
-               endif
-          case _wtipo = "NORMAL"
-               if _sQueRet == 'CDEB'
-                  _xRet = sa2 -> a2_conta // Fornecedores conforme o cadastro
-               else     
-                  _xRet = "101020601001" // Adiantamentos a Fornecedores
-               endif
-        endcase
+		_wtipo := "NORMAL
+		
+		// Testa se é ASSOCIADO
+		if left (se5 -> e5_vachvex, 3) == "SZI"
+			_sQuery := ""
+			_sQuery += "SELECT ZI_TM, ZI_HISTOR"
+			_sQuery +=   " FROM " + RetSQLName ("SZI") + " SZI"
+			_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+			_sQuery +=    " AND SZI.ZI_FILIAL   = '" + xfilial ("SZI") + "'"
+			_sQuery +=    " AND SZI.ZI_ASSOC    = '" + se5 -> e5_clifor + "'"
+			_sQuery +=    " AND SZI.ZI_LOJASSO  = '" + se5 -> e5_loja + "'"
+			_sQuery +=    " AND SZI.ZI_SEQ      = '" + substr (se5 -> e5_vachvex, 12, 6) + "'"
+			_aRetQry = U_Qry2Array (_sQuery)
+			if len(_aRetQry) > 0
+				_wtipo := "ASSOCIADO"
+			endif
+		endif
+		// testa se é OBRA
+		if _EhObra()
+			_wtipo = "OBRA" 
+		endif
+		// atribui contas
+		do case 
+			case _wtipo = "OBRA"
+				if _sQueRet == 'CDEB'
+					_xRet = "201090101001" // Obrigações Obras em Andamento
+				else     
+					_xRet = "101020801001" // Adiantamentos Obra Nova Unidade Flores
+				endif
+			case _wtipo = "ASSOCIADO"
+				if _sQueRet == 'CDEB'
+					// Se foi setado no programa do conta corrente uma conta debito
+					// usa essa, senão usa "Produtos a Liquidas Associados"
+					// essas contas são setadas no SZI
+					_xRet = iif( type ("_SZI_Deb") == 'C', _SZI_Deb,  "201030101001" )	               
+				else 
+					// Se foi setado no programa do conta corrente uma conta debito
+					// usa essa, senão usa "Adiantamentos Associados"
+					// essas contas são setadas no SZI
+					_xRet = iif( type ("_SZI_Cred") == 'C', _SZI_Cred, "101020101002" )
+					// Aqui deveria levar em consideracao o tipo de movimento da conta corrente (ou seja, so quero movtos originados via cta corrente associados. Compra de lenha nao entra aqui)
+					// Seria bom abrir um lcto padrao separado do 'fornecedores normais'
+				endif
+			case _wtipo = "NORMAL"
+				if _sQueRet == 'CDEB'
+					_xRet = sa2 -> a2_conta // Fornecedores conforme o cadastro
+				else     
+					_xRet = "101020601001" // Adiantamentos a Fornecedores
+				endif
+		endcase
 
 	// Teste
 	// case _sLPad + _sSeq == '610031' 
@@ -524,56 +531,128 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 	// 	Else
 	// 		_xRet:= 0
 	// 		u_log('610031 - zerado')
-	// 	endif                                                                                                                                                                                                                                          
+	// 	endif
 
-    case _sLPad + _sSeq == '631000'  // contabilizacao venda cupons
-    	_xRet   = ""
-     	if _sQueRet == 'CDEB'
-     		_wtipo = ALLTRIM(SL4->L4_FORMA)
-     		do case 
-     		case _wtipo == 'R$'
-     			_xRet = "101010101002" // conta caixa
-     		case _wtipo == 'VP'	
-     			_xRet = "403010401004" // conta bonificacoes
+	case _sLPad + _sSeq == '631000'  // contabilizacao venda cupons
+		_xRet   = ""
+		if _sQueRet == 'CDEB'
+			_wtipo = ALLTRIM(SL4->L4_FORMA)
+			do case 
+			case _wtipo == 'R$'
+				_xRet = "101010101002" // conta caixa
+			case _wtipo == 'VP'	
+				_xRet = "403010401004" // conta bonificacoes
 			case _wtipo == 'PIX'	
-     			_xRet = "101020201001" // conta clientes	 
-     		otherwise
-     			// se a forma de pagamento nao foi dinheiro - contabiliza usando a conta cliente do titulo
-     			// pq no financeiro - o cliente fica a administradora de cartao e la deve estar associada a conta correta
-     			_sSQL := ""
-     			_sSQL += " SELECT E1_CLIENTE, E1_LOJA"
-     			_sSQL += "   FROM SE1010"
-     			_sSQL += "  WHERE E1_FILIAL  = '" + SL4->L4_FILIAL + "'" 
-     			_sSQL += "    AND E1_NUM     = '" + SF2->F2_DOC + "'"
-     			_sSQL += "    AND E1_PREFIXO = '" + SF2->F2_SERIE + "'"
-     			_sSQL += "    AND E1_EMISSAO = '" + DTOS(SF2->F2_EMISSAO) + "'" // tem que pegar do F2 no L4 quando eh mais de uma parcela no cartao gera com datas diferentes
-     			_sSQL += "    AND E1_TIPO    = '" + SL4->L4_FORMA + "'"
-     			_aDados := U_Qry2Array(_sSQL)
-     			if len (_aDados) > 0
-     				_wcliente = _aDados[1,1]
-     				_wloja    = _aDados[1,2]
-     				_xRet = fBuscaCpo("SA1",1,xFilial("SA1")+_wcliente+_wloja, "A1_CONTA" )
-     			endif	
-     		endcase
-     	endif
-     	if _sQueRet == 'CCD'
-     		_wtipo = ALLTRIM(SL4->L4_FORMA)
-     		if _wtipo = 'VP'
-     			do case
-     				case SL4->L4_FILIAL = '03'
-     					_xRet = '0334001' 
-     				case SL4->L4_FILIAL = '08'
-     					_xRet = '084003'
-     				case SL4->L4_FILIAL = '10'
-     					_xRet = '104003'
-     				case SL4->L4_FILIAL = '13'
-     					_xRet = '134003'
-     		 	endcase
-     		endif
-     	endif
-     	
+				_xRet = "101020201001" // conta clientes	 
+			otherwise
+				// se a forma de pagamento nao foi dinheiro - contabiliza usando a conta cliente do titulo
+				// pq no financeiro - o cliente fica a administradora de cartao e la deve estar associada a conta correta
+				_sSQL := ""
+				_sSQL += " SELECT E1_CLIENTE, E1_LOJA"
+				_sSQL += "   FROM SE1010"
+				_sSQL += "  WHERE E1_FILIAL  = '" + SL4->L4_FILIAL + "'" 
+				_sSQL += "    AND E1_NUM     = '" + SF2->F2_DOC + "'"
+				_sSQL += "    AND E1_PREFIXO = '" + SF2->F2_SERIE + "'"
+				_sSQL += "    AND E1_EMISSAO = '" + DTOS(SF2->F2_EMISSAO) + "'" // tem que pegar do F2 no L4 quando eh mais de uma parcela no cartao gera com datas diferentes
+				_sSQL += "    AND E1_TIPO    = '" + SL4->L4_FORMA + "'"
+				_aDados := U_Qry2Array(_sSQL)
+				if len (_aDados) > 0
+					_wcliente = _aDados[1,1]
+					_wloja    = _aDados[1,2]
+					_xRet = fBuscaCpo("SA1",1,xFilial("SA1")+_wcliente+_wloja, "A1_CONTA" )
+				endif	
+			endcase
+		endif
+		if _sQueRet == 'CCD'
+			_wtipo = ALLTRIM(SL4->L4_FORMA)
+			if _wtipo = 'VP'
+				do case
+					case SL4->L4_FILIAL = '03'
+						_xRet = '0334001' 
+					case SL4->L4_FILIAL = '08'
+						_xRet = '084003'
+					case SL4->L4_FILIAL = '10'
+						_xRet = '104003'
+					case SL4->L4_FILIAL = '13'
+						_xRet = '134003'
+				endcase
+			endif
+		endif
+
+
 	case _sLPad + _sSeq == '640014'  // DEVOLUÇÃO DE RAPEL
 		_xRet := _BuscaZC0()
+
+
+	case _sLPad + _sSeq == '650002'  // Compras sem estoque
+		if _sQueRet = "VL"
+			_xRet = SD1->D1_TOTAL+SD1->D1_VALIPI+SD1->D1_DESPESA-SD1->D1_VALDESC+SD1->D1_VALFRE+SD1->D1_ICMSCOM-IF(SF4->F4_CREDICM='S',SD1->D1_VALICM,0)-(SD1->D1_VALIMP6+SD1->D1_VALIMP5)
+		endif
+
+
+	case _sLPad + _sSeq == '650040'  // Compras de servicos em geral SEM rateio. Manter compatibilidade com 651/001
+		if _sQueRet = "CDEB"
+			do case
+			case alltrim (sd1 -> d1_cod) == 'S0201' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0701' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0720' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0721' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S0802' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301031', '403010201035')
+			case alltrim (sd1 -> d1_cod) == 'S0901' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301028', '403010201014')
+			case alltrim (sd1 -> d1_cod) == 'S0902' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301028', '403010201014')
+			case alltrim (sd1 -> d1_cod) == 'S1001' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010204003', '403010104003')
+			case alltrim (sd1 -> d1_cod) == 'S1102' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301029', '403010201007')
+			case alltrim (sd1 -> d1_cod) == 'S1104' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010501006', '403010201045')
+			case alltrim (sd1 -> d1_cod) == 'S1401' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1402' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1403' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1404' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301030', '403010201013')
+			case alltrim (sd1 -> d1_cod) == 'S1405' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1406' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1412' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1413' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1601' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010204004', '403010104004')
+			case alltrim (sd1 -> d1_cod) == 'S1701' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1702' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1703' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1712' ; _xRet = iif (substr (sd1 -> d1_cc, 3, 1) $ '1/2', '701010301022', '403010201009')
+			otherwise
+				_xRet = sd1 -> d1_conta
+			endcase
+		endif
+
+
+	case _sLPad + _sSeq == '651001'  // Compras de servicos em geral COM rateio. Manter compatibilidade com 650/040
+		if _sQueRet = "CDEB"
+			do case
+			case alltrim (sd1 -> d1_cod) == 'S0201' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0701' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0720' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S0721' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S0802' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301031', '403010201035')
+			case alltrim (sd1 -> d1_cod) == 'S0901' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301028', '403010201014')
+			case alltrim (sd1 -> d1_cod) == 'S0902' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301028', '403010201014')
+			case alltrim (sd1 -> d1_cod) == 'S1001' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010204003', '403010104003')
+			case alltrim (sd1 -> d1_cod) == 'S1102' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301029', '403010201007')
+			case alltrim (sd1 -> d1_cod) == 'S1104' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010501006', '403010201045')
+			case alltrim (sd1 -> d1_cod) == 'S1401' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1402' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1403' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1404' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301030', '403010201013')
+			case alltrim (sd1 -> d1_cod) == 'S1405' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1406' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1412' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1413' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301011', '403010201006')
+			case alltrim (sd1 -> d1_cod) == 'S1601' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010204004', '403010104004')
+			case alltrim (sd1 -> d1_cod) == 'S1701' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1702' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1703' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301023', '403010201033')
+			case alltrim (sd1 -> d1_cod) == 'S1712' ; _xRet = iif (substr (sde -> de_cc, 3, 1) $ '1/2', '701010301022', '403010201009')
+			otherwise
+				_xRet = sde -> de_conta
+			endcase
+		endif
+
 
 	case _sLPad + _sSeq == '666005'  // Custeio MO + GGF + apoio.
 		_xRet   = ""
@@ -700,6 +779,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				_xRet = U_LP2 ('CTA_TP_VEND',, fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"),, _sLPad + _sSeq)
 			endcase
 
+
 	case _sLPad + _sSeq == '678001'  // REMESSA DE BONIFICACAO
 		do case
 			case _sQueRet = "CCD"  // Cfe. prog. antigo 'vendacc.prw':
@@ -733,7 +813,18 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
 				_xRet = U_LP2 ('CTA_TP_VEND',, fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"),, _sLPad + _sSeq)
 			endcase
+	otherwise
+		_oAviso := ClsAviso ():New ()
+		_oAviso:Tipo       = 'E'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+		_oAviso:Titulo     = procname () + ": Sem tratamento (case) para LPad/seq " + _sLPad + _sSeq
+		_oAviso:Texto      = procname () + ": Sem tratamento (case) para LPad/seq " + _sLPad + _sSeq
+		_oAviso:Texto     += " tipo de retorno=" + _sQueRet
+		_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
+		_oAviso:Origem     = procname ()
+		_oAviso:Grava ()
 	endcase
+
 
 	// Tenta dar um tratamento para o caso de nao ter encontrado nada a retornar.
 	if _xRet == NIL

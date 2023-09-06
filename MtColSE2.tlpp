@@ -97,7 +97,7 @@ user function MTColSE2 ()
 			endif
 		endif
 	else
-		U_Log2 ('info', '[' + procname () + ']Nao vou mexer nas parcelas neste momento (nao eh nota de safra, ou nao eh o momento correto).')
+	//	U_Log2 ('debug', '[' + procname () + ']Nao vou mexer nas parcelas neste momento (nao eh nota de safra, ou nao eh o momento correto).')
 		_aRet := aclone (_aColsE2)  // Se nao alterar nada, retorna o original.
 	endif
 

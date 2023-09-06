@@ -92,7 +92,9 @@
 // 14/12/2022 - Claudia - Inclusão de tratamento notas de complemento no valor mercadoria. GLPI: 12852
 // 01/03/2023 - Claudia - Ajustado filtro de filial e amarração SC5 X FAT_DADOS. GLPI: 13216
 // 18/04/2023 - Claudia - Ajustado campo conforme GLPI: 13458
+// 01/09/2023 - Robert  - Nao negativava coluna CUSTOMEDIO quando origem=SD1
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
 	Local cCadastro  := "Exportacao geral de dados de faturamento para planilha"
@@ -291,7 +293,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Cod.promotor",             "SA1.A1_VAPROMO AS PROMOTOR"})
 		aadd (_aOpcoes, {.F., "Nome promotor",            "RTRIM (ISNULL ((SELECT A2_NOME FROM " + RetSQLName ("SA2") + " AS SA2FOR WHERE SA2FOR.D_E_L_E_T_ = '' AND SA2FOR.A2_COD = SA1.A1_VAPROMO), '')) AS NOME_PROMOTOR"})
 		//aadd (_aOpcoes, {.F., "Nome promotor",            "RTRIM (ISNULL ((SELECT ZX5_46DESC FROM " + RetSQLName ("ZX5") + " WHERE D_E_L_E_T_ = '' AND ZX5_FILIAL = '  ' AND ZX5_TABELA = '46' AND ZX5_46COD = SA1.A1_VAPROMO), '')) AS NOME_PROMOTOR"})
-		aadd (_aOpcoes, {.F., "Custo medio do movto",     "CUSTOMEDIO"})
+	//	aadd (_aOpcoes, {.F., "Custo medio do movto",     "CUSTOMEDIO"})
+		aadd (_aOpcoes, {.F., "Custo medio do movto",     "CUSTOMEDIO * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END "})
 		aadd (_aOpcoes, {.F., "Tipo embalagem",           "RTRIM (ISNULL ((SELECT ZAZ_NLINF FROM " + RetSQLName ("ZAZ") + " WHERE D_E_L_E_T_ = '' AND ZAZ_FILIAL = '" + xfilial ("ZAZ") + "' AND ZAZ_CLINF = SB1.B1_CLINF), '')) AS TIPO_EMBALAGEM"})
 		aadd (_aOpcoes, {.F., "Agrupador unitário",       "CASE WHEN (SB1.B1_CODPAI <> '')  THEN  SB1.B1_CODPAI ELSE SB1.B1_COD END AS AGRUPADOR_UNITARIO"})
 		aadd (_aOpcoes, {.F., "Ato cooperativo/não coop.","CASE WHEN (B1_VAATO = 'S')  THEN  'Cooperativo' ELSE 'Nao Cooperativo' END AS ATO"})

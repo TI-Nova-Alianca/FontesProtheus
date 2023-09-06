@@ -321,7 +321,8 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 		endif
 	endif
 	if _lContinua .and. sb1 -> b1_vafullw != 'S'
-		u_help ("Produto '" + alltrim (_sProduto) + "' nao configurado para integracao com FullWMS. Etiquetas nao serao geradas.")
+	//	u_help ("Produto '" + alltrim (_sProduto) + "' nao configurado para integracao com FullWMS. Etiquetas nao serao geradas.")
+		U_Log2 ('aviso', '[' + procname () + "]Produto '" + alltrim (_sProduto) + "' nao configurado para integracao com FullWMS. Etiquetas nao serao geradas.")
 		_lContinua = .F.
 	endif
 	if _lContinua .and. empty (sb1 -> b1_codbar)

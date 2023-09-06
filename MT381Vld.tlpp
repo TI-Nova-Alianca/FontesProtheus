@@ -12,14 +12,64 @@
 // #Modulos           #PCP
 
 // Historico de alteracoes:
+// 31/08/2023 - Robert - Verifica mais de um MMM empenhado na mesma OP (GLPI 14146)
 //
 
 // --------------------------------------------------------------------------
 user function MT381VLD ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
+	private _sPrefLog := cOP  // Para melhorar arquivo de log. Superfluo!!!
+
+	// Valida nao de obra duplicada
+	if _lRet
+		_lRet = _VerMODup ()
+	endif
+
+	if _lRet
+		// Nao valida durante a execucao do U_AJLOCEMP por que todos os empenhos
+		// da OP sao refeitos para alterar o almox de onde serao empenhados.
+		if ! IsInCallStack ("U_AJLOCEMP")
+			U_Log2 ('debug', '[' + procname () + ']Nao estou rodando no U_AJLOCEMP. Vou validar CC')
+			_lRet = _VerLinEn ()
+		else
+			U_Log2 ('debug', '[' + procname () + ']Estou rodando no U_AJLOCEMP')
+		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lRet
+
+
+// --------------------------------------------------------------------------
+// Verifica se tem mais de uma linha de mao de obra. Isso por que, atualmente,
+// temos possibilidade de envasar alguns produtos em mais de uma linha de
+// envase. As MMM de todas as linhas disponiveis ficam na estrutura, e fica a
+// cargo de quem abre a OP deletar os empenhos de todos os MMM, exceto daquele
+// cuja linha de envase vai ser usada.
+static function _VerMODup ()
+	local _lRet   := .T.
+	local _nLinha := 0
+	local _nQtMMM := 0
+	for _nLinha = 1 to len (aCols)
+		if ! GDDeleted (_nLinha) .and. left (GDFieldGet ("D4_COD", _nLinha), 3) == 'MMM'
+			_nQtMMM ++
+		endif
+	next
+	if _nQtMMM > 1
+		u_help ("Nao deve ser empenhada mais que uma mao de obra (itens MMM)",, .t.)
+		_lRet = .F.
+	endif
+return _lRet
+
+
+// --------------------------------------------------------------------------
+// Consistencia entre Ca_VaLinEn e o MMM empenhado
+static function _VerLinEn ()
+	local _lRet     := .T.
 	local _sH1CC    := ''
 	local _nLinha   := 0
+	local _sMsg     := ''
 
 	// Se tem linha de envase informada na OP, verifica qual eh o seu centro de custo
 	sc2 -> (dbsetorder (1))
@@ -37,14 +87,19 @@ user function MT381VLD ()
 			_sH1CC = sh1 -> h1_ccusto
 		endif
 	endif
+	U_Log2 ('debug', '[' + procname () + ']_sH1CC = ' + _sH1CC)
 	
 	// Verifica se tem empenho de mao de obra referente ao CC da linha de envase.
 	if _lRet .and. ! empty (_sH1CC)
+		U_LogACols ()
 		_nLinha = ascan (aCols, {|_aVal| alltrim (_aVal [GDFieldPos ("D4_COD")]) == alltrim ('MMM' + _sH1CC)})
 		if _nLinha == 0 .or. GDDeleted (_nLinha)
-			_lRet = u_MsgNoYes ("Na OP consta que vai ser envasada na linha " + sc2 -> c2_valinen + ", que encontra-se ligada ao centro de custo '" + _sH1CC + "'. Entretanto, nao encontrei empenho de mao de obra (item MMM) deste centro de custo. Confirma assim mesmo?")
+			_sMsg := "Na OP " + alltrim (cOP)
+			_sMsg += " consta que vai ser envasada na linha " + sc2 -> c2_valinen
+			_sMsg += ", que encontra-se ligada ao centro de custo '" + _sH1CC
+			_sMsg += "'. Entretanto, nao encontrei empenho de mao de obra (item MMM) deste centro de custo."
+			_sMsg += " Confirma assim mesmo?"
+			_lRet = u_MsgNoYes (_sMsg)
 		endif
 	endif
-
-	U_ML_SRArea (_aAreaAnt)
 return _lRet
