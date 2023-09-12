@@ -79,7 +79,7 @@
 // 10/04/2023 - Robert  - Acrescentado tratamento para CC *1101 e *1102 no LPAD 666005.
 // 24/07/2023 - Claudia - Incluído LPAD's para pagar.me. GLPI: 12280
 // 30/08/2023 - Robert  - Criado tratamento para LPAD 650/040 e 651/001 (GLPI 14099)
-//
+// 12/09/2023 - Claudia - Incluido LPAD 520/024de taxa pagar.me. GLPI: 14141
 
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
@@ -319,6 +319,19 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 	case _sLPad + _sSeq $ '520022/521022/524022' .and. _sQueRet == 'VL' // descontos - estorna provisao de rapel
 		_xRet = 0
+
+
+	case _sLPad == '520' .and. _sSeq='024' .and. _sQueRet == 'VL'
+		if (SE5->E5_VADCMPV+SE5->E5_VADAREI+SE5->E5_VAENCAR+SE5->E5_VAFEIRA) > 0 .and. !SE5->E5_MOTBX$"STB/STD"
+			_xRet = 0
+		else
+			If(SE5->E5_TIPO$"CC /CD " .AND. ALLTRIM(SE5->E5_ORIGEM) $ "ZB1/ZD0" .AND. ALLTRIM(SE5->E5_TIPODOC) == "VL") .OR. ("PAGAR.ME"$SE1->E1_HIST .OR. "CIELO"$SE1->E1_HIST)
+				_xRet = SE5->E5_VLDESCO
+			else
+				_xRet = 0
+			endif
+		endif
+
 
 	case _sLPad == '520' .and. _sSeq='026'
 		if _sQueRet == 'CDEB'
