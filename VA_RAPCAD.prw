@@ -11,6 +11,7 @@
 // #Modulos   		  #FAT 
 //
 // Historico de alteracoes:
+// 12/09/2023 - Claudia - Incluida a ligação de cabeçalho e itens pelo código matriz. GLPI: 14186
 //
 // ------------------------------------------------------------------------------------------------
 #Include "Totvs.ch"
@@ -81,8 +82,10 @@ Static Function ModelDef()
 
 	//Fazendo o relacionamento
 	aAdd(aRelation, {"ZAX_FILIAL", "FWxFilial('ZAX')"} )
-	aAdd(aRelation, {"ZAX_CLIENT", "ZA7_CLI   "})
-	aAdd(aRelation, {"ZAX_LOJA", "ZA7_LOJA"})
+	// aAdd(aRelation, {"ZAX_CLIENT", "ZA7_CLI   "})
+	// aAdd(aRelation, {"ZAX_LOJA", "ZA7_LOJA"})
+	aAdd(aRelation, {"ZAX_CODMAT", "ZA7_CLI   "})
+	aAdd(aRelation, {"ZAX_LOJMAT", "ZA7_LOJA"})
 	oModel:SetRelation("ZAXDETAIL", aRelation, ZAX->(IndexKey(1)))
 
 Return oModel
