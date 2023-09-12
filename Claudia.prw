@@ -39,7 +39,44 @@ User Function claudia ()
 
 	//u_help("ajustes katia")
 	//U_AjFiscal()
+
+	//u_help("INCLUI COD MATRIZ ZAX")
+	//_CODMATZAX()
+
 Return
+
+// Static Function _CODMATZAX()
+// 	Local _x := 0
+
+// 	_oSQL:= ClsSQL ():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 	   ZAX.ZAX_CLIENT "
+// 	_oSQL:_sQuery += "    ,ZAX.ZAX_LOJA "
+// 	_oSQL:_sQuery += "	  ,ZAX_LINHA "
+// 	_oSQL:_sQuery += "    ,ZAX_ITEM "
+// 	_oSQL:_sQuery += "    ,SA1.A1_VACBASE "
+// 	_oSQL:_sQuery += " FROM ZAX010 ZAX "
+// 	_oSQL:_sQuery += " INNER JOIN SA1010 SA1 "
+// 	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " 		AND SA1.A1_COD = ZAX.ZAX_CLIENT "
+// 	_oSQL:_sQuery += " 		AND SA1.A1_LOJA = ZAX.ZAX_LOJA "
+// 	_oSQL:_sQuery += " WHERE ZAX.D_E_L_E_T_ = '' "
+// 	_aDados := aclone(_oSQL:Qry2Array())
+
+// 	For _x:=1 to Len(_aDados)
+
+// 		DbSelectArea("ZAX")
+// 		DbSetOrder(3) // ZAX_FILIAL+ZAX_CLIENT+ZAX_LOJA+ZAX_LINHA+ZAX_ITEM 
+// 		if DbSeek(xFilial("ZAX") + _aDados[_x,1] + _aDados[_x,2] + _aDados[_x,3] + _aDados[_x,4] ,.F.)
+// 			reclock ("ZAX", .f.)
+// 				ZAX -> ZAX_CODMAT := _aDados[_x,5]
+// 				ZAX -> ZAX_LOJMAT := '01'
+// 			msunlock ()
+// 		endif	
+// 	Next
+
+// Return
 
 // Static Function _deletaContatos()
 //  	Local _aDados 	:= {}
