@@ -23,6 +23,7 @@
 // 16/10/2020 - Robert - Nao levava valores junto quando copia a tabela 13 (grp.prc.safra)
 // 15/01/2021 - Robert - Replica tabela 52
 // 10/02/2021 - Robert - Replicacao da tabela 52 nao fazia da 53 (itens) - GLPI 9383.
+// 14/09/2023 - Robert - Tratamento campo ZX5_13PMIN
 //
 
 // --------------------------------------------------------------------------
@@ -53,7 +54,6 @@ User Function ReplSafr ()
 		endif
 	endif
 	if _lContinua
-		u_logId ()
 		_sOpcoes = mv_par03
 		
 		AADD(aSays,"Este programa tem como objetivo replicar cadastros usados pelas rotinas")
@@ -97,9 +97,9 @@ Static Function _Opcoes ()
 
 	// Monta array de opcoes.
 	_aOpcoes = {}
-	aadd (_aOpcoes, {.F., "Grupos de uvas p/tabela precos", "ZX5_13"})
-	aadd (_aOpcoes, {.F., "Faixas grau uvas espaldeira",    "ZX5_17"})
-	aadd (_aOpcoes, {.F., "Faixas grau uvas latadas",       "ZX5_52"})
+	aadd (_aOpcoes, {.F., "Grupos e variedades tabelas precos", "ZX5_13"})
+	aadd (_aOpcoes, {.F., "Faixas grau uvas espaldeira",        "ZX5_17"})
+	aadd (_aOpcoes, {.F., "Faixas grau uvas latadas",           "ZX5_52"})
 
 	// Pre-seleciona opcoes cfe. conteudo anterior
 	for _nOpcao = 1 to len (_aOpcoes)
@@ -191,7 +191,8 @@ static function _ReplZX513 ()
 		CursorWait ()
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT ZX5_13.ZX5_13GRUP, ZX5_13.ZX5_13DESC, ZX5_13.ZX5_13GBAS, ZX5_13.ZX5_13PBEN, ZX5_13.ZX5_13BAGE, ZX5_13.ZX5_13PBCO, ZX5_13.ZX5_13BAGC, ZX5_13.ZX5_13PBAG,"
+		_oSQL:_sQuery += " SELECT ZX5_13.ZX5_13GRUP, ZX5_13.ZX5_13DESC, ZX5_13.ZX5_13GBAS, ZX5_13.ZX5_13PBEN"
+		_oSQL:_sQuery +=       ", ZX5_13.ZX5_13BAGE, ZX5_13.ZX5_13PBCO, ZX5_13.ZX5_13BAGC, ZX5_13.ZX5_13PBAG, ZX5_13.ZX5_13GMAG, ZX5_13.ZX5_13PMIN,"
 		_oSQL:_sQuery +=        " ISNULL (ZX5_14.ZX5_14SAFR, '') ZX5_14SAFR,"
 		_oSQL:_sQuery +=        " ISNULL (ZX5_14.ZX5_14PROD, '') ZX5_14PROD, ISNULL (ZX5_14.ZX5_14GRUP, '') ZX5_14GRUP,"
 		_oSQL:_sQuery +=        " ISNULL (ZX5_14.ZX5_14GRMO, '') ZX5_14GRMO, ISNULL (ZX5_14.ZX5_14EXPL, '') ZX5_14EXPL, ISNULL (SB1.B1_DESC, '') B1_DESC"
@@ -211,12 +212,11 @@ static function _ReplZX513 ()
 		_oSQL:_sQuery +=    " AND ZX5_13.ZX5_TABELA  = '13'"
 		_oSQL:_sQuery +=    " AND ZX5_13.ZX5_13SAFR  = '" + mv_par01 + "'"
 		_oSQL:_sQuery +=  " ORDER BY ZX5_13.ZX5_13GRUP, SB1.B1_DESC"
-		u_log (_oSQL:_sQuery)
+		_oSQL:Log ('[' + procname () + ']')
 		_sAliasQ := _oSQL:Qry2Trb ()
 		do while ! (_sAliasQ) -> (eof ())
 			_sGrupo = (_sAliasQ) -> zx5_13grup
-			u_log ((_sAliasQ) -> zx5_13grup, (_sAliasQ) -> zx5_13desc, (_sAliasQ) -> zx5_14GRUP, (_sAliasQ) -> zx5_14prod, (_sAliasQ) -> b1_desc)
-
+			U_Log2 ('debug', '[' + procname () + ']Grupo ' + (_sAliasQ) -> zx5_13grup + (_sAliasQ) -> zx5_13desc + (_sAliasQ) -> zx5_14GRUP + (_sAliasQ) -> zx5_14prod + (_sAliasQ) -> b1_desc)
 
 			// Insere o grupo, se ainda nao existir.
 			_oSQL := ClsSQL ():New ()
@@ -228,9 +228,8 @@ static function _ReplZX513 ()
 			_oSQL:_sQuery +=    " AND ZX5_13.ZX5_TABELA  = '13'"
 			_oSQL:_sQuery +=    " AND ZX5_13.ZX5_13SAFR  = '" + mv_par02 + "'"
 			_oSQL:_sQuery +=    " AND ZX5_13.ZX5_13GRUP  = '" + (_sAliasQ) -> zx5_13grup + "'"
-			//u_log (_oSQL:_sQuery)
 			if _oSQL:RetQry () == 0
-				u_log ('inserindo grupo na tabela 13')
+				U_Log2 ('debug', '[' + procname () + ']inserindo grupo na tabela 13')
 				_aDados = {}
 				aadd (_aDados, {'ZX5_13SAFR', mv_par02})
 				aadd (_aDados, {'ZX5_13GRUP', (_sAliasQ) -> zx5_13grup})
@@ -241,19 +240,20 @@ static function _ReplZX513 ()
 				aadd (_aDados, {'ZX5_13PBCO', (_sAliasQ) -> zx5_13pbco})
 				aadd (_aDados, {'ZX5_13BAGC', (_sAliasQ) -> zx5_13bagc})
 				aadd (_aDados, {'ZX5_13PBAG', (_sAliasQ) -> zx5_13pbag})
-				//u_log (_aDados)
+				aadd (_aDados, {'ZX5_13GMAG', (_sAliasQ) -> zx5_13gmag})
+				aadd (_aDados, {'ZX5_13PMIN', (_sAliasQ) -> zx5_13pmin})
 				_oTab := ClsTabGen ():New ('13')
 				if ! _oTab:Insere (_aDados)
 					u_help (_oTab:UltMsg)
 					return
 				endif
 			else
-				u_log ('Grupo ja existe')
+				U_Log2 ('debug', '[' + procname () + ']Grupo ja existe')
 			endif
 	
 			// Insere os itens do grupo
 			do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> zx5_13grup == _sGrupo
-				u_log ((_sAliasQ) -> zx5_13grup, (_sAliasQ) -> zx5_13desc, (_sAliasQ) -> zx5_14GRUP, (_sAliasQ) -> zx5_14prod, (_sAliasQ) -> b1_desc)
+				U_Log2 ('debug', '[' + procname () + ']' + (_sAliasQ) -> zx5_13grup + (_sAliasQ) -> zx5_13desc + (_sAliasQ) -> zx5_14GRUP + (_sAliasQ) -> zx5_14prod + (_sAliasQ) -> b1_desc)
 				
 				// Pode haver grupo (sinteticas, por exemplo) sem item relacionado.
 				if ! empty ((_sAliasQ) -> zx5_14prod) .and. ! empty ((_sAliasQ) -> zx5_14grup)
@@ -267,21 +267,19 @@ static function _ReplZX513 ()
 					_oSQL:_sQuery +=    " AND ZX5_14.ZX5_14SAFR  = '" + mv_par02 + "'"
 					_oSQL:_sQuery +=    " AND ZX5_14.ZX5_14GRUP  = '" + (_sAliasQ) -> zx5_14grup + "'"
 					_oSQL:_sQuery +=    " AND ZX5_14.ZX5_14PROD  = '" + (_sAliasQ) -> zx5_14prod + "'"
-					//u_log (_oSQL:_sQuery)
 					if _oSQL:RetQry () == 0
-						u_log ('inserindo produto na tabela 14')
+						U_Log2 ('debug', '[' + procname () + ']inserindo produto na tabela 14')
 						_aDados = {}
 						aadd (_aDados, {'ZX5_14SAFR', mv_par02})
 						aadd (_aDados, {'ZX5_14GRUP', (_sAliasQ) -> zx5_14grup})
 						aadd (_aDados, {'ZX5_14PROD', (_sAliasQ) -> zx5_14prod})
-						//u_log (_aDados)
 						_oTab := ClsTabGen ():New ('14')
 						if ! _oTab:Insere (_aDados)
-							u_help (_oTab:UltMsg)
+							u_help (_oTab:UltMsg,, .t.)
 							return
 						endif
 					else
-						u_log ('Item ja existe')
+						U_Log2 ('debug', '[' + procname () + ']Item ja existe')
 					endif
 				endif
 				(_sAliasQ) -> (dbskip ())
@@ -364,7 +362,7 @@ static function _ReplZX517 ()
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_17SAFR  = '" + mv_par02 + "'"
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_17PROD  = ZX5.ZX5_17PROD)"
 		_oSQL:_sQuery +=  " ORDER BY ZX5_17PROD"
-		u_log (_oSQL:_sQuery)
+		_oSQL:Log ('[' + procname () + ']')
 		_sAliasQ := _oSQL:Qry2Trb ()
 		_sChave = (_sAliasQ) -> MaxChv
 		do while ! (_sAliasQ) -> (eof ())
@@ -477,7 +475,7 @@ static function _ReplZX552 ()
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_52SAFR  = '" + mv_par02 + "'"
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_52GRUP  = ZX5.ZX5_52GRUP)"
 		_oSQL:_sQuery +=  " ORDER BY ZX5_52GRUP"
-		u_log (_oSQL:_sQuery)
+		_oSQL:Log ('[' + procname () + ']')
 		_sAliasQ := _oSQL:Qry2Trb ()
 		_nCopiado = 0
 		_sChave = (_sAliasQ) -> MaxChv
@@ -517,7 +515,7 @@ static function _ReplZX552 ()
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_53SAFR  = '" + mv_par02 + "'"
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_53GRUP  = ZX5.ZX5_53GRUP)"
 		_oSQL:_sQuery +=  " ORDER BY ZX5_53GRUP"
-		u_log (_oSQL:_sQuery)
+		_oSQL:Log ('[' + procname () + ']')
 		_sAliasQ := _oSQL:Qry2Trb ()
 		_nCopiado = 0
 		_sChave = (_sAliasQ) -> MaxChv
