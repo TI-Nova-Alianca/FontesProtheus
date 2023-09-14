@@ -11,7 +11,8 @@
 // #Modulos           #FAT
 
 // Historico de alteracoes:
-//
+// 13/09/2023 Sandra/Robert - Validação contratos encerrados manualmente. GLPI 14205
+// 
 
 #include "rptdef.ch"  // Para ter a definicao da variavel IMP_PDF
 
@@ -143,7 +144,12 @@ Static Function PrintReport(_oRep)
 		_trb -> (dbgoto (_nRegAtu))
 
 		if _nSaldoFim > 0
-			_trb -> situacao = 'A'  // Aberto
+		// Contratos baixados manualmente  GLPI 14205
+			if  _trb -> filial = '07' .and. _trb -> contrato $'000039/000040/000041' 
+				_trb -> situacao = 'E'  // Encerrado
+			else
+				_trb -> situacao = 'A'  // Aberto
+			endif	
 		else
 			_trb -> situacao = 'E'  // Encerrado
 		endif
