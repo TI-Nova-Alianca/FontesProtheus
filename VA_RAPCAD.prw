@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 12/09/2023 - Claudia - Incluida a ligação de cabeçalho e itens pelo código matriz. GLPI: 14186
+// 14/09/2023 - Claudia - Alterada validações de codigo matriz para codigo cliente. GLPI: 14215
 //
 // ------------------------------------------------------------------------------------------------
 #Include "Totvs.ch"
@@ -137,8 +138,10 @@ Static Function _VldPos()
 	oModelCab  := oModelPad:GetModel('ZA7MASTER')
     oModelGrid := oModelPad:GetModel('ZAXDETAIL')
 
-	_sCliente :=  oModelCab:GetValue("ZA7_CLI")
-	_sLoja    :=  oModelCab:GetValue("ZA7_LOJA")
+	_sCliMat  :=  oModelCab:GetValue("ZA7_CLI")
+	_sLojaMat :=  oModelCab:GetValue("ZA7_LOJA")
+	_sCliente :=  oModelGrid:GetValue("ZAX_CLIENT")
+	_sLoja    :=  oModelGrid:GetValue("ZAX_LOJA")
 	_sCont    :=  oModelCab:GetValue("ZA7_CONT")
 	_sSeq     :=  oModelCab:GetValue("ZA7_SEQ")
 	_dDtBase  :=  oModelCab:GetValue("ZA7_DBASE")
@@ -170,7 +173,7 @@ Static Function _VldPos()
 		_lRet = .F.
 	endif
     
-    if _sOper == 3 .and. DbSeek(xFilial("ZA7") + _sCliente + _sLoja + _sCont + _sSeq, .F.)
+    if _sOper == 3 .and. DbSeek(xFilial("ZA7") + _sLojaMat + _sLojaMat + _sCont + _sSeq, .F.)
        u_help ("Sequência ja informada para este contrato.")    
        _lRet = .F. 
     endif
@@ -202,8 +205,8 @@ Static Function _VldPos()
 		_oSQL:_sQuery += " SELECT COUNT(*) AS JA_TEM "
         _oSQL:_sQuery += " FROM " + RetSQLName ("ZA7") + " ZA7 "
         _oSQL:_sQuery += " WHERE ZA7.D_E_L_E_T_ = '' "
-        _oSQL:_sQuery += " AND ZA7_CLI    = '" + _sCliente + "' "
-        _oSQL:_sQuery += " AND ZA7_LOJA   = '" + _sLoja    + "' "
+        _oSQL:_sQuery += " AND ZA7_CLI    = '" + _sCliMat  + "' "
+        _oSQL:_sQuery += " AND ZA7_LOJA   = '" + _sLojaMat + "' "
         _oSQL:_sQuery += " AND ZA7_VIGENT = '1'"
 		_aDados := aclone(_oSQL:Qry2Array ())
 
