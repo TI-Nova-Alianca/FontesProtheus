@@ -1237,9 +1237,7 @@ static function _Gera2023 ()
 		zz9 -> zz9_serior = (_sAliasQ) -> serie
 		zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
 		zz9 -> zz9_msgNF  = 'COMPL PRECO;' + _sMsgNF
-	//	zz9 -> zz9_TES    = iif (_nVCompl <= 0, '', U_TESSafra (mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V'))
 		zz9 -> zz9_TES    = U_TESSafra (mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V')
-		zz9 -> zz9_dco    = ''
 		if valtype (_oCarSaf) == 'O' .and. len (_oCarSaf:CCompart) > 0
 			zz9 -> zz9_ccomp  = _oCarSaf:TodasComp ()
 		endif

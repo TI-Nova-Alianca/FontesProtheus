@@ -13,6 +13,8 @@
 
 // Historico de alteracoes:
 // 19/01/2023 - Robert - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
+// 15/09/2023 - Robert - Campo tb_wms_movimentacoes.status_protheus passa a gravar descricao junto
+//                     - Passa a gerar solicitacao de transferencia com :CodMotivo=08
 //
 
 #Include "Protheus.ch"
@@ -26,6 +28,17 @@ User Function BatFullM ()
 	local _oTrEstq   := nil
 	local _sAliasQ   := ""
 	local _lRet      := .T.
+	private _aStatProt := {}  // Deixar PRIVATE para ser vista pelas demais functions.
+
+	// Define os possiveis valores para os campos 'status_protheus'
+	// que constam nas tabelas de integracao.
+	aadd (_aStatProt, {'1', 'Falta estq ERP'})
+	aadd (_aStatProt, {'2', 'Outros erros'})
+	aadd (_aStatProt, {'3', 'Executado no ERP'})
+	aadd (_aStatProt, {'4', '(reservado)'})  // [Qt Full # qt ERP] Reservado para uso na integracao de guarda das etiquetas
+	aadd (_aStatProt, {'5', '(reservado)'})  // [qtde_mov < qtde_exec] Reservado para uso na integracao de guarda das etiquetas
+	aadd (_aStatProt, {'6', '(reservado)'})  // [solic.c/nao aceite] Reservado para uso na integracao de guarda das etiquetas
+	aadd (_aStatProt, {'C', 'Cancelado no ERP'})
 
 	// Variavel para erros de rotinas automaticas. Deixar tipo 'private' para ser vista por outras rotinas.
 	if type ("_sErroAuto") != 'C'
@@ -39,9 +52,9 @@ User Function BatFullM ()
 	_oSQL:_sQuery +=      " , dbo.VA_DatetimeToVarchar (dthr) as dtemis"  // Para gravacao no Protheus
 	_oSQL:_sQuery +=      " , format (dthr, 'yyyy-MM-dd HH:mm:ss.fff') as PK"  // Nao estou muito confortavel com isto, mas foi o melhor que consegui para usar como 'PK'.
 	_oSQL:_sQuery +=   " from tb_wms_movimentacoes"
-	_oSQL:_sQuery +=  " where status_protheus != '3'"  // 3 = executado
-	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
-	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = qtd.movimentada diferente qt.executada
+	_oSQL:_sQuery +=  " where status_protheus not like '3%'"  // 3 = executado
+	_oSQL:_sQuery +=    " and status_protheus not like 'C%'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
+	_oSQL:_sQuery +=    " and status_protheus not like '5%'"  // 5 = qtd.movimentada diferente qt.executada
 	_oSQL:_sQuery +=  " order by dthr"
 	_oSQL:Log ()
 	_sAliasQ := _oSQL:Qry2Trb ()
@@ -74,12 +87,11 @@ User Function BatFullM ()
 				_oTrEstq:LoteOrig = left (alltrim ((_sAliasQ) -> lote) + space (10), 10)
 				_oTrEstq:LoteDest = left (alltrim ((_sAliasQ) -> lote) + space (10), 10)
 			endif
-			//_oTrEstq:EndOrig  = 
-			//_oTrEstq:EndDest  = 
-			_oTrEstq:QtdSolic = (_sAliasQ) -> qtde
-			_oTrEstq:Motivo   = 'Baixa avaria - ' + (_sAliasQ) -> obs
-			_oTrEstq:UsrIncl = 'FullWMS'  //cUserName
-			_oTrEstq:DtEmis  = stod ((_sAliasQ) -> dtemis)
+			_oTrEstq:QtdSolic  = (_sAliasQ) -> qtde
+			_oTrEstq:CodMotivo = '08'  // Cfe tabela 56 do ZX5
+			_oTrEstq:Motivo    = 'Baixa avaria - ' + (_sAliasQ) -> obs
+			_oTrEstq:UsrIncl   = 'FullWMS'  //cUserName
+			_oTrEstq:DtEmis    = stod ((_sAliasQ) -> dtemis)
 			if ! _oTrEstq:Grava ()
 				U_Log2 ('erro', '[' + procname () + ']' + _oTrEstq:UltMsg)
 				_AtuFull ((_sAliasQ) -> PK, '2', '')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
@@ -97,7 +109,7 @@ User Function BatFullM ()
 
 		(_sAliasQ) -> (dbskip ())
 
-		//EXIT  // DURANTE TESTES, PARA RODAR 1 REGISTRO POR VEZ
+		EXIT  // DURANTE TESTES, PARA RODAR 1 REGISTRO POR VEZ
 
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
@@ -119,6 +131,7 @@ return _lRet
 // 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
 // 9 = 'cancelado no ERP'
 static function _AtuFull (_sDtHr, _sStatus, _sIdZAG)
+/*
 	local _oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := " update tb_wms_movimentacoes"
 	_oSQL:_sQuery +=    " set status_protheus = '" + _sStatus + "'"
@@ -127,4 +140,28 @@ static function _AtuFull (_sDtHr, _sStatus, _sIdZAG)
 	_oSQL:_sQuery +=  " where dthr = '" + alltrim (_sDtHr) + "'"  // Primary key
 	_oSQL:Log ()
 	_oSQL:Exec ()
-return
+*/
+	local _oSQL  := NIL
+	local _nStat := 0
+	local _lRet  := .F.
+
+	_nStat = ascan (_aStatProt, {|_aVal| _aVal [1] == _sStatus})
+	if _nStat == 0
+		u_help ("Tentativa de gravar um status desconhecido ('" + cvaltochar (_sStatus) + "') na tabela tb_wms_movimentacoes",, .t.)
+		_lRet = .F.
+	else
+		// Concatena o descritivo do status, por que eh sempre uma complicacao
+		// na hora de consultar essa tabela, sem saber o significado de cada um.
+		// Vou habilitar compactacao da tabela no SQL, entao a existencia de
+		// muitos registros com dados semelhantes vai reduzir o tamanho.
+		_sStatus += '-' + _aStatProt [_nStat, 2]
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " update tb_wms_movimentacoes"
+		_oSQL:_sQuery +=    " set status_protheus = '" + _sStatus + "'"
+		_oSQL:_sQuery +=      " , IdZAG = '" + _sIdZAG + "'"
+		_oSQL:_sQuery +=  " where dthr = '" + alltrim (_sDtHr) + "'"  // Primary key
+		_oSQL:Log ()
+		_lRet = _oSQL:Exec ()
+	endif
+return _lRet
