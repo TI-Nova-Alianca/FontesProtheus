@@ -19,6 +19,7 @@
 // 06/11/2019 - Cláudia - Alterada a validação para que caso não existir o código fornecedor inserido na tabela,
 //                        não permita a gravação.
 // 02/02/2022 - Claudia - Ajustada validação produto x fornecedor. GLPI: 11556
+// 18/09/2023 - Claudia - Incluida exceção de produtos tipo 'SG'. GLPI: 14231
 //
 // -----------------------------------------------------------------------------------------------------------------
 User Function MT120PCol ()
@@ -45,7 +46,7 @@ Static Function _VProdForn ()
 	If ! GDDeleted ()
 		_wtipo = fbuscacpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C7_PRODUTO"),  "B1_TIPO")
 
-		If _wtipo != 'GG' .and. _wtipo != 'AI' // verifica se existe amarracao na SA5			
+		If _wtipo != 'GG' .and. _wtipo != 'AI' .and. _wtipo != 'SG' // verifica se existe amarracao na SA5			
 			_oSQL:_sQuery := ""
     		_oSQL:_sQuery += " SELECT "
 			_oSQL:_sQuery += " 		A5_CODPRF "
