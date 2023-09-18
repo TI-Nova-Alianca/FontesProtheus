@@ -93,8 +93,8 @@
 // 01/03/2023 - Claudia - Ajustado filtro de filial e amarração SC5 X FAT_DADOS. GLPI: 13216
 // 18/04/2023 - Claudia - Ajustado campo conforme GLPI: 13458
 // 01/09/2023 - Robert  - Nao negativava coluna CUSTOMEDIO quando origem=SD1
+// 06/09/2023 - Claudia - Tratamento para descontos da zina franca. GLPI: 14152
 //
-
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
 	Local cCadastro  := "Exportacao geral de dados de faturamento para planilha"
@@ -237,7 +237,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Valor mercadoria",         "CASE WHEN V.TIPONFSAID = 'C' THEN 0 ELSE "+_sSelVlMer + " * (CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END) END AS VALMERC"})
 	//	aadd (_aOpcoes, {.F., "Valor mercadoria",         _sSelVlMer + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALMERC"})
 	//	aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
-		aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET + V.D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
+	//	aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET + V.D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
+		aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET + V.D2_VALFRE - DESCZFPIS - DESCZFCOF) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
 		aadd (_aOpcoes, {.F., "Valor ICMS",               "V.VALICM * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS ICMS"})
 		aadd (_aOpcoes, {.F., "Valor IPI",                "V.VALIPI * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS IPI"})
 		aadd (_aOpcoes, {.F., "Valor PIS",                "V.VALPIS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS PIS"})
@@ -274,7 +275,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Valor frete paletizacao",  "V.FRETEPALET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS FRTPALETIZ"})
 		aadd (_aOpcoes, {.F., "PVCond",                   "V.PVCOND * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END as PVCOND"})
 	//	aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
-		aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET + D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
+	//	aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET + D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
+	    aadd (_aOpcoes, {.F., "Valor total NF",           "CASE V.ORIGEM WHEN 'SD1' THEN (" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET + V.DESPESA + D2_VALFRE - DESCZFPIS - DESCZFCOF) * -1 ELSE (" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET + D2_VALFRE - DESCZFPIS - DESCZFCOF) * 1 END AS VL_TOT_NF"})
 		aadd (_aOpcoes, {.F., "Msg Adicionais",           "RTRIM(C5_MENNOTA) AS MSGADIC"})
 	//	aadd (_aOpcoes, {.F., "Numero de Serie",          "RTRIM(C6_VANSER) AS NUMSER"})
 	    aadd (_aOpcoes, {.F., "Numero de Serie",          "'' AS NUMSER"})
