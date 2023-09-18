@@ -47,6 +47,7 @@
 // 12/06/2023 - Robert  - Melhorado teste de gravacao do SD3 no metodo GeraSD3() - GLPI 13677
 // 25/07/2023 - Robert  - Verifica se tem saldo e se tem inconsistencia entre tabelas antes de gravar a solicitacao.
 // 05/09/2023 - Robert  - Melhorados testes de ter/nao ter lotes quando envolve FullWMS
+// 15/09/2023 - Robert  - Quando :CodMotivo=08 chama a validacao de estoques com outros parametros.
 //
 
 // ------------------------------------------------------------------------------------
@@ -1250,7 +1251,14 @@ METHOD PodeIncl () Class ClsTrEstq
 	// Verifica possiveis inconsistencias entre tabelas e disponibilidade de saldos 
 	if _lContinua
 		U_Log2 ('debug', '[' + procname () + ']Vou validar estoque')
-		_sMsgEstq = U_VerEstq ("5", ::ProdOrig, '', ::AlmOrig, ::QtdSolic, '', ::EndOrig, ::LoteOrig, '')
+
+		// Quando avarias recebidas do FullWMS, nao quero mais validar
+		// o estoque do FullWMS por que lah jah foi dado baixa.
+		if ::CodMotivo == '08'  // Quando avarias recebidas do FullWMS, nao quero
+			_sMsgEstq = U_VerEstq ("6", ::ProdOrig, '', ::AlmOrig, ::QtdSolic, '', ::EndOrig, ::LoteOrig, '')
+		else
+			_sMsgEstq = U_VerEstq ("5", ::ProdOrig, '', ::AlmOrig, ::QtdSolic, '', ::EndOrig, ::LoteOrig, '')
+		endif
 		if ! empty (_sMsgEstq)
 			::SomaMsg (_sMsgEstq)
 			_lContinua = .F.
