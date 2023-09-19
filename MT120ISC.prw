@@ -31,8 +31,6 @@ User function MT120ISC ()
 		_sTpOper := iif(alltrim(sc1 -> c1_vaprose) == 'P','02','11')
 
 		GDFieldPut ("C7_VAPROSE", sc1 -> c1_vaprose)
-		GDFieldPut ("C7_PRECO"  , sc1 -> c1_vavluni)
-		GDFieldPut ("C7_TOTAL"  , sc1 -> c1_vavluni * sc1-> c1_quant)
 		GDFieldPut ("C7_OBS"    , sc1 -> c1_obs)
 		GDFieldPut ("C7_VAFNOME", fBuscaCpo ('SA2', 1, xfilial ('SA2') + CA120FORN + CA120LOJ, 'A2_NOME'))
 		GDFieldPut ("C7_VADESTI", sc1 -> c1_vadesti)
@@ -43,6 +41,9 @@ User function MT120ISC ()
 		GDFieldPut ("C7_VAOPER" , _sTpOper)
 		GDFieldPut ("C7_TES"    , MaTesInt(1, _sTpOper, cA120Forn, cA120Loj, "F", SC1->C1_PRODUTO, "C7_TES")) 
 		GDFieldPut ("C7_OPER"   , _sTpOper)
+		GDFieldPut ("C7_PRECO"  , sc1 -> c1_vavluni)
+		GDFieldPut ("C7_QUANT"  , sc1 -> c1_quant)
+		GDFieldPut ("C7_TOTAL"  , sc1 -> c1_vavluni * sc1-> c1_quant)
 		//GDFieldPut ("C7_OPER"   , sc1 -> c1_vaNF)
 
 	else  // Aut.entrega
