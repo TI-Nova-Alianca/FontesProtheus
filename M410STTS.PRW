@@ -20,7 +20,7 @@
 // 11/01/2022 - Claudia - Incluida validação para liberação de credito p/ ped.ecommerce. GLPI: 11270
 // 04/05/2023 - Claudia - Incluida a validação para liberação de credito para loja. GLPI: 13521
 // 05/05/2023 - Claudia - Alterada validação de lojas, incluindo a verificação das filiais. GLPI: 13533
-//
+// 21/09/2023 - Sandra  - Incluida a validação para liberação de credito R$ para loja. GLPI: 14260. 
 // --------------------------------------------------------------------------------------------------
 User Function M410STTS()
 	local _aAreaAnt := U_ML_SRArea ()
