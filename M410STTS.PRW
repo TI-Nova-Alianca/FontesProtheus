@@ -41,7 +41,7 @@ User Function M410STTS()
 		_LibCred()
 	endif
 	// Libera pedidos da filial
-	if alltrim(m->c5_vatipo) $('CC/CD/PIX/PX') .and. alltrim(m->c5_filial) $ ('13/08')
+	if alltrim(m->c5_vatipo) $('CC/CD/PIX/PX/R$') .and. alltrim(m->c5_filial) $ ('13/08')
 		_LibCred()
 	endif
 
