@@ -93,9 +93,9 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 	_sQueRet = alltrim (upper (_sQueRet))
 
-	U_Log2 ('debug', '[' + procname () + ']_sLPad   = ' + _sLPad)
-	U_Log2 ('debug', '[' + procname () + ']_sSeq    = ' + _sSeq)
-	U_Log2 ('debug', '[' + procname () + ']_sQueRet = ' + _sQueRet)
+//	U_Log2 ('debug', '[' + procname () + ']_sLPad   = ' + _sLPad)
+//	U_Log2 ('debug', '[' + procname () + ']_sSeq    = ' + _sSeq)
+//	U_Log2 ('debug', '[' + procname () + ']_sQueRet = ' + _sQueRet)
 
 	do case
 	case _sLPad == '500' .and. _sSeq='004' .and. IsInCallStack ("U_VA_ZA4")// Inclusao contas a receber

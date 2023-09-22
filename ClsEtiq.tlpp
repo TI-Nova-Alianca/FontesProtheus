@@ -1235,9 +1235,10 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 		_oSQL:_sQuery += " SELECT *"
 		_oSQL:_sQuery +=   " FROM C"
 		_oSQL:_sQuery +=  " WHERE QT_A_REQ > ESTQ""
-		//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+//		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_aSemSaldo := aclone (_oSQL:Qry2Array (.F., .F.))
-		//U_Log2 ('debug', _aSemSaldo)
+//		U_Log2 ('debug', '[' + procname () + ']_aSemSaldo:')
+//		U_Log2 ('debug', _aSemSaldo)
 		if len (_aSemSaldo) > 0
 			_sMsgSaldo := "Sem saldo:"
 			for _nSemSaldo = 1 to len (_aSemSaldo)

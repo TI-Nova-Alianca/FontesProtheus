@@ -651,6 +651,7 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 			if empty (_dDtApont)
 				u_help ("Data nao informada. Apontamento cancelado.",, .t.)
 			else
+			
 				procregua (len (_aEtiq))
 				for _nEtiq = 1 to len (_aEtiq)
 					incproc ("Apontando etiqueta " + _aEtiq [_nEtiq, 2])

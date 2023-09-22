@@ -46,7 +46,8 @@ user function OrdAuto (_aMatriz)
 			endif
 
 			// Em 07/03/2022 tive problema com campo que foi tirado de uso por um UPDDISTR (GLPI 11721)
-			if ! X3Uso (sx3 -> x3_usado)
+		//	if ! X3Uso (sx3 -> x3_usado)
+			if ! X3Uso (sx3 -> x3_usado, nModulo)
 				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' e pode nao ser considerado pela rotina automatica.")
 				u_logpcham ()
 			endif
