@@ -101,6 +101,8 @@
 // 16/12/2022 - Robert - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
 // 13/03/2023 - Robert - Novos parametros FINA090.
 // 29/05/2023 - Robert - Metodos Grava() e TransFil() passam a usar controle de transacao (GLPI 13532).
+// 21/09/2023 - Robert - Nao salvava area de trabalho no metodo PodeIncl() - GLPI 14182.
+//                     - Nao validava codigo e loja de fornecedor (nao do associado) no metodo PodeIncl() - GLPI 14182.
 //
 
 // ------------------------------------------------------------------------------------
@@ -1589,6 +1591,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	local _oDUtil    := NIL
 	local _sCRLF     := chr (13) + chr (10)
 	local _oSQL      := NIL
+	local _aAreaAnt  := U_ML_SRArea ()
 
 	::UltMsg = ""
 
@@ -2050,11 +2053,20 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif
 
+	if _lContinua .and. (! empty (::Fornece) .or. ! empty (::LojaFor))
+		sa2 -> (dbsetorder (1))
+		if ! sa2 -> (dbseek (xfilial ("SA2") + ::Fornece + ::LojaFor, .F.))
+			::UltMsg += "Fornecedor/loja informado nao localizado no cadastro."
+			_lContinua = .F.
+		endif
+	endif
+
 	// Se chegou aqui com mensagem de erro, mostra para o usuario.
 	if ! _lContinua .and. ! empty (::UltMsg)
 		u_help (::UltMsg,, .t.)
 	endif
 
+	U_ML_SRArea (_aAreaAnt)
 return _lContinua
 
 
