@@ -78,7 +78,7 @@ Static Function _BloqLotes(_sLinkSrv)
     _oSQL:_sQuery += " 		AND B8_PRODUTO   = ITEM_COD_ITEM_LOG "
     _oSQL:_sQuery += " 		AND B8_LOTECTL   = LOTE "
     _oSQL:_sQuery += " 		AND B8_DTVALID   = VALIDADE "
-    _oSQL:_sQuery += " WHERE ITEM_COD_ITEM_LOG='0150' ""
+    //_oSQL:_sQuery += " WHERE ITEM_COD_ITEM_LOG='0150' ""
     _oSQL:_sQuery += " ORDER BY ITEM_COD_ITEM_LOG, LOTE, POSICAO "
     u_log(_oSQL:_sQuery)
     _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
