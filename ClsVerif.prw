@@ -93,6 +93,7 @@
 // 30/06/2023 - Robert  - Melhoria geral verificacao 4 (permite mais de 1 mes; filtro por produto)
 // 08/08/2023 - Robert  - Nao limpava array AColsF3 antes de gerar a consulta.
 // 14/08/2023 - Robert  - Inativada verificacao 85 (procedure VA_SP_VERIFICA_ETIQ_PRODUCAO nunca ficou funcional).
+// 24/09/2023 - Robert  - Criada verificacao 98 (diferenca estoques Protheus x FullWMS)
 //
 
 #include "protheus.ch"
@@ -324,6 +325,8 @@ return _sHTM
 // --------------------------------------------------------------------------
 // Gera a query para a consulta.
 METHOD GeraQry (_lDefault) Class ClsVerif
+	local _sLinkSrv  := ''
+
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 	do case
 	case ::Numero == 1
@@ -3889,6 +3892,166 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += " ORDER BY GX0041_LCTO_CONTABIL_FILIAL, GX0041_LCTO_CONTABIL_DATA, GX0041_LCTO_CONTABIL_DEBITO, GX0041_LCTO_CONTABIL_CREDITO"
 
 
+	case ::Numero == 98
+		_sLinkSrv = U_LkServer ('FULLWMS_AX01')
+		::Filiais    = '01'  // Somente operamos com FullWMS na matriz.
+		::Setores    = 'LOG/CUS/INF'
+		::Descricao  = "Diferenca estoques Protheus x FullWMS"
+		::Sugestao   = "Verificar manualmente diferença de saldos entre os dois sistemas."
+		::QuandoUsar = "A qualquer momento."
+		::Dica       = ""
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SB2, SB8, view v_alianca_estoques (do FullWMS)'
+		::GrupoPerg = "U_VALID010"
+		::ValidPerg (_lDefault)
+		::Query := ""
+		// Gera uma CTE com os estoques do Protheus que NAO CONTROLAM LOTE, acumulados por item.
+		::Query += "WITH PROTHEUS_SEM_LOTE AS ("
+		::Query += " SELECT SB2.B2_COD AS PRT_COD"
+		::Query +=       ", SB1.B1_DESC AS PRT_DESC"
+		::Query +=       ", SUM (CASE WHEN B2_LOCAL = '01' THEN B2_QATU ELSE 0 END) AS PRT_AX01"
+		::Query +=       ", SUM (CASE WHEN B2_LOCAL = '10' THEN B2_QATU ELSE 0 END) AS PRT_AX10"  // Talvez nao precise de todos estes almox
+		::Query +=       ", SUM (CASE WHEN B2_LOCAL = '90' THEN B2_QATU ELSE 0 END) AS PRT_AX90"  // Talvez nao precise de todos estes almox
+		::Query +=       ", SUM (B2_QATU) AS PRT_TOTAL""
+		::Query += " FROM " + RetSQLName ("SB1") + " SB1 "
+		::Query +=      "," + RetSQLName ("SB2") + " SB2 "
+		::Query += " WHERE SB2.D_E_L_E_T_ = ''"
+		::Query +=   " AND SB2.B2_FILIAL = '" + xfilial ("SB2") + "'"
+		::Query +=   " AND (SB2.B2_LOCAL IN ('01', '10', '91') OR (SB1.B1_TIPO = 'PA' AND B2_LOCAL = '90'))"
+		::Query +=   " AND SB1.D_E_L_E_T_ = ''"
+		::Query +=   " AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
+		::Query +=   " AND SB1.B1_COD = SB2.B2_COD"
+		::Query +=   " AND SB1.B1_TIPO NOT IN ('MO','GF','AP')"
+		::Query +=   " AND SB1.B1_VAFULLW = 'S'"
+		::Query +=   " AND SB1.B1_RASTRO != 'L'"
+		::Query +=   " AND SB2.B2_COD BETWEEN '" + ::Param01 + "' AND '" + ::Param02 + "'"
+		::Query += " GROUP BY SB2.B2_COD, SB1.B1_DESC"
+		::Query += ")"
+		// Gera uma CTE com os estoques do Protheus que NAO CONTROLAM LOTE, acumulados por item.
+		::Query += ", PROTHEUS_COM_LOTE AS ("
+		::Query += " SELECT SB8.B8_PRODUTO AS PRT_COD"
+		::Query +=       ", SB8.B8_LOTECTL AS PRT_LOTE"
+		::Query +=       ", SB1.B1_DESC    AS PRT_DESC"
+		::Query +=       ", SUM (CASE WHEN B8_LOCAL = '01' THEN B8_SALDO ELSE 0 END) AS PRT_AX01"
+		::Query +=       ", SUM (CASE WHEN B8_LOCAL = '10' THEN B8_SALDO ELSE 0 END) AS PRT_AX10"  // Talvez nao precise de todos estes almox
+		::Query +=       ", SUM (CASE WHEN B8_LOCAL = '90' THEN B8_SALDO ELSE 0 END) AS PRT_AX90"  // Talvez nao precise de todos estes almox
+		::Query +=       ", SUM (B8_SALDO) AS PRT_TOTAL""
+		::Query += " FROM " + RetSQLName ("SB1") + " SB1 "
+		::Query +=      "," + RetSQLName ("SB8") + " SB8 "
+		::Query += " WHERE SB8.D_E_L_E_T_ = ''"
+		::Query +=   " AND SB8.B8_FILIAL = '" + xfilial ("SB8") + "'"
+		::Query +=   " AND (SB8.B8_LOCAL IN ('01', '10', '91') OR (SB1.B1_TIPO = 'PA' AND B8_LOCAL = '90'))"
+		::Query +=   " AND SB1.D_E_L_E_T_ = ''"
+		::Query +=   " AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
+		::Query +=   " AND SB1.B1_COD = SB8.B8_PRODUTO"
+		::Query +=   " AND SB1.B1_TIPO NOT IN ('MO','GF','AP')"
+		::Query +=   " AND SB1.B1_VAFULLW = 'S'"
+		::Query +=   " AND SB1.B1_RASTRO = 'L'"
+		::Query +=   " AND SB8.B8_PRODUTO BETWEEN '" + ::Param01 + "' AND '" + ::Param02 + "'"
+		::Query +=   " AND SB8.B8_LOTECTL BETWEEN '" + ::Param03 + "' AND '" + ::Param04 + "'"
+		::Query += " GROUP BY SB8.B8_PRODUTO, SB8.B8_LOTECTL, SB1.B1_DESC"
+		::Query += ")"
+		// Busca estoques do FullWMS agrupados por item + lote.
+		::Query += ", FULL_ORIG AS ("
+		::Query += "select *"
+		::Query += " FROM openquery (" + _sLinkSrv + ","
+		::Query += " 'select item_cod_item_log as full_cod"
+		::Query +=        ", lote as full_lote"
+		::Query +=        ", sum (case when situacao_rua  like ''9%'' then qtd else 0 end) as full_indisp"
+		::Query +=        ", sum (case when situacao_lote like ''B%'' then qtd else 0 end) as full_bloq"
+		::Query +=        ", sum (case when num_reserva   is not null then qtd else 0 end) as full_reserv"
+		::Query +=        ", sum (qtd) as full_total"
+		::Query +=    " from v_alianca_estoques"
+		::Query +=   " where empr_codemp       = 1"
+		::Query +=     " and item_cod_item_log between ''" + iif (empty (::Param01), ' ', ::Param01) + "'' and ''" + ::Param02 + "''"
+		::Query +=     " and lote              between ''" + iif (empty (::Param03), ' ', ::Param03) + "'' and ''" + ::Param04 + "''"
+		::Query +=   " group by item_cod_item_log, lote"
+		::Query += " ')"
+		::Query += ")"
+		// Gera uma CTE com os estoques do FullWMS, acumulados por item + lote,
+		// mas somente daqueles itens que controlam lotes no Protheus, para
+		// posterior comparacao com os saldos do Protheus.
+		::Query += ", FULL_COM_LOTE AS ("
+		::Query += " SELECT FULL_COD"
+		::Query +=       ", FULL_LOTE"
+		::Query +=       ", SUM (FULL_INDISP) AS FULL_INDISP"
+		::Query +=       ", SUM (FULL_BLOQ)   AS FULL_BLOQ"
+		::Query +=       ", SUM (FULL_RESERV) AS FULL_RESERV"
+		::Query +=       ", SUM (FULL_TOTAL)  AS FULL_TOTAL"
+		::Query += " FROM FULL_ORIG"
+		::Query += " WHERE EXISTS (SELECT *"
+		::Query +=                 " FROM " + RetSQLName ("SB1") + " SB1 "
+		::Query +=                " WHERE SB1.D_E_L_E_T_ = ''"
+		::Query +=                  " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		::Query +=                  " AND SB1.B1_COD     = FULL_COD"
+		::Query +=                  " AND SB1.B1_RASTRO  = 'L')"
+		::Query += " GROUP BY FULL_COD, FULL_LOTE"
+		::Query += ")"
+		// Gera uma CTE com os estoques do FullWMS, acumulados por item,
+		// mas somente daqueles itens que NAO controlam lotes no Protheus,
+		// para posterior comparacao com os saldos do Protheus.
+		::Query += ", FULL_SEM_LOTE AS ("
+		::Query += " SELECT FULL_COD"
+		::Query +=       ", SUM (FULL_INDISP) AS FULL_INDISP"
+		::Query +=       ", SUM (FULL_BLOQ)   AS FULL_BLOQ"
+		::Query +=       ", SUM (FULL_RESERV) AS FULL_RESERV"
+		::Query +=       ", SUM (FULL_TOTAL)  AS FULL_TOTAL"
+		::Query += " FROM FULL_ORIG"
+		::Query += " WHERE EXISTS (SELECT *"
+		::Query +=                 " FROM " + RetSQLName ("SB1") + " SB1 "
+		::Query +=                " WHERE SB1.D_E_L_E_T_ = ''"
+		::Query +=                  " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		::Query +=                  " AND SB1.B1_COD     = FULL_COD"
+		::Query +=                  " AND SB1.B1_RASTRO != 'L')"
+		::Query += " GROUP BY FULL_COD"
+		::Query += ")"
+		// Gera nova CTE com uma UNION de duas queries para comparativo de
+		// saldos entre os dois sistemas.
+		// Como quero contemplar itens COM e SEM lotes, preciso comparar
+		// as CTEs sem lote e, tambem, as com lote.
+		::Query += ", COMPARATIVO AS ("
+		::Query += " SELECT PROTHEUS_SEM_LOTE.PRT_COD"
+		::Query +=       ", PROTHEUS_SEM_LOTE.PRT_DESC"
+		::Query +=       ", '' as PRT_LOTE"
+		::Query +=       ", PROTHEUS_SEM_LOTE.PRT_AX01"
+		::Query +=       ", PROTHEUS_SEM_LOTE.PRT_AX10"
+		::Query +=       ", PROTHEUS_SEM_LOTE.PRT_AX90"
+		::Query +=       ", PROTHEUS_SEM_LOTE.PRT_TOTAL"
+		::Query +=       ", FULL_SEM_LOTE.FULL_COD"
+		::Query +=       ", '' as FULL_LOTE"
+		::Query +=       ", FULL_SEM_LOTE.FULL_INDISP"
+		::Query +=       ", FULL_SEM_LOTE.FULL_BLOQ"
+		::Query +=       ", FULL_SEM_LOTE.FULL_RESERV"
+		::Query +=       ", FULL_SEM_LOTE.FULL_TOTAL"
+		::Query +=       ", ISNULL (PROTHEUS_SEM_LOTE.PRT_TOTAL, 0) - ISNULL (FULL_SEM_LOTE.FULL_TOTAL, 0) AS DIFERENCA"
+		::Query += " FROM PROTHEUS_SEM_LOTE"
+		::Query +=      " FULL OUTER JOIN FULL_SEM_LOTE"
+		::Query +=      " ON (FULL_SEM_LOTE.FULL_COD = PROTHEUS_SEM_LOTE.PRT_COD)"
+		::Query += " UNION ALL"
+		::Query += " SELECT PROTHEUS_COM_LOTE.PRT_COD"
+		::Query +=       ", PROTHEUS_COM_LOTE.PRT_DESC"
+		::Query +=       ", PROTHEUS_COM_LOTE.PRT_LOTE"
+		::Query +=       ", PROTHEUS_COM_LOTE.PRT_AX01"
+		::Query +=       ", PROTHEUS_COM_LOTE.PRT_AX10"
+		::Query +=       ", PROTHEUS_COM_LOTE.PRT_AX90"
+		::Query +=       ", PROTHEUS_COM_LOTE.PRT_TOTAL"
+		::Query +=       ", FULL_COM_LOTE.FULL_COD"
+		::Query +=       ", FULL_COM_LOTE.FULL_LOTE"
+		::Query +=       ", FULL_COM_LOTE.FULL_INDISP"
+		::Query +=       ", FULL_COM_LOTE.FULL_BLOQ"
+		::Query +=       ", FULL_COM_LOTE.FULL_RESERV"
+		::Query +=       ", FULL_COM_LOTE.FULL_TOTAL"
+		::Query +=       ", ISNULL (PROTHEUS_COM_LOTE.PRT_TOTAL, 0) - ISNULL (FULL_COM_LOTE.FULL_TOTAL, 0) AS DIFERENCA"
+		::Query += " FROM PROTHEUS_COM_LOTE"
+		::Query +=      " FULL OUTER JOIN FULL_COM_LOTE"
+		::Query +=      " ON (FULL_COM_LOTE.FULL_COD  = PROTHEUS_COM_LOTE.PRT_COD"
+		::Query +=      " AND FULL_COM_LOTE.FULL_LOTE = PROTHEUS_COM_LOTE.PRT_LOTE)"
+		::Query += ")"
+		::Query += " SELECT *"
+		::Query +=   " FROM COMPARATIVO"
+		::Query +=  " WHERE DIFERENCA != 0"
+		::Query += " ORDER BY ISNULL (PRT_COD, '') + ISNULL (FULL_COD, '')"
+		::Query +=         ", ISNULL (PRT_LOTE, '') + ISNULL (FULL_LOTE, '')"
+
 	otherwise
 		::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
 
@@ -4025,8 +4188,8 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 				::Param02 = lastday (stod (::MesAntEstq + '01'))  // Deixa um valor default para poder gerar a query inicial.
 				::Param03 = ''  // Deixa um valor default para poder gerar a query inicial.
 				::Param04 = 'z'  // Deixa um valor default para poder gerar a query inicial.
-			endif	
-				
+			endif
+
 		case ::GrupoPerg == "U_VALID007"
 			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
 			aadd (_aRegsPerg, {01, "Mostrar apenas os problemas?  ", "C", 1,  0,  "",   "      ", {'Apenas problemas', 'Tudo'},        ""})
@@ -4061,6 +4224,19 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 			if _lDefault
 				::Param01 = U_IniSafra ()  // Retorna o Ano da Safra atual. Deixa um valor default para poder gerar a query inicial.
 			endif
+
+		case ::GrupoPerg == "U_VALID010"
+			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
+			aadd (_aRegsPerg, {01, "Produto inicial               ", "C", 15, 0,  "",   "SB1   ", {},                                  ""})
+			aadd (_aRegsPerg, {02, "Produto final                 ", "C", 15, 0,  "",   "SB1   ", {},                                  ""})
+			aadd (_aRegsPerg, {03, "Lote inicial                  ", "C", 10, 0,  "",   "SB8   ", {},                                  ""})
+			aadd (_aRegsPerg, {04, "Lote final                    ", "C", 10, 0,  "",   "SB8   ", {},                                  ""})
+			if _lDefault
+				::Param01 = ''  // Deixa um valor default para poder gerar a query inicial.
+				::Param02 = 'z'  // Deixa um valor default para poder gerar a query inicial.
+				::Param03 = ''  // Deixa um valor default para poder gerar a query inicial.
+				::Param04 = 'z'  // Deixa um valor default para poder gerar a query inicial.
+			endif	
 
 		case ::GrupoPerg == "U_VALID028"
 			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
