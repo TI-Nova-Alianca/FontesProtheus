@@ -11,6 +11,7 @@
 // #Modulos 		  #CUS 
 //
 // Historico de alteracoes:
+// 25/09/2023 - Claudia - Incluido parametro de almoxarifado. GLPI: 14268
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -68,6 +69,9 @@ Static Function _Gera()
     _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND B7_FILIAL = '"+ mv_par01 +"'"
     _oSQL:_sQuery += " AND B7_DOC    = '"+ mv_par02 +"'"
+    if !empty(mv_par03)
+        _oSQL:_sQuery += " AND B7_LOCAL  = '"+ mv_par03 +"'"
+    endif
 	_oSQL:Log ()
 	_aDados := aclone (_oSQL:Qry2Array (.t.,.t.))
 
@@ -98,6 +102,7 @@ Static Function _ValidPerg ()
     //                     PERGUNT            TIPO TAM DEC VALID F3     Opcoes                      						                        Help
     aadd (_aRegsPerg, {01, "Filial          ", "C", 2, 0,  "",  "SM0", {},                         								                    ""})                      								                   
     aadd (_aRegsPerg, {02, "Documento       ", "C", 9, 0,  "",  "   ", {},                         								                    ""})
+    aadd (_aRegsPerg, {03, "Local           ", "C", 2, 0,  "",  "NNR", {},                         								                    ""})
     U_ValPerg (cPerg, _aRegsPerg)
 Return
 
