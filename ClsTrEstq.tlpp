@@ -48,6 +48,7 @@
 // 25/07/2023 - Robert  - Verifica se tem saldo e se tem inconsistencia entre tabelas antes de gravar a solicitacao.
 // 05/09/2023 - Robert  - Melhorados testes de ter/nao ter lotes quando envolve FullWMS
 // 15/09/2023 - Robert  - Quando :CodMotivo=08 chama a validacao de estoques com outros parametros.
+// 25/09/2023 - Robert  - Verifica se o produto pode ser transformado, antes de permitir a inclusao da solicitacao.
 //
 
 // ------------------------------------------------------------------------------------
@@ -1277,6 +1278,19 @@ METHOD PodeIncl () Class ClsTrEstq
 						_lContinua = .F.
 					endif
 				endif
+			endif
+		endif
+	endif
+
+	// Verifica se o produto pode ser transformado
+	if _lContinua .and. ::ProdDest != ::ProdOrig
+		U_Log2 ('debug', '[' + procname () + ']Solicitacao de transformacao do item ' + ::ProdOrig + ' para ' + ::ProdDest)
+		if posicione ("SB1", 1, xfilial("SB1") + ::ProdOrig, "B1_VATROUT") != "S"
+			if ! U_ZZUVL ('119', __cUserId, .F.)
+				::SomaMsg ("Item origem configurado para nao aceitar transformacao para outros codigos.")
+				_lContinua = .F.
+			else
+				U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Aceitando solicitacao de transformacoes por que o usuario ' + __cUserId + ' pertence ao grupo 119.')
 			endif
 		endif
 	endif
