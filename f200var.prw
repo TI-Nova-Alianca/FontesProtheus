@@ -64,6 +64,7 @@
 // 01/06/2023 - Claudia - Incluido tratamento de Rapel para bco Santander abatimento - GLPI 13662.
 // 04/08/2023 - Robert  - Recebimento: Busca prefixo pelo arquivo de borderos, por
 //                        que agora estamos tendo variedade de prefixos (antes era apenas '10 ') - GLPI 14044
+// 26/06/2023 - Claudia - Incluida validação para BB das despesas para transferencias entre filiais GLPI: 14289 
 //
 
 //
@@ -191,7 +192,7 @@ User Function F200VAR()
 			_cConta  := _aSE1[1,9]
 			_nVlrRec := _aValores[8]
 			_nVlrJur := _aValores[9]
-			_nVlrDes := _aValores[5]
+			_nVlrDes := _aValores[5] 
 			_cStatus := 'A'
 			_dDtBai  := _aValores[02]
 			_dDtPro  := date()
@@ -207,6 +208,13 @@ User Function F200VAR()
 				OTHERWISE
 					_cTipo := 'NI' // Não identificado
 			EndCase
+
+			// especifico banco do brasil
+			if cBanco == "001" .and. alltrim(_aValores [14]) == "98"
+				if  _aValores [10] > 0
+					_nVlrDes := _nVlrDes + _aValores [10]
+				endif
+			endif    
 			
 			dbSelectArea("ZB5")
 			dbSetOrder(1) // ZB5_FILIAL+ZB5_SERIE+ ZB5_NUM + ZB5_PARC + ZB5_CLI + ZB5_LOJA + ZB5_TIPO + ZB5_DTAPRO
