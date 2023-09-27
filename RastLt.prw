@@ -33,6 +33,7 @@
 //                     - Melhorado log, para identificacao de niveis.
 // 24/05/2022 - Robert - Leitura de todas as entradas passa a buscar na function VA_FKARDEX_LOTE (GLPI 11980)
 // 27/05/2022 - Robert - Leitura de todas as movimentacoes passa a buscar na function VA_FKARDEX_LOTE (GLPI 11980)
+// 27/09/2023 - Robert - Voltado contorno para ler lote=OP quando item PA nao coltrola lotes pelo Protheus (GLPI 14299)
 //
 
 // --------------------------------------------------------------------------
@@ -173,6 +174,37 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		_oSQL:_sQuery += " ORDER BY K.OP"
 		//_oSQL:Log (_sStrLog)
 		_aOP := aclone (_oSQL:Qry2Array (.F., .F.))
+
+
+		// INICIO BACA   INICIO BACA   INICIO BACA   INICIO BACA   INICIO BACA
+		// Se o item controla rastreabilidade pelo Protheus, jah tenho as OPs que
+		// produziram o lote, atraves do kardex do lote. Entretanto, ainda temos a
+		// maioria dos PAs que nao usam lote no Protheus, entao terei que assumir
+		// o numero da OP como sendo o lote. Quando a rastreabilidade for completa
+		// no Protheus, isso vai ser desnecessario.
+		if len (_aOP) == 0 .and. sb1 -> b1_rastro == 'N' .and. sb1 -> b1_tipo == 'PA'
+			U_Log2 ('aviso', '[' + procname () + ']Produto eh PA e nao controla rastro pelo Protheus. Vou tentar buscar por lote=OP')
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "SELECT D3_OP, SUM (D3_QUANT), D3_UM, MAX (D3_EMISSAO)"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
+			_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + _sFilial + "'"
+			_oSQL:_sQuery +=   " AND SD3.D3_ESTORNO != 'S'"
+			_oSQL:_sQuery +=   " AND SD3.D3_TM      < '5'"
+			_oSQL:_sQuery +=   " AND SD3.D3_OP     != ''"
+			_oSQL:_sQuery +=   " AND SD3.D3_CF      like 'PR%'"
+			_oSQL:_sQuery +=   " AND SD3.D3_QUANT   > 0"
+			_oSQL:_sQuery +=   " AND NOT (SD3.D3_FILIAL = '09' AND SD3.D3_OP = '00332501001')"  // OP que teria jogado vinho dentro do mosto e deve ser desconsiderada
+			_oSQL:_sQuery +=   " AND SD3.D3_COD     = '" + _sProduto + "'"
+			_oSQL:_sQuery +=   " AND SD3.D3_OP      like '" + alltrim (_sLote) + "%'"
+			_oSQL:_sQuery += " GROUP BY D3_OP, D3_UM"
+			_oSQL:_sQuery += " ORDER BY D3_OP"
+			_oSQL:Log (_sStrLog)
+			_aOP := aclone (_oSQL:Qry2Array (.F., .F.))
+			U_Log2 ('debug', _aOP)
+		endif
+		// FIM BACA   FIM BACA   FIM BACA   FIM BACA   FIM BACA   FIM BACA   FIM BACA
+
 
 		for _nOP = 1 to len (_aOP)
 

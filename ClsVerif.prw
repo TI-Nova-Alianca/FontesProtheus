@@ -94,6 +94,7 @@
 // 08/08/2023 - Robert  - Nao limpava array AColsF3 antes de gerar a consulta.
 // 14/08/2023 - Robert  - Inativada verificacao 85 (procedure VA_SP_VERIFICA_ETIQ_PRODUCAO nunca ficou funcional).
 // 24/09/2023 - Robert  - Criada verificacao 98 (diferenca estoques Protheus x FullWMS)
+// 27/09/2023 - Robert  - Criada opcao somente com diferenca/todos na verificacao 98
 //
 
 #include "protheus.ch"
@@ -4048,7 +4049,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += ")"
 		::Query += " SELECT *"
 		::Query +=   " FROM COMPARATIVO"
-		::Query +=  " WHERE DIFERENCA != 0"
+		if ::Param05 == 1  // Somente itens com diferenca
+			::Query +=  " WHERE DIFERENCA != 0"
+		else  // Todos os itens (desde que tenham saldo)
+			::Query +=  " WHERE ISNULL (PRT_TOTAL, 0) != 0 OR ISNULL (FULL_TOTAL, 0) != 0"
+		endif
 		::Query += " ORDER BY ISNULL (PRT_COD, '') + ISNULL (FULL_COD, '')"
 		::Query +=         ", ISNULL (PRT_LOTE, '') + ISNULL (FULL_LOTE, '')"
 
@@ -4231,11 +4236,13 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 			aadd (_aRegsPerg, {02, "Produto final                 ", "C", 15, 0,  "",   "SB1   ", {},                                  ""})
 			aadd (_aRegsPerg, {03, "Lote inicial                  ", "C", 10, 0,  "",   "SB8   ", {},                                  ""})
 			aadd (_aRegsPerg, {04, "Lote final                    ", "C", 10, 0,  "",   "SB8   ", {},                                  ""})
+			aadd (_aRegsPerg, {05, "Somente com diferenca / Todos ", "N",  1, 0,  "",   "      ", {},                                  ""})
 			if _lDefault
-				::Param01 = ''  // Deixa um valor default para poder gerar a query inicial.
+				::Param01 = ''   // Deixa um valor default para poder gerar a query inicial.
 				::Param02 = 'z'  // Deixa um valor default para poder gerar a query inicial.
-				::Param03 = ''  // Deixa um valor default para poder gerar a query inicial.
+				::Param03 = ''   // Deixa um valor default para poder gerar a query inicial.
 				::Param04 = 'z'  // Deixa um valor default para poder gerar a query inicial.
+				::Param05 = 1    // Deixa um valor default para poder gerar a query inicial.
 			endif	
 
 		case ::GrupoPerg == "U_VALID028"
