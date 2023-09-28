@@ -38,12 +38,12 @@ User Function VA_DA0EXP(_sFilial, _sTabCod)
     _sArq := 'tabela_' + alltrim(_sTabCod)
     nHandle := FCreate("c:\temp\"+ alltrim(_sArq)+".csv")
 
-    _sTexto := "FILIAL;TABELA;ITEM;PRODUTO;ESTADO;PRECO_VENDA" + Chr(13) + Chr(10) 
+    _sTexto := "FILIAL;TABELA;ITEM;PRODUTO;ESTADO;PRECO_VENDA;STATUS" + Chr(13) + Chr(10) 
     FWrite(nHandle,_sTexto )
 
     For _x:= 1 to Len(_aDados)
     
-        _sTexto := _aDados[_x, 1] +";"+ _aDados[_x, 2] +";"+  _aDados[_x, 3] +";"+  _aDados[_x, 4] +";"+  _aDados[_x, 5] +";"+  strtran(str(_aDados[_x, 6]),".",",") + Chr(13) + Chr(10) 
+        _sTexto := _aDados[_x, 1] +";"+ _aDados[_x, 2] +";"+  _aDados[_x, 3] +";"+  _aDados[_x, 4] +";"+  _aDados[_x, 5] +";"+  strtran(str(_aDados[_x, 6]),".",",") +";"+ 'A' + Chr(13) + Chr(10) 
         FWrite(nHandle,_sTexto )
 
     Next
