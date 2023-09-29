@@ -4236,7 +4236,7 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 			aadd (_aRegsPerg, {02, "Produto final                 ", "C", 15, 0,  "",   "SB1   ", {},                                  ""})
 			aadd (_aRegsPerg, {03, "Lote inicial                  ", "C", 10, 0,  "",   "SB8   ", {},                                  ""})
 			aadd (_aRegsPerg, {04, "Lote final                    ", "C", 10, 0,  "",   "SB8   ", {},                                  ""})
-			aadd (_aRegsPerg, {05, "Somente com diferenca / Todos ", "N",  1, 0,  "",   "      ", {},                                  ""})
+			aadd (_aRegsPerg, {05, "Somente com diferenca / Todos ", "N",  1, 0,  "",   "      ", {'Com diferenca', 'Todos'},          ""})
 			if _lDefault
 				::Param01 = ''   // Deixa um valor default para poder gerar a query inicial.
 				::Param02 = 'z'  // Deixa um valor default para poder gerar a query inicial.

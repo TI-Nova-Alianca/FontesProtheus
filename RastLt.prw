@@ -56,11 +56,11 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 	local _aSD2      := {}
 	local _nSD2      := 0
 	// nao estah buscando laudo (falta passar a data) ---> local _sLaudo    := ''
-	local _nNivFold  := 15 //10  // A partir deste nivel gera os nodos 'compactados' para nao ficar grande demais na visualizacao inicial.
+	local _nNivFold  := 8  // A partir deste nivel gera os nodos 'compactados' para nao ficar grande demais na visualizacao inicial.
 	local _sQuebra   := "&#xa;"  // Representacao de uma quebra de linha na visualizacao do FreeMind
 	local _aCarga    := ""
 	local _nMaxStr   := 400000 //200000  // Limite para o tamanho da string de retorno (pelo que sei, o maximo eh 64K)
-	local _nLimNivel := 20 //15  // Limite maximo de niveis de pesquisa
+	local _nLimNivel := 15  // Limite maximo de niveis de pesquisa, Jah usei 20, mas demora demais...
 	local _sStrLog   := ''
 	local _lContinua := .T.
 	local _sKardex   := ''

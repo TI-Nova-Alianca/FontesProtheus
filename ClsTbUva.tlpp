@@ -29,7 +29,7 @@ return
 CLASS ClsTbUva
 
 	// Declaracao das propriedades da Classe
-//	public  data UltMsg       // Ultima mensagem gerada.
+	public data CodTabela  // Pode existir mais de uma tabela para cada safra (simulacoes, etc)
 	public data Conducao   // [E]spaldeira, [L]atada
 	public data Grupos     // Grupos de uvas cfe. tabela 13 do ZX5
 	public data SubGrupos  // Subgrupos de uvas cfe. tabela 13 do ZX5
@@ -53,7 +53,8 @@ ENDCLASS
 METHOD New (_xChave) Class ClsTbUva
 
 	// Gera atributos com valores default
-	::GeraAtrib ()
+	::CodTabela = _xChave
+	::GeraAtrib (_xChave)
 Return ::self
 
 
@@ -64,30 +65,32 @@ METHOD GeraAtrib () Class ClsTbUva
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _oSQL      := NIL
 	local _nGrupo    := 0
+	local _aDados    := {}
+	local _nDado     := 0
 
 	// Defaults
-//	::UltMsg       = ''
 	::Conducao  = ''
 	::Safra     = ''
 	::TipoUva   = ''
 	::TipoPreco = ''
 	::Grupos    = {}
 	::SubGrupos = {}
+	::UltMsg    = ''
 
-	if empty (::Safra)     ; ::SomaMsg ("Safra nao definida.")               ; _lContinua = .F. ; endif
-	if empty (::TipoPreco) ; ::SomaMsg ("Tipo de preco nao definido.")       ; _lContinua = .F. ; endif
-	if empty (::TipoUva)   ; ::SomaMsg ("Tipo de uva nao definido.")         ; _lContinua = .F. ; endif
-	if empty (::Conducao)  ; ::SomaMsg ("Sistema de conducao nao definido.") ; _lContinua = .F. ; endif
+	if empty (::CodTabela)
+		u_help ("Para instanciar uma tabela de precos de safra, deve-se informar seu codigo.",, .t.)
+		_lContinua = .F.
+	endif
 
 	// Gera uma lista de grupos relacionados ao tipo de uvas solicitado.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT ZX5_13GRUP, ZX5_13DESC, ZX5_13GBAS"
+		_oSQL:_sQuery := "SELECT ZX5_13SAFR, ZX5_13GRUP, ZX5_13DESC, ZX5_13GBAS"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_13 "
 		_oSQL:_sQuery += " WHERE ZX5_13.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_TABELA = '13'"
-		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13SAFR = '" + ::Safra + "'"
+		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13SAFR = '" + ::CodTabela + "'"
 		_oSQL:_sQuery +=   " AND LEN (ZX5_13.ZX5_13GRUP) >= 3"  // Nao quero listar os 'grandes grupos'
 		if ::TipoUva == 'C'
 			_oSQL:_sQuery += " AND ZX5_13.ZX5_13GRUP like '1%'"  // Lista comuns
@@ -98,12 +101,30 @@ METHOD GeraAtrib () Class ClsTbUva
 		endif
 		_oSQL:_sQuery += " ORDER BY ZX5_13GRUP"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		::Grupos := aclone (_oSQL:Qry2Array (.f., .f.))
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		if len (::Grupos) == 0q
+			_SomaMsg ("Tabela de precos '" + ::CodTabela + "' nao existe, ou nao tem nenhum grupo de variedades informado.")
+			_lContinua = .F.
+		endif
 	endif
-
-	// Gera listas de variedades ligadas a cada grupo.
 	if _lContinua
-		for _nGrupo = 1 to len (::Grupos)
+		::Safra = ::Grupos [1, 1]
+		if empty (::Safra)
+			::SomaMsg ("Safra nao definida.")
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua
+		if empty (::TipoPreco) ; ::SomaMsg ("Tipo de preco nao definido.")       ; _lContinua = .F. ; endif
+		if empty (::TipoUva)   ; ::SomaMsg ("Tipo de uva nao definido.")         ; _lContinua = .F. ; endif
+		if empty (::Conducao)  ; ::SomaMsg ("Sistema de conducao nao definido.") ; _lContinua = .F. ; endif
+	endif
+	
+	// Gera listas de variedades ligadas a cada grupo.
+	::Grupos = {}
+	if _lContinua
+		for _nDado = 1 to len (_aDados)
+			aadd (::Grupos, _aDados [_nDado, 1])
 		next
 	endif
 
@@ -118,130 +139,135 @@ METHOD GeraHTM () Class ClsTbUva
 	local _nTotCols := 25
 	local _nGrp13   := 0
 
-	// dicas em https://www.w3schools.com/css/css_text_align.asp
+	if empty (::CodTabela)
+		::SomaMsg ("Codigo de tabela nao definido. Impossivel gerar HTML.")
+	else
+		// dicas em https://www.w3schools.com/css/css_text_align.asp
 
-	_sHTM := '<!DOCTYPE html><html><head><meta charset="1252"/><title>Tabela uva safra</title></head><body>'
-	_sHTM += '<table width="80%" border="1" cellspacing="0" cellpadding="0" align="center">'
-	
-	// Linhas iniciais da tabela (descricao, tipos de uvas, datas, etc.
-	_sHTM += '<tr>'
-	_sHTM +=    '<th colspan=' + cvaltochar (_nTotCols) + ' align=left>' + alltrim (sm0 -> m0_nomecom) + '</th>'
-	_sHTM += '</tr>'
-	_sHTM += '<tr>'
-		_sHTM +=    '<th colspan=' + cvaltochar (_nTotCols) + ' align=left>Tabela de preço '
-		if ::TipoPreco == 'E'
-			_sHTM += 'de entrada'
-		elseif ::TipoPreco == 'C'
-			_sHTM += 'de compra'
-		elseif ::TipoPreco == 'C'
-			_sHTM += 'MOC'
-		else
-			_sHTM += '(OUTRAS NAO DEFINIDAS)'
-		endif
-		_sHTM += ' - uvas ' + iif (::TipoUva == 'C', 'comuns', iif (::TipoUva == 'F', 'viniferas', '(SEM DEFINICAO)'))
-		_sHTM += ' ' + iif (::Conducao == 'L', 'latadas', iif (::Conducao == 'E', 'espaldeira', '(SEM DEFINICAO)'))
-		_sHTM += ' - safra ' + ::Safra + '</th>'
-	_sHTM += '</tr>'
-	_sHTM += '<tr>'
-	_sHTM +=    '<th colspan=' + cvaltochar (_nTotCols) + ' align=left>Gerada em ' + dtoc (date ()) + ' - ' + time () + '</th>'
-	_sHTM += '</tr>'
+		_sHTM := '<!DOCTYPE html><html><head><meta charset="1252"/><title>Tabela uva safra</title></head><body>'
+		_sHTM += '<table width="80%" border="1" cellspacing="0" cellpadding="0" align="center">'
+		
+		// Linhas iniciais da tabela (descricao, tipos de uvas, datas, etc.
+		_sHTM += '<tr>'
+		_sHTM +=    '<th colspan=' + cvaltochar (_nTotCols) + ' align=left>' + alltrim (sm0 -> m0_nomecom) + '</th>'
+		_sHTM += '</tr>'
+		_sHTM += '<tr>'
+			_sHTM +=    '<th colspan=' + cvaltochar (_nTotCols) + ' align=left>Tabela ' + ::CodTabela + ' (preço '
+			if ::TipoPreco == 'E'
+				_sHTM += 'de entrada'
+			elseif ::TipoPreco == 'C'
+				_sHTM += 'de compra'
+			elseif ::TipoPreco == 'C'
+				_sHTM += 'MOC'
+			else
+				_sHTM += '[OUTRAS NAO DEFINIDAS]'
+			endif
+			_sHTM += ')'
+			_sHTM += ' - uvas ' + iif (::TipoUva == 'C', 'comuns', iif (::TipoUva == 'F', 'viniferas', '(SEM DEFINICAO)'))
+			_sHTM += ' ' + iif (::Conducao == 'L', 'latadas', iif (::Conducao == 'E', 'espaldeira', '(SEM DEFINICAO)'))
+			_sHTM += ' - safra ' + ::Safra + '</th>'
+		_sHTM += '</tr>'
+		_sHTM += '<tr>'
+		_sHTM +=    '<th colspan=' + cvaltochar (_nTotCols) + ' align=left>Gerada em ' + dtoc (date ()) + ' - ' + time () + '</th>'
+		_sHTM += '</tr>'
 
-	// Linhas de titulos das colunas (nomes dos grupos, grau base, etc)
-	_sHTM += '<tr>'
-	_sHTM +=    '<th align=left>Grau</th>'
-	for _nGrp13 = 1 to len (::Grupos)
-		_sHTM += '<th colspan=3 align=center>Grp ' + alltrim (::Grupos [_nGrp13, 1])
-		_sHTM +=    '-' + alltrim (::Grupos [_nGrp13, 2])
-		_sHTM +=    '(gb ' + cvaltochar (::Grupos [_nGrp13, 3]) + ')'
-		_sHTM += '</th>'
-	next
-	_sHTM += '</tr>'
+		// Linhas de titulos das colunas (nomes dos grupos, grau base, etc)
+		_sHTM += '<tr>'
+		_sHTM +=    '<th align=left>Grau</th>'
+		for _nGrp13 = 1 to len (::Grupos)
+			_sHTM += '<th colspan=3 align=center>Grp ' + alltrim (::Grupos [_nGrp13, 1])
+			_sHTM +=    '-' + alltrim (::Grupos [_nGrp13, 2])
+			_sHTM +=    '(gb ' + cvaltochar (::Grupos [_nGrp13, 3]) + ')'
+			_sHTM += '</th>'
+		next
+		_sHTM += '</tr>'
 
-	// Adiciona cada grau
-	_sHTM += '<tr style="font-family:tahoma;font-size:12px">'
-	
-	_sHTM +=    '<th align=center>13.0</th>'
-	_sHTM +=    '<th align=left>Bordo</th>'
-	_sHTM +=    '<th align=left>Bordo cnv</th>'
-	_sHTM +=    '<th align=left>Bordo ord</th>'
-	_sHTM +=    '<th align=left>Niagara</th>'
-	_sHTM +=    '<th align=left>Niagara cnv</th>'
-	_sHTM +=    '<th align=left>Niagara ord</th>'
-	_sHTM +=    '<th align=left>Bordo</th>'
-	_sHTM +=    '<th align=left>Bordo cnv</th>'
-	_sHTM +=    '<th align=left>Bordo ord</th>'
-	_sHTM +=    '<th align=left>Niagara</th>'
-	_sHTM +=    '<th align=left>Niagara cnv</th>'
-	_sHTM +=    '<th align=left>Niagara ord</th>'
-	_sHTM +=    '<th align=left>Bordo</th>'
-	_sHTM +=    '<th align=left>Bordo cnv</th>'
-	_sHTM +=    '<th align=left>Bordo ord</th>'
-	_sHTM +=    '<th align=left>Niagara</th>'
-	_sHTM +=    '<th align=left>Niagara cnv</th>'
-	_sHTM +=    '<th align=left>Niagara ord</th>'
-	_sHTM +=    '<th align=left>Bordo</th>'
-	_sHTM +=    '<th align=left>Bordo cnv</th>'
-	_sHTM +=    '<th align=left>Bordo ord</th>'
-	_sHTM +=    '<th align=left>Niagara</th>'
-	_sHTM +=    '<th align=left>Niagara cnv</th>'
-	_sHTM +=    '<th align=left>Niagara ord</th>'
-	_sHTM += '</tr>'
-	_sHTM += '<tr>'
-	_sHTM +=    '<th/>'
-	_sHTM +=    '<th align=left>Rubea</th>'
-	_sHTM +=    '<th align=left>Rubea cnv</th>'
-	_sHTM +=    '<th align=left>Rubea ord</th>'
-	_sHTM +=    '<th align=left>Concord</th>'
-	_sHTM +=    '<th align=left>Concord cnv</th>'
-	_sHTM +=    '<th align=left>Concord ord</th>'
-	_sHTM +=    '<th align=left>Rubea</th>'
-	_sHTM +=    '<th align=left>Rubea cnv</th>'
-	_sHTM +=    '<th align=left>Rubea ord</th>'
-	_sHTM +=    '<th align=left>Concord</th>'
-	_sHTM +=    '<th align=left>Concord cnv</th>'
-	_sHTM +=    '<th align=left>Concord ord</th>'
-	_sHTM +=    '<th align=left>Rubea</th>'
-	_sHTM +=    '<th align=left>Rubea cnv</th>'
-	_sHTM +=    '<th align=left>Rubea ord</th>'
-	_sHTM +=    '<th align=left>Concord</th>'
-	_sHTM +=    '<th align=left>Concord cnv</th>'
-	_sHTM +=    '<th align=left>Concord ord</th>'
-	_sHTM +=    '<th align=left>Rubea</th>'
-	_sHTM +=    '<th align=left>Rubea cnv</th>'
-	_sHTM +=    '<th align=left>Rubea ord</th>'
-	_sHTM +=    '<th align=left>Concord</th>'
-	_sHTM +=    '<th align=left>Concord cnv</th>'
-	_sHTM +=    '<th align=left>Concord ord</th>'
-	_sHTM += '</tr>'
-	_sHTM += '<tr>'
-	_sHTM +=    '<th align=center>13.0</th>'
-	_sHTM +=    '<th align=right>1,5960</th>'
-	_sHTM +=    '<th align=right>1,8354</th>'
-	_sHTM +=    '<th align=right>2,4738</th>'
-	_sHTM +=    '<th align=right>1,33</th>'
-	_sHTM +=    '<th align=right>1,5295</th>'
-	_sHTM +=    '<th align=right>2,2610</th>'
-	_sHTM +=    '<th align=right>1,5960</th>'
-	_sHTM +=    '<th align=right>1,8354</th>'
-	_sHTM +=    '<th align=right>2,4738</th>'
-	_sHTM +=    '<th align=right>1,33</th>'
-	_sHTM +=    '<th align=right>1,5295</th>'
-	_sHTM +=    '<th align=right>2,2610</th>'
-	_sHTM +=    '<th align=right>1,5960</th>'
-	_sHTM +=    '<th align=right>1,8354</th>'
-	_sHTM +=    '<th align=right>2,4738</th>'
-	_sHTM +=    '<th align=right>1,33</th>'
-	_sHTM +=    '<th align=right>1,5295</th>'
-	_sHTM +=    '<th align=right>2,2610</th>'
-	_sHTM +=    '<th align=right>1,5960</th>'
-	_sHTM +=    '<th align=right>1,8354</th>'
-	_sHTM +=    '<th align=right>2,4738</th>'
-	_sHTM +=    '<th align=right>1,33</th>'
-	_sHTM +=    '<th align=right>1,5295</th>'
-	_sHTM +=    '<th align=right>2,2610</th>'
-	_sHTM += '</tr>'
-	_sHTM += '</table>'
-	_sHTM += '</body></html>'
+		// Adiciona cada grau
+		_sHTM += '<tr style="font-family:tahoma;font-size:12px">'
+		
+		_sHTM +=    '<th align=center>13.0</th>'
+		_sHTM +=    '<th align=left>Bordo</th>'
+		_sHTM +=    '<th align=left>Bordo cnv</th>'
+		_sHTM +=    '<th align=left>Bordo ord</th>'
+		_sHTM +=    '<th align=left>Niagara</th>'
+		_sHTM +=    '<th align=left>Niagara cnv</th>'
+		_sHTM +=    '<th align=left>Niagara ord</th>'
+		_sHTM +=    '<th align=left>Bordo</th>'
+		_sHTM +=    '<th align=left>Bordo cnv</th>'
+		_sHTM +=    '<th align=left>Bordo ord</th>'
+		_sHTM +=    '<th align=left>Niagara</th>'
+		_sHTM +=    '<th align=left>Niagara cnv</th>'
+		_sHTM +=    '<th align=left>Niagara ord</th>'
+		_sHTM +=    '<th align=left>Bordo</th>'
+		_sHTM +=    '<th align=left>Bordo cnv</th>'
+		_sHTM +=    '<th align=left>Bordo ord</th>'
+		_sHTM +=    '<th align=left>Niagara</th>'
+		_sHTM +=    '<th align=left>Niagara cnv</th>'
+		_sHTM +=    '<th align=left>Niagara ord</th>'
+		_sHTM +=    '<th align=left>Bordo</th>'
+		_sHTM +=    '<th align=left>Bordo cnv</th>'
+		_sHTM +=    '<th align=left>Bordo ord</th>'
+		_sHTM +=    '<th align=left>Niagara</th>'
+		_sHTM +=    '<th align=left>Niagara cnv</th>'
+		_sHTM +=    '<th align=left>Niagara ord</th>'
+		_sHTM += '</tr>'
+		_sHTM += '<tr>'
+		_sHTM +=    '<th/>'
+		_sHTM +=    '<th align=left>Rubea</th>'
+		_sHTM +=    '<th align=left>Rubea cnv</th>'
+		_sHTM +=    '<th align=left>Rubea ord</th>'
+		_sHTM +=    '<th align=left>Concord</th>'
+		_sHTM +=    '<th align=left>Concord cnv</th>'
+		_sHTM +=    '<th align=left>Concord ord</th>'
+		_sHTM +=    '<th align=left>Rubea</th>'
+		_sHTM +=    '<th align=left>Rubea cnv</th>'
+		_sHTM +=    '<th align=left>Rubea ord</th>'
+		_sHTM +=    '<th align=left>Concord</th>'
+		_sHTM +=    '<th align=left>Concord cnv</th>'
+		_sHTM +=    '<th align=left>Concord ord</th>'
+		_sHTM +=    '<th align=left>Rubea</th>'
+		_sHTM +=    '<th align=left>Rubea cnv</th>'
+		_sHTM +=    '<th align=left>Rubea ord</th>'
+		_sHTM +=    '<th align=left>Concord</th>'
+		_sHTM +=    '<th align=left>Concord cnv</th>'
+		_sHTM +=    '<th align=left>Concord ord</th>'
+		_sHTM +=    '<th align=left>Rubea</th>'
+		_sHTM +=    '<th align=left>Rubea cnv</th>'
+		_sHTM +=    '<th align=left>Rubea ord</th>'
+		_sHTM +=    '<th align=left>Concord</th>'
+		_sHTM +=    '<th align=left>Concord cnv</th>'
+		_sHTM +=    '<th align=left>Concord ord</th>'
+		_sHTM += '</tr>'
+		_sHTM += '<tr>'
+		_sHTM +=    '<th align=center>13.0</th>'
+		_sHTM +=    '<th align=right>1,5960</th>'
+		_sHTM +=    '<th align=right>1,8354</th>'
+		_sHTM +=    '<th align=right>2,4738</th>'
+		_sHTM +=    '<th align=right>1,33</th>'
+		_sHTM +=    '<th align=right>1,5295</th>'
+		_sHTM +=    '<th align=right>2,2610</th>'
+		_sHTM +=    '<th align=right>1,5960</th>'
+		_sHTM +=    '<th align=right>1,8354</th>'
+		_sHTM +=    '<th align=right>2,4738</th>'
+		_sHTM +=    '<th align=right>1,33</th>'
+		_sHTM +=    '<th align=right>1,5295</th>'
+		_sHTM +=    '<th align=right>2,2610</th>'
+		_sHTM +=    '<th align=right>1,5960</th>'
+		_sHTM +=    '<th align=right>1,8354</th>'
+		_sHTM +=    '<th align=right>2,4738</th>'
+		_sHTM +=    '<th align=right>1,33</th>'
+		_sHTM +=    '<th align=right>1,5295</th>'
+		_sHTM +=    '<th align=right>2,2610</th>'
+		_sHTM +=    '<th align=right>1,5960</th>'
+		_sHTM +=    '<th align=right>1,8354</th>'
+		_sHTM +=    '<th align=right>2,4738</th>'
+		_sHTM +=    '<th align=right>1,33</th>'
+		_sHTM +=    '<th align=right>1,5295</th>'
+		_sHTM +=    '<th align=right>2,2610</th>'
+		_sHTM += '</tr>'
+		_sHTM += '</table>'
+		_sHTM += '</body></html>'
+	endif
 return _sHTM
 
 
