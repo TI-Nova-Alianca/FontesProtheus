@@ -118,6 +118,7 @@
 // 04/08/2023 - Robert  - Nucleo,SubNucleo e GrpFam deixam de ser atributos e passam a ser
 //                        metodos, por questao de performance (raramente sao usados, e
 //                        exigiam leitura no NaWeb a cada vez que instanciava a classe).
+// 29/09/2023 - Robert  - Passa a gerar mais tags de detalhamento na prev.pagto.safra (GLPI 9561)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -145,9 +146,9 @@ CLASS ClsAssoc
 	data aInscrEst   // Array com todas as inscr.est. (A2_INSCR). Util quando o associado tiver mais de um codigo/loja.
 	data aLojas      // Array com todas as lojas (A2_LOJA). Util quando o associado tiver mais de um codigo/loja.
 	data CoopOrigem
-	data DAPMotivo   // A2_VAMNDAP - Motivo de nao ter DAP
-	data DAPNumero   // A2_VANRDAP - Numero da DAP
-	data DAPValidad  // A2_VAVLDAP - Data de validade
+	data DAPMotivo   // naweb.CCAssociadoDAP.CCAssociadoMotDapDesc - Motivo de nao ter DAP
+	data DAPNumero   // naweb.CCAssociadoDAP.CCAssociadoNrDap      - Numero da DAP
+	data DAPValidad  // naweb.CCAssociadoDAP.CCAssociadoDapVcto    - Data de validade
 	data DtFalecim
 	data DtNascim
 	data EMail
@@ -160,6 +161,7 @@ CLASS ClsAssoc
 	data FSNFComplem  // Fechamento de safra: Indica se deve buscar as NF de complemento de valor
 	data FSNFPrdProp  // Fechamento de safra: Indica se deve buscar as NF de producao propria
 	data FSPrevPagto  // Fechamento de safra: Indica se deve buscar as previsoes de pagamento
+	data FSPrPgtAbat  // Fechamento de safra: Indica se deve buscar abatimentos das previsoes de pagamento
 	data FSRegraPagto // Fechamento de safra: Indica se deve buscar regras para pagamento
 	data FSResValEfet // Fechamento de safra: Indica se deve buscar resumo com valores efetivos por variedade
 	data FSResVaried  // Fechamento de safra: Indica se deve buscar resumo por variedade
@@ -228,6 +230,7 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 	::FSNFComplem  = .F.
 	::FSNFPrdProp  = .F.
 	::FSPrevPagto  = .F.
+	::FSPrPgtAbat  = .F.
 	::FSRegraPagto = .F.
 	::FSResValEfet = .F.
 	::FSResVaried  = .F.
@@ -1129,6 +1132,8 @@ METHOD FechSafra () Class ClsAssoc
 	local _nMedVar   := 0
 	local _nTotFunru := 0
 	local _aTotVlEf  := {}
+	local _aDetPag   := {}
+	local _nDetPag   := 0
 
 	if empty (::FSSafra)
 		::UltMsg += "Safra nao informada"
@@ -1141,8 +1146,8 @@ METHOD FechSafra () Class ClsAssoc
 	_sRetFechS += '<safra>' + ::FSSafra + '</safra>'
 
 	// Busca notas do associado
-
 	if ::FSNFEntrada .or. ::FSNFCompra .or. ::FSNFComplem .or. ::FSNFPrdProp
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando notas de safra')
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT TIPO_NF, FILIAL, DATA, DOC, SERIE, PRODUTO, DESCRICAO, GRAU, PESO_LIQ, VALOR_UNIT, VALOR_TOTAL, "
@@ -1246,12 +1251,12 @@ METHOD FechSafra () Class ClsAssoc
 
 	// Busca previsoes de pagamento (faturas e notas em aberto no contas a pagar).
 	if ::FSPrevPagto
-		U_Log2 ('debug', 'Buscando previsao de pagamento')
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando previsoes de pagamento')
 		_sRetFechS += '<faturaPagamento>'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "WITH C AS ("
-		_oSQL:_sQuery += "SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, "
+		_oSQL:_sQuery += "SELECT E2_FILIAL, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, "
 		
 		// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma fatura.
 		// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
@@ -1259,20 +1264,22 @@ METHOD FechSafra () Class ClsAssoc
 		// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
 		_oSQL:_sQuery += " E2_VALOR - dbo.VA_FSE2_CONSUMIDO_EM_FATURA (SE2.R_E_C_N_O_, 'z') AS E2_VALOR,
 		_oSQL:_sQuery +=       " E2_SALDO, "
-		_oSQL:_sQuery +=       " RTRIM (E2_HIST)"
-		_oSQL:_sQuery +=       " + CASE WHEN SE2.E2_FATURA != ''"
-		_oSQL:_sQuery +=              " THEN ' (' + (SELECT STRING_AGG (RTRIM (E2_HIST), '; ')"
-		_oSQL:_sQuery +=                             " FROM (SELECT DISTINCT E2_HIST"  // Gera uma subquery para poder usar DISTINCT
-		_oSQL:_sQuery +=                                     " FROM " + RetSQLName ("SE2") + " F "
-		_oSQL:_sQuery +=                                    " WHERE F.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=                                      " AND F.E2_FILIAL  = SE2.E2_FILIAL"
-		_oSQL:_sQuery +=                                      " AND F.E2_FORNECE = SE2.E2_FORNECE"
-		_oSQL:_sQuery +=                                      " AND F.E2_LOJA    = SE2.E2_LOJA"
-		_oSQL:_sQuery +=                                      " AND F.E2_FATURA  = SE2.E2_NUM"
-		_oSQL:_sQuery +=                                      " AND F.E2_FATPREF = SE2.E2_PREFIXO) AS DISTINTO"  // PRECISA DAR UM ALIAS PARA A SUBQUERY
-		_oSQL:_sQuery +=                                    ") + ')'"
-		_oSQL:_sQuery +=              " ELSE ''"
-		_oSQL:_sQuery +=              " END AS E2_HIST"
+		_oSQL:_sQuery +=       " RTRIM (E2_HIST) as E2_HIST"
+//		_oSQL:_sQuery +=       " RTRIM (E2_HIST)"
+//		_oSQL:_sQuery +=       " + CASE WHEN SE2.E2_FATURA != ''"
+//		_oSQL:_sQuery +=              " THEN ' (' + (SELECT STRING_AGG (RTRIM (E2_HIST), '; ')"
+//		_oSQL:_sQuery +=                             " FROM (SELECT DISTINCT E2_HIST"  // Gera uma subquery para poder usar DISTINCT
+//		_oSQL:_sQuery +=                                     " FROM " + RetSQLName ("SE2") + " F "
+//		_oSQL:_sQuery +=                                    " WHERE F.D_E_L_E_T_ = ''"
+//		_oSQL:_sQuery +=                                      " AND F.E2_FILIAL  = SE2.E2_FILIAL"
+//		_oSQL:_sQuery +=                                      " AND F.E2_FORNECE = SE2.E2_FORNECE"
+//		_oSQL:_sQuery +=                                      " AND F.E2_LOJA    = SE2.E2_LOJA"
+//		_oSQL:_sQuery +=                                      " AND F.E2_FATURA  = SE2.E2_NUM"
+//		_oSQL:_sQuery +=                                      " AND F.E2_FATPREF = SE2.E2_PREFIXO) AS DISTINTO"  // PRECISA DAR UM ALIAS PARA A SUBQUERY
+//		_oSQL:_sQuery +=                                    ") + ')'"
+//		_oSQL:_sQuery +=              " ELSE ''"
+//		_oSQL:_sQuery +=              " END AS E2_HIST"
+		_oSQL:_sQuery +=      ", E2_TIPO"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
 		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
@@ -1305,7 +1312,7 @@ METHOD FechSafra () Class ClsAssoc
 		// Safra 2021: GLPI 11661
 		if ::FSSafra == '2020' //.or. ::FSSafra == '2021'
 			_oSQL:_sQuery += " UNION ALL"
-			_oSQL:_sQuery += " SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, E2_VALOR, E2_SALDO, E2_HIST"
+			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, E2_VALOR, E2_SALDO, E2_HIST, E2_TIPO"
 			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
 			_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"
@@ -1314,9 +1321,6 @@ METHOD FechSafra () Class ClsAssoc
 			if ::FSSafra == '2020'
 				_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO like '202102%'"
 				_oSQL:_sQuery +=    " AND SE2.E2_VENCREA like '202102%'"
-			//elseif ::FSSafra == '2021'
-			//	_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO = '20220223'"
-			//	_oSQL:_sQuery +=    " AND SE2.E2_VENCREA like '202202%'"
 			endif
 			_oSQL:_sQuery +=    " AND SE2.E2_FORNECE = '" + ::Codigo + "'"
 			_oSQL:_sQuery +=    " AND SE2.E2_LOJA    = '" + ::Loja + "'"
@@ -1331,9 +1335,8 @@ METHOD FechSafra () Class ClsAssoc
 			_oSQL:_sQuery +=                   " AND ZI_DATA    = SE2.E2_EMISSAO"
 			_oSQL:_sQuery +=                   " AND ZI_TM      = '16')"
 		endif
-
-		_oSQL:_sQuery +=  " ORDER BY E2_VENCTO, E2_NUM, E2_PREFIXO"
-		_oSQL:Log ()
+		_oSQL:_sQuery +=  " ORDER BY E2_VENCTO, E2_FILIAL, E2_NUM, E2_PREFIXO, E2_PARCELA"
+	//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_sAliasQ := _oSQL:Qry2Trb (.F.)
 		_nTotValor = 0
 		_nTotSaldo = 0
@@ -1344,7 +1347,57 @@ METHOD FechSafra () Class ClsAssoc
 			_sRetFechS += '<vencto>' + dtoc (stod ((_sAliasQ) -> e2_vencto)) + '</vencto>'
 			_sRetFechS += '<valor>'  + cvaltochar ((_sAliasQ) -> e2_valor) + '</valor>'
 			_sRetFechS += '<saldo>'  + cvaltochar ((_sAliasQ) -> e2_saldo) + '</saldo>'
-			_sRetFechS += '<hist>'  + alltrim ((_sAliasQ) -> e2_hist) + '</hist>'
+			_sRetFechS += '<hist>'   + alltrim ((_sAliasQ) -> e2_hist) + '</hist>'
+			_sRetFechS += '<num>'    + (_sAliasQ) -> e2_num + '</num>'
+			_sRetFechS += '<pref>'   + (_sAliasQ) -> e2_prefixo + '</pref>'
+			_sRetFechS += '<parc>'   + (_sAliasQ) -> e2_parcela + '</parc>'
+
+			// Busca baixas (pagtos/dacoes/compensacoes) deste titulo.
+			if ::FSPrPgtAbat
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "SELECT FK2_BAIXAS_ORIG.FK2_DATA, FK2_BAIXAS_ORIG.FK2_VALOR"
+				_oSQL:_sQuery +=      ", ISNULL ('Compens. ' + SE2_COMP.E2_HIST, FK2_BAIXAS_ORIG.FK2_HISTOR)"  // Se tem contrapartica, eh uma compensacao e quero saber contra o que foi compensado
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("FK7") + " FK7_TIT_ORIG "
+				_oSQL:_sQuery +=      " ," + RetSQLName ("FK2") + " FK2_BAIXAS_ORIG "
+				//
+				// Faz um novo LEFT JOIN com o FK7 procurando a contrapartida (se
+				// for uma compensacao), para saber contra O QUE foi compensado.
+				_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("FK7") + " FK7_COMP "
+				_oSQL:_sQuery +=        " LEFT JOIN " + RetSQLName ("SE2") + " SE2_COMP"
+				_oSQL:_sQuery +=             " ON (SE2_COMP.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=             " AND SE2_COMP.E2_FILIAL = FK7_COMP.FK7_FILIAL"
+				_oSQL:_sQuery +=             " AND FK7_COMP.FK7_ALIAS = 'SE2'"
+				_oSQL:_sQuery +=             " AND SE2_COMP.E2_FILIAL + '|' + SE2_COMP.E2_PREFIXO + '|' + SE2_COMP.E2_NUM + '|' + SE2_COMP.E2_PARCELA + '|' + SE2_COMP.E2_TIPO + '|' + SE2_COMP.E2_FORNECE + '|' + SE2_COMP.E2_LOJA = FK7_COMP.FK7_CHAVE)"
+				_oSQL:_sQuery +=         " ON (FK7_COMP.D_E_L_E_T_ = ''"  // Nao validar filial por que pode haver compensacao entre filiais.
+				_oSQL:_sQuery +=         " AND FK7_COMP.FK7_IDDOC = FK2_BAIXAS_ORIG.FK2_IDCOMP)"
+				_oSQL:_sQuery += " WHERE FK2_BAIXAS_ORIG.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_IDDOC  = FK7_TIT_ORIG.FK7_IDDOC"
+				_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_TPDOC != 'ES'"
+				_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_TPDOC != 'BA'"
+				_oSQL:_sQuery +=   " AND dbo.VA_FESTORNADO_FK2 (FK2_BAIXAS_ORIG.FK2_FILIAL, FK2_BAIXAS_ORIG.FK2_IDFK2) != 1"
+				_oSQL:_sQuery +=   " AND FK7_TIT_ORIG.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND FK7_TIT_ORIG.FK7_FILIAL = '" + (_sAliasQ) -> e2_filial + "'"
+				_oSQL:_sQuery +=   " AND FK7_TIT_ORIG.FK7_ALIAS  = 'SE2'
+				_oSQL:_sQuery +=   " AND FK7_TIT_ORIG.FK7_CHAVE  = '" + (_sAliasQ) -> e2_filial
+				_oSQL:_sQuery +=                                  "|" + (_sAliasQ) -> e2_prefixo
+				_oSQL:_sQuery +=                                  "|" + (_sAliasQ) -> e2_num
+				_oSQL:_sQuery +=                                  "|" + (_sAliasQ) -> e2_parcela
+				_oSQL:_sQuery +=                                  "|" + (_sAliasQ) -> e2_tipo
+				_oSQL:_sQuery +=                                  "|" + ::Codigo
+				_oSQL:_sQuery +=                                  "|" + ::Loja + "'"
+
+			//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+				_aDetPag = _oSQL:Qry2Array (.f., .f.)
+				_aDetPag = _oSQL:Qry2Array (.f., .f.)
+				for _nDetPag = 1 to len (_aDetPag)
+					_sRetFechS += '<FatPagAbatItem>'
+					_sRetFechS += '<abatData>'  + _aDetPag [_nDetPag, 1]              + '</abatData>'
+					_sRetFechS += '<abatValor>' + cvaltochar (_aDetPag [_nDetPag, 2]) + '</abatValor>'
+					_sRetFechS += '<abatHist>'  + alltrim (_aDetPag [_nDetPag, 3])    + '</abatHist>'
+					_sRetFechS += '</FatPagAbatItem>'
+				next
+			endif
+
 			_nTotValor += (_sAliasQ) -> e2_valor
 			_nTotSaldo += (_sAliasQ) -> e2_saldo
 			_sRetFechS += '</faturaPagamentoItem>'
@@ -1365,7 +1418,7 @@ METHOD FechSafra () Class ClsAssoc
 
 	// Busca valores de FUNRURAL que tenham sido descontados do fornecedor.
 	if ::FSDFunrur
-		U_Log2 ('debug', 'Buscando descontos de FUNRURAL')
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando descontos de FUNRURAL')
 		_sRetFechS += '<descontoFUNRURAL>'
 
 		if ::FSSafra >= '2022'  // Antes de 2022 nao faziamos esse desconto.
@@ -1441,6 +1494,7 @@ METHOD FechSafra () Class ClsAssoc
 
 	// Regras de pagamento (informativo)
 	if ::FSRegraPagto
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando regras de pagamento')
 		_sRetFechS += '<regraPagamento>'
 		if ::FSSafra == '2019' .or. ::FSSafra == '2020'
 			_sRetFechS += '<regraPagamentoItem>'
@@ -1510,6 +1564,7 @@ METHOD FechSafra () Class ClsAssoc
 
 	// Valores efetivos por variedade/grau
 	if ::FSResValEfet
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando valores efetivos por variedade/grau')
 		_aMedVar = {}
 		_aTotVlEf = {0, 0, 0, 0, 0}
 		_sRetFechS += '<valoresEfetivos>'
@@ -1529,7 +1584,7 @@ METHOD FechSafra () Class ClsAssoc
 			_oSQL:_sQuery +=   " AND SAFRA      = '" + ::FSSafra + "'"
 			_oSQL:_sQuery += " GROUP BY PRODUTO, DESCRICAO, GRAU, GRAU, CLAS_ABD, CLAS_FINAL, SIST_CONDUCAO"
 			_oSQL:_sQuery += " ORDER BY DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL "
-			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 			_sAliasQ := _oSQL:Qry2Trb (.F.)
 			(_sAliasQ) -> (dbgotop ())
 			do while ! (_sAliasQ) -> (eof ())
@@ -1588,6 +1643,7 @@ METHOD FechSafra () Class ClsAssoc
 	// Resumo grau medio por variedade
 	// Termina de calcular as medias por variedade e insere nos dados para retorno da funcao.
 	if ::FSResVaried
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando grau medio por variedade')
 		_sRetFechS += '<resumoVariedade>'
 		_aMedVar = {}
 		_nTotValor = 0
@@ -1642,7 +1698,7 @@ METHOD FechSafra () Class ClsAssoc
 	// Resumo de grau e classificacao por variedade
 	// Termina de calcular as medias por variedade e insere nos dados para retorno da funcao.
 	if ::FSResVarGC
-		U_Log2 ('debug', 'Buscando resumo por variedade / grau / classif')
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando resumo por variedade / grau / classificacao')
 		_sRetFechS += '<resumoVarGrauClas>'
 		_nTotPeso  = 0
 		_nTotValor = 0
@@ -1691,7 +1747,7 @@ METHOD FechSafra () Class ClsAssoc
 
 	// Auxilio combustivel / frete
 	if ::FSFrete
-		U_Log2 ('debug', 'Buscando fretes de safra')
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando fretes de safra')
 		_sRetFechS += '<freteSafra>'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
@@ -1735,7 +1791,7 @@ METHOD FechSafra () Class ClsAssoc
 		_oSQL:_sQuery +=   " FROM C"
 		_oSQL:_sQuery +=  " WHERE E2_VALOR != 0"  // Os que estao zerados eh por que foram totalmente consumidos em uma fatura.
 		_oSQL:_sQuery +=  " ORDER BY E2_VENCTO, E2_NUM, E2_PREFIXO"
-		_oSQL:Log ()
+	//	_oSQL:Log ()
 		_sAliasQ := _oSQL:Qry2Trb (.F.)
 		_nTotValor = 0
 		_nTotSaldo = 0
@@ -1765,8 +1821,8 @@ METHOD FechSafra () Class ClsAssoc
 	endif
 
 	// Lancamentos com saldo na conta corrente
-//	if ! _lSohRegra
 	if ::FSLctosCC
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando lctos em aberto na conta corrente')
 		_sRetFechS += '<lctoCC>'
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""

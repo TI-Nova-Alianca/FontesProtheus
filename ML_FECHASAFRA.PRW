@@ -43,6 +43,7 @@
 // 21/07/2023 - Robert  - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra() - GLPI 13956
 // 05/08/2023 - Robert  - Removido parametro de filtragem por 'nucleo' do associado.
 //                      - Removidas opcoes 'detalhado' e 'somente NF compra'
+// 29/09/2023 - Robert  - Implementado modelo4 em 132 colunas, mostrando descontos (GLPI 9561)
 //
 
 #include "protheus.ch"
@@ -59,7 +60,7 @@ User Function ML_FECHASAFRA (_lAutomat)
 	cDesc2  := " "
 	cDesc3  := " "
 	tamanho := "G"
-	limite   := 120
+	limite  := 220
 	aReturn := {"Zebrado", 1,"Administracao", 1, 2, 1, "",1}
 	aLinha  := {}
 	nLastKey:= 0
@@ -68,12 +69,22 @@ User Function ML_FECHASAFRA (_lAutomat)
 	wnrel   := "ML_FECHASAFRA"
 	nTipo   := 0
 
+	U_Log2 ('debug', '[' + procname () + ']teste')
 	_ValidPerg()
 	Pergunte(cPerg, .f.)
 
 	if ! _lAuto
+		Pergunte(cPerg, .t.)
+		if mv_par01 >= '2023'
+			tamanho := "M"
+			limite  := 132
+		endif
 		wnrel  := SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F.)
 	else
+		if mv_par01 >= '2023'
+			tamanho := "M"
+			limite  := 132
+		endif
 		// Execucao sem interface com o usuario.
 		//
 		// Deleta o arquivo do relatorio para evitar a pergunta se deseja sobrescrever.
@@ -123,7 +134,11 @@ User Function ML_FECHASAFRA (_lAutomat)
 //		if mv_par06 == 1  // Detalhado
 //			processa ({|| _Modelo2 (.f.)})
 //		elseif mv_par06 == 2  // Resumido
+		if mv_par01 < '2023'
 			processa ({|| _Modelo3 ()})
+		else
+			processa ({|| _Modelo4 ()})
+		endif
 //		elseif mv_par06 == 3  // Resumido (apenas NF compra)
 //			processa ({|| _Modelo2 (.T.)})
 //		else
@@ -2016,12 +2031,318 @@ static function _Modelo3 ()
 	endif
 return
 
+
+// --------------------------------------------------------------------------
+// Modelo em 132 colunas.
+static function _Modelo4 ()
+	local _lContinua := .T.
+//	local _aAssoc    := {}
+//	local _nAssoc    := 0
+	local _oAssoc    := NIL
+//	local _oSQL      := NIL
+	local _sXmlFech  := ''
+	local _sError    := ''
+	local _sWarning  := ''
+	local _sLinImp   := ''
+	local _aResPag   := {}
+//	local _nResPag   := 0
+	local _nFatPag   := 0
+//	local _aTotResP  := {}
+	local _nRegraPag := 0
+	local _nLctoCC   := 0
+	local _sMesPagto := ''
+	local _nTotDesc  := 0
+//	local _sFtPgHist := ''
+//	local _nItFunr   := 0
+	local _nVlEfetiv := 0
+
+//	local _nFatPag   := 0
+	local _nSldPagto := 0
+	local _nTFatXML  := 0
+	local _nTSldXML  := 0
+	local _nTGFat    := 0
+	local _nTGAbat   := 0
+	local _nAbatim   := 0
+	local _aLinImp   := {}
+	local _nLinImp   := 0
+
+	private _sMascPeso := "@E 99,999,999"
+	private _sMascVUni := "@E 999.9999"
+	private _sMascVTot := "@E 99,999,999.99"
+	private _oXMLFech  := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
+
+	// Variaveis padrao para relatorios.
+	private nTipo    := IIF(aReturn[4]==1,15,18)
+	private li       := 80
+	private m_pag    := 1
+	private cabec1   := ""
+	private cabec2   := ""
+	private _nMaxLin := 68
+	li = _nMaxLin + 1
+	limite = 132
+	tamanho = 'M'
+
+	U_Log2 ('debug', 'Gerando rel.fechto.safra pela funcao ' + procname ())
+
+	procRegua (10)
+
+	// Instancia objeto 'associado' para gerar seu fechamento de safra.
+	_oAssoc := ClsAssoc ():New (mv_par02, mv_par03)
+	if valtype (_oAssoc) != 'O' .or. empty (_oAssoc:Codigo)
+		u_help ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados.",, .t.)
+		_lContinua = .F.
+	endif
+
+	if _lContinua
+		_oAssoc:FSSafra      = mv_par01
+		_oAssoc:FSPrevPagto  = .t.  // Buscar previsoes de pagamento
+		_oAssoc:FSPrPgtAbat  = (mv_par05 == 1)  // Buscar os abatimentos de cada previsao de pagamento
+		_oAssoc:FSRegraPagto = .t.  // Buscar regras de pagamento
+		_oAssoc:FSResValEfet = .t.  // Buscar resumo com valores efetivos (premios, complementos, etc)
+		_oAssoc:FSFrete      = .t.  // Buscar fretes/aux.combustivel
+		_oAssoc:FSLctosCC    = (mv_par04 == 1)  // Buscar (ou nao) lctos em aberto na cta.corrente
+		_sXmlFech = _oAssoc:FechSafra ()
+	//	U_LogXML (_sXMLFech, .t.)
+		if empty (_sXmlFech)
+			u_help ("Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		// Converte de texto para XML
+		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+		if ! empty (_sError) .or. ! empty (_sWarning)
+			u_help ("Erro ao decodificar retorno: " + _sError + _sWarning,, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		if m_pag >1
+			_roda()
+		endif
+		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+		@ li, 00 PSAY "Associado: " + _oAssoc:Codigo + '-' + _oAssoc:Loja + ' ' + _oAssoc:Nome
+		li += 2
+	endif
+
+	// Lista resumo de variedades e respectivos valores.
+	if _lContinua .and. type ('_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem') == 'A'
+		@li, 0 PSAY 'Valores efetivos:                Grau/clas  Conduc    Peso Kg    Vlr.compra    Vlr.complem    Vlr.premio     Vlr.total  Un.efetivo'
+		li ++
+		@li, 0 PSAY '------------------------------   ---------  ------   --------   -----------   ------------   -----------   -----------  ----------'
+		li ++
+		for _nVlEfetiv = 1 to len (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem)
+			_sLinImp := ''
+			if _oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_varied:TEXT != 'TOTAIS'
+				_Cabec (_nMaxLin)
+				_sLinImp += U_TamFixo (ALLTRIM(_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_varied:TEXT) + ' - ' + alltrim (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_desc:TEXT), 35, ' ') + ' '
+				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_grau:TEXT, 4) + ' '
+				if upper (left (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_conducao:TEXT, 1)) == 'L'
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_clasLatada:TEXT, 2) + ' '
+				else
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_clasEspaldeira:TEXT, 2) + ' '
+				endif
+				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_conducao:TEXT, 6) + ' '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_peso:TEXT), _sMascPeso) + ' '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vCompra:TEXT), _sMascVTot) + '  
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vComplem:TEXT), _sMascVTot) + ' '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vPremio:TEXT), _sMascVTot) + ' '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valtot:TEXT), _sMascVTot) + '    '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valunit:TEXT), _sMascVUni)
+				@ li, 0 psay _sLinImp
+				li ++
+			else
+				@ li, 0 psay space (52) + '---------   -----------   ------------   -----------   -----------'
+				li ++
+				_sLinImp += space (50)
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_peso:TEXT), _sMascPeso) + '  '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vCompra:TEXT), _sMascVTot) + '  '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vComplem:TEXT), _sMascVTot) + ' '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vPremio:TEXT), _sMascVTot) + ' '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valtot:TEXT), _sMascVTot)
+				@ li, 0 psay _sLinImp
+				li ++
+			endif
+		next
+		li ++
+	endif
+		
+	// Lista auxilio combustivel
+	if _lContinua .and. type ('_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem') == 'A'
+		_Cabec (_nMaxLin - 2)
+		_nFatPag = len (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem)
+		_sLinImp := 'Auxilio combustivel: ' + GetMv ("MV_SIMB1") + ' '
+		_sLinImp += alltrim (transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot))
+		@ li, 0 psay _sLinImp
+		li += 2
+	endif
+
+	// Lista previsoes de pagamento da safra
+	if _lContinua .and. type ('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem') == 'A'
+		_Cabec (_nMaxLin - 4)
+		_aLinImp = {}
+		aadd (_aLinImp, 'Mes/ano         Valor   Observacoes                                                                                            Saldo')
+		aadd (_aLinImp, '-------   -----------   ------------------------------------------------------------------------------------------    --------------')
+		_nFatPag = 1
+		do while _lContinua .and. _nFatPag <= len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem)
+
+			// O XML vem jah ordenado por data de vencimento, mas aberto por
+			// documento. Como quero listar um resumo mensal, tenho que varrer
+			// os documentos e acumular em arrays.
+			_sMesPagto = substr (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_vencto:TEXT, 4)
+			_aAbatim = {}  // Array para guardar os possiveis abatimentos do mes
+			_aResPag = {_sMesPagto, 0, 0}  // Array para guardar totais do mes
+			do while _lContinua .and. _nFatPag <= len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem) ;
+			.and. substr (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_vencto:TEXT, 4) == _sMesPagto
+
+				// O XML jah retorna com uma linha de totais, que nao quero listar agora.
+				if _oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_doc:TEXT != 'TOTAIS'
+
+					_aResPag  [2] += val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT)
+					_aResPag  [3] += val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT)
+					_nTGFat       += val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT)
+
+					// Se tiver tags de abatimentos, preciso ler.
+					// Se tiver mais de um abatimento, eh formato array.
+					if type ('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[' + cvaltochar (_nFatPag) + ']:_FatPagAbatItem') == 'A'
+						_nAbatim = 1
+						do while _nAbatim <= len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem)
+							aadd (_aAbatim, {_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem [_nAbatim]:_abatData:TEXT, ;
+											_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem [_nAbatim]:_abatHist:TEXT, ;
+										val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem [_nAbatim]:_abatValor:TEXT)})
+							_nAbatim ++
+							_nTGAbat += _aAbatim [len (_aAbatim), 3]
+						enddo
+					elseif type ('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[' + cvaltochar (_nFatPag) + ']:_FatPagAbatItem') == 'O'
+						aadd (_aAbatim, {_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem:_abatData:TEXT, ;
+										_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem:_abatHist:TEXT, ;
+									val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_FatPagAbatItem:_abatValor:TEXT)})
+						_nTGAbat += _aAbatim [len (_aAbatim), 3]
+					endif
+
+				else
+
+					// Aproveito que o XML jah traz tags de totais, para
+					// conferir totais que calculei aqui.
+					if mv_par05 == 1
+						_nTFatXML = val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT)
+						_nTSldXML = val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT)
+
+						if _nTGFat != _nTFatXML
+							u_help ("Total de pagamentos que calculei aqui (" + cvaltochar (_nTGFat) + ") nao bate com o que veio no XML (" + cvaltochar (_nTFatXML) + ")",, .t.)
+							_aLinImp = {}
+						endif
+						if (_nTGFat - _nTGAbat) != _nTSldXML
+							u_help ("Saldo final que calculei aqui (" + cvaltochar (_nTGFat - _nTGAbat) + ") nao bate com o que veio no XML (" + cvaltochar (_nTSldXML) + ")",, .t.)
+							_aLinImp = {}
+						endif
+					endif
+				endif
+				_nFatPag ++
+			enddo
+
+			_nSldPagto = _aResPag [2]
+			
+			// Agora que tenho o resumo do mes nas arrays, posso gerar linhas para impressao.
+			// A tag de totais ao final nao tem data (e nem quero imprimir ela aqui)
+			if _lContinua .and. ! empty (_aResPag [1])
+				_sLinImp := _aResPag [1] + ' '
+				_sLinImp += transform (_aResPag [2], _sMascVTot)
+				_sLinImp += '               Valor safra' + space (72)
+				_sLinImp += transform (_nSldPagto, _sMascVTot)
+				aadd (_aLinImp, _sLinImp)
+				_sLinImp = ''
+				
+				// Lista os abatimentos/baixas/pagtos/compensacoes (se existirem)
+				for _nAbatim = 1 to len (_aAbatim)
+					_nSldPagto -= _aAbatim [_nAbatim, 3]
+					_sLinImp := '        '
+					_sLinImp += transform (_aAbatim [_nAbatim, 3], _sMascVTot) + '-  '
+					_sLinImp += dtoc (stod (_aAbatim [_nAbatim, 1])) + '  '
+					_sLinImp += U_TamFixo (_aAbatim [_nAbatim, 2], 81, ' ') + '  '
+					_sLinImp += transform (_nSldPagto, _sMascVTot)
+					aadd (_aLinImp, _sLinImp)
+					_sLinImp = ''
+				next
+
+				// Linha separando cada parcela
+				if mv_par05 == 1
+					_sLinImp = replicate ('-', limite)
+					aadd (_aLinImp, _sLinImp)
+					_sLinImp = ''
+				endif
+			endif
+		enddo
+
+		_sLinImp := 'TOTAIS  '
+		_sLinImp += transform (_nTGFat, _sMascVTot)
+		_sLinImp += space (98)
+		_sLinImp += transform (_nTGFat - _nTGAbat, _sMascVTot)
+		aadd (_aLinImp, _sLinImp)
+		_sLinImp = ''
+
+		for _nLinImp = 1 to len (_aLinImp)
+//			u_log (_aLinImp [_nLinImp])
+			_Cabec (_nMaxLin - 4)
+			_sLinImp = _aLinImp [_nLinImp]
+			@ li, 0 psay _sLinImp
+			li ++
+		next
+		li += 2
+	endif
+
+	// Lista regras para pagamento de safra
+	if _lContinua .and. type ('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem') == 'A'
+		_Cabec (_nMaxLin - 4)
+		@li, 0 PSAY 'Regras para pagamento:'
+		li ++
+		for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
+			_Cabec (_nMaxLin)
+			_sLinImp := space (35)
+			_sLinImp += _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_descComParc:TEXT
+			@ li, 0 psay _sLinImp
+			li ++
+		next
+		li ++
+	endif
+
+	// Lista lancamentos em aberto a debito na conta corrente
+	if _lContinua .and. type ('_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem') == 'A'
+		_Cabec (_nMaxLin - 4)
+		@li, 0 PSAY 'Descontos em aberto:   Data        Historico                                                    Saldo'
+		li ++
+		_nTotDesc = 0
+		for _nLctoCC = 1 to len (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem)
+			_Cabec (_nMaxLin)
+			if _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT != 'TOTAIS' .and. _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dc:TEXT == 'D'
+				_sLinImp := space (23)
+				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dtMovto:TEXT, 10) + '  '
+				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_hist:TEXT, 50) + '  '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT), '@E 999,999,999.99') + ' '
+
+				// Nao posso aproveitar a linha de totais que vem no XML por que acumula debitos
+				// e creditos, e neste momento quero apenas os debitos.
+				_nTotDesc += val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT)
+				@ li, 0 psay _sLinImp
+				li ++
+			endif
+		next
+		@ li, 0 psay '                                                                                       --------------'
+		li ++
+		@ li, 0 psay '                                                                                     ' + transform (_nTotDesc, _sMascVTot)
+		li += 2
+	endif
+
+	IF m_pag >1
+		_roda()
+	endif
 return
 
 
 // Rodapé
 static function _roda ()
-
 	@ li, 0 psay __PrtfatLine ()
 	li ++
 	@ li, 20 psay Padc ('**** DOCUMENTO CONFIDENCIAL ****', limite,' ') 
@@ -2030,24 +2351,36 @@ static function _roda ()
 	li ++
 return
 
-IF m_pag >1
-		_roda()
+
+// --------------------------------------------------------------------------
+// Gera quebra de pagina
+static function _Cabec (_nLinha)
+	if li > _nLinha
+		if m_pag > 1
+			@ li, 0 psay __PrtfatLine ()
+			li ++
+			@ li, 20 psay Padc ('**** DOCUMENTO CONFIDENCIAL ****', limite,' ') 
+			li ++ 
+			@ li, 0 psay __PrtfatLine ()
+			li ++
+		endif
+		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 	endif
+return
 
 
-//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
-	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
-	aadd (_aRegsPerg, {01, "Safra                         ", "C", 4,  0,  "",   "   ", {},                        ""})
-	aadd (_aRegsPerg, {02, "Associado                     ", "C", 6,  0,  "",   "SA2", {},                        ""})
-	aadd (_aRegsPerg, {03, "Loja                          ", "C", 2,  0,  "",   "",    {},                        ""})
-//	aadd (_aRegsPerg, {04, "PARAMETRO EM DESUSO           ", "C", 2,  0,  "",   "   ", {},                        ""})
-//	aadd (_aRegsPerg, {05, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}           , ""})	
-	aadd (_aRegsPerg, {04, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}           , ""})	
-//	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Detalhado", "Resumido", "Apenas NF compra"}, ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes           Help
+	aadd (_aRegsPerg, {01, "Safra                         ", "C", 4,  0,  "",   "   ", {},             ""})
+	aadd (_aRegsPerg, {02, "Associado                     ", "C", 6,  0,  "",   "SA2", {},             ""})
+	aadd (_aRegsPerg, {03, "Loja                          ", "C", 2,  0,  "",   "",    {},             ""})
+//	aadd (_aRegsPerg, {04, "PARAMETRO EM DESUSO           ", "C", 2,  0,  "",   "   ", {},             ""})
+//	aadd (_aRegsPerg, {05, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}, ""})
+	aadd (_aRegsPerg, {04, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}, ""})
+	aadd (_aRegsPerg, {05, "Mostrar pagtos e compensacoes?", "N", 1,  0,  "",   "   ", {"Sim", "Nao"}, ""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
