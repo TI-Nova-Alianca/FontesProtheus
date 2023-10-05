@@ -15,6 +15,7 @@
 // 05/05/2021 - Claudia - Incluida msg de resumo de lançamentos no mes. GLPI: 9983
 // 16/07/2021 - Cláudia - Incluido e-mail da vanessa para recebimento
 // 23/06/2022 - Claudia - Criado grupo 139 para recebimento do email. GLPI: 14296
+// 05/10/2023 - Claudia - Testes de envio de email.
 //
 // ----------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -201,7 +202,7 @@ User Function BatZB5Mail()
                             
         _oAUtil := ClsAUtil():New (_aResumo)
 		_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
-        _sDestin := 'charlene.baldez@novaalianca.coop.br;claudia.lionco@novaalianca.coop.br'
+        _sDestin := 'charlene.baldez@novaalianca.coop.br'
         //_sDestin := 'claudia.lionco@novaalianca.coop.br'
 
 		U_SendMail (_sDestin, "Transf.de valores entre filiais MENSAL", _sMsg, {})
