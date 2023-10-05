@@ -7,7 +7,7 @@
 // #TipoDePrograma    #processo
 // #Descricao         #Exporta tabela de preços para .CSV
 // #PalavasChave      #vendas #tabela_de_preco
-// #TabelasPrincipais #DA0
+// #TabelasPrincipais #DA0 #DA1
 // #Modulos   		  #FAT 
 //
 // Historico de alteracoes:

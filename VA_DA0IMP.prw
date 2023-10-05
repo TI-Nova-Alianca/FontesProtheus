@@ -7,7 +7,7 @@
 // #TipoDePrograma    #processo
 // #Descricao         #Importa .CSV com dados da tabela de preços
 // #PalavasChave      #vendas #tabela_de_preco
-// #TabelasPrincipais #DA0
+// #TabelasPrincipais #DA0 #DA1
 // #Modulos   		  #FAT 
 //
 // Historico de alteracoes:
@@ -69,11 +69,29 @@ Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
         _sCliente := DA1->DA1_CLIENT
         _sLoja    := DA1->DA1_LOJA
 
+        If DA1->DA1_ESTADO != _sEstado
+            _oEvento := ClsEvent():New ()
+            _oEvento:Alias     = 'DA1'
+            _oEvento:Texto     = "Estado alterado de "+ DA1->DA1_ESTADO +" para "+ _sEstado +". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado
+            _oEvento:CodEven   = "DA0002"
+            _oEvento:Grava()
+        EndIf
+
+        If DA1->DA1_PRCVEN != _nValor  
+            _oEvento := ClsEvent():New ()
+            _oEvento:Alias     = 'DA1'
+            _oEvento:Texto     = "Valor alterado de "+ alltrim(str(DA1->DA1_PRCVEN)) +" para "+ alltrim(str(_nValor))+ ". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado
+            _oEvento:CodEven   = "DA0002"
+            _oEvento:Grava()
+        EndIf
+
         reclock("DA1", .F.)
+            DA1->DA1_ESTADO := _sEstado
             DA1->DA1_PRCVEN := _nValor   
             DA1->DA1_ICMS   := _RegraICMS(_sEstado) 
             DA1->DA1_VAST   := _RegraST(_sEstado,_sDA0Est,_nValor,_sCliente,_sLoja,_sProduto)                                                                      	                                                                 
         MsUnLock()
+
     EndIf        	
 Return
 //
@@ -116,6 +134,12 @@ Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
             _sCliente := DA1->DA1_CLIENT
             _sLoja    := DA1->DA1_LOJA
 
+            _oEvento := ClsEvent():New ()
+            _oEvento:Alias     = 'DA1'
+            _oEvento:Texto     = "Produto incluído "+ _sProduto +". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado + " Valor:" + alltrim(str(_nValor))
+            _oEvento:CodEven   = "DA0002"
+            _oEvento:Grava()
+
             reclock("DA1", .T.)
                 DA1->DA1_FILIAL := _sFilial
                 DA1->DA1_ITEM   := _sItem
@@ -132,6 +156,7 @@ Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
                 DA1->DA1_TPOPER := '4'
                 DA1->DA1_DATVIG := ddatabase                                                                   	                                                                 
             MsUnLock()
+
         EndIf  
     EndIf      	
 Return
@@ -147,6 +172,12 @@ Static Function _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
         reclock("DA1", .F.)
             DA1->(DbDelete())                                                                   	                                                                 
         MsUnLock()
+
+        _oEvento := ClsEvent():New ()
+        _oEvento:Alias     = 'DA1'
+        _oEvento:Texto     = "Produto Excluído "+ _sProduto +". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado + " Valor:" + alltrim(str(_nValor))
+        _oEvento:CodEven   = "DA0002"
+        _oEvento:Grava()
     EndIf        	
 Return
 //
