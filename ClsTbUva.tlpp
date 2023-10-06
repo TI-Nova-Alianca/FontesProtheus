@@ -16,7 +16,7 @@
 //
 
 #Include "Protheus.ch"
-//#Include "RwMake.ch"
+#include "VA_INCLU.prw"
 //#Include "TbiConn.ch"
 
 // --------------------------------------------------------------------------
@@ -50,35 +50,35 @@ ENDCLASS
 
 // --------------------------------------------------------------------------
 // Construtor.
-METHOD New (_xChave) Class ClsTbUva
+METHOD New (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc) Class ClsTbUva
 
 	// Gera atributos com valores default
-	::CodTabela = _xChave
-	::GeraAtrib (_xChave)
+	::GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc)
 Return ::self
 
 
 // --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
-METHOD GeraAtrib () Class ClsTbUva
+METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc) Class ClsTbUva
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _oSQL      := NIL
-	local _nGrupo    := 0
+//	local _nGrupo    := 0
 	local _aDados    := {}
 	local _nDado     := 0
 
 	// Defaults
-	::Conducao  = ''
-	::Safra     = ''
-	::TipoUva   = ''
-	::TipoPreco = ''
+	::CodTabela = _sCodTab
+	::Conducao  = _sConduc
 	::Grupos    = {}
+	::Safra     = ''
 	::SubGrupos = {}
+	::TipoPreco = _sTipoPrc
+	::TipoUva   = _sTipoUva
 	::UltMsg    = ''
 
-	if empty (::CodTabela)
-		u_help ("Para instanciar uma tabela de precos de safra, deve-se informar seu codigo.",, .t.)
+	if empty (::CodTabela) .or. empty (::TipoPreco) .or. empty (::TipoUva) .or. empty (::Conducao)
+		u_help ("Para instanciar uma tabela de precos de safra, deve-se informar seu codigo, tipo de preco (entrada/compra/MOC/...), tipo de uva (C/F), sistema de conducao (L/E).",, .t.)
 		_lContinua = .F.
 	endif
 
@@ -102,30 +102,61 @@ METHOD GeraAtrib () Class ClsTbUva
 		_oSQL:_sQuery += " ORDER BY ZX5_13GRUP"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
-		if len (::Grupos) == 0q
-			_SomaMsg ("Tabela de precos '" + ::CodTabela + "' nao existe, ou nao tem nenhum grupo de variedades informado.")
+		U_Log2 ('debug', '[' + procname () + ']_aDados:')
+		u_log (_aDados)
+		if len (_aDados) == 0
+			::SomaMsg ("Tabela de precos '" + ::CodTabela + "' nao existe, ou nao tem nenhum grupo de variedades informado.")
 			_lContinua = .F.
 		endif
 	endif
 	if _lContinua
-		::Safra = ::Grupos [1, 1]
+		::Safra = _aDados [1, 1]
 		if empty (::Safra)
 			::SomaMsg ("Safra nao definida.")
 			_lContinua = .F.
 		endif
 	endif
-	if _lContinua
-		if empty (::TipoPreco) ; ::SomaMsg ("Tipo de preco nao definido.")       ; _lContinua = .F. ; endif
-		if empty (::TipoUva)   ; ::SomaMsg ("Tipo de uva nao definido.")         ; _lContinua = .F. ; endif
-		if empty (::Conducao)  ; ::SomaMsg ("Sistema de conducao nao definido.") ; _lContinua = .F. ; endif
-	endif
 	
-	// Gera listas de variedades ligadas a cada grupo.
+	// Alimenta array de grupos
 	::Grupos = {}
 	if _lContinua
 		for _nDado = 1 to len (_aDados)
-			aadd (::Grupos, _aDados [_nDado, 1])
+			aadd (::Grupos, array (.TbUvaGruposQtColunas))
+			::Grupos [len (::Grupos), .TbUvaGruposCodigo]    = _aDados [_nDado, 2]
+			::Grupos [len (::Grupos), .TbUvaGruposDescricao] = _aDados [_nDado, 3]
+			::Grupos [len (::Grupos), .TbUvaGruposGrauBase]  = _aDados [_nDado, 4]
+			U_Log2 ('debug', '[' + procname () + ']::Grupo adicionado:')
+			U_Log2 ('debug', ::Grupos [len (::Grupos)])
 		next
+	endif
+
+	// Alimenta array de variedades ligadas a cada grupo.
+	if _lContinua
+		for _nGrupo = 1 to len (::Grupos)
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "SELECT ZX5_14PROD, SB5.B5_CEME"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_14 "
+			_oSQL:_sQuery += " WHERE ZX5_14.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
+	parei aqui		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + ::Grupos [_nGrupo, .TbUvaGruposCodigo] + "'"
+			_oSQL:_sQuery += " ORDER BY B1_DESC"
+			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+			_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+			U_Log2 ('debug', '[' + procname () + ']_aDados:')
+			u_log (_aDados)
+			if len (_aDados) == 0
+				::SomaMsg ("Tabela de precos '" + ::CodTabela + "' nao existe, ou nao tem nenhum grupo de variedades informado.")
+				_lContinua = .F.
+			endif
+		next
+	endif
+
+	// Se deu algum problema, limpa o codigo da tabela para que o programa que
+	// for usar o objeto possa testar.
+	if ! _lContinua
+		::CodTabela = ''
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
@@ -174,10 +205,13 @@ METHOD GeraHTM () Class ClsTbUva
 		// Linhas de titulos das colunas (nomes dos grupos, grau base, etc)
 		_sHTM += '<tr>'
 		_sHTM +=    '<th align=left>Grau</th>'
+		U_Log2 ('debug', '[' + procname () + ']Montando linha titulos grupos')
 		for _nGrp13 = 1 to len (::Grupos)
-			_sHTM += '<th colspan=3 align=center>Grp ' + alltrim (::Grupos [_nGrp13, 1])
-			_sHTM +=    '-' + alltrim (::Grupos [_nGrp13, 2])
-			_sHTM +=    '(gb ' + cvaltochar (::Grupos [_nGrp13, 3]) + ')'
+			U_Log2 ('debug', '[' + procname () + ']Gerando HTML para o grupo ' + ::Grupos [_nGrp13, .TbUvaGruposCodigo])
+			U_Log2 ('debug', ::Grupos [_nGrp13] )
+			_sHTM += '<th colspan=3 align=center>Gr.' + alltrim (::Grupos [_nGrp13, .TbUvaGruposCodigo])
+			_sHTM +=    '-' + alltrim (::Grupos [_nGrp13, .TbUvaGruposDescricao])
+			_sHTM +=    ' (gb ' + cvaltochar (::Grupos [_nGrp13, .TbUvaGruposGrauBase]) + ')'
 			_sHTM += '</th>'
 		next
 		_sHTM += '</tr>'
