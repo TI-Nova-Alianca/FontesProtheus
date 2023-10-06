@@ -192,3 +192,9 @@
 #XTranslate .PrcUvaColPrcCompra          => 8
 #XTranslate .PrcUvaColPrcMOC             => 9
 #XTranslate .PrcUvaQtColunas             => 9
+
+// Define nomes para colunas de arrays usadas na ClsTbUva
+#XTranslate .TbUvaGruposCodigo    => 1
+#XTranslate .TbUvaGruposDescricao => 2
+#XTranslate .TbUvaGruposGrauBase  => 3
+#XTranslate .TbUvaGruposQtColunas => 3
