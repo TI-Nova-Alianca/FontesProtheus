@@ -94,6 +94,7 @@
 // 18/04/2023 - Claudia - Ajustado campo conforme GLPI: 13458
 // 01/09/2023 - Robert  - Nao negativava coluna CUSTOMEDIO quando origem=SD1
 // 06/09/2023 - Claudia - Tratamento para descontos da zina franca. GLPI: 14152
+// 06/10/2023 - Claudia - Necessario incluir validação especifica para a NF de complemento '000229689'. GLPI: 14313
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
@@ -234,7 +235,7 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Mesoregiao",               "RTRIM (ZB_MESO) AS MESOREGIAO"})
 		aadd (_aOpcoes, {.F., "Municipio",                "RTRIM (SA1.A1_MUN) MUNICIPIO"})
 		aadd (_aOpcoes, {.F., "Nome Representante 1",     "RTRIM (A3_NOME) AS REPRES"})
-		aadd (_aOpcoes, {.F., "Valor mercadoria",         "CASE WHEN V.TIPONFSAID = 'C' THEN 0 ELSE "+_sSelVlMer + " * (CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END) END AS VALMERC"})
+		aadd (_aOpcoes, {.F., "Valor mercadoria",         "CASE WHEN V.TIPONFSAID = 'C' and V.DOC='000229689' THEN V.TOTAL + V.PVCOND WHEN V.TIPONFSAID = 'C' THEN 0 ELSE "+_sSelVlMer + " * (CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END) END AS VALMERC"})
 	//	aadd (_aOpcoes, {.F., "Valor mercadoria",         _sSelVlMer + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALMERC"})
 	//	aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
 	//	aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET + V.D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
