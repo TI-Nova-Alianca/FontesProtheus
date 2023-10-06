@@ -94,9 +94,8 @@
 // 18/04/2023 - Claudia - Ajustado campo conforme GLPI: 13458
 // 01/09/2023 - Robert  - Nao negativava coluna CUSTOMEDIO quando origem=SD1
 // 06/09/2023 - Claudia - Tratamento para descontos da zina franca. GLPI: 14152
-// 04/10/2023 - Robert  - Coluna do custo medio estava sem alias. Alterada para 'CUSTOMEDIO'.
+// 06/10/2023 - Claudia - Necessario incluir validação especifica para a NF de complemento '000229689'. GLPI: 14313
 //
-
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
 	Local cCadastro  := "Exportacao geral de dados de faturamento para planilha"
@@ -236,7 +235,7 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Mesoregiao",               "RTRIM (ZB_MESO) AS MESOREGIAO"})
 		aadd (_aOpcoes, {.F., "Municipio",                "RTRIM (SA1.A1_MUN) MUNICIPIO"})
 		aadd (_aOpcoes, {.F., "Nome Representante 1",     "RTRIM (A3_NOME) AS REPRES"})
-		aadd (_aOpcoes, {.F., "Valor mercadoria",         "CASE WHEN V.TIPONFSAID = 'C' THEN 0 ELSE "+_sSelVlMer + " * (CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END) END AS VALMERC"})
+		aadd (_aOpcoes, {.F., "Valor mercadoria",         "CASE WHEN V.TIPONFSAID = 'C' and V.DOC='000229689' THEN V.TOTAL + V.PVCOND WHEN V.TIPONFSAID = 'C' THEN 0 ELSE "+_sSelVlMer + " * (CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END) END AS VALMERC"})
 	//	aadd (_aOpcoes, {.F., "Valor mercadoria",         _sSelVlMer + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALMERC"})
 	//	aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
 	//	aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET + V.D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
@@ -298,7 +297,7 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Nome promotor",            "RTRIM (ISNULL ((SELECT A2_NOME FROM " + RetSQLName ("SA2") + " AS SA2FOR WHERE SA2FOR.D_E_L_E_T_ = '' AND SA2FOR.A2_COD = SA1.A1_VAPROMO), '')) AS NOME_PROMOTOR"})
 		//aadd (_aOpcoes, {.F., "Nome promotor",            "RTRIM (ISNULL ((SELECT ZX5_46DESC FROM " + RetSQLName ("ZX5") + " WHERE D_E_L_E_T_ = '' AND ZX5_FILIAL = '  ' AND ZX5_TABELA = '46' AND ZX5_46COD = SA1.A1_VAPROMO), '')) AS NOME_PROMOTOR"})
 	//	aadd (_aOpcoes, {.F., "Custo medio do movto",     "CUSTOMEDIO"})
-		aadd (_aOpcoes, {.F., "Custo medio do movto",     "CUSTOMEDIO * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS CUSTOMEDIO"})
+		aadd (_aOpcoes, {.F., "Custo medio do movto",     "CUSTOMEDIO * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END "})
 		aadd (_aOpcoes, {.F., "Tipo embalagem",           "RTRIM (ISNULL ((SELECT ZAZ_NLINF FROM " + RetSQLName ("ZAZ") + " WHERE D_E_L_E_T_ = '' AND ZAZ_FILIAL = '" + xfilial ("ZAZ") + "' AND ZAZ_CLINF = SB1.B1_CLINF), '')) AS TIPO_EMBALAGEM"})
 		aadd (_aOpcoes, {.F., "Agrupador unitário",       "CASE WHEN (SB1.B1_CODPAI <> '')  THEN  SB1.B1_CODPAI ELSE SB1.B1_COD END AS AGRUPADOR_UNITARIO"})
 		aadd (_aOpcoes, {.F., "Ato cooperativo/não coop.","CASE WHEN (B1_VAATO = 'S')  THEN  'Cooperativo' ELSE 'Nao Cooperativo' END AS ATO"})
