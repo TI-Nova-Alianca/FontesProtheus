@@ -125,7 +125,7 @@ user function robert ()
 		// _sFuncao += '_reginv ()'
 		// _sFuncao += '_recmail ()'
 		// _sFuncao += '_RevCH ()'
-		_sFuncao += '_RelAssoc ()'
+		// _sFuncao += '_RelAssoc ()'
 		// _sFuncao += '_SF1()'
 		// _sFuncao += '_SimCtb ()'
 		// _sFuncao += '_SimSafr23 ()'
@@ -140,6 +140,12 @@ user function robert ()
 		// _sFuncao += '_VA_VEF ()'
 		// _sFuncao += '_VA_XLS ()'
 		// _sFuncao += '_verif ()'
+		U_GravaSX1 ("VA_ACR", "01", "0345")
+		U_GravaSX1 ("VA_ACR", "02", "0348")
+		U_GravaSX1 ("VA_ACR", "03", 1)  // Ignorar uvas na estrutura ]S/N]
+		U_GravaSX1 ("VA_ACR", "04", 'PS/')  // Tipos a ignorar
+		U_GravaSX1 ("VA_ACR", "05", 2)  // Ignorar subniveis dos VD [S/N]
+		_sFuncao += 'U_VA_ACR (.t.)'
 		if ! empty (_sFuncao)
 			&(_sFuncao)
 		else
@@ -3337,25 +3343,25 @@ return
 // Testes classe tabela preco uva safra
 static function _TbUva ()
 	local _sHTML  := ''
-	local _oTbUva := ClsTbUva ():New ('2023')
-	_oTbUva:Conducao  = 'L'
-	_oTbUva:Safra     = '2023'
-	_oTbUva:TipoUva   = 'C'
-	_oTbUva:TipoPreco = 'C'
-	_oTbUva:GeraAtrib ()
+	local _oTbUva := ClsTbUva ():New ('2023', 'C', 'C', 'L')
 
-	// Exporta para arquivo, durante a implementacao, para conferencia.
-	_sHTML = _oTbUva:GeraHTM ()
-	if empty (_sHTML)
-		u_help (_oTbUva:UltMsg,, .t.)
+	if empty (_oTbUva:CodTabela)
+		U_Log2 ('erro', '[' + procname () + ']' + _oTbUva:UltMsg)
 	else
-		_sArq := 'c:\temp\TabUva.htm'
-		if file (_sArq)
-			delete file (_sArq)
+		// Exporta para arquivo, durante a implementacao, para conferencia.
+		_sHTML = _oTbUva:GeraHTM ()
+		if empty (_sHTML)
+			u_help (_oTbUva:UltMsg,, .t.)
+		else
+			_sArq := 'c:\temp\TabUva.htm'
+			if file (_sArq)
+				delete file (_sArq)
+			endif
+			_nHdl = fcreate (_sArq, 0)
+			fwrite (_nHdl, _sHtml)
+			fclose (_nHdl)
+			ShellExecute ("Open", _sArq, "", "", 1)
 		endif
-		_nHdl = fcreate (_sArq, 0)
-		fwrite (_nHdl, _sHtml)
-		fclose (_nHdl)
 	endif
 return
 

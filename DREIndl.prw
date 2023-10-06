@@ -41,6 +41,7 @@
 //                     - Exportacao da tabela DRE_INDL_CONTAB para conferencias
 // 01/08/2023 - Robert - Adicionado CC 011409 (linha Caxias) na exportacao de
 //                       dados abertos para gerar planilha dinamica.
+// 04/10/2023 - Robert - Tratamento para exportar e excluir tabela DRE_INDL_CUSTOS_OPS
 //
 
 // --------------------------------------------------------------------------
@@ -312,7 +313,8 @@ user function DREIndlC ()
 		aadd (_aOpcoes, "Lin.Tetra (por marca de terceiro)")
 		aadd (_aOpcoes, "Grandes clientes")
 		aadd (_aOpcoes, "Aberto (para gerar tabela dinamica)")
-		aadd (_aOpcoes, "Tabela auxiliar valores contabeis para rateio")
+		aadd (_aOpcoes, "Tabela auxiliar-valores contabeis para rateio")
+		aadd (_aOpcoes, "Tabela auxiliar-medias custos das OPs")
 		aadd (_aOpcoes, "Cancelar")
 		_nLayout = U_F3Array (_aOpcoes, "Selecione layout", {{1,"Opcoes",200,""}}, 400, 300)
 
@@ -331,6 +333,8 @@ user function DREIndlC ()
 			processa ({|| _Cons2 ('AC', '', 'zz')})
 		case _nLayout == 7
 			processa ({|| _Cons2 ('CTB', '', 'zz')})
+		case _nLayout == 8
+			processa ({|| _Cons2 ('CUSTOS_OP', '', 'zz')})
 		endcase
 
 	elseif left (_trbDRE->agrup, 1) == 'F'  // Rateio filial a filial
@@ -590,6 +594,40 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
 
+	case _sLayout == 'CUSTOS_OP'  // Tabela auxiliar de media de custos das OPs
+		 // Usei DISTINCT por que o mesmo item aparece varias vezes na tabela de itens.
+		_oSQL:_sQuery := "WITH LINCOM AS ("
+		_oSQL:_sQuery += "	SELECT 'A' AS COD, 'SUCO_INTEGRAL' AS DESCR UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'B', 'ORGANICO' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'C', 'SUCO_100' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'D', 'NECT_BEBID' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'E', 'PREPARADOS' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'F', 'VINHO_FINO' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'G', 'ESPUMANTE' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'H', 'VINHO_MESA' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'I', 'FILTRADO' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'J', 'SAGU_QUENTAO' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'K', 'INDUSTRIALIZ' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'L', 'REVENDA' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'M', 'GRANEL' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'N', 'FRISANTE' UNION ALL"
+		_oSQL:_sQuery += "	SELECT 'Z', 'OUTRAS'"
+		_oSQL:_sQuery += ")"
+		_oSQL:_sQuery += "SELECT DISTINCT C.PRODUTO, I.LIN_ENV, I.LIN_COML, LINCOM.DESCR"
+		_oSQL:_sQuery +=      ", C.PERC_CUSTO_AP, C.PERC_CUSTO_MO, C.PERC_CUSTO_GF"
+		_oSQL:_sQuery +=      ", C.PERC_CUSTO_ME, C.PERC_CUSTO_VD, C.PERC_CUSTO_BN, C.PERC_CUSTO_PERDAS"
+		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".DRE_INDL_CUSTOS_OPS C"
+		_oSQL:_sQuery +=      ", " + _sLinkSrv + ".DRE_INDL_ITENS I"
+		_oSQL:_sQuery +=      " LEFT JOIN LINCOM"
+		_oSQL:_sQuery +=           " ON (LINCOM.COD = I.LIN_COML)"
+		_oSQL:_sQuery += " WHERE C.ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+		_oSQL:_sQuery +=   " AND I.ID_ANALISE = C.ID_ANALISE"
+		_oSQL:_sQuery +=   " AND I.PRODUTO    = C.PRODUTO"
+		_oSQL:_sQuery += " order by PRODUTO"
+		_oSQL:ArqDestXLS = 'DRE_INDL_' + cvaltochar (_trbDRE -> idanalise) + '_CUSTOS_OPS'
+		_oSQL:Log ()
+		_oSQL:Qry2XLS(.F.,.F.,.F.)
+
 	endcase
 return
 
@@ -617,13 +655,18 @@ static function _Excl ()
 	_oSQL:Log ()
 	if _oSQL:Exec ()
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+		_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL_CUSTOS_OPS WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 		_oSQL:Log ()
 		if _oSQL:Exec ()
-			_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 			_oSQL:Log ()
 			if _oSQL:Exec ()
-				_AtuTrb ()
+				_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+				_oSQL:Log ()
+				if _oSQL:Exec ()
+					_AtuTrb ()
+				endif
 			endif
 		endif
 	endif
