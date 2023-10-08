@@ -62,9 +62,11 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc) Class ClsTbUva
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _oSQL      := NIL
-//	local _nGrupo    := 0
+	local _nGrupo    := 0
 	local _aDados    := {}
 	local _nDado     := 0
+	local _sAliasQ   := ''
+	local _aAux      := {}
 
 	// Defaults
 	::CodTabela = _sCodTab
@@ -125,16 +127,61 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc) Class ClsTbUva
 			::Grupos [len (::Grupos), .TbUvaGruposCodigo]    = _aDados [_nDado, 2]
 			::Grupos [len (::Grupos), .TbUvaGruposDescricao] = _aDados [_nDado, 3]
 			::Grupos [len (::Grupos), .TbUvaGruposGrauBase]  = _aDados [_nDado, 4]
-			U_Log2 ('debug', '[' + procname () + ']::Grupo adicionado:')
-			U_Log2 ('debug', ::Grupos [len (::Grupos)])
+			::Grupos [len (::Grupos), .TbUvaGruposListaUvas] = {}
+	//		U_Log2 ('debug', '[' + procname () + ']::Grupo adicionado:')
+	//		U_Log2 ('debug', ::Grupos [len (::Grupos)])
 		next
 	endif
 
+	// Para cada grupo criado, cria uma lista com as suas variedades.
+	if _lContinua
+		for _nGrupo = 1 to len (::Grupos)
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "SELECT V.*"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_14 "
+			_oSQL:_sQuery +=      ", VA_VFAMILIAS_UVAS V "
+			_oSQL:_sQuery += " WHERE ZX5_14.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + ::Grupos [_nGrupo, .TbUvaGruposCodigo] + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_BASE"
+			_oSQL:_sQuery += " ORDER BY V.DESCR_BASE, V.COD_BASE"
+			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+			_sAliasQ := _oSQL:Qry2Trb (.F.)
+			(_sAliasQ) -> (dbgotop ())
+			_aAux = {}
+			do while ! (_sAliasQ) -> (eof ())
+				aadd (_aAux, array (.TbUvaGruposListaUvasQtColunas))
+				_aAux [len (_aAux), .TbUvaGruposListaUvasCodBase]            = (_sAliasQ) -> cod_base
+				_aAux [len (_aAux), .TbUvaGruposListaUvasDescrBase]          = (_sAliasQ) -> desc_resum
+				_aAux [len (_aAux), .TbUvaGruposListaUvasCodEmConversao]     = (_sAliasQ) -> cod_em_conversao
+				_aAux [len (_aAux), .TbUvaGruposListaUvasDescrEmConversao]   = (_sAliasQ) -> desc_resum_em_conversao
+				_aAux [len (_aAux), .TbUvaGruposListaUvasCodBordadura]       = (_sAliasQ) -> cod_bordadura
+				_aAux [len (_aAux), .TbUvaGruposListaUvasDescrBordadura]     = (_sAliasQ) -> desc_resum_bordadura
+				_aAux [len (_aAux), .TbUvaGruposListaUvasCodOrganica]        = (_sAliasQ) -> cod_organica
+				_aAux [len (_aAux), .TbUvaGruposListaUvasDescrOrganica]      = (_sAliasQ) -> desc_resum_organica
+				_aAux [len (_aAux), .TbUvaGruposListaUvasCodFinaClas_comum]  = (_sAliasQ) -> cod_fina_clas_comum
+				_aAux [len (_aAux), .TbUvaGruposListaUvasDescrFinaClasComum] = (_sAliasQ) -> desc_resum_fina_clas_comum
+				_aAux [len (_aAux), .TbUvaGruposListaUvasCodParaEspumante]   = (_sAliasQ) -> cod_para_espumante
+				_aAux [len (_aAux), .TbUvaGruposListaUvasDescrParaEspumante] = (_sAliasQ) -> desc_resum_para_espumante
+				_aAux [len (_aAux), .TbUvaGruposListaUvasFinaOuComum]        = (_sAliasQ) -> fina_comum
+				_aAux [len (_aAux), .TbUvaGruposListaUvasCor]                = (_sAliasQ) -> cor
+				_aAux [len (_aAux), .TbUvaGruposListaUvasTintorea]           = (_sAliasQ) -> tintorea
+				(_sAliasQ) -> (dbskip ())
+			enddo
+			::Grupos [_nGrupo, .TbUvaGruposListaUvas] = aclone (_aAux)
+	//		U_Log2 ('debug', '[' + procname () + ']::Grupo com variedades:')
+	//		U_Log2 ('debug', ::Grupos [_nGrupo])
+	//		U_Log2 ('debug', ::Grupos [_nGrupo, .TbUvaGruposListaUvas])
+		next
+	endif
+/*
 	// Alimenta array de variedades e seus principais atributos.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT ZX5_14.ZX5_14GRUP, ZX5_14PROD, SB1.B1_DESC, SB1.B1_VARUVA"
-		_oSQL:_sQuery +=      ", SB1.B1_VACOR, SB1.B1_VATTR, SB1.B1_VAORGAN"
+		_oSQL:_sQuery +=      ", SB1.B1_VACOR, SB1.B1_VATTR, SB1.B1_VAORGAN, SB1.B1_CODPAI"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_14 "
 		_oSQL:_sQuery +=      " ," + RetSQLName ("SB1") + " SB1 "
 		_oSQL:_sQuery += " WHERE ZX5_14.D_E_L_E_T_ = ''"
@@ -151,7 +198,11 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc) Class ClsTbUva
 
 		_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_    = ''"
 		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL     = '" + xfilial ("SB1") + "'"
-		_oSQL:_sQuery +=   " AND SB1.B1_COD        = ZX5_14.ZX5_14PROD"
+		
+		// Quero incluir aqui as variedades que estao explicitamente na tabela
+		// de precos e, tambem, suas variacoes (organica, bordadura, em conversao)
+		_oSQL:_sQuery +=   " AND (SB1.B1_COD        = ZX5_14.ZX5_14PROD"
+		_oSQL:_sQuery +=    " OR  SB1.B1_CODPAI     = ZX5_14.ZX5_14PROD)"
 		_oSQL:_sQuery += " ORDER BY ZX5_14PROD"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
@@ -170,16 +221,18 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc) Class ClsTbUva
 				::Varied [len (::Varied), .TbUvaVariedCor]      = _aDados [_nDado, 5]
 				::Varied [len (::Varied), .TbUvaVariedTintorea] = _aDados [_nDado, 6]
 				::Varied [len (::Varied), .TbUvaVariedOrganica] = _aDados [_nDado, 7]
+				::Varied [len (::Varied), .TbUvaVariedCodBase]  = _aDados [_nDado, 8]
 			next
 			U_Log2 ('debug', 'Variedades:')
 			U_Log2 ('debug', ::Varied)
 		endif
 	endif
-
-	// Se deu algum problema, limpa o codigo da tabela para que o programa que
-	// for usar o objeto possa testar.
+*/
+	// Se deu algum problema, limpa os dados principais para inutilizar o objeto.
 	if ! _lContinua
 		::CodTabela = ''
+		::Grupos    = {}
+		::Safra     = ''
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
@@ -190,19 +243,130 @@ return
 // Gera tabela em formato HTML
 METHOD GeraHTM () Class ClsTbUva
 	local _sHTM      := ''
-	local _nTotCols  := 25
-	local _nGrp13    := 0
-	local _lTemConv  := .T.
-	local _lTemBord  := .F.
-	local _lTemEmCon := .F.
-	local _lTemOrg   := .F.
-	local _nColSpan  := 0
+//	local _nTotCols  := 25
+	local _nGrupo    := 0
 	local _aSubgrup  := {}
 	local _nSubgrup  := 0
+	local _aTitGrup  := {}
+	local _aVaried := {}
 	local _nVaried   := 0
+	local _aLinha  := {}
+	local _aAux      := {}
+	local _lAdicionou := .F.
 
+	// Como a quantidade de celulas mescladas eh muito grande, achei melhor
+	// preparar arrays com os dados (jah eh bastante complicado) e, num
+	// passo seguinte, gerar HTML.
+
+	// Passo 1: preparar arrays de dados para o HTML
 	if empty (::CodTabela)
 		::SomaMsg ("Codigo de tabela nao definido. Impossivel gerar HTML.")
+	else
+
+		// Uvas comuns: 4 subcolunas (convenc/bordadura/em conv/organ)
+		// Uvas viniferas em espaldeira: 2 subcolunas (para vinho/para espumante)
+		// Uvas viniferas latadas: nenhuma subcoluna
+		if ::TipoUva == 'C'
+			_aSubgrup = {'Convencional', 'Bordadura', 'Em conversão', 'Orgânica'}
+		elseif ::TipoUva == 'F' .and. ::Conducao == 'E'
+			_aSubGrup = {'Para vinho', 'Para espumante'}
+		else
+			_aSubGrup = {}
+		endif
+	//	U_Log2 ('debug', _aSubGrup)
+
+		// Prepara titulos dos grupos
+		_aTitGrup = {}
+		aadd (_aTitGrup, '<th> </th>')  // Esta coluna vai ser, posteriormente, usada para o grau.
+		for _nGrupo = 1 to len (::Grupos)
+			aadd (_aTitGrup, '<th colspan=' + cvaltochar (len (_aSubGrup)) + ' align=center>' + ;
+			                 'Gr.' + alltrim (::Grupos [_nGrupo, .TbUvaGruposCodigo]) + ;
+			                 '-' + alltrim (::Grupos [_nGrupo, .TbUvaGruposDescricao]) + ;
+			                 ' (gb ' + cvaltochar (::Grupos [_nGrupo, .TbUvaGruposGrauBase]) + ')' + ;
+			                 '</th>')
+		next
+
+		// Array com todas as colunas (subgrupos e variedades)
+		_aVaried = {}
+		_aLinha = {'Grau'}
+		for _nGrupo = 1 to len (::Grupos)
+			for _nSubgrup = 1 to len (_aSubgrup)
+				aadd (_aLinha, _aSubgrup [_nSubgrup])
+			next
+		next
+		aadd (_aVaried, aclone (_aLinha))
+		_nVaried = 1
+		do while .t.
+			U_Log2 ('debug', '[' + procname () + ']_nVaried=' + cvaltochar (_nVaried))
+			_aLinha = {' '}  // Primeira coluna vai ser usada pelo grau
+			_lAdicionou = .F.
+			// Para cada grupo, verifica se ainda tem variedades a adicionar
+			for _nGrupo = 1 to len (::Grupos)
+				U_Log2 ('debug', '[' + procname () + ']_nGrupo=' + cvaltochar (_nGrupo))
+				_aAux = aclone (::Grupos [_nGrupo, .TbUvaGruposListaUvas])
+				if _nVaried <= len (_aAux)
+					// Variedade base sempre deve existir, independente de tipo/conducao
+					if ! empty (_aAux [_nVaried, .TbUvaGruposListaUvasCodBase])
+						aadd (_aLinha, alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasCodBase]) + '-' + alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasDescrBase]))
+					else
+						aadd (_aLinha, ' ')
+					endif
+
+					// Estas colunas existem somente para uvas comuns
+					if ::TipoUva == 'C'
+						if ! empty (_aAux [_nVaried, .TbUvaGruposListaUvasCodBordadura])
+							aadd (_aLinha, alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasCodBordadura]) + '-' + alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasDescrBordadura]))
+						else
+							aadd (_aLinha, ' ')
+						endif
+						if ! empty (_aAux [_nVaried, .TbUvaGruposListaUvasCodEmConversao])
+							aadd (_aLinha, alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasCodEmConversao]) + '-' + alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasDescrEmConversao]))
+						else
+							aadd (_aLinha, ' ')
+						endif
+						if ! empty (_aAux [_nVaried, .TbUvaGruposListaUvasCodOrganica])
+							aadd (_aLinha, alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasCodOrganica]) + '-' + alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasDescrOrganica]))
+						else
+							aadd (_aLinha, ' ')
+						endif
+					endif
+
+					// Esta coluna existe somente para viniferas em espaldeira
+					if ::TipoUva == 'F' .and. ::Conducao == 'E'
+						if ! empty (_aAux [_nVaried, .TbUvaGruposListaUvasCodParaEspumante])
+							aadd (_aLinha, alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasCodParaEspumante]) + '-' + alltrim (_aAux [_nVaried, .TbUvaGruposListaUvasDescrParaEspumante]))
+						else
+							aadd (_aLinha, ' ')
+						endif
+					endif
+					_lAdicionou = .T.
+		//			U_Log2 ('debug', '[' + procname () + ']Adicionei variedades e ficou assim:')
+		//			U_Log2 ('debug', _aLinha)
+				else
+					U_Log2 ('debug', '[' + procname () + ']Este grupo nao tem mais variedades.')
+					// Preciso colocar um espaco nestas posicoes para gerar uma celula vazia no HTML depois.
+					for _nSubgrup = 1 to len (_aSubgrup)
+						aadd (_aLinha, ' ')
+					next
+		//			U_Log2 ('debug', '[' + procname () + ']Adicionei vazios e ficou assim:')
+		//			U_Log2 ('debug', _aLinha)
+				endif
+			next
+			if ! _lAdicionou
+				exit
+			endif
+			aadd (_aVaried, aclone (_aLinha))
+			_nVaried ++
+		enddo
+		U_Log2 ('debug', _aVaried)
+		for _nVaried = 1 to len (_aVaried)
+			U_Log2 ('debug', '[' + procname () + ']Linha ' + cvaltochar (_nVaried) + ' tam = ' + cvaltochar (len (_aVaried [_nVaried])))
+		next
+	endif
+
+	// Passo 2: montagem do HTML
+	if len (_aVaried) == 0
+		::SomaMsg ("Sem variedades para esta tabela. Impossivel gerar HTML.")
 	else
 		// dicas em https://www.w3schools.com/css/css_text_align.asp
 
@@ -211,10 +375,10 @@ METHOD GeraHTM () Class ClsTbUva
 		
 		// Linhas iniciais da tabela (descricao, tipos de uvas, datas, etc.
 		_sHTM += '<tr>'
-		_sHTM +=    '<th colspan=' + cvaltochar (_nTotCols) + ' align=left>' + alltrim (sm0 -> m0_nomecom) + '</th>'
+		_sHTM +=    '<th colspan=' + cvaltochar (len (_aVaried [1])) + ' align=left>' + alltrim (sm0 -> m0_nomecom) + '</th>'
 		_sHTM += '</tr>'
 		_sHTM += '<tr>'
-			_sHTM +=    '<th colspan=' + cvaltochar (_nTotCols) + ' align=left>Tabela ' + ::CodTabela + ' (preço '
+			_sHTM +=    '<th colspan=' + cvaltochar (len (_aVaried [1])) + ' align=left>Tabela ' + ::CodTabela + ' (preço '
 			if ::TipoPreco == 'E'
 				_sHTM += 'de entrada'
 			elseif ::TipoPreco == 'C'
@@ -230,159 +394,27 @@ METHOD GeraHTM () Class ClsTbUva
 			_sHTM += ' - safra ' + ::Safra + '</th>'
 		_sHTM += '</tr>'
 		_sHTM += '<tr>'
-		_sHTM +=    '<th colspan=' + cvaltochar (_nTotCols) + ' align=left>Gerada em ' + dtoc (date ()) + ' - ' + time () + '</th>'
+		_sHTM +=    '<th colspan=' + cvaltochar (len (_aVaried [1])) + ' align=left>Gerada em ' + dtoc (date ()) + ' - ' + time () + '</th>'
 		_sHTM += '</tr>'
+
 
 		// Linhas de titulos das colunas (nomes dos grupos, grau base, etc)
-		_sHTM += '<tr>'
-		_sHTM +=    '</th>'
 		U_Log2 ('debug', '[' + procname () + ']Montando linha titulos grupos')
-		_aSubgrup = {'Grau'}  // Vou adicionar subgrupos cfe. for encontrando eles.
-		for _nGrp13 = 1 to len (::Grupos)
-			U_Log2 ('debug', '[' + procname () + ']Gerando HTML para o grupo ' + ::Grupos [_nGrp13, .TbUvaGruposCodigo])
-			U_Log2 ('debug', ::Grupos [_nGrp13] )
-
-
-			// Verifica se tem uvas convencionais/bordadura/em conversao/orgenicas neste grupo.
-			_lTemConv = .f.
-			_lTemBord = .f.
-			_lTemEmCon = .f.
-			_lTemOrg = .F.
-			_nColSpan = 0
-			if ascan (::Varied, {|_aVal| _aVal [.TbUvaVariedGrupo] == ::Grupos [_nGrp13, .TbUvaGruposCodigo] .and. _aVal [.TbUvaVariedOrganica] == 'C'}) > 0
-				_lTemConv = .T.
-				_nColSpan ++
-				aadd (_aSubgrup, 'Convencional')
-			endif
-			if ascan (::Varied, {|_aVal| _aVal [.TbUvaVariedGrupo] == ::Grupos [_nGrp13, .TbUvaGruposCodigo] .and. _aVal [.TbUvaVariedOrganica] == 'B'}) > 0
-				_lTemBord = .T.
-				_nColSpan ++
-				aadd (_aSubgrup, 'Bordadura')
-			endif
-			if ascan (::Varied, {|_aVal| _aVal [.TbUvaVariedGrupo] == ::Grupos [_nGrp13, .TbUvaGruposCodigo] .and. _aVal [.TbUvaVariedOrganica] == 'E'}) > 0
-				_lTemEmCon = .T.
-				_nColSpan ++
-				aadd (_aSubgrup, 'Em conversao')
-			endif
-			if ascan (::Varied, {|_aVal| _aVal [.TbUvaVariedGrupo] == ::Grupos [_nGrp13, .TbUvaGruposCodigo] .and. _aVal [.TbUvaVariedOrganica] == 'O'}) > 0
-				_lTemOrg = .T.
-				_nColSpan ++
-				aadd (_aSubgrup, 'Organica')
-			endif
-			U_Log2 ('debug', '[' + procname () + ']_lTemConv = ' + cvaltochar (_lTemConv ))
-			U_Log2 ('debug', '[' + procname () + ']_lTemBord = ' + cvaltochar (_lTemBord ))
-			U_Log2 ('debug', '[' + procname () + ']_lTemEmCon= ' + cvaltochar (_lTemEmCon))
-			U_Log2 ('debug', '[' + procname () + ']_lTemOrg  = ' + cvaltochar (_lTemOrg  ))
-			U_Log2 ('debug', '[' + procname () + ']_nColSpan = ' + cvaltochar (_nColSpan ))
-			U_Log2 ('debug', '[' + procname () + ']Subgrupos:')
-			U_Log2 ('debug', _aSubgrup)
-
-			// Linha com os nomes dos grupos
-			_sHTM += '<th colspan=' + cvaltochar (_nColSpan) + ' align=center>Gr.' + alltrim (::Grupos [_nGrp13, .TbUvaGruposCodigo])
-			_sHTM +=    '-' + alltrim (::Grupos [_nGrp13, .TbUvaGruposDescricao])
-			_sHTM +=    ' (gb ' + cvaltochar (::Grupos [_nGrp13, .TbUvaGruposGrauBase]) + ')'
-			_sHTM += '</th>'
-
-			_sHTM += '</th>'
-		next
-
-		// Linha com os subgrupos (converc/bordadura/organ...)
 		_sHTM += '<tr>'
-		for _nSubgrup = 1 to len (_aSubgrup)
-			_sHTM += '<th align=center>' + _aSubgrup [_nSubgrup] + '</th>'
+		for _nGrupo = 1 to len (_aTitGrup)
+			_sHTM += _aTitGrup [_nGrupo]
 		next
 		_sHTM += '</tr>'
 
-
-		for _nVaried = 1 to len (::Varied)
+		// Adiciona as variedades ao grid
+		for _nVaried = 1 to len (_aVaried)
+			_sHTM += '<tr>'
+			for _nGrupo = 1 to len (_aVaried [_nVaried])
+				_sHTM += '<th>' + _aVaried [_nVaried, _nGrupo] + '</th>'
+			next
+			_sHTM += '</tr>
 		next
 
-		// Adiciona cada grau
-		_sHTM += '<tr style="font-family:tahoma;font-size:12px">'
-
-
-/*
-		_sHTM +=    '<th align=center>13.0</th>'
-		_sHTM +=    '<th align=left>Bordo</th>'
-		_sHTM +=    '<th align=left>Bordo cnv</th>'
-		_sHTM +=    '<th align=left>Bordo ord</th>'
-		_sHTM +=    '<th align=left>Niagara</th>'
-		_sHTM +=    '<th align=left>Niagara cnv</th>'
-		_sHTM +=    '<th align=left>Niagara ord</th>'
-		_sHTM +=    '<th align=left>Bordo</th>'
-		_sHTM +=    '<th align=left>Bordo cnv</th>'
-		_sHTM +=    '<th align=left>Bordo ord</th>'
-		_sHTM +=    '<th align=left>Niagara</th>'
-		_sHTM +=    '<th align=left>Niagara cnv</th>'
-		_sHTM +=    '<th align=left>Niagara ord</th>'
-		_sHTM +=    '<th align=left>Bordo</th>'
-		_sHTM +=    '<th align=left>Bordo cnv</th>'
-		_sHTM +=    '<th align=left>Bordo ord</th>'
-		_sHTM +=    '<th align=left>Niagara</th>'
-		_sHTM +=    '<th align=left>Niagara cnv</th>'
-		_sHTM +=    '<th align=left>Niagara ord</th>'
-		_sHTM +=    '<th align=left>Bordo</th>'
-		_sHTM +=    '<th align=left>Bordo cnv</th>'
-		_sHTM +=    '<th align=left>Bordo ord</th>'
-		_sHTM +=    '<th align=left>Niagara</th>'
-		_sHTM +=    '<th align=left>Niagara cnv</th>'
-		_sHTM +=    '<th align=left>Niagara ord</th>'
-		_sHTM += '</tr>'
-		_sHTM += '<tr>'
-		_sHTM +=    '<th/>'
-		_sHTM +=    '<th align=left>Rubea</th>'
-		_sHTM +=    '<th align=left>Rubea cnv</th>'
-		_sHTM +=    '<th align=left>Rubea ord</th>'
-		_sHTM +=    '<th align=left>Concord</th>'
-		_sHTM +=    '<th align=left>Concord cnv</th>'
-		_sHTM +=    '<th align=left>Concord ord</th>'
-		_sHTM +=    '<th align=left>Rubea</th>'
-		_sHTM +=    '<th align=left>Rubea cnv</th>'
-		_sHTM +=    '<th align=left>Rubea ord</th>'
-		_sHTM +=    '<th align=left>Concord</th>'
-		_sHTM +=    '<th align=left>Concord cnv</th>'
-		_sHTM +=    '<th align=left>Concord ord</th>'
-		_sHTM +=    '<th align=left>Rubea</th>'
-		_sHTM +=    '<th align=left>Rubea cnv</th>'
-		_sHTM +=    '<th align=left>Rubea ord</th>'
-		_sHTM +=    '<th align=left>Concord</th>'
-		_sHTM +=    '<th align=left>Concord cnv</th>'
-		_sHTM +=    '<th align=left>Concord ord</th>'
-		_sHTM +=    '<th align=left>Rubea</th>'
-		_sHTM +=    '<th align=left>Rubea cnv</th>'
-		_sHTM +=    '<th align=left>Rubea ord</th>'
-		_sHTM +=    '<th align=left>Concord</th>'
-		_sHTM +=    '<th align=left>Concord cnv</th>'
-		_sHTM +=    '<th align=left>Concord ord</th>'
-		_sHTM += '</tr>'
-		_sHTM += '<tr>'
-		_sHTM +=    '<th align=center>13.0</th>'
-		_sHTM +=    '<th align=right>1,5960</th>'
-		_sHTM +=    '<th align=right>1,8354</th>'
-		_sHTM +=    '<th align=right>2,4738</th>'
-		_sHTM +=    '<th align=right>1,33</th>'
-		_sHTM +=    '<th align=right>1,5295</th>'
-		_sHTM +=    '<th align=right>2,2610</th>'
-		_sHTM +=    '<th align=right>1,5960</th>'
-		_sHTM +=    '<th align=right>1,8354</th>'
-		_sHTM +=    '<th align=right>2,4738</th>'
-		_sHTM +=    '<th align=right>1,33</th>'
-		_sHTM +=    '<th align=right>1,5295</th>'
-		_sHTM +=    '<th align=right>2,2610</th>'
-		_sHTM +=    '<th align=right>1,5960</th>'
-		_sHTM +=    '<th align=right>1,8354</th>'
-		_sHTM +=    '<th align=right>2,4738</th>'
-		_sHTM +=    '<th align=right>1,33</th>'
-		_sHTM +=    '<th align=right>1,5295</th>'
-		_sHTM +=    '<th align=right>2,2610</th>'
-		_sHTM +=    '<th align=right>1,5960</th>'
-		_sHTM +=    '<th align=right>1,8354</th>'
-		_sHTM +=    '<th align=right>2,4738</th>'
-		_sHTM +=    '<th align=right>1,33</th>'
-		_sHTM +=    '<th align=right>1,5295</th>'
-		_sHTM +=    '<th align=right>2,2610</th>'
-		_sHTM += '</tr>'
-*/
 		_sHTM += '</table>'
 		_sHTM += '</body></html>'
 	endif
