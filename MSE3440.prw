@@ -35,6 +35,8 @@
 // 22/07/2021 - Claudia - Incluida a divisão das parcelas para ST/IPI no "IPI distribuídos nas "N" parcelas".GLPI: 10539
 // 05/09/2022 - Claudia - Incluso variaveis _VLRSEG, _VLFRETE, _vlrDesp - GLPI: 12563
 // 16/02/2023 - Claudia - Descontado os juros da base liberada. GLPI: 13200
+// 29/08/2023 - Claudia - Ajustes de devoluções/compensação. GLPI: 13795
+// 31/08/2023 - Claudia - Ajustes em compensação de titulos RA. GLPI: 13536
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
 /*
@@ -55,6 +57,7 @@ User Function MSE3440 ()
 	local _lContinua := .T.
 	
 	u_logIni ()
+	u_log("gravando")
 	
 	// Se estiver sendo chamado a partir da rotina de preparacao de notas, nao executa.
 	If _lContinua .and. (IsInCallStack ("MATA460A") .or. IsInCallStack ("MATA460B"))
@@ -69,6 +72,7 @@ User Function MSE3440 ()
 	// Posiciona no contas a receber para buscar e atualizar dados.
 	If _lContinua
 		se1 -> (dbsetorder (1))
+		u_log("1. " + se3 -> e3_num)
 		If ! se1 -> (msSeek (xfilial ("SE1") + se3 -> e3_prefixo + se3 -> e3_num + se3 -> e3_parcela + se3 -> e3_tipo, .F.))
 			u_help ('Titulo a receber nao encontrado: ' + xfilial ("SE1") + se3 -> e3_prefixo + se3 -> e3_num + se3 -> e3_parcela + se3 -> e3_tipo)
 			_lContinua = .F.
@@ -77,7 +81,8 @@ User Function MSE3440 ()
 
 	// busca dados do vendedor que esta lendo no SE3
 	If _lContinua
-		If se3->e3_num == '000189441'
+		u_log("2. " + se3 -> e3_num)
+		If se3->e3_num == '000226055'
 			u_help("Nota")
 		EndIf
 		_vend1     := se1 -> e1_vend1   
@@ -111,7 +116,7 @@ User Function MSE3440 ()
 		_sQuery += " AND E5_LOJA   	= '" + se3->e3_loja    + "'"
 		_sQuery += " AND E5_SEQ  	= '" + se3->e3_seq     + "'"
 		_sQuery += " AND E5_RECPAG 	= 'R'"
-		_sQuery += " AND (E5_TIPODOC = 'VL' OR (E5_TIPODOC = 'CP' AND E5_DOCUMEN LIKE '% RA %'))"
+		_sQuery += " AND (E5_TIPODOC = 'VL' OR (E5_TIPODOC = 'CP' AND E5_DOCUMEN LIKE '%RA%'))"
 		_sQuery += " AND E5_DATA BETWEEN  '" + w_dtini + "' AND '" + w_dtfim + "'"
 			
 		_aVlrRec := U_Qry2Array(_sQuery)
@@ -121,6 +126,32 @@ User Function MSE3440 ()
 		Else
 			_vlrRec := 0
 		EndIf
+		// //
+		// // **********************************************************************************************
+		// // valor recebido no titulo
+		// _vlrReceb := 0
+		// _sQuery := ""
+		// _sQuery += " SELECT 
+		// _sQuery += " 	ROUND(SUM(E5_VALOR), 2)"
+		// _sQuery += " FROM " +  RetSQLName ("SE5") + " AS SE5 "
+		// _sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
+		// _sQuery += " AND E5_FILIAL  = '" + se1->e1_filial  +"'"
+		// _sQuery += " AND E5_NUMERO  = '" + se1->e1_num     + "'"
+		// _sQuery += " AND E5_PREFIXO = '" + se1->e1_prefixo + "'"
+		// _sQuery += " AND E5_PARCELA = '" + se1->e1_parcela + "'"
+		// _sQuery += " AND E5_CLIFOR 	= '" + se1->e1_cliente + "'"
+		// _sQuery += " AND E5_LOJA   	= '" + se1->e1_loja    + "'"
+		// _sQuery += " AND E5_RECPAG 	= 'R'"
+		// _sQuery += " AND E5_SITUACA!= 'C'"
+		// _sQuery += " AND (E5_TIPODOC = 'VL' OR (E5_TIPODOC = 'CP' AND E5_DOCUMEN LIKE '% RA %'))"
+		// _sQuery += " AND E5_DATA BETWEEN '" + w_dtini + "' AND '" + w_dtfim + "'"
+		// _aReceb := U_Qry2Array(_sQuery)
+
+		// If Len(_aReceb)>0
+		// 	_vlrReceb := _aReceb[1,1]
+		// Else
+		// 	_vlrReceb := 0
+		// EndIf
 		//
 		// **********************************************************************************************
 		//busca descontos do título
@@ -140,7 +171,8 @@ User Function MSE3440 ()
 		_sQuery += " AND E5_SEQ  	= '" + se3->e3_seq     + "'"
 		_sQuery += " AND E5_RECPAG 	= 'R'"
 		_sQuery += " AND E5_SITUACA != 'C'"
-		_sQuery += " AND (E5_TIPODOC = 'DC' OR (E5_TIPODOC = 'CP' AND E5_DOCUMEN NOT LIKE '% RA %'))"
+		_sQuery += " AND (E5_TIPODOC = 'DC' OR (E5_TIPODOC = 'CP' AND E5_DOCUMEN NOT LIKE '%NCC%') AND (E5_TIPODOC = 'CP' AND E5_DOCUMEN NOT LIKE '%RA%'))"
+		//_sQuery += " AND (E5_TIPODOC = 'DC' OR (E5_TIPODOC = 'CP' AND E5_DOCUMEN NOT LIKE '% RA %') OR (E5_TIPODOC = 'CP' AND E5_DOCUMEN NOT LIKE '%NCC%'))"
 		_sQuery += " AND E5_DATA BETWEEN '" + w_dtini + "' AND '" + w_dtfim + "'"
 		_aDesc := U_Qry2Array(_sQuery)
 		
@@ -148,32 +180,6 @@ User Function MSE3440 ()
 			_vlrDesc := _aDesc[1,1]
 		Else
 			_vlrDesc := 0
-		EndIf
-		//
-		// **********************************************************************************************
-		// valor recebido no titulo
-		_vlrReceb := 0
-		_sQuery := ""
-		_sQuery += " SELECT 
-		_sQuery += " 	ROUND(SUM(E5_VALOR), 2)"
-		_sQuery += " FROM " +  RetSQLName ("SE5") + " AS SE5 "
-		_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
-		_sQuery += " AND E5_FILIAL  = '" + se1->e1_filial  +"'"
-		_sQuery += " AND E5_NUMERO  = '" + se1->e1_num     + "'"
-		_sQuery += " AND E5_PREFIXO = '" + se1->e1_prefixo + "'"
-		_sQuery += " AND E5_PARCELA = '" + se1->e1_parcela + "'"
-		_sQuery += " AND E5_CLIFOR 	= '" + se1->e1_cliente + "'"
-		_sQuery += " AND E5_LOJA   	= '" + se1->e1_loja    + "'"
-		_sQuery += " AND E5_RECPAG 	= 'R'"
-		_sQuery += " AND E5_SITUACA!= 'C'"
-		_sQuery += " AND (E5_TIPODOC = 'VL' OR (E5_TIPODOC = 'CP' AND E5_DOCUMEN LIKE '% RA %'))"
-		_sQuery += " AND E5_DATA BETWEEN '" + w_dtini + "' AND '" + w_dtfim + "'"
-		_aReceb := U_Qry2Array(_sQuery)
-
-		If Len(_aReceb)>0
-			_vlrReceb := _aReceb[1,1]
-		Else
-			_vlrReceb := 0
 		EndIf
 		//
 		// **********************************************************************************************
@@ -483,6 +489,51 @@ User Function MSE3440 ()
 				_vlrIpi := 0
 				_vlrST  := 0
 			EndIf
+		EndIf
+		//
+		// **********************************************************************************************
+		// Se for compensação, nao desconta IPI e ST
+		_sQuery := ""
+		_sQuery += " SELECT 
+		_sQuery += " 	COUNT(*)"
+		_sQuery += " FROM " +  RetSQLName ("SE5") + " AS SE5 "
+		_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
+		_sQuery += " AND E5_FILIAL  = '" + se1->e1_filial  +"'"
+		_sQuery += " AND E5_NUMERO  = '" + se1->e1_num     + "'"
+		_sQuery += " AND E5_PREFIXO = '" + se1->e1_prefixo + "'"
+		_sQuery += " AND E5_PARCELA = '" + se1->e1_parcela + "'"
+		_sQuery += " AND E5_CLIFOR 	= '" + se1->e1_cliente + "'"
+		_sQuery += " AND E5_LOJA   	= '" + se1->e1_loja    + "'"
+		_sQuery += " AND E5_RECPAG 	= 'R'"
+		_sQuery += " AND E5_SITUACA!= 'C'"
+		_sQuery += " AND E5_TIPODOC = 'CP' AND E5_DOCUMEN LIKE '%NCC%'"
+		_aNCC := U_Qry2Array(_sQuery)
+
+		If Len(_aNCC) > 0
+			_vlrIpi := 0
+			_vlrST  := 0
+		EndIf
+		//
+		// **********************************************************************************************
+		// Se for compensação, RA usa base prevista
+		_sQuery := ""
+		_sQuery += " SELECT 
+		_sQuery += " 	COUNT(*)"
+		_sQuery += " FROM " +  RetSQLName ("SE5") + " AS SE5 "
+		_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
+		_sQuery += " AND E5_FILIAL  = '" + se1->e1_filial  +"'"
+		_sQuery += " AND E5_NUMERO  = '" + se1->e1_num     + "'"
+		_sQuery += " AND E5_PREFIXO = '" + se1->e1_prefixo + "'"
+		_sQuery += " AND E5_PARCELA = '" + se1->e1_parcela + "'"
+		_sQuery += " AND E5_CLIFOR 	= '" + se1->e1_cliente + "'"
+		_sQuery += " AND E5_LOJA   	= '" + se1->e1_loja    + "'"
+		_sQuery += " AND E5_RECPAG 	= 'R'"
+		_sQuery += " AND E5_SITUACA!= 'C'"
+		_sQuery += " AND E5_TIPODOC = 'CP' AND E5_DOCUMEN LIKE '%RA%'"
+		_aRA := U_Qry2Array(_sQuery)
+
+		If Len(_aRA) > 0
+			_vlrRec := _baseComis
 		EndIf
 		//
 		// **********************************************************************************************

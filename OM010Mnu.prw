@@ -15,11 +15,17 @@
 
 // --------------------------------------------------------------------------
 user function OM010Mnu ()
-	aadd (aRotina, {"Obs.internas"		, "U_MemoDA0 (da0 -> (recno ()), 'A', 'DA0_VACME2', 'DA0_VAOBS')"	,0,4,32,NIL})
-	aadd (aRotina, {"Obs.impressas" 	, "U_MemoDA0 (da0 -> (recno ()), 'A', 'DA0_VACMEM', 'DA0_VAINST')"	,0,4,32,NIL})
-	//aadd (aRotina, {"Exporta tabela", "U_VA_DA0EXP (da0 -> da0_filial, da0 -> da0_codtab)"				,0,4,32,NIL})
-	//aadd (aRotina, {"Importa tabela", "U_VA_DA0IMP ()"													,0,4,32,NIL})
-	aadd (aRotina, {"Log alteração" 	, "U_VA_DA0LOG (da0 -> da0_filial, da0 -> da0_codtab)"				,0,4,32,NIL})
-	//aadd (aRotina, {"Imp.Tabelas" 		, "U_VA_DA0TAB()"													,0,4,32,NIL})
-	aadd (aRotina, {"Envia Mercanet"	, "U_AtuMerc ('DA0', da0 -> (recno ()))"							,0,4,32,NIL})
+	aadd (aRotina, {"Obs.internas"			, "U_MemoDA0 (da0 -> (recno ()), 'A', 'DA0_VACME2', 'DA0_VAOBS')"	,0,4,32,NIL})
+	aadd (aRotina, {"Obs.impressas" 		, "U_MemoDA0 (da0 -> (recno ()), 'A', 'DA0_VACMEM', 'DA0_VAINST')"	,0,4,32,NIL})
+	aadd (aRotina, {"Envia Mercanet"		, "U_AtuMerc ('DA0', da0 -> (recno ()))"							,0,4,32,NIL})
+	aadd (aRotina, {"Atualiza Tabela" 		, "U_VA_ATPRC()"													,0,4,32,NIL})
+	aadd (aRotina, {"Lista preço Alianca"	, "U_VA_LPR()"														,0,4,32,NIL})
+	aadd (aRotina, {"T. Prc. Canal X UF"	, "U_VA_PRDXCLI()"													,0,4,32,NIL})
+	//aadd (aRotina, {"Exporta tabela"		, "U_VA_DA0EXP (da0 -> da0_filial, da0 -> da0_codtab)"				,0,4,32,NIL})
+	//aadd (aRotina, {"Importa tabela"		, "U_VA_DA0IMP ()"													,0,4,32,NIL})
+	//aadd (aRotina, {"Log alteração" 		, "U_VA_DA0LOG (da0 -> da0_filial, da0 -> da0_codtab)"				,0,4,32,NIL})
+	//aadd (aRotina, {"Imprime Tabelas" 		, "U_VA_DA0TAB()"													,0,4,32,NIL})
+	
 return
+
+
