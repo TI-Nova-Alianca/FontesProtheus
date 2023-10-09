@@ -32,18 +32,6 @@ User function VA_DA0IMP()
         _nValor   := val(strtran(_aDados[_i, 6], ",", ".")) 
         _sStatus  := alltrim(_aDados[_i, 7])
 
-        If _i == 2
-            DbSelectArea("DA0")
-            DbSetOrder(1) // DA0_FILIAL+DA0_CODTAB 
-            If DbSeek(_sFilial + _sTabela ,.F.)
-                _sDA0Est := DA0->DA0_VAUF
-
-                reclock("DA0", .f.)
-                    DA0->DA0_ATIVO := '2'
-                msunlock()
-            EndIf                                                                                                                                  
-        EndIf
-
         Do Case
             Case _sStatus == 'A'
                 _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor)
@@ -54,7 +42,22 @@ User function VA_DA0IMP()
             Case _sStatus == 'E'
                 _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor)
         EndCase
+
+        If _i == len(_aDados)
+            DbSelectArea("DA0")
+            DbSetOrder(1) // DA0_FILIAL+DA0_CODTAB 
+            If DbSeek(_sFilial + _sTabela ,.F.)
+                _sDA0Est := DA0->DA0_VAUF
+
+                reclock("DA0", .f.)
+                    DA0->DA0_ATIVO := '2'
+                msunlock()
+
+                U_AtuMerc ('DA0', da0 -> (recno ()))
+            EndIf                                                                                                                                  
+        EndIf
 	Next
+    
 	u_help("Atualizado!")
 Return
 //
