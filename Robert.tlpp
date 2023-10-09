@@ -141,7 +141,7 @@ user function robert ()
 		// _sFuncao += '_VA_XLS ()'
 		// _sFuncao += '_verif ()'
 		U_GravaSX1 ("VA_ACR", "01", "0345")
-		U_GravaSX1 ("VA_ACR", "02", "0348")
+		U_GravaSX1 ("VA_ACR", "02", "0345")
 		U_GravaSX1 ("VA_ACR", "03", 1)  // Ignorar uvas na estrutura ]S/N]
 		U_GravaSX1 ("VA_ACR", "04", 'PS/')  // Tipos a ignorar
 		U_GravaSX1 ("VA_ACR", "05", 2)  // Ignorar subniveis dos VD [S/N]
