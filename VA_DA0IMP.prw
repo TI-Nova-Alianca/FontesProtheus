@@ -13,34 +13,50 @@
 // Historico de alteracoes:
 //
 // ---------------------------------------------------------------------------------------
-User function VA_DA0IMP()
+#Include "Protheus.ch"
+#Include "Rwmake.ch"
+
+User Function VA_DA0IMP()
+    Processa({|| _ProcessaTab()}, "Executando ajustes na tabela de preço...")
+    u_help("Atualizado!")
+Return
+//
+// ---------------------------------------------------------------------------------------
+// Processamento da importação
+Static function _ProcessaTab()
     Local _sArqOri := ""
     Local _i       := 0
     Local _sDA0Est := ""
-
+    Local _aMsg    := {}
+    
     _sArqOri := tFileDialog( "CSV files (*.csv) ", 'Seleção de Arquivos', , , .F., )
 
     _aDados = U_LeCSV(_sArqOri, ';')
 
     for _i := 2 to len(_aDados)
-
         _sFilial  := PADL(ALLTRIM(_aDados[_i, 1]),2,'0')
         _sTabela  := PADL(ALLTRIM(_aDados[_i, 2]),3,'0')
         _sItem    := PADL(ALLTRIM(_aDados[_i, 3]),4,'0')
-		_sProduto := PADL(ALLTRIM(_aDados[_i, 4]),4,'0')
+		_sProduto := ALLTRIM(_aDados[_i, 4])
 		_sEstado  := alltrim(_aDados[_i, 5])
         _nValor   := val(strtran(_aDados[_i, 6], ",", ".")) 
         _sStatus  := alltrim(_aDados[_i, 7])
 
+        DbSelectArea("DA0")
+        DbSetOrder(1) // DA0_FILIAL+DA0_CODTAB 
+        If DbSeek(_sFilial + _sTabela ,.F.)
+            _sDA0Est := DA0->DA0_VAUF
+        EndIf             
+
         Do Case
             Case _sStatus == 'A'
-                _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor)
+                _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
 
             Case _sStatus == 'I'
-                _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor)
+                _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
 
             Case _sStatus == 'E'
-                _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor)
+                _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
         EndCase
 
         If _i == len(_aDados)
@@ -58,12 +74,19 @@ User function VA_DA0IMP()
         EndIf
 	Next
     
-	u_help("Atualizado!")
+     _sMsg := ""
+     For _i := 1 to Len(_aMsg)
+        _sMsg += _aMsg[_i, 1] + ' -> ' + _aMsg[_i, 2] + CRLF
+     Next
+
+    If !empty(_sMsg)
+        _MsgLog(_sMsg, _sTabela)
+    EndIf
 Return
 //
 // ---------------------------------------------------------------------------------------
 // Atualiza registros
-Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor,_sDA0Est)
+Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor,_sDA0Est, _aMsg)
 
     DbSelectArea("DA1")
     DbSetOrder(3) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
@@ -71,8 +94,9 @@ Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
     If DbSeek(_sFilial + _sTabela + _sItem ,.F.)
         _sCliente := DA1->DA1_CLIENT
         _sLoja    := DA1->DA1_LOJA
-
-        If DA1->DA1_ESTADO != _sEstado
+        _sEstAnt  := DA1->DA1_ESTADO
+        _sVlrAnt  := DA1->DA1_PRCVEN
+        If _sEstAnt != _sEstado
             _oEvento := ClsEvent():New ()
             _oEvento:Alias     = 'DA1'
             _oEvento:Texto     = "Estado alterado de "+ DA1->DA1_ESTADO +" para "+ _sEstado +". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado
@@ -80,12 +104,12 @@ Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
             _oEvento:Grava()
         EndIf
 
-        If DA1->DA1_PRCVEN != _nValor  
+        If _sVlrAnt != _nValor  
             _oEvento := ClsEvent():New ()
             _oEvento:Alias     = 'DA1'
             _oEvento:Texto     = "Valor alterado de "+ alltrim(str(DA1->DA1_PRCVEN)) +" para "+ alltrim(str(_nValor))+ ". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado
             _oEvento:CodEven   = "DA0002"
-            _oEvento:Grava()
+            _oEvento:Grava()            
         EndIf
 
         reclock("DA1", .F.)
@@ -94,13 +118,14 @@ Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
             DA1->DA1_ICMS   := _RegraICMS(_sEstado) 
             DA1->DA1_VAST   := _RegraST(_sEstado,_sDA0Est,_nValor,_sCliente,_sLoja,_sProduto)                                                                      	                                                                 
         MsUnLock()
-
+        _sMsg := "Item " + _sItem + " alterado de Vlr." + alltrim(str(_sVlrAnt))+ " para " + alltrim(str(_nValor))+ " Estado de " + _sEstAnt + " para " + _sEstado + Chr(10) + Chr (13)
+        aadd(_aMsg,{ "ALT", _sMsg })
     EndIf        	
-Return
+Return 
 //
 // ---------------------------------------------------------------------------------------
 // Inclui registros
-Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor,_sDA0Est)
+Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor,_sDA0Est,_aMsg)
     Local _lCont := .T.
 
     Do Case 
@@ -131,9 +156,9 @@ Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
 
     If _lCont 
         DbSelectArea("DA1")
-        DbSetOrder(3) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
+        DbSetOrder(3) // DA1_FILIAL+DA1_CODTAB+DA1_ITEM                                                                                                                                  
 
-        If !DbSeek(_sFilial + _sTabela + _sItem ,.F.)
+        If !DbSeek(_sFilial + _sTabela + _sItem)
             _sCliente := DA1->DA1_CLIENT
             _sLoja    := DA1->DA1_LOJA
 
@@ -160,13 +185,18 @@ Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
                 DA1->DA1_DATVIG := ddatabase                                                                   	                                                                 
             MsUnLock()
 
+            _sMsg := "Item " + _sItem + " aVlr." + alltrim(str(_nValor)) + " Estado " + _sEstado + Chr(10) + Chr (13)
+            aadd(_aMsg,{ "INC", _sMsg })
+        else
+            _sMsg := "Item " + _sItem + " com status <I> porém já está na tabela de preço. Item não incluído." + Chr(10) + Chr (13)
+            aadd(_aMsg,{ "INFO", _sMsg })
         EndIf  
     EndIf      	
-Return
+Return 
 //
 // ---------------------------------------------------------------------------------------
 // Exclui registros
-Static Function _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor)
+Static Function _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
 
     DbSelectArea("DA1")
     DbSetOrder(3) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
@@ -181,6 +211,12 @@ Static Function _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
         _oEvento:Texto     = "Produto Excluído "+ _sProduto +". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado + " Valor:" + alltrim(str(_nValor))
         _oEvento:CodEven   = "DA0002"
         _oEvento:Grava()
+
+        _sMsg := "Item " + _sItem + " excluído." + Chr(10) + Chr (13)
+        aadd(_aMsg,{ "DEL", _sMsg })
+    else
+        _sMsg := "Item " + _sItem + " não encontrado para excluir." + Chr(10) + Chr (13)
+        aadd(_aMsg,{ "INFO", _sMsg })
     EndIf        	
 Return
 //
@@ -221,3 +257,60 @@ Static Function _RegraST(_sEstado,_sDA0Est,_nValor,_sCliente,_sLoja,_sProduto)
 
     _xRet = U_CalcST4(_sEstado, _sProduto, _nValor, _sCliente, _sLoja, 1, '801')
 Return _xRet
+//
+// ---------------------------------------------------------------------------------------
+// Mostra Log
+Static Function _MsgLog(cMsg, _sTabela)
+	Local lRetMens := .F.
+	Local oButton1
+	Local oButton2
+	Local oMultiGe1
+	Static oDlg
+
+	DEFINE MSDIALOG oDlg TITLE "New Dialog" FROM 000, 000  TO 600, 800 COLORS 0, 16777215 PIXEL
+
+	@ 006, 005 GET oMultiGe1 VAR cMsg OF oDlg MULTILINE SIZE 390, 267 COLORS 0, 16777215 HSCROLL PIXEL
+	@ 280, 357 BUTTON oButton1 PROMPT "OK" SIZE 037, 012  ACTION (lRetMens:=.T., oDlg:End()) OF oDlg PIXEL
+	@ 280, 311 BUTTON oButton2 PROMPT "Salvar .TXT" SIZE 037, 012 ACTION (_SalvArq(cMsg, _sTabela)) OF oDlg PIXEL
+
+	ACTIVATE MSDIALOG oDlg CENTERED
+
+Return lRetMens
+//
+// ---------------------------------------------------------------------------------------
+//Função para gerar um arquivo texto 
+Static Function _SalvArq(cMsg, _sTabela)
+    Local cFileNom :='\x_arq_'+dToS(Date())+StrTran(Time(),":")+".txt"
+    Local cQuebra  := CRLF + "=======================================================================" + CRLF
+    Local lOk      := .T.
+    Local cTexto   := ""
+     
+    //Pegando o caminho do arquivo
+    cFileNom := "c:\temp\LOG_tabela_" +alltrim(_sTabela) + ".txt"
+ 
+    //Se o nome não estiver em branco    
+    If !Empty(cFileNom)
+        //Teste de existência do diretório
+        If ! ExistDir(SubStr(cFileNom,1,RAt('\',cFileNom)))
+            Alert("Diretório não existe:" + CRLF + SubStr(cFileNom, 1, RAt('\',cFileNom)) + "!")
+            Return
+        EndIf
+         
+        //Montando a mensagem
+        cTexto := "Função   - "+ FunName()       + CRLF
+        cTexto += "Usuário  - "+ cUserName       + CRLF
+        cTexto += "Data     - "+ dToC(dDataBase) + CRLF
+        cTexto += "Hora     - "+ Time()          + CRLF
+        cTexto += "Mensagem - "+ "Importação" + cQuebra  + cMsg + cQuebra
+         
+        //Testando se o arquivo já existe
+        If File(cFileNom)
+            lOk := MsgYesNo("Arquivo já existe, deseja substituir?", "Atenção")
+        EndIf
+         
+        If lOk
+            MemoWrite(cFileNom, cTexto)
+            MsgInfo("Arquivo Gerado com Sucesso:"+CRLF+cFileNom,"Atenção")
+        EndIf
+    EndIf
+Return
