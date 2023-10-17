@@ -4,6 +4,7 @@
 // Descricao..: Apuração de entradas e saídas do estoque. GLPI: 7636
 //
 // Historico de alteracoes:
+// 17/10/2023 - Claudia - Incluida a coluna de data. GLPI: 14379
 //
 // -----------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -27,12 +28,13 @@ User Function VA_APUES()
 	_DtAntFin	:= LastDate(_DtAntIni)
 	
 	_oSQL := ClsSQL():New ()
-	_oSQL:_sQuery += " 	WITH entSaida (VALOR, COD, FILIAL, MOVIMENTO, DOC, AX, QTD)"
+	_oSQL:_sQuery += " 	WITH entSaida (VALOR, DATA, COD, FILIAL, MOVIMENTO, DOC, AX, QTD)"
 	_oSQL:_sQuery += " 	AS"
 	_oSQL:_sQuery += " 	("
 	//	--Saldo Inicial - OK
 	_oSQL:_sQuery += " 		SELECT"
 	_oSQL:_sQuery += " 			SUM(B9_VINI1)"
+	_oSQL:_sQuery += " 		   ,B9_DATA  AS DATA"
 	_oSQL:_sQuery += " 		   ,B9_COD"
 	_oSQL:_sQuery += " 		   ,B9_FILIAL"
 	_oSQL:_sQuery += " 		   ,'01-Saldo_Inicial'"
@@ -45,10 +47,12 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		GROUP BY B9_COD"
 	_oSQL:_sQuery += " 				,B9_FILIAL"
 	_oSQL:_sQuery += " 				,B9_LOCAL"
+	_oSQL:_sQuery += " 				,B9_DATA"
 	_oSQL:_sQuery += " 		UNION"
 	//	--Saldo final - OK
 	_oSQL:_sQuery += " 		SELECT"
 	_oSQL:_sQuery += " 			-SUM(B9_VINI1)"
+	_oSQL:_sQuery += " 		   ,B9_DATA  AS DATA"
 	_oSQL:_sQuery += " 		   ,B9_COD"
 	_oSQL:_sQuery += " 		   ,B9_FILIAL"
 	_oSQL:_sQuery += " 		   ,'13-Saldo_Final'"
@@ -61,10 +65,12 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		GROUP BY B9_COD"
 	_oSQL:_sQuery += " 				,B9_FILIAL"
 	_oSQL:_sQuery += " 				,B9_LOCAL"
+	_oSQL:_sQuery += " 				,B9_DATA"
 	_oSQL:_sQuery += " 		UNION"
 	//	--compras - OK - Está somando as entradas de transferencias
 	_oSQL:_sQuery += " 		SELECT"
 	_oSQL:_sQuery += " 			SUM(D1_CUSTO)"
+	_oSQL:_sQuery += " 		   ,D1_DTDIGIT  AS DATA"
 	_oSQL:_sQuery += " 		   ,D1_COD"
 	_oSQL:_sQuery += " 		   ,D1_FILIAL"
 	_oSQL:_sQuery += " 		   ,'02-Compras'"
@@ -86,10 +92,12 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D1_FILIAL"
 	_oSQL:_sQuery += " 				,D1_DOC"
 	_oSQL:_sQuery += " 				,D1_LOCAL"
+	_oSQL:_sQuery += " 				,D1_DTDIGIT"
 	_oSQL:_sQuery += " 		UNION"
 	//	--Vendas - OK - ver tranfil pois deve estar contabilizando as transferencias como se fossem compra
 	_oSQL:_sQuery += " 		SELECT"
 	_oSQL:_sQuery += " 			-SUM(D2_CUSTO1)"
+	_oSQL:_sQuery += " 		   ,D2_EMISSAO  AS DATA"
 	_oSQL:_sQuery += " 		   ,D2_COD"
 	_oSQL:_sQuery += " 		   ,D2_FILIAL"
 	_oSQL:_sQuery += " 		   ,'12-Saida_Vendas'"
@@ -115,9 +123,11 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D2_FILIAL"
 	_oSQL:_sQuery += " 				,D2_DOC"
 	_oSQL:_sQuery += " 				,D2_LOCAL"
+	_oSQL:_sQuery += " 				,D2_EMISSAO"
 	_oSQL:_sQuery += " 		UNION"
 	_oSQL:_sQuery += " 		SELECT"
 	_oSQL:_sQuery += " 			SUM(D1_CUSTO)"
+	_oSQL:_sQuery += " 		   ,D1_DTDIGIT  AS DATA"
 	_oSQL:_sQuery += " 		   ,D1_COD"
 	_oSQL:_sQuery += " 		   ,D1_FILIAL"
 	_oSQL:_sQuery += " 		   ,'05-Entrada_transf'"
@@ -141,10 +151,12 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D1_FILIAL"
 	_oSQL:_sQuery += " 				,D1_DOC"
 	_oSQL:_sQuery += " 				,D1_LOCAL"
+	_oSQL:_sQuery += " 				,D1_DTDIGIT"
 	_oSQL:_sQuery += " 		UNION"
 	//	--Saídas TRANSFERENCIAS
 	_oSQL:_sQuery += " 		SELECT"
 	_oSQL:_sQuery += " 			-SUM(D2_CUSTO1)"
+	_oSQL:_sQuery += " 		   ,D2_EMISSAO  AS DATA"
 	_oSQL:_sQuery += " 		   ,D2_COD"
 	_oSQL:_sQuery += " 		   ,D2_FILIAL"
 	_oSQL:_sQuery += " 		   ,'06-Saida_transf'"
@@ -165,10 +177,12 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D2_FILIAL"
 	_oSQL:_sQuery += " 				,D2_DOC"
 	_oSQL:_sQuery += " 				,D2_LOCAL"
+	_oSQL:_sQuery += " 				,D2_EMISSAO"
 	_oSQL:_sQuery += " 		UNION"
 	//	--compras Terceiros - OK
 	_oSQL:_sQuery += " 		SELECT"
 	_oSQL:_sQuery += " 			SUM(D1_CUSTO)"
+	_oSQL:_sQuery += " 		   ,D1_DTDIGIT  AS DATA"
 	_oSQL:_sQuery += " 		   ,D1_COD"
 	_oSQL:_sQuery += " 		   ,D1_FILIAL"
 	_oSQL:_sQuery += " 		   ,'07-Entradas_Terceiros'"
@@ -189,10 +203,12 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D1_FILIAL"
 	_oSQL:_sQuery += " 				,D1_DOC"
 	_oSQL:_sQuery += " 				,D1_LOCAL"
+	_oSQL:_sQuery += " 				,D1_DTDIGIT"
 	_oSQL:_sQuery += " 		UNION"
 	//	--Saídas Terceiros - OK
 	_oSQL:_sQuery += " 		SELECT"
 	_oSQL:_sQuery += " 			-SUM(D2_CUSTO1)"
+	_oSQL:_sQuery += " 		   ,D2_EMISSAO  AS DATA"
 	_oSQL:_sQuery += " 		   ,D2_COD"
 	_oSQL:_sQuery += " 		   ,D2_FILIAL"
 	_oSQL:_sQuery += " 		   ,'08-Saidas_Terceiros'"
@@ -213,6 +229,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D2_FILIAL"
 	_oSQL:_sQuery += " 				,D2_DOC"
 	_oSQL:_sQuery += " 				,D2_LOCAL"
+	_oSQL:_sQuery += " 				,D2_EMISSAO"
 	_oSQL:_sQuery += " 		UNION"
 	//	-- MOVIMENTOações internas
 	_oSQL:_sQuery += " 		SELECT"
@@ -220,6 +237,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				WHEN D3_CF LIKE 'RE%' THEN -D3_CUSTO1"
 	_oSQL:_sQuery += " 				ELSE D3_CUSTO1"
 	_oSQL:_sQuery += " 			END)"
+	_oSQL:_sQuery += " 		   ,D3_EMISSAO  AS DATA"
 	_oSQL:_sQuery += " 		   ,D3_COD"
 	_oSQL:_sQuery += " 		   ,D3_FILIAL"
 	_oSQL:_sQuery += " 		   ,'09-Movimento_Interno'"
@@ -240,6 +258,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_FILIAL"
 	_oSQL:_sQuery += " 				,D3_DOC"
 	_oSQL:_sQuery += " 				,D3_LOCAL"
+	_oSQL:_sQuery += " 				,D3_EMISSAO"
 	_oSQL:_sQuery += " 		UNION"
 	//	-- REQUISIÇÃO PARA OP - erro
 	_oSQL:_sQuery += " 		SELECT"
@@ -247,6 +266,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				WHEN D3_CF LIKE 'RE%' THEN -D3_CUSTO1"
 	_oSQL:_sQuery += " 				ELSE D3_CUSTO1"
 	_oSQL:_sQuery += " 			END)"
+	_oSQL:_sQuery += " 		   ,D3_EMISSAO  AS DATA"
 	_oSQL:_sQuery += " 		   ,D3_COD"
 	_oSQL:_sQuery += " 		   ,D3_FILIAL"
 	_oSQL:_sQuery += " 		   ,'10-Requisicao_OP'"
@@ -267,6 +287,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_FILIAL"
 	_oSQL:_sQuery += " 				,D3_DOC"
 	_oSQL:_sQuery += " 				,D3_LOCAL"
+	_oSQL:_sQuery += " 				,D3_EMISSAO"
 	_oSQL:_sQuery += " 		UNION"
 	//	-- Produção Por OP - OK
 	_oSQL:_sQuery += " 		SELECT"
@@ -274,6 +295,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				WHEN D3_CF LIKE 'RE%' THEN -D3_CUSTO1"
 	_oSQL:_sQuery += " 				ELSE D3_CUSTO1"
 	_oSQL:_sQuery += " 			END)"
+	_oSQL:_sQuery += " 		   ,D3_EMISSAO  AS DATA"
 	_oSQL:_sQuery += " 		   ,D3_COD"
 	_oSQL:_sQuery += " 		   ,D3_FILIAL"
 	_oSQL:_sQuery += " 		   ,'11-Produção_OP'"
@@ -294,6 +316,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_FILIAL"
 	_oSQL:_sQuery += " 				,D3_DOC"
 	_oSQL:_sQuery += " 				,D3_LOCAL"
+	_oSQL:_sQuery += " 				,D3_EMISSAO"
 	_oSQL:_sQuery += " 		UNION"
 	//	--transferencias internas--
 	_oSQL:_sQuery += " 		SELECT"
@@ -301,6 +324,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				WHEN D3_CF LIKE 'RE%' THEN -D3_CUSTO1"
 	_oSQL:_sQuery += " 				ELSE D3_CUSTO1"
 	_oSQL:_sQuery += " 			END)"
+	_oSQL:_sQuery += " 		   ,D3_EMISSAO AS DATA"
 	_oSQL:_sQuery += " 		   ,D3_COD"
 	_oSQL:_sQuery += " 		   ,D3_FILIAL"
 	_oSQL:_sQuery += " 		   ,'04-Saida_Transf_Interna'"
@@ -321,6 +345,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_FILIAL"
 	_oSQL:_sQuery += " 				,D3_DOC"
 	_oSQL:_sQuery += " 				,D3_LOCAL"
+	_oSQL:_sQuery += " 				,D3_EMISSAO"
 	_oSQL:_sQuery += " 		UNION"
 	//	--transferencia interna--
 	_oSQL:_sQuery += " 		SELECT"
@@ -328,6 +353,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				WHEN D3_CF LIKE 'RE%' THEN -D3_CUSTO1"
 	_oSQL:_sQuery += " 				ELSE D3_CUSTO1"
 	_oSQL:_sQuery += " 			END)"
+	_oSQL:_sQuery += " 		   ,D3_EMISSAO AS DATA"
 	_oSQL:_sQuery += " 		   ,D3_COD"
 	_oSQL:_sQuery += " 		   ,D3_FILIAL"
 	_oSQL:_sQuery += " 		   ,'03-Entrada_Transf_Interna'"
@@ -347,9 +373,11 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		GROUP BY D3_COD"
 	_oSQL:_sQuery += " 				,D3_FILIAL"
 	_oSQL:_sQuery += " 				,D3_DOC"
+	_oSQL:_sQuery += " 				,D3_EMISSAO"
 	_oSQL:_sQuery += " 				,D3_LOCAL)"
 	_oSQL:_sQuery += " 	SELECT"
 	_oSQL:_sQuery += " 		B1_TIPO"
+	_oSQL:_sQuery += " 	   ,substring (DATA, 7, 2) + '/' + substring (DATA,5, 2) + '/' + substring (DATA, 1, 4) "
 	_oSQL:_sQuery += " 	   ,COD"
 	_oSQL:_sQuery += " 	   ,SUM(VALOR) AS VALOR"
 	_oSQL:_sQuery += " 	   ,DOC"
@@ -362,6 +390,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		ON entSaida.COD = B1_COD"
 	_oSQL:_sQuery += " 			AND D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " 	GROUP BY B1_TIPO"
+	_oSQL:_sQuery += " 			,DATA"
 	_oSQL:_sQuery += " 			,MOVIMENTO"
 	_oSQL:_sQuery += " 			,DOC"
 	_oSQL:_sQuery += " 			,FILIAL"
