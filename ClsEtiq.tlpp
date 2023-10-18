@@ -53,6 +53,7 @@
 // 17/04/2023 - Robert - Metodo PodeApont() passa a usar metodo SomaMsg() em ves de u_help() para mostrar os erros.
 // 12/05/2023 - Robert - Gera msg ao tentar imprimir etiq.de OP e campo C2_VABARCX estiver vazio  (GLPI 13561).
 // 07/06/2023 - Robert - Melhorada msg cod barras da OP (GLPI 13695).
+// 18/10/2023 - Robert - Valida qt.prevista da OP antes de permitir incluir nova etiqueta (GLPI 13212)
 //
 
 #Include "Protheus.ch"
@@ -1413,6 +1414,8 @@ return _lContinua
 // Verifica se pode incluir a etiqueta.
 METHOD PodeIncl () Class ClsEtiq
 	local _lContinua := .T.
+	local _oSQL      := NIL
+	local _nEtqJaTem := 0
 
 	if _lContinua .and. empty (::Produto)
 		::SomaMsg ("Produto nao informado. Gravacao de etiqueta nao permitida.")
@@ -1439,9 +1442,24 @@ METHOD PodeIncl () Class ClsEtiq
 		if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
 			::SomaMsg ("OP '" + ::OP + "' nao encontrada.")
 			_lContinua = .F.
-		else
-			if sc2 -> c2_produto != ::Produto
-				::SomaMsg ("Prod.da etiq.(" + alltrim (::Produto) + ") deve ser o mesmo da OP (" + alltrim (sc2 -> c2_produto) + ").")
+		endif
+		if _lContinua .and. sc2 -> c2_produto != ::Produto
+			::SomaMsg ("Prod.da etiq.(" + alltrim (::Produto) + ") deve ser o mesmo da OP (" + alltrim (sc2 -> c2_produto) + ").")
+			_lContinua = .F.
+		endif
+		if _lContinua
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT SUM (ZA1_QUANT)"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZA1") + " ZA1"
+			_oSQL:_sQuery += " WHERE ZA1.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZA1.ZA1_FILIAL = '" + xfilial ("ZA1") + "'"
+			_oSQL:_sQuery +=   " AND ZA1.ZA1_OP     = '" + ::OP + "'"
+			_oSQL:_sQuery +=   " AND ZA1.ZA1_APONT != 'I'"  // Inutilizadas nao contam
+		//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+			_nEtqJaTem = _oSQL:RetQry (1, .f.)
+			if (_nEtqJaTem + ::Quantidade) > sc2 -> c2_quant
+				::SomaMsg ("Soma das qt.das etiq.ja existentes (" + cvaltochar (_nEtqJaTem) + ") + qt.desta etiq.(" + cvaltochar (::Quantidade) + ") ficaria maior que a qt.da OP (" + cvaltochar (sc2 -> c2_quant) + ").")
 				_lContinua = .F.
 			endif
 		endif
