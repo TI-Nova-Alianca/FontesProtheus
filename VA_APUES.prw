@@ -377,7 +377,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_LOCAL)"
 	_oSQL:_sQuery += " 	SELECT"
 	_oSQL:_sQuery += " 		B1_TIPO"
-	_oSQL:_sQuery += " 	   ,substring (DATA, 7, 2) + '/' + substring (DATA,5, 2) + '/' + substring (DATA, 1, 4) "
+	_oSQL:_sQuery += " 	   ,substring (DATA, 7, 2) + '/' + substring (DATA,5, 2) + '/' + substring (DATA, 1, 4) AS DATA"
 	_oSQL:_sQuery += " 	   ,COD"
 	_oSQL:_sQuery += " 	   ,SUM(VALOR) AS VALOR"
 	_oSQL:_sQuery += " 	   ,DOC"
