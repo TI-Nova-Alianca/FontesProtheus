@@ -65,6 +65,7 @@
 // 22/08/2022 - Robert  - Consulta de movtos.vinculados passa a usar o metodo :RegRelac().
 // 14/04/2023 - Robert  - Geracao manual do SE2 passa a perguntar data de vencimento.
 // 03/08/2023 - Robert  - Rel. de IR nao tem mais o parametro de 'nucleo'.
+// 18/10/2023 - Robert  - Desabilitado botao 'compensar com titulos de outros fornecedores'
 //
 
 #include "colors.ch"
@@ -91,7 +92,7 @@ User Function szi()
 	private _SZI_Age   := NIL  // Deixar private para ser vista por inicializadores padrao de campos / contabilizacoes.
 	private _SZI_Cta   := NIL  // Deixar private para ser vista por inicializadores padrao de campos / contabilizacoes.
 	private _SZI_Cred  := NIL  // Deixar private para ser vista por inicializadores padrao de campos / contabilizacoes.
-	private _SZI_Deb   := NIL  // Deixar private para ser vista por inicializadores padrao de campos / contabilizacoes.
+//	private _SZI_Deb   := NIL  // Deixar private para ser vista por inicializadores padrao de campos / contabilizacoes.
 	private _SZI_Hist  := NIL  // Deixar private para ser vista por inicializadores padrao de campos / contabilizacoes.
 	private _aTipoTit  := {"NDF", "PA", "DP"}
 	private _sTMCorrD  := _oCtaCorr:TMCorrMonD
@@ -906,10 +907,10 @@ return
 // Baixa do movimento. Gera movimentacao financeira caso necessario.
 User Function SZIB ()
 	local _nForma    := 0
-	local _aBkpSX1   := {}
-	local cPerg      := ""
-	local _sOutrIni  := ""
-	local _sOutrFim  := ""
+//	local _aBkpSX1   := {}
+//	local cPerg      := ""
+//	local _sOutrIni  := ""
+//	local _sOutrFim  := ""
 	local _lContinua := .T.
 
 	// Acho que o certo eh eliminar os titulos do SE2, mas agora nao tenho tempo para verificar. Robert, 05/09/2017
@@ -937,9 +938,8 @@ User Function SZIB ()
 		_nForma = aviso ("Forma de baixa", ;
 							"Selecione a forma de baixa deste lançamento:" + chr (13) + chr (10) +;
 							"- Normal: direto contra banco/caixa" + chr (13) + chr (10) + ;
-							"- Compensacao: entre titulos do mesmo associado" + chr (13) + chr (10) + ;
-							"- Comp.outros: entre titulos do associado contra titulos de outros associados", ;
-							{"&Normal", "Co&mpensacao", "Comp.&outros", "&Cancelar"}, ;
+							"- Compensacao: com outros titulos", ;
+							{"&Normal", "Co&mpensacao", "&Cancelar"}, ;
 							3, ;
 							"Forma de baixa")
 
@@ -947,58 +947,58 @@ User Function SZIB ()
 		// sao lidas pelos lancamentos padronizados da contabilidade, por isso
 		// devem ser inicializadas em branco ou com NIL para evitar a geracao
 		// de lancamentos indevidos.
-		_SZI_Hist = ''
-		_SZI_Deb  = NIL
+	//	_SZI_Hist = ''
+	//	_SZI_Deb  = NIL
 		_SZI_Cred = NIL
 		_SZI_Hist = NIL
 		do case
 		case szi -> zi_tm $ '01/29'  // == '01'
 			_SZI_Hist = "REEMB.UNIMED " +  transform (szi -> zi_MesRef, "@R 99/9999")
-			_SZI_Deb  = iif (_nForma == 1, NIL, '201030101001')
+		//	_SZI_Deb  = iif (_nForma == 1, NIL, '201030101001')
 			_SZI_Cred = iif (cFilAnt $ '07/08/12', '201030103001', '101020101003')
 		case szi -> zi_tm == '02'
 			_SZI_Hist = "REEMB.CELULAR " + transform (szi -> zi_MesRef, "@R 99/9999")
 			if _nForma == 2 .or. _nForma == 3
-				_SZI_Deb  = "201030101001"
+		//		_SZI_Deb  = "201030101001"
 			else
-				_SZI_Deb = NIL  // Vai pegar a conta do banco posteriormente.
+		//		_SZI_Deb = NIL  // Vai pegar a conta do banco posteriormente.
 			endif
 			_SZI_Cred = "101020101004"
 		case szi -> zi_tm == '03'
 			_SZI_Hist = "REEMB.AN.SOLO " + transform (szi -> zi_MesRef, "@R 99/9999")
-			_SZI_Deb  = NIL
+		//	_SZI_Deb  = NIL
 			_SZI_Cred = '101020101002'
 		case szi -> zi_tm == '05'
 			_SZI_Hist = "REEMB.INSUMOS " + transform (szi -> zi_MesRef, "@R 99/9999")
-			_SZI_Deb  = NIL
+		//	_SZI_Deb  = NIL
 			_SZI_Cred = '201030101001'
 		case szi -> zi_tm == '06'
 			_SZI_Hist = "REEMB.SEMENTES " + transform (szi -> zi_MesRef, "@R 99/9999")
-			_SZI_Deb  = NIL
+		//	_SZI_Deb  = NIL
 			_SZI_Cred = '201030101001'
 		case szi -> zi_tm == '07'
 			_SZI_Hist = "REEMB.ADTO.SAFRA " + transform (szi -> zi_MesRef, "@R 99/9999")
-			_SZI_Deb  = NIL
+		//	_SZI_Deb  = NIL
 			_SZI_Cred = '201030101001'
 		case szi -> zi_tm == '11'
 			_SZI_Hist = "RESG.CTA.CAP."
-			_SZI_Deb  = '201030102001'
+		//	_SZI_Deb  = '201030102001'
 			_SZI_Cred = NIL
 		case szi -> zi_tm == '12'  // Cap. social a integralizar
 			_SZI_Cred = '204010102001'
 		case szi -> zi_tm == '14'
 			_SZI_Hist = "VLR.PAGTO.JUROS"
-			_SZI_Deb  = NIL
+		//	_SZI_Deb  = NIL
 			_SZI_Cred = '201030101001'
 		case szi -> zi_tm == '15'
 			_SZI_Hist = "VLR.RECEBTO.JUROS"
-			_SZI_Deb  = '101020101002'
+		//	_SZI_Deb  = '101020101002'
 			_SZI_Cred = NIL
 		case szi -> zi_tm == '20'  // Cap. social a integralizar
 			_SZI_Cred = '204010102001'
 
 		endcase
-
+/*
 		// Se compensar com titulos de outros associados, o usuario deve confirmar estes parametros.
 		if _nForma == 3
 			if ! Pergunte (cPerg2, .T.)
@@ -1008,13 +1008,11 @@ User Function SZIB ()
 				_sOutrFim = mv_par02
 			endif
 		endif
-
+*/
 		// Chama rotinas de baixa ou compensacao, conforme selecao do usuario.
 		// O saldo do SZI serah atualizado via pontos de entrada.
 		CursorWait ()
 		if _nForma == 1
-			//_Pergunte ('FIN080')
-			//_lCtOnLine = (MV_PAR03 == 1)
 
 			u_log2 ('debug', 'Vou chamar FINA080')
 			FINA080 (NIL, 3, .T.)
@@ -1026,16 +1024,16 @@ User Function SZIB ()
 				U_FINA080 ()
 			endif
 
-		elseif _nForma == 2 .or. _nForma == 3
-			//_Pergunte ('AFI340')
+		elseif _nForma == 2 // .or. _nForma == 3
 			u_log2 ('debug', 'Vou chamar FINA340')
 			fina340 (3)
-			U_SalvaSX1 (cPerg, _aBkpSX1)
+//			U_SalvaSX1 (cPerg, _aBkpSX1)
 		endif
 		CursorArrow ()
 	endif
 return
-//
+
+
 // --------------------------------------------------------------------------
 // Cancelar baixas
 User Function SZIC ()
@@ -1090,17 +1088,17 @@ User Function SZIC ()
 
 					// Prepara dados para inicializadores padrao dos campos.
 					_SZI_Hist = ''
-					_SZI_Deb  = NIL
+				//	_SZI_Deb  = NIL
 					_SZI_Hist = NIL
 					do case
 					case szi -> zi_tm == '11'
 						_SZI_Hist = "ESTORNO RESG.CTA.CAP " + szi -> zi_nomasso
-						_SZI_Deb  = NIL
+					//	_SZI_Deb  = NIL
 						_SZI_Cred = '201030102001'
 					endcase
 					u_log ("Variaveis private preparadas para as outras rotinas:")
 					u_log ('   _SZI_Hist:', _SZI_Hist)
-					u_log ('   _SZI_Deb: ', _SZI_Deb)
+				//	u_log ('   _SZI_Deb: ', _SZI_Deb)
 					u_log ('   _SZI_Cred:', _SZI_Cred)
 
 					fina080 (NIL, 5, .T.)  // Usa estorno por que o P.E. F080Est nao eh executado em caso de exclusao de baixa.

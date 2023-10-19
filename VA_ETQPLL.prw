@@ -67,6 +67,7 @@
 //                     - Passa a usar semaforo na geracao de etiquetas por grupo.
 // 12/05/2023 - Robert - Criado botao p/impr.avulsa com cod.barras (GLPI 13561).
 // 25/08/2023 - Robert - Grava tb_wms_entrada.status_protheus = 'C-Cancelado no ERP' e nao mais 'C' (GLPI 14112)
+// 18/10/2023 - Robert - Removidas linhas comentariadas.
 //
 
 #include "rwmake.ch"
@@ -129,48 +130,6 @@ user function ZA1LG (_lRetCores)
 	endif
 return
 
-/*
-// --------------------------------------------------------------------------
-// Inclusão
-User Function EtqPlltI ()
-	local _lRetIncl := .F.
-	local _oEtiq    := NIL
-	private altera  := .F.
-	private inclui  := .T.
-	private aGets   := {}
-	private aTela   := {}
-
-	// Verifica se o usuario tem liberacao.
-	if ! U_ZZUVL ('073', __cUserID, .T.)
-		return
-	endif
-	if ! U_ZZUVL ('074', __cUserID, .T.)
-		return
-	endif
-
-	// Cria variáveis 'M->' aqui para serem vistas depois da inclusão.
-	RegToMemory ("ZA1", inclui, inclui)
-
-	// Apos a inclusao do registro, faz os tratamentos necessarios.
-	if axinclui ("ZA1", za1 -> (recno ()), 3, NIL, NIL, NIL, "allwaystrue ()") == 1
-		CursorWait ()
-		_oEtiq := ClsEtiq():New ()
-		_oEtiq:GeraAtrib ('M')  // Gerar a partir das variaveis M-> da tela.
-		u_logobj (_oEtiq, .t., .f.)
-		if _oEtiq:PodeIncl ()
-			_lRetIncl = _oEtiq:Grava ()
-		else
-			_lRetIncl = .F.
-		endif
-		CursorArrow ()
-		if ! _lRetIncl
-			u_help (_oEtiq:UltMsg,, .t.)
-		else
-			u_help ("Etiqueta '" + _oEtiq:Codigo + "' gerada.")
-		endif
-	endif
-return _lRetIncl
-*/
 
 // --------------------------------------------------------------------------
 // Exclusão
@@ -382,59 +341,6 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 
 	U_ML_SRArea (_aAreaAnt)
 return len (_aPal)
-
-
-/*
-// --------------------------------------------------------------------------
-// Inclusão automática (para ser chamada de outra rotina).
-// Minha intencao eh migrar esta funcao para o metodo :Grava() da ClsEtiq.
-User Function IncEtqPll(_sCodPro, _sNumOP, _nQtd, _sFornece, _sLoja, _sNF, _sSerie, _dData, _sItem, _sIdZAG)
-	local _aAreaAnt := U_ML_SRArea ()
-	local _sNextNum := ''
-	local _nSeqEtq  := 0
-
-	// Gera sequencial da etiqueta dentro do grupo (OP ou NF) a que pertence.
-	if ! empty (_sNumOP) .or. ! empty (_sNF)
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT COUNT (*)"
-		_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZA1")
-		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=    " AND ZA1_OP     = '" + _sNumOP + "'"
-		_oSQL:_sQuery +=    " AND ZA1_DOCE   = '" + _sNF + "'"
-		_oSQL:_sQuery +=    " AND ZA1_SERIEE = '" + _sSerie + "'"
-		_oSQL:_sQuery +=    " AND ZA1_ITEM = '"   + _sItem + "'"
-		_oSQL:_sQuery +=    " AND ZA1_FORNEC = '" + _sFornece + "'"
-		_oSQL:_sQuery +=    " AND ZA1_LOJAF  = '" + _sLoja + "'"
-		_nSeqEtq = _oSQL:RetQry () + 1
-	endif
-
-	_sNextNum = U_NxtZA1 (_sCodPro)
-	reclock("ZA1",.T.)
-	ZA1 -> ZA1_FILIAL = xFilial("ZA1")
-	ZA1 -> ZA1_CODIGO = _sNextNum
-	ZA1 -> ZA1_DATA   = _dData
-	ZA1 -> ZA1_OP     = _sNumOP
-	ZA1 -> ZA1_PROD   = _sCodPro
-	ZA1 -> ZA1_QUANT  = _nQtd
-	za1 -> za1_doce   = _sNF
-	za1 -> za1_seriee = _sSerie
-	za1 -> za1_item   = _sItem
-	za1 -> za1_fornec = _sFornece
-	za1 -> za1_lojaf  = _sLoja
-	za1 -> za1_seq    = _nSeqEtq
-	za1 -> za1_usrinc = cUserName
-	za1 -> za1_idZAG  = _sIdZAG 
-	msunlock()
-	u_log2 ('info', 'Etiqueta ' + za1 -> za1_codigo + ' gravada. Produto: ' + alltrim (za1 -> za1_prod) + ' OP: ' + alltrim (za1 -> za1_op))
-
-	do while __lSX8
-		ConfirmSX8 ()
-	enddo
-
-	U_ML_SRArea (_aAreaAnt)
-Return _sNextNum
-*/
 
 
 // --------------------------------------------------------------------------

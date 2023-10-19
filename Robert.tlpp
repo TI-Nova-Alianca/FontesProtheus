@@ -15,6 +15,7 @@
 // Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
 // local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
 // Compilacao por linha de comando  https://tdn.totvs.com/pages/viewpage.action?pageId=528461210
+// Encerramento de OP com data posterior --->  https://tdn.totvs.com/pages/releaseview.action?pageId=6087508
 
 // Campos a serem eliminados quando der no jeito:
 // ZZU_EMP, d1_fim, f1_fim (?), A2_VACAVIS, A2_VALAVIS, A2_VANAVIS, 'A2_VA%DAP'
@@ -133,19 +134,20 @@ user function robert ()
 		// _sFuncao += '_Sisdevin ()'
 		// _sFuncao += '_ST_MG ()'
 		// _sFuncao += '_SZI ()'
-		// _sFuncao += '_TbUva ()'
+		_sFuncao += '_TbUva ()'
 		// _sFuncao += '_telnet ()'
 		// _sFuncao += '_TrEstq ()'
 		// _sFuncao += '_VACCR2 ()'
 		// _sFuncao += '_VA_VEF ()'
 		// _sFuncao += '_VA_XLS ()'
 		// _sFuncao += '_verif ()'
-		U_GravaSX1 ("VA_ACR", "01", "0345")
-		U_GravaSX1 ("VA_ACR", "02", "0345")
-		U_GravaSX1 ("VA_ACR", "03", 1)  // Ignorar uvas na estrutura ]S/N]
-		U_GravaSX1 ("VA_ACR", "04", 'PS/')  // Tipos a ignorar
-		U_GravaSX1 ("VA_ACR", "05", 2)  // Ignorar subniveis dos VD [S/N]
-		_sFuncao += 'U_VA_ACR (.t.)'
+		// U_GravaSX1 ("VA_ACR", "01", "0345")
+		// U_GravaSX1 ("VA_ACR", "02", "0345")
+		// U_GravaSX1 ("VA_ACR", "03", 'PA/VD')  // Tipos a listar
+		// U_GravaSX1 ("VA_ACR", "04", 'PS/')  // Tipos componentes a ignorar
+		// U_GravaSX1 ("VA_ACR", "05", 2)  // Mostrar uvas na estrutura ]S/N]
+		// U_GravaSX1 ("VA_ACR", "06", 1)  // Abrir subniveis dos VD [S/N]
+		// _sFuncao += 'U_VA_ACR (.t.)'
 		if ! empty (_sFuncao)
 			&(_sFuncao)
 		else
