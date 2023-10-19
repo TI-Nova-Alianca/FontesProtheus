@@ -12,6 +12,7 @@
 //
 //  Historico de alteracoes:
 // 08/09/2022 - Claudia - Incluida a data de cancelamento da baixa de verbas. GLPI: 12575
+// 29/08/2023 - Claudia - Ajustes de devoluções/compensação. GLPI: 13795
 //
 // -----------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -63,6 +64,8 @@ User Function VA_COMDEV(_dtaIni, _dtaFin, _sVend)
 	_oSQL:_sQuery += " 		AND SE1.E1_VEND1 = '" + alltrim(_sVend) + "'"
 	_oSQL:_sQuery += " 		AND SE1.E1_EMISSAO BETWEEN '" + dtos(_dtaAnt) + "' AND '" + dtos(_dtaFin) + "')"
 	_oSQL:_sQuery += " 	/ 100 * -1 AS COMISSAO"
+    _oSQL:_sQuery += "    ,E5_RECPAG RECPAG "
+    _oSQL:_sQuery += "    ,E5_MOTBX MOTBX "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SE5") + " SE5 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
     _oSQL:_sQuery += " 	ON (SA1.D_E_L_E_T_ = ''"
@@ -73,7 +76,7 @@ User Function VA_COMDEV(_dtaIni, _dtaFin, _sVend)
     _oSQL:_sQuery += " AND E5_FILIAL = '" + xFilial('SE5') + "' " 
     _oSQL:_sQuery += " AND E5_DATA  BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
     _oSQL:_sQuery += " AND E5_TIPO   = 'NCC'"
-    _oSQL:_sQuery += " AND E5_MOTBX  = 'DEB'"
+    _oSQL:_sQuery += " AND E5_MOTBX IN ('DEB','CMP') " // = 'DEB'
     _oSQL:_sQuery += " AND E5_NATUREZ <> 'VERBAS'"
     _oSQL:_sQuery += " AND E5_DTCANBX = '' "
     _oSQL:_sQuery += " ORDER BY E5_DATA"

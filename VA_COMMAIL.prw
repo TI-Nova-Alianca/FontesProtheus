@@ -401,6 +401,12 @@ Static Function _GeraPDF_Email()
 			If mv_par10 == 2
 				_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 			
+				If  _aDev[_y,12] == 'P' .and. _aDev[_i,13] == 'CMP'
+					_nValor := _aDev[_y,11] * -1
+				else
+					_nValor := _aDev[_y,11]
+				endif
+
 				oPrint:Say(nLinha,0100, alltrim(_aDev[_y,2]) 	 			  	 			,oFont12n)
 				oPrint:Say(nLinha,0600, alltrim(_aDev[_y,3]) 	 			  	 			,oFont12n)
 				oPrint:Say(nLinha,0800, alltrim(_aDev[_y,4]) 	 			  	 			,oFont12n)
@@ -408,11 +414,11 @@ Static Function _GeraPDF_Email()
 				oPrint:Say(nLinha,1300, alltrim(_aDev[_y,7]) 	 			  	 			,oFont12n)
 				oPrint:Say(nLinha,1900, TransForm( _aDev[_y,8] , '@E 9,999,999.99') 		,oFont12n)
 				oPrint:Say(nLinha,1900, TransForm( _aDev[_y,10] , '@E 999.99') 				,oFont12n)
-				oPrint:Say(nLinha,1900, TransForm( _aDev[_y,11] , '@E 9,999,999.99') 		,oFont12n)
+				oPrint:Say(nLinha,1900, TransForm( _nValor , '@E 9,999,999.99') 			,oFont12n)
 
 				nLinha += 50
 			EndIf
-			_nTotDev += _aDev[_y,11]
+			_nTotDev += _nValor
 					
 		Next
 		nLinha += 50

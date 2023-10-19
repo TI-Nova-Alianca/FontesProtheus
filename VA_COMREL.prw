@@ -369,6 +369,12 @@ Static Function PrintReport(oReport)
 
 			_nTotDev := 0
 			For _i := 1 to len(_aDev)
+
+				If  _aDev[_i,12] == 'P' .and. _aDev[_i,13] == 'CMP'
+					_nValor := _aDev[_i,11] * -1
+				else
+					_nValor := _aDev[_i,11]
+				endif
 				oSection4:Cell("COLUNA1")	:SetBlock   ({|| _aDev[_i,2] })
 				oSection4:Cell("COLUNA2")	:SetBlock   ({|| _aDev[_i,3] })
 				oSection4:Cell("COLUNA3")	:SetBlock   ({|| _aDev[_i,4] })
@@ -376,11 +382,11 @@ Static Function PrintReport(oReport)
 				oSection4:Cell("COLUNA5")	:SetBlock   ({|| _aDev[_i,7] })
 				oSection4:Cell("COLUNA6")	:SetBlock   ({|| _aDev[_i,8] })
 				oSection4:Cell("COLUNA7")	:SetBlock   ({|| _aDev[_i,10] })
-				oSection4:Cell("COLUNA8")	:SetBlock   ({|| _aDev[_i,11] })
+				oSection4:Cell("COLUNA8")	:SetBlock   ({|| _nValor })
 				
 				oSection4:PrintLine()
 
-				_nTotDev += _aDev[_i,11] 
+				_nTotDev += _nValor
 			Next
 
 			If Len(_aDev) > 0

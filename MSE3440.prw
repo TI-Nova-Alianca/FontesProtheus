@@ -55,6 +55,7 @@ User Function MSE3440 ()
 	local _nNovaBase := 0
 	local _nNovaComi := 0
 	local _lContinua := .T.
+	local _x         := 0
 	
 	u_logIni ()
 	u_log("gravando")
@@ -518,7 +519,7 @@ User Function MSE3440 ()
 		// Se for compensação, RA usa base prevista
 		_sQuery := ""
 		_sQuery += " SELECT 
-		_sQuery += " 	COUNT(*)"
+		_sQuery += " 	COUNT(*) , SUM(SE5.E5_VALOR)"
 		_sQuery += " FROM " +  RetSQLName ("SE5") + " AS SE5 "
 		_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
 		_sQuery += " AND E5_FILIAL  = '" + se1->e1_filial  +"'"
@@ -532,9 +533,12 @@ User Function MSE3440 ()
 		_sQuery += " AND E5_TIPODOC = 'CP' AND E5_DOCUMEN LIKE '%RA%'"
 		_aRA := U_Qry2Array(_sQuery)
 
-		If Len(_aRA) > 0
-			_vlrRec := _baseComis
-		EndIf
+		For _x := 1 to Len(_aRA)
+			If _aRA[_x,1] > 0
+				_vlrRec := _aRA[_x,2]
+			EndIf
+		Next
+
 		//
 		// **********************************************************************************************
 		// calculo da base de comissao liberada
