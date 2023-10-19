@@ -12,16 +12,17 @@
 
 #include "protheus.ch"
 
-#XTranslate .EstrHistNivel      => 1
-#XTranslate .EstrHistTipoComp   => 2
-#XTranslate .EstrHistCodComp    => 3
-#XTranslate .EstrHistDescri     => 4
-#XTranslate .EstrHistQuantAcum  => 5
-#XTranslate .EstrHistRevAtu     => 6
-#XTranslate .EstrHistCustDUnit  => 7
-#XTranslate .EstrHistCustDAcum  => 8
-#XTranslate .EstrHistEhUva      => 9
-#XTranslate .EstrHistQtColunas  => 9
+#XTranslate .EstrHistNivel        => 1
+#XTranslate .EstrHistTipoComp     => 2
+#XTranslate .EstrHistCodComp      => 3
+#XTranslate .EstrHistDescri       => 4
+#XTranslate .EstrHistQuantAcum    => 5
+#XTranslate .EstrHistRevAtu       => 6
+#XTranslate .EstrHistCustDUnit    => 7
+#XTranslate .EstrHistCustDAcum    => 8
+#XTranslate .EstrHistEhUva        => 9
+#XTranslate .EstrHistMaiorNivelVD => 10
+#XTranslate .EstrHistQtColunas    => 10
 
 // --------------------------------------------------------------------------
 user function VA_ACR (_lAuto)
@@ -66,43 +67,40 @@ return _lRet
 
 // --------------------------------------------------------------------------
 static function _Gera ()
-	local _lContinua := .T.
-	local _oSQL      := NIL
-	local _aHeader   := {}
-	local _aCols     := {}
-	local _n         := 1
-	local _aEstrAux  := {}
-	local _aEstrHist := {}
-	local _nEstrAux  := 0
-	local _nFilho    := 0
-	local _sFiltComp := ''
+	local _oSQL       := NIL
+	local _sAliasQ    := ''
+	local _nRecCount  := 0
+	local _aHeader    := {}
+	local _aCols      := {}
+	local _n          := 1
+	local _aEstrHist  := {}
+	local _nCustoME   := 0
+	local _nCustoVD   := 0
+	local _nCustoMO   := 0
+	local _nCustoBN   := 0
+	local _nCustoOUT  := 0
 	private _aEstruts := {}  // Deixar private para ser vista pelas funcoes auxiliares.
 	private _oDlg1    := NIL  // Deixar private para ser vista pelas funcoes auxiliares.
 	private _oGetD1   := NIL  // Deixar private para ser vista pelas funcoes auxiliares.
 
-	// Cria aHeader em formato compativel com a query para mostrar posteriormente em tela.
+	U_LogSX1 (cPerg)
+
+	// Cria aHeader para a tela inicial.
 	_aHeader = {}
 	//              Titulo                  Campo        Masc               Tam Dec Valid Usado Tipo F3     Context CBox Relacao Alteravel
 	aadd (_aHeader, {"Produto",             "PRODUTO",   "",                15, 0,  "",   "",   "C", "SB1", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Descricao",           "DESCRICAO", "",                60, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo ME",            "CUSTOME",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo VD",            "CUSTOVD",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Custo MO",            "CUSTOVO",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Custo MO",            "CUSTOMO",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo BN",            "CUSTOBN",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Custo Outros",        "CUSTOOUTR", "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Custo Outros",        "CUSTOOUT",  "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Rev.Atual",           "REVATU",    "",                 3, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
 
-	// Alimentacao inicial do aCols com os itens a serem analisados.
+	// Busca produtos cuja estrutura vai ser analisada.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT B1_COD, B1_DESC"
-	_oSQL:_sQuery +=      ", 0 AS CUSTO_ME"    // 3
-	_oSQL:_sQuery +=      ", 0 AS CUSTO_VD"    // 4
-	_oSQL:_sQuery +=      ", 0 AS CUSTO_MO"    // 5
-	_oSQL:_sQuery +=      ", 0 AS CUSTO_BN"    // 6
-	_oSQL:_sQuery +=      ", 0 AS CUSTO_OUTR"  // 7
-	_oSQL:_sQuery +=      ", B1_REVATU"
-	_oSQL:_sQuery +=      ", '' AS DELETADO"
+	_oSQL:_sQuery += "SELECT B1_COD, B1_DESC, B1_REVATU"
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
 	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
@@ -111,119 +109,53 @@ static function _Gera ()
 	_oSQL:_sQuery +=   " AND SB1.B1_MSBLQL != '1'"
 	_oSQL:_sQuery += " ORDER BY B1_COD"
 	_oSQL:Log ('[' + procname () + ']')
-	_aCols := aclone (_oSQL:Qry2Array (.f., .f.))
+	_sAliasQ = _oSQL:Qry2Trb (.f.)
+	count to _nRecCount
+	procregua (_nRecCount)
+	(_sAliasQ) -> (dbgotop ())
+	do while ! (_sAliasQ) -> (eof ())
+		incproc ('Lendo estrutura do ' + (_sAliasQ) -> b1_cod)
+		_LeDados ((_sAliasQ) -> b1_cod, (_sAliasQ) -> b1_revatu, @_aEstrHist, @_nCustoME, @_nCustoVD, @_nCustoMO, @_nCustoBN, @_nCustoOUT)
+
+		if len (_aEstrHist) == 0
+			U_Log2 ('aviso', '[' + procname () + ']Item sem estrutura: ' + (_sAliasQ) -> b1_cod)
+		else
+
+			// Passa para _aCols os dados da array lida
+			aadd (_aCols, aclone (U_LinVazia (_aHeader)))
+			_n = len (_aCols)
+			GDFieldPut ("PRODUTO",   (_sAliasQ) -> b1_cod,    _n, _aHeader, _aCols)
+			GDFieldPut ("DESCRICAO", (_sAliasQ) -> b1_desc,   _n, _aHeader, _aCols)
+			GDFieldPut ("REVATU",    (_sAliasQ) -> b1_revatu, _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOME",   _nCustoME,               _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOVD",   _nCustoVD,               _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOMO",   _nCustoMO,               _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOBN",   _nCustoBN,               _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOOUT" , _nCustoOUT,              _n, _aHeader, _aCols)
+
+			// Guardo a estrutura pronta numa array geral, pois imagino que o
+			// usuario vai consultar mais de uma vez e, jah que gastei tempo
+			// na leitura inicial, por que nao aproveitar?
+			aadd (_aEstruts, {_aCols [_n, 1], aclone (_aEstrHist)})
+
+		endif
+
+		(_sAliasQ) -> (dbskip ())
+	enddo
+	(_sAliasQ) -> (dbclosearea ())
+	dbselectarea ("SB1")
+
 	if len (_aCols) == 0
 		u_help ("Nenhum item selecionado para analise.",, .t.)
-	endif
+	else
 
-	// Alimenta custos e outros dados adicionais no aCols.
-	procregua (len (_aCols))
+		u_LogACols (_aHeader, _aCols)
+	
+		// durante testes, rodo via script e nao tenho interface com o usuario.
+		if type ("oMainWnd") != "O"
+			_SimEstru (mv_par01)
+		endif
 
-	// Monta expressao para filtrar componentes
-	_sFiltComp = ".T."
-	if mv_par05 == 2  // Nao considerar uvas
-		_sFiltComp += ".and.sb1->b1_grupo!='0400'"
-	endif
-	if ! empty (mv_par04)
-		_sFiltComp += ".and.!sb1->b1_tipo$'" + alltrim (mv_par04) + "'"
-	endif
-	U_Log2 ('debug', '[' + procname () + ']Filtro para leitura das estruturas: ' + _sFiltComp)
-
-	sb1 -> (dbsetorder (1))
-	for _n = 1 to len (_aCols)
-		incproc ('Lendo estrutura do ' + _aCols [_n, 1])
-
-		// Preenche a ultima coluna com .F. para indicar 'linha nao deletada'.
-		_aCols [_n, len (_aCols [_n])] = .F.
-
-		_aEstrAux = aclone (U_ML_Comp2 (_aCols [_n, 1], 1, _sFiltComp, dDataBase, .f., .f., .f., .f., .f., '', .f., .t., .t., .f., _aCols [_n, 8]))
-
-		// Nao preciso de todas as colunas da array gerada pela funcao de
-		// leitura de estrutura, entao vou substituir por coisas que preciso.
-		for _nEstrAux = 1 to len (_aEstrAux)
-			if ! sb1 -> (dbseek (xfilial ("SB1") + _aEstrAux [_nEstrAux, 2], .F.))
-				u_help ("Nao localizado cadastro do item '" + _aEstrAux [_nEstrAux, 2] + "'",, .t.)
-				_lContinua = .F.
-			else
-				_aEstrAux [_nEstrAux, 5] = sb1 -> b1_tipo
-				_aEstrAux [_nEstrAux, 6] = sb1 -> b1_desc
-				_aEstrAux [_nEstrAux, 8] = sb1 -> b1_custd
-				_aEstrAux [_nEstrAux, 9] = (sb1 -> b1_grupo == '0400')
-			endif
-		next
-		U_Log2 ('debug', '[' + procname () + ']_aEstrAux com dados do SB1')
-		U_Log2 ('debug', _aEstrAux)
-
-		// Prepara uma 'estrutura para historico' filtrando itens que nao interessam,
-		// acrescentando acumulados, etc. Tambem jah grava uma copia dessa estrutura
-		// numa array em memoria, para o caso do usuario querer consultar depois.
-		_aEstrHist = {}
-		_nEstrAux = 1
-		do while _nEstrAux <= len (_aEstrAux)
-
-			aadd (_aEstrHist, array (.EstrHistQtColunas))
-			_aEstrHist [len (_aEstrHist), .EstrHistNivel]     = _aEstrAux [_nEstrAux, 1]
-			_aEstrHist [len (_aEstrHist), .EstrHistCodComp]   = _aEstrAux [_nEstrAux, 2]
-			_aEstrHist [len (_aEstrHist), .EstrHistQuantAcum] = _aEstrAux [_nEstrAux, 4]
-			_aEstrHist [len (_aEstrHist), .EstrHistRevAtu]    = _aEstrAux [_nEstrAux, 12]
-			_aEstrHist [len (_aEstrHist), .EstrHistTipoComp]  = _aEstrAux [_nEstrAux, 5]
-			_aEstrHist [len (_aEstrHist), .EstrHistCustDUnit] = _aEstrAux [_nEstrAux, 8]
-			_aEstrHist [len (_aEstrHist), .EstrHistDescri]    = alltrim (_aEstrAux [_nEstrAux, 6])
-			_aEstrHist [len (_aEstrHist), .EstrHistEhUva]     = _aEstrAux [_nEstrAux, 9]
-
-			// Ateh nova definicao, queremos ler o custo
-			// somente do nivel mais alto do VD, desconsiderando os
-			// subniveis para composicao do custo do produto acabado.
-			// Isso por que temos casos de VD dentro de VD.
-			if mv_par06 == 2
-				if _aEstrAux [_nEstrAux, 5] == 'VD'
-					_nFilho = _nEstrAux
-					do while _nFilho <= len (_aEstrAux) .and. _aEstrAux [_nFilho + 1, 1] > _aEstrAux [_nEstrAux, 1]
-						U_Log2 ('debug', '[' + procname () + ']Desconsiderando comp. ' + _aEstrAux [_nFilho+1, 2] + ' (nivel ' + cvaltochar (_aEstrAux [_nFilho+1, 1]) + ' por ser descendente de um VD.')
-						_nFilho ++
-					enddo
-					_nEstrAux = _nFilho
-				endif
-			endif
-
-			_nEstrAux ++
-		enddo
-
-		// Acumula o custo de reposicao dos niveis superiores somando o custo de seus filhos.
-		_aEstrHist [1, .EstrHistCustDAcum] = _AcumNiv (@_aEstrHist, 1)
-		//_aEstrHist [1, .EstrHistCustDAcum] = _CustAcum (@_aEstrHist, 1)
-
-		// Abre os custos do item atual conforme os tipos de seus componentes.
-		for _nEstrAux = 2 to len (_aEstrAux)  // Como o primeiro item eh o proprio pai, nao quero somar seu custo.
-			do case
-			case _aEstrAux [_nEstrAux, 5] == 'ME'
-				_aCols [_n, 3] += sb1 -> b1_custd * _aEstrAux [_nEstrAux, 4]
-			case _aEstrAux [_nEstrAux, 5] == 'VD'
-				_aCols [_n, 4] += sb1 -> b1_custd * _aEstrAux [_nEstrAux, 4]
-			case _aEstrAux [_nEstrAux, 5] == 'MO'
-				_aCols [_n, 5] += sb1 -> b1_custd * _aEstrAux [_nEstrAux, 4]
-			case _aEstrAux [_nEstrAux, 5] == 'BN'
-				_aCols [_n, 6] += sb1 -> b1_custd * _aEstrAux [_nEstrAux, 4]
-			otherwise
-				_aCols [_n, 7] += sb1 -> b1_custd * _aEstrAux [_nEstrAux, 4]
-			endcase
-		next
-
-		// Guardo a estrutura pronta numa array geral, pois imagino que o
-		// usuario vai consultar mais de uma vez e, jah que gastei tempo
-		// na leitura inicial, por que nao aproveitar?
-		aadd (_aEstruts, {_aCols [_n, 1], aclone (_aEstrHist)})
-	next
-
-	U_Log2 ('debug', '[' + procname () + ']_aEstruts:')
-	U_Log2 ('debug', _aEstruts)
-	u_LogACols (_aHeader, _aCols)
-	// durante testes, rodo via script e nao tenho interface com o usuario.
-	if type ("oMainWnd") != "O"
-		_VisEstru (mv_par01)
-	endif
-
-	if _lContinua
 		_aSize := MsAdvSize()
 		define MSDialog _oDlg1 from _aSize [1], _aSize [1] to _aSize [6], _aSize [5] of oMainWnd pixel title "Analise custo reposicao"
 
@@ -264,6 +196,162 @@ return
 
 
 // --------------------------------------------------------------------------
+// Leitura e preparacao de dados para a tela principal.
+static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD, _nCustoMO, _nCustoBN, _nCustoOUT)
+	local _sFiltComp := ''
+	local _aEstrAux  := {}
+
+	local _nComp  := 0
+	local _nFilho    := 0
+
+	// Monta expressao para filtrar componentes
+	_sFiltComp = ".T."
+	if mv_par05 == 2  // Nao considerar uvas
+		_sFiltComp += ".and.sb1->b1_grupo!='0400'"
+	endif
+	if ! empty (mv_par04)
+		_sFiltComp += ".and.!sb1->b1_tipo$'" + alltrim (mv_par04) + "'"
+	endif
+	U_Log2 ('debug', '[' + procname () + ']Filtro para leitura das estruturas: ' + _sFiltComp)
+
+	sb1 -> (dbsetorder (1))
+
+	_aEstrAux = U_ML_Comp2 (_sProduto, 1, _sFiltComp, dDataBase, .f., .f., .f., .f., .f., '', .f., .t., .t., .f., _sRevisao)
+
+	// Nao preciso de todas as colunas da array gerada pela funcao de
+	// leitura de estrutura, entao vou substituir por coisas que preciso.
+	for _nComp = 1 to len (_aEstrAux)
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _aEstrAux [_nComp, 2], .F.))
+			u_help ("Nao localizado cadastro do item '" + _aEstrAux [_nComp, 2] + "'",, .t.)
+			_lContinua = .F.
+		else
+			_aEstrAux [_nComp, 5] = sb1 -> b1_tipo
+			_aEstrAux [_nComp, 6] = sb1 -> b1_desc
+			_aEstrAux [_nComp, 8] = sb1 -> b1_custd
+			_aEstrAux [_nComp, 9] = (sb1 -> b1_grupo == '0400')
+		endif
+	next
+
+	// Prepara uma 'estrutura para historico' filtrando itens que nao interessam,
+	// acrescentando acumulados, etc.
+	_aEstrHist = {}
+	_nComp = 1
+	do while _nComp <= len (_aEstrAux)
+		aadd (_aEstrHist, array (.EstrHistQtColunas))
+		_aEstrHist [len (_aEstrHist), .EstrHistNivel]        = _aEstrAux [_nComp, 1]
+		_aEstrHist [len (_aEstrHist), .EstrHistCodComp]      = _aEstrAux [_nComp, 2]
+		_aEstrHist [len (_aEstrHist), .EstrHistQuantAcum]    = _aEstrAux [_nComp, 4]
+		_aEstrHist [len (_aEstrHist), .EstrHistRevAtu]       = _aEstrAux [_nComp, 12]
+		_aEstrHist [len (_aEstrHist), .EstrHistTipoComp]     = _aEstrAux [_nComp, 5]
+		_aEstrHist [len (_aEstrHist), .EstrHistCustDUnit]    = _aEstrAux [_nComp, 8]
+		_aEstrHist [len (_aEstrHist), .EstrHistDescri]       = alltrim (_aEstrAux [_nComp, 6])
+		_aEstrHist [len (_aEstrHist), .EstrHistEhUva]        = _aEstrAux [_nComp, 9]
+		_aEstrHist [len (_aEstrHist), .EstrHistMaiorNivelVD] = .F.  // Vai ser revisado mais adante
+
+		// Eventualmente queremos considerar o VD como se fosse uma 'MP comprada'
+		if mv_par06 == 2
+			if _aEstrAux [_nComp, 5] == 'VD'
+				_nFilho = _nComp
+				do while _nFilho <= len (_aEstrAux) .and. _aEstrAux [_nFilho + 1, 1] > _aEstrAux [_nComp, 1]
+					U_Log2 ('debug', '[' + procname () + ']Desconsiderando comp. ' + _aEstrAux [_nFilho+1, 2] + ' (nivel ' + cvaltochar (_aEstrAux [_nFilho+1, 1]) + ' por ser descendente de um VD.')
+					_nFilho ++
+				enddo
+				_nComp = _nFilho
+			endif
+		endif
+		_nComp ++
+	enddo
+
+	// Identifica os VDs que tem o maior nivel, para que no grid principal,
+	// na coluna 'custo VD', seja somado somente o seu custo e nao dos
+	// filhos, pois eh comum termos itens VD dentro de outros VD. Nesses
+	// casos, eu estaria somando mais que uma vez.
+	// Tah, tah, eu sei... o certo mesmo seria um 'custo em partes' aqui!
+	_nComp = 2  // Posso estar analisando um VD como 'pai'
+	do while _nComp <= len (_aEstrHist)
+		U_Log2 ('debug', '[' + procname () + ']Procurando maior VD na linha ' + cvaltochar (_nComp))
+		if _aEstrHist [_nComp, .EstrHistTipoComp] == 'VD'
+			U_Log2 ('debug', '[' + procname () + ']eh VD')
+			_aEstrHist [_nComp, .EstrHistMaiorNivelVD] = .T.
+			_nFilho = _nComp
+			do while _nFilho <= len (_aEstrHist) .and. _aEstrHist [_nFilho+1, .EstrHistNivel] > _aEstrHist [_nComp, .EstrHistNivel]
+				U_Log2 ('debug', '[' + procname () + ']Achei filho na linha ' + cvaltochar (_nFilho+1))
+				_aEstrHist [_nFilho+1, .EstrHistMaiorNivelVD] = .F.
+				_nFilho ++
+			enddo
+			_nComp = _nFilho
+		endif
+		_nComp ++
+	enddo
+	U_Log2 ('debug', '[' + procname () + ']Maior nivel de VD identificado:')
+	U_Log2 ('debug', _aEstrHist)
+
+	// Acumula o custo de reposicao dos niveis 'pais' somando o custo de seus filhos.
+	_AtuCust (@_aEstrHist, 1, .EstrHistNivel, .EstrHistQuantAcum, .EstrHistCustDUnit, .EstrHistCustDAcum)
+	U_Log2 ('debug', '[' + procname () + ']Custos acumulados:')
+	U_Log2 ('debug', _aEstrHist)
+
+	// Abre os custos do item atual conforme os tipos de seus componentes.
+	for _nComp = 2 to len (_aEstrHist)  // Como o primeiro item eh o proprio pai, nao quero somar seu custo.
+		do case
+		case _aEstrHist [_nComp, .EstrHistTipoComp] == 'ME'
+			_nCustoME += _aEstrHist [_nComp, .EstrHistCustDAcum]
+		case _aEstrHist [_nComp, .EstrHistTipoComp] == 'VD'
+			if _aEstrHist [_nComp, .EstrHistMaiorNivelVD]
+				_nCustoVD += _aEstrHist [_nComp, .EstrHistCustDAcum]
+			endif
+		case _aEstrHist [_nComp, .EstrHistTipoComp] == 'MO'
+			_nCustoMO += _aEstrHist [_nComp, .EstrHistCustDAcum]
+		case _aEstrHist [_nComp, .EstrHistTipoComp] == 'BN'
+			_nCustoBN += _aEstrHist [_nComp, .EstrHistCustDAcum]
+		otherwise
+			_nCustoOUT += _aEstrHist [_nComp, .EstrHistCustDAcum]
+		endcase
+	next
+return
+
+
+// --------------------------------------------------------------------------
+// Acumula custos por niveis - versao 3 afff
+static function _AtuCust (_aEst, _nLinha, _nColNiv, _nColQt, _nColCusUn, _nColAcum, _nInteracao)
+	local _nCusFilhos := 0
+	local _nLinAux    := 0
+	local _lTemSubNiv := .F.
+	_nInteracao := iif (_nInteracao == NIL, 1, _nInteracao+1)
+	_sPrefLog := 'int' + strzero (_nInteracao, 2)
+
+	// Se tem filhos, preciso atualizar antes o custo dos filhos
+	_nLinAux = _nLinha + 1
+	_nCusFilhos = 0
+	do while _nLinAux <= len (_aEst) .and. _aEst [_nLinAux, _nColNiv] > _aEst [_nLinha, _nColNiv]
+		_lTemSubNiv = .T.
+		U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, _nColNiv] * 2) + '_nLinha = ' + cvaltochar (_nLinha) + '  _nLinAux = ' + cvaltochar (_nLinAux) + ' dentro do loop da int. ' + strzero (_nInteracao, 2))
+		
+		// Processar somente os filhos, e nao os netos.
+		if _aEst [_nLinAux, _nColNiv] == _aEst [_nLinha, _nColNiv] + 1
+			U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, _nColNiv] * 2) + 'Vou fazer chamada para o filho da linha ' + cvaltochar (_nLinAux) + ' nivel ' + cvaltochar (_aEst [_nLinAux, _nColNiv]) + ' ' + _aEst [_nLinAux, .EstrHistCodComp])
+			_AtuCust (@_aEst, _nLinAux, _nColNiv, _nColQt, _nColCusUn, _nColAcum, _nInteracao)
+			
+			// Agora que tenho o custo deste filho atualizado, posso soma-lo ao custo do nivel atual.
+			_nCusFilhos += _aEst [_nLinAux, _nColAcum]
+			U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, _nColNiv] * 2) + 'Acumulei para o ' + alltrim (_aEst [_nLinha, .EstrHistCodComp]) + ' o custo de ' + cvaltochar (_aEst [_nLinAux, _nColAcum])+ ' do filho ' + alltrim (_aEst [_nLinAux, .EstrHistCodComp]) + '. _nCusFilhos = ' + cvaltochar (_nCusFilhos))
+		else
+			U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, _nColNiv] * 2) + 'Nao eh filho direto.')
+		endif
+		_nLinAux ++
+	enddo
+	
+	// Se nao tem filhos, fica com seu propro custo.
+	if _lTemSubNiv
+		_aEst [_nLinha, _nColAcum] = _nCusFilhos
+		U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinha, _nColNiv] * 2) + 'Gravado ' + cvaltochar (_aEst [_nLinha, _nColAcum]) + ' na linha ' + cvaltochar (_nLinha) + ' (cod. ' + _aEst [_nLinha, .EstrHistCodComp] + ')')
+	else
+		_aEst [_nLinha, _nColAcum] = _aEst [_nLinha, _nColqT] * _aEst [_nLinha, _nColCusUn]
+	endif
+return
+
+
+// --------------------------------------------------------------------------
 // Funcao executada pelo duplo clique do mouse.
 static function _DblClick ()
 //	local _sCampo := aHeader [_oGetD1:oBrowse:nColPos, 2]
@@ -278,8 +366,7 @@ static function _RClick (_o, _x, _y)
 	local _sProduto  := GDFieldGet ("PRODUTO", _oGetD1:nAt, .f., _oGetD1:aHeader, _oGetD1:aCols)
  
 	MENU _oMenu POPUP 
-	aAdd( _oMenuItem, MenuAddItem ("Visualizar estrutura"    ,,, .T.,,,, _oMenu, {|| processa ({||_VisEstru (_sProduto, .f.)}) },,,,,{|| .T.}) ) 
-//	aAdd( _oMenuItem, MenuAddItem ("Vis.estrut.c/ult.compras",,, .T.,,,, _oMenu, {|| _VisEstru (_sProduto, .t.) },,,,,{|| .T.}) ) 
+	aAdd( _oMenuItem, MenuAddItem ("Simulacoes estrutura"    ,,, .T.,,,, _oMenu, {|| processa ({||_SimEstru (_sProduto, .f.)}) },,,,,{|| .T.}) ) 
 	ENDMENU
 
 	_oMenu:Activate (_x + 15, _y + 205)
@@ -288,7 +375,7 @@ return
 
 // --------------------------------------------------------------------------
 // Visualiza estrutura que foi considerada para o produto selecionado.
-static function _VisEstru (_sProduto, _lUltComp)
+static function _SimEstru (_sProduto, _lUltComp)
 	local _nPosEstr    := 0
 	local _nCompon     := 0
 	local _oSQL        := NIL
@@ -314,19 +401,19 @@ static function _VisEstru (_sProduto, _lUltComp)
 		_aAux = aclone (_aEstruts [_nPosEstr, 2])
 		
 		_aHeader = {}
-		//              Titulo            Campo       Masc                 Tam Dec Valid Usado Tipo F3  Context CBox Relacao Alteravel
-		aadd (_aHeader, {"Indice",        "INDICE",   "",                   10, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Nivel",         "NIVEL",    "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Tipo",          "TIPO",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Componente",    "COMP",     "",                   15, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Descricao",     "DESCR",    "",                   60, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Quant(acum)",   "QUANT",    "@E 999,999.9999999", 14, 7,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Custo acum",    "CUSTACUM", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Cus.rep.atual", "CUSREP",   "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Ult.comp",      "ULTCOMP1", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Ult.comp-1",    "ULTCOMP2", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Ult.comp-2",    "ULTCOMP3", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Rev.atual",     "REVATU",   "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		//              Titulo             Campo       Masc                 Tam Dec Valid Usado Tipo F3  Context CBox Relacao Alteravel
+		aadd (_aHeader, {"Indice",         "INDICE",   "",                   10, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Nivel",          "NIVEL",    "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Tipo",           "TIPO",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Componente",     "COMP",     "",                   15, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Descricao",      "DESCR",    "",                   60, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Quant(acum)",    "QUANT",    "@E 999,999.9999999", 14, 7,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Cus.std.acum.",  "CUSTACUM", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Cus.std.atual",  "CUSREP",   "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Ult.comp",       "ULTCOMP1", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Ult.comp-1",     "ULTCOMP2", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Ult.comp-2",     "ULTCOMP3", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Rev.atual",      "REVATU",   "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 
 		_aCols = {}
 		for _nCompon = 1 to len (_aAux)
@@ -335,14 +422,14 @@ static function _VisEstru (_sProduto, _lUltComp)
 
 			// Monta um codigo 'com pontos' para ajudar a identificar a hereditariedade dos componentes.
 			GDFieldPut ("INDICE",   alltrim (_sProduto) + '.' + strzero (_nCompon, 2), _n, _aHeader, _aCols)
-			GDFieldPut ("NIVEL",    _aAux [_nCompon, .EstrHistNivel], _n, _aHeader, _aCols)
-			GDFieldPut ("TIPO",     _aAux [_nCompon, .EstrHistTipoComp], _n, _aHeader, _aCols)
-			GDFieldPut ("COMP",     _aAux [_nCompon, .EstrHistCodComp], _n, _aHeader, _aCols)
+			GDFieldPut ("NIVEL",    _aAux [_nCompon, .EstrHistNivel],     _n, _aHeader, _aCols)
+			GDFieldPut ("TIPO",     _aAux [_nCompon, .EstrHistTipoComp],  _n, _aHeader, _aCols)
+			GDFieldPut ("COMP",     _aAux [_nCompon, .EstrHistCodComp],   _n, _aHeader, _aCols)
 			GDFieldPut ("DESCR",    iif (_nCompon == 1, '', space (_aAux [_nCompon, .EstrHistNivel] * 5) + '+---') + _aAux [_nCompon, .EstrHistDescri], _n, _aHeader, _aCols)
 			GDFieldPut ("QUANT",    _aAux [_nCompon, .EstrHistQuantAcum], _n, _aHeader, _aCols)
 			GDFieldPut ("CUSREP",   _aAux [_nCompon, .EstrHistCustDUnit], _n, _aHeader, _aCols)
-			GDFieldPut ("CUSTACUM", _aAux [_nCompon, .EstrHistCustDUnit] * _aAux [_nCompon, .EstrHistQuantAcum], _n, _aHeader, _aCols)
-			GDFieldPut ("REVATU",   _aAux [_nCompon, .EstrHistRevAtu], _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTACUM", _aAux [_nCompon, .EstrHistCustDAcum], _n, _aHeader, _aCols)
+			GDFieldPut ("REVATU",   _aAux [_nCompon, .EstrHistRevAtu],    _n, _aHeader, _aCols)
 
 			// Busca ultimas compras do componente.
 			_aUltCom = {}
@@ -360,7 +447,7 @@ static function _VisEstru (_sProduto, _lUltComp)
 				_oSQL := ClsSQL():New ()
 				_oSQL:_sQuery := "SELECT CUSREPUNI"
 				_oSQL:_sQuery += " FROM VA_ULTCOMP ('', 'zz', '" + _aAux [_nCompon, .EstrHistCodComp] + "', 3)"
-				_oSQL:Log ('[' + procname () + '][' + _aAux [_nCompon, .EstrHistCodComp] + ']')
+			//	_oSQL:Log ('[' + procname () + '][' + _aAux [_nCompon, .EstrHistCodComp] + ']')
 				_aUltCom := aclone (_oSQL:Qry2Array (.F., .F.))
 			endif
 
@@ -369,6 +456,7 @@ static function _VisEstru (_sProduto, _lUltComp)
 			GDFieldPut ("ULTCOMP1", iif (len (_aUltCom) >= 1, _aUltCom [1, 1], 0), _n, _aHeader, _aCols)
 			GDFieldPut ("ULTCOMP2", iif (len (_aUltCom) >= 2, _aUltCom [2, 1], 0), _n, _aHeader, _aCols)
 			GDFieldPut ("ULTCOMP3", iif (len (_aUltCom) >= 3, _aUltCom [3, 1], 0), _n, _aHeader, _aCols)
+			
 		next
 
 		u_LogACols (_aHeader, _aCols)
@@ -376,23 +464,23 @@ static function _VisEstru (_sProduto, _lUltComp)
 		_aSize := MsAdvSize()
 		define MSDialog _oDlgEstr from _aSize [1] + 25, _aSize [1] + 25 to _aSize [6] - 25, _aSize [5] - 25 of oMainWnd pixel title "Estrutura do " + _sProduto
 
-		_oGetDEstr := MsNewGetDados ():New (31, ;                       // Limite superior
-									5, ;                             // Limite esquerdo 
+		_oGetDEstr := MsNewGetDados ():New (31, ;                        // Limite superior
+									5, ;                                 // Limite esquerdo 
 									_oDlgEstr:nClientHeight / 2 - 20, ;  // Limite inferior
-									_oDlgEstr:nClientWidth / 2 - 10, ;  // Limite direito
-									2, ;                             // [ nStyle ]
-									"AllwaysTrue ()", ;              // [ uLinhaOk ]
-									"AllwaysTrue ()", ;              // [ uTudoOk ]
-									NIL, ;                           // [cIniCpos]
-									NIL,;                            // [ aAlter ]
-									NIL,;                            // [ nFreeze ]
-									NIL,;                            // [ nMax ]
-									NIL,;                            // [ cFieldOk ]
-									NIL,;                            // [ uSuperDel ]
-									NIL,;                            // [ uDelOk ]
-									_oDlgEstr,;                         // [ oWnd ]
-									_aHeader,;                       // [ ParHeader ]
-									_aCols)                          // [ aParCols ]
+									_oDlgEstr:nClientWidth / 2 - 10, ;   // Limite direito
+									4, ;                                 // [ nStyle ]
+									"AllwaysTrue ()", ;                  // [ uLinhaOk ]
+									"AllwaysTrue ()", ;                  // [ uTudoOk ]
+									NIL, ;                               // [cIniCpos]
+									NIL,;                                // [ aAlter ]
+									NIL,;                                // [ nFreeze ]
+									NIL,;                                // [ nMax ]
+									NIL,;                                // [ cFieldOk ]
+									NIL,;                                // [ uSuperDel ]
+									NIL,;                                // [ uDelOk ]
+									_oDlgEstr,;                          // [ oWnd ]
+									_aHeader,;                           // [ ParHeader ]
+									_aCols)                              // [ aParCols ]
 
 		_oGetDEstr:oBrowse:bLDblClick := {|| allwaystrue ()}
 		_oGetDEstr:oBrowse:bRClicked := {|_o, _x, _y| allwaystrue ()}
@@ -402,6 +490,7 @@ static function _VisEstru (_sProduto, _lUltComp)
 		_bBotaoCan = {|| _oDlgEstr:End ()}
 		_aBotAdic  = {}
 		aadd (_aBotAdic, {"", {|| aHeader := aclone (_oGetDEstr:aHeader), aCols := aclone (_oGetDEstr:aCols), U_aColsXLS ()}, "Exp.planilha"})
+		aadd (_aBotAdic, {"", {|| _RecCust (_oGetDEstr:aHeader, @_oGetDEstr:aCols)}, "Recalcular custo"})
 		
 		// durante testes, rodo via script e nao tenho interface com o usuario.
 		if type ("oMainWnd") == "O"
@@ -412,42 +501,55 @@ return
 
 
 // --------------------------------------------------------------------------
-// Acumula custos por niveis - versao 1
-static function _AcumNiv (_aEst, _nLinha)
-	U_Log2 ('debug', '[' + procname () + ']Recebi chamada para linha ' + cvaltochar (_nLinha))
+// Recalcula o custo de uma estrutura que estah sendo visualizada em tela.
+static function _RecCust (_aHeader, _aCols)
+	local _aEstrTela := {}
+	local _n         := 0
+	local _lContinua := .T.
 
-	if _nLinha >= len (_aEst)
-		U_Log2 ('debug', '[' + procname () + ']Retornando por que terminou a array.')
-		return _aEst [_nLinha, .EstrHistCustDAcum]
-	endif
-
-	do while _nLinha < len (_aEst)
-		if _aEst [_nLinha + 1, .EstrHistNivel] > _aEst [_nLinha, .EstrHistNivel]
-			_aEst [_nLinha + 1, .EstrHistCustDAcum] = _AcumNiv (@_aEst, _nLinha + 1)
-		endif
-		_nLinha ++
-		U_Log2 ('debug', '[' + procname () + ']Incrementei _nLinha para ' + cvaltochar (_nLinha))
-	enddo
-return
-
-
-// --------------------------------------------------------------------------
-// Acumula custos por niveis - versao 2
-static function _CustAcum (_aEst, _nLinOrig)
-	local _nRet := 0
-	local _nLinha := _nLinOrig + 1
-	U_Log2 ('debug', '[' + procname () + ']Recebi chamada para linha ' + cvaltochar (_nLinOrig))
+	CursorWait ()
 	
-	// Primeiro preciso verificar necessidade de atualizar o custo dos filhos
-	do while _nLinha < len (_aEst)
-		if _aEst [_nLinha + 1, .EstrHistNivel] > _aEst [_nLinha, .EstrHistNivel]
-			_aEst [_nLinha, .EstrHistCustDAcum] = _CustAcum (@_aEst, _nLinha)
+	// Nao deixo deletar itens pais por que, ao acumular os custos, somente
+	// considero as quantidades das 'folhas' da arvore.
+	for _n = 1 to len (_aCols)
+		if _n < len (_aCols) .and. GDDeleted (_n, _aHeader, _aCols) .and. GDFieldGet ("NIVEL", _n, .f., _aHeader, _aCols) < GDFieldGet ("NIVEL", _n+1, .f., _aHeader, _aCols)
+			u_help ("Para recalculo de custos, somente podem ser deletadas linhas de itens 'filhos'.",, .t.)
+			_lContinua = .F.
+			exit
 		endif
-		//eca nao consigo fazer esta funcao!!!!!
-		_nRet += _aEst [_nLinha, .EstrHistCustDAcum]
-		_nLinha ++
-	enddo
-return _nRet
+	next
+
+	if _lContinua
+		for _n = 1 to len (_aCols)
+			aadd (_aEstrTela, array (.EstrHistQtColunas))
+			_aEstrTela [len (_aEstrTela), .EstrHistNivel]     = GDFieldGet ("NIVEL",    _n, .f., _aHeader, _aCols)
+			_aEstrTela [len (_aEstrTela), .EstrHistTipoComp]  = GDFieldGet ("TIPO",     _n, .f., _aHeader, _aCols)
+			_aEstrTela [len (_aEstrTela), .EstrHistCodComp]   = GDFieldGet ("COMP",     _n, .f., _aHeader, _aCols)
+			_aEstrTela [len (_aEstrTela), .EstrHistDescri]    = GDFieldGet ("DESCR",    _n, .f., _aHeader, _aCols)
+			_aEstrTela [len (_aEstrTela), .EstrHistRevAtu]    = GDFieldGet ("REVATU",   _n, .f., _aHeader, _aCols)
+			_aEstrTela [len (_aEstrTela), .EstrHistCustDUnit] = GDFieldGet ("CUSREP",   _n, .f., _aHeader, _aCols)
+			_aEstrTela [len (_aEstrTela), .EstrHistCustDAcum] = GDFieldGet ("CUSTACUM", _n, .f., _aHeader, _aCols)
+			if GDDeleted (_n, _aHeader, _aCols)
+				_aEstrTela [len (_aEstrTela), .EstrHistQuantAcum] = 0
+			else
+				_aEstrTela [len (_aEstrTela), .EstrHistQuantAcum] = GDFieldGet ("QUANT",    _n, .f., _aHeader, _aCols)
+			endif
+		next
+
+		U_Log2 ('debug', '[' + procname () + ']Estrutura para recalc.custo cfe tela:')
+		U_Log2 ('debug', _aEstrTela)
+		_AtuCust (@_aEstrTela, 1, .EstrHistNivel, .EstrHistQuantAcum, .EstrHistCustDUnit, .EstrHistCustDAcum)
+
+		// Atualiza os custos no aCols
+		for _n = 1 to len (_aEstrTela)
+			GDFieldPut ("CUSTACUM", _aEstrTela [_n, .EstrHistCustDAcum], _n, _aHeader, _aCols)
+		next
+		// Atualiza browse na tela
+		_oGetDEstr:oBrowse:Refresh()
+		_oGetDEstr:Show ()
+	endif
+	CursorArrow ()
+return
 
 
 // --------------------------------------------------------------------------
@@ -468,8 +570,14 @@ return
 
 /*
 na consulta da estrutura:
-- numeracao com pontos pra identificar os niveis
 - mostrar data da ultima atualização do standard e tb ultimas compras (com fornecedor)
-- quantidade faltam decimais
 - no caso de uvas, diferenciar compra X complemento de safra (por que o volume de mosto já terminou)
+- tela 1 se somar as colunas, nao bate com a abertura da estrutura
+- coluna com data somente da ultima compra
+- opcao de informar custo repos.unitario (somente em tela) e recalcular o custo
+- % de participacao de cada tipo na tela principal
+- % de participacao de cada nivel na tela da estrutura
+- custo total (acumulado) e b1_custd a dir. da descricao na tela principal
+- atalho na segunda tela pra alterar o custo std no cadastro do componente (recalcular depois)
+- va_ccr do item 4439 nao bateu (NF 238340 do fornecedor 000851)
 */
