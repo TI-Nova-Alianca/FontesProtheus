@@ -55,6 +55,7 @@
 //                      - Incluidas chamadas da funcao PerfMon para monitoramento de performance.
 // 04/05/2022 - Robert  - Eliminada leitura do parametro VA_USRENF (atualmente grupo 050 do ZZU).
 // 11/01/2023 - Claudia - Incluída a chamada de transmissão da GNRE. GLPI: 10469 
+// 19/10/2023 - Claudia - Incluidos logs para verificar emissão de GNRE. GLPI: 14392
 //
 // --------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
@@ -723,9 +724,27 @@ static function _VerifGNRE(_sFilial, _sSerie, _sDoc)
 		For _x:=1 to Len(_aAutoriz)
 			if  _aAutoriz[_x, 1] == '100'
 				FISA095()
+
+				_oEvento := ClsEvent():New ()
+				_oEvento:Alias     = 'SF2'
+				_oEvento:Texto     = "Guia GNRE gerada e aberta tela de transmissão. Filial:"+ _sFilial + " Doc.:"+_sDoc + " Série:" + _sSerie
+				_oEvento:CodEven   = "GNRE01"
+				_oEvento:Grava()
+
 			else
 				If msgyesno ("A nota " + _sSerie + _sDoc +" possui guia GNRE. Deseja transmitir agora?")
 					FISA095()
+					_oEvento := ClsEvent():New ()
+					_oEvento:Alias     = 'SF2'
+					_oEvento:Texto     = "Guia GNRE gerada e aberta tela de transmissão. Filial:"+ _sFilial + " Doc.:"+_sDoc + " Série:" + _sSerie
+					_oEvento:CodEven   = "GNRE01"
+					_oEvento:Grava()
+				else
+					_oEvento := ClsEvent():New ()
+					_oEvento:Alias     = 'SF2'
+					_oEvento:Texto     = "Guia GNRE gerada e cancelada a tela de transmissão. Filial:"+ _sFilial + " Doc.:"+_sDoc + " Série:" + _sSerie
+					_oEvento:CodEven   = "GNRE01"
+					_oEvento:Grava()
 				endif
 			endif
 		Next
