@@ -101,19 +101,19 @@
 
 
 // Define nomes para as colunas retornadas pelo metodo de geracao de dados para extrato de conta corrente da classe de associado.
-#XTranslate .ExtratoCCFilial]    => 1
-#XTranslate .ExtratoCCDescFil]   => 2
-#XTranslate .ExtratoCCData]      => 3
-#XTranslate .ExtratoCCTM]        => 4
-#XTranslate .ExtratoCCDC]        => 5
-#XTranslate .ExtratoCCHist]      => 6
-#XTranslate .ExtratoCCValor]     => 7
-#XTranslate .ExtratoCCFornAdt]   => 8
-#XTranslate .ExtratoCCLojaAdt]   => 9
-#XTranslate .ExtratoCCObs]       => 10
-#XTranslate .ExtratoCCCapSocial] => 11
-#XTranslate .ExtratoCCOrigem]    => 12
-#XTranslate .ExtratoCCQtColunas] => 12
+#XTranslate .ExtratoCCFilial    => 1
+#XTranslate .ExtratoCCDescFil   => 2
+#XTranslate .ExtratoCCData      => 3
+#XTranslate .ExtratoCCTM        => 4
+#XTranslate .ExtratoCCDC        => 5
+#XTranslate .ExtratoCCHist      => 6
+#XTranslate .ExtratoCCValor     => 7
+#XTranslate .ExtratoCCFornAdt   => 8
+#XTranslate .ExtratoCCLojaAdt   => 9
+#XTranslate .ExtratoCCObs       => 10
+#XTranslate .ExtratoCCCapSocial => 11
+#XTranslate .ExtratoCCOrigem    => 12
+#XTranslate .ExtratoCCQtColunas => 12
 
 
 // Define nomes para as colunas usadas pela classe ClsExtrCC para representacao de um extrato de conta corrente de associados.
@@ -198,7 +198,8 @@
 #XTranslate .TbUvaGruposDescricao => 2
 #XTranslate .TbUvaGruposGrauBase  => 3
 #XTranslate .TbUvaGruposListaUvas => 4
-#XTranslate .TbUvaGruposQtColunas => 4
+#XTranslate .TbUvaGruposPrecos    => 5
+#XTranslate .TbUvaGruposQtColunas => 5
 //
 #XTranslate .TbUvaGruposListaUvasCodBase            => 1
 #XTranslate .TbUvaGruposListaUvasDescrBase          => 2
@@ -217,12 +218,27 @@
 #XTranslate .TbUvaGruposListaUvasTintorea           => 15
 #XTranslate .TbUvaGruposListaUvasQtColunas          => 15
 //
-#XTranslate .TbUvaVariedCod       => 1
-#XTranslate .TbUvaVariedDesc      => 2
-#XTranslate .TbUvaVariedGrupo     => 3
-#XTranslate .TbUvaVariedVarUva    => 4
-#XTranslate .TbUvaVariedCor       => 5
-#XTranslate .TbUvaVariedTintorea  => 6
-#XTranslate .TbUvaVariedOrganica  => 7
-#XTranslate .TbUvaVariedCodBase   => 8
-#XTranslate .TbUvaVariedQtColunas => 8
+#XTranslate .TbUvaGruposPrcGrau                    => 1
+#XTranslate .TbUvaGruposPrcCompraCodBase           => 2
+#XTranslate .TbUvaGruposPrcCompraCodEmConversao    => 3
+#XTranslate .TbUvaGruposPrcCompraCodBordadura      => 4
+#XTranslate .TbUvaGruposPrcCompraCodOrganica       => 5
+#XTranslate .TbUvaGruposPrcCompraCodFinaClas_comum => 6
+#XTranslate .TbUvaGruposPrcCompraCodParaEspumante  => 7
+#XTranslate .TbUvaGruposPrcMOCCodBase              => 8
+#XTranslate .TbUvaGruposPrcMOCCodEmConversao       => 9
+#XTranslate .TbUvaGruposPrcMOCCodBordadura         => 10
+#XTranslate .TbUvaGruposPrcMOCCodOrganica          => 11
+#XTranslate .TbUvaGruposPrcMOCCodFinaClas_comum    => 12
+#XTranslate .TbUvaGruposPrcMOCCodParaEspumante     => 13
+#XTranslate .TbUvaGruposPrcQtColunas               => 13
+
+// acho que nao vou usar  #XTranslate .TbUvaVariedCod       => 1
+// acho que nao vou usar  #XTranslate .TbUvaVariedDesc      => 2
+// acho que nao vou usar  #XTranslate .TbUvaVariedGrupo     => 3
+// acho que nao vou usar  #XTranslate .TbUvaVariedVarUva    => 4
+// acho que nao vou usar  #XTranslate .TbUvaVariedCor       => 5
+// acho que nao vou usar  #XTranslate .TbUvaVariedTintorea  => 6
+// acho que nao vou usar  #XTranslate .TbUvaVariedOrganica  => 7
+// acho que nao vou usar  #XTranslate .TbUvaVariedCodBase   => 8
+// acho que nao vou usar  #XTranslate .TbUvaVariedQtColunas => 8
