@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 15/03/2022 - Claudia - Criação de rotina para gravação de codigo matriz. GLPI: 11635
 // 28/04/2023 - Claudia - Incluida rotina de envio do cliente para o Mercanet. GLPI: 13495
+// 20/10/2023 - Claudia - Incluido relatorio de clientes. GLPI: 14394
 //
 // ------------------------------------------------------------------------------------------------------------
 #INCLUDE "PROTHEUS.CH"
@@ -27,8 +28,9 @@ User Function CRM980MDef()
     // [n][3] - Operação (1-Pesquisa; 2-Visualização; 3-Inclusão; 4-Alteração; 5-Exclusão)
     // [n][4] - Acesso relacionado a rotina, se esta posição não for informada nenhum acesso será validado
     //----------------------------------------------------------------------------------------------------------
-    aAdd(aRotina,{"Incluir Cod. Matriz","u_VA_CODMAT()",4,0})
-    aAdd(aRotina,{"Envia p/ Mercanet"  ,"u_VA_ATUCLI()",4,0})
+    aAdd(aRotina,{"Incluir Cod. Matriz" ,"u_VA_CODMAT()",4,0})
+    aAdd(aRotina,{"Envia p/ Mercanet"   ,"u_VA_ATUCLI()",4,0})
+    aAdd(aRotina,{"Rel.Clientes"        ,"u_VA_RELCLI()",4,0})
 
 Return( aRotina )
 //
