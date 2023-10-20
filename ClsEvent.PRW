@@ -64,6 +64,7 @@
 // 24/02/2023 - Robert  - Gera aviso quando receber chave antiga para evento de carga/safra.
 // 28/04/2023 - Robert  - Erro na leitura do campo ZN_DIASVLD
 // 30/08/2023 - Robert  - Nao envia mais e-mail de alter.cadastro para grupo 015 (auditoria) - GLPI 14099
+// 20/10/2023 - Robert  - Criados atributos ::Avisar e ::AvisarZZU, com respectiva funcionalidade de envio de aviso (GLPI 14397)
 //
 
 #include "protheus.ch"
@@ -79,6 +80,8 @@ CLASS ClsEvent
 
 	// Declaracao das propriedades da Classe
 	data Alias
+	data Avisar     // Usuario(s) para gerar aviso
+	data AvisarZZU  // Grupo(s) para gerar aviso
 	data Filial
 	data Texto
 	data NFSaida
@@ -136,6 +139,8 @@ ENDCLASS
 METHOD New (_nRegSZN) Class ClsEvent
 	::Filial     := xfilial ("SZN")
 	::Alias      := ""
+	::Avisar     := ""
+	::AvisarZZU  := ""
 	::Texto      := ""
 	::NFSaida    := ""
 	::SerieSaid  := ""
@@ -307,6 +312,21 @@ METHOD Grava () Class ClsEvent
 
 	// Envia evento por e-mail, se for o caso.
 	::Self:SendMail ()
+
+	// Envia aviso, se solicitado pela rotina chamadora.
+	if ! empty (::Avisar) .or. ! empty (::AvisarZZU)
+		_oAviso := ClsAviso ():New ()
+		_oAviso:Tipo       = 'A'
+		if ! empty (::Avisar)
+			_oAviso:DestinAvis = alltrim (::Avisar)
+		endif
+		if ! empty (::AvisarZZU)
+			_oAviso:DestinZZU = alltrim (::AvisarZZU)
+		endif
+		_oAviso:Titulo     = 'Evento Protheus ' + _sTextoZN
+		_oAviso:Texto      = _sTextoZN
+		_oAviso:Grava ()
+	endif
 
 	U_ML_SRArea (_aArea)
 return .t.
