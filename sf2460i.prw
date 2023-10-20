@@ -156,7 +156,9 @@
 //                      - Melhorado E2_HIST na funcao _TitSTMG() - GLPI 12779
 // 27/02/2023 - Sandra  - Gravar E2_TIPO=TRS e nao mais IMP na funcao _TitSTMG() - GLPI 12779
 // 01/06/2023 - Claudia - Alterada data de vencimento para titulos a pagar ST. GLPI: 13653
+// 20/10/2023 - Robert  - Criado tratamento para venda de tambores a associados (GLPI 14397)
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -168,7 +170,8 @@ User Function sf2460i ()
 	// Verifica valor rapel
     _sSQL := ""
     _sSQL += " SELECT SUM (D2_VRAPEL)"
-  	_sSQL += "   FROM SD2010 AS SD2"
+//  	_sSQL += "   FROM SD2010 AS SD2"
+  	_sSQL += "   FROM " + RetSQLName ("SD2") + " AS SD2"
  	_sSQL += "  WHERE D_E_L_E_T_ = ''"
    	_sSQL += "    AND SD2.D2_FILIAL   = '" + xfilial ("SD2") + "'"
 	_sSQL += "    AND SD2.D2_DOC      = '" + sf2 -> f2_doc   + "'"
@@ -674,6 +677,10 @@ static function _AtuSZIMudas ()
 	local _oAssoc    := NIL
 	Local i          := 0
 	Local x          := 0
+	local _sTProd    := ''
+	local _sHist     := ''
+	local _oEvento   := NIL
+	local _sTxtEvent := ''
 
 	// Verifica se o cliente eh um associado
 	if _lContinua 
@@ -693,7 +700,8 @@ static function _AtuSZIMudas ()
 			_oSQL:_sQuery += "   and SD2.D2_FILIAL   = '" + xfilial ("SD2") + "'"
 			_oSQL:_sQuery += "   and SD2.D2_DOC      = '" + sf2 -> f2_doc   + "'"
 			_oSQL:_sQuery += "   and SD2.D2_SERIE    = '" + sf2 -> f2_serie + "'"
-			_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446','5456')" 
+	//		_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446','5456')" 
+			_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446','5456','2722')" 
 			_aProdOK := aclone (_oSQL:Qry2Array ())
 			
 			_sTProd := '0'
@@ -703,10 +711,12 @@ static function _AtuSZIMudas ()
 					Do Case
 						Case alltrim(_aProdOK[x,4]) $ '5446' 		// açucar
 							_sTProd := '1'
-						Case alltrim(_aProdOK[x,4]) $ '7206/7207' 	// mudinha  
+						Case alltrim(_aProdOK[x,4]) $ '7206/7207' 	// mudinha
 							_sTProd := '2' 
 						Case alltrim(_aProdOK[x,4]) $  '5456' 		// milho
 							_sTProd := '3' 
+						Case alltrim(_aProdOK[x,4]) $  '2722' 		// Tambores
+							_sTProd := '4'
 					EndCase
 				Next
 
@@ -722,6 +732,10 @@ static function _AtuSZIMudas ()
 					Case _sTProd == '3'		// milho
 						_sTM   := '23'
 						_sHist := 'VENDA MILHO CFE.NF.'
+						_sSerie:= 'INS'
+					Case _sTProd == '4'  // Outros produtos
+						_sTM   := '23'
+						_sHist := 'VENDA DIVERSOS CFE.NF.'
 						_sSerie:= 'INS'
 				EndCase
 			
@@ -749,8 +763,8 @@ static function _AtuSZIMudas ()
 				if len(_aSE1)> 0
 					for i:=1 to len(_aSE1)	
 						// -------------------------------------------------------
-				   		// Lança na conta corrente associados
-				   		_oCtaCorr := ClsCtaCorr():New ()
+						// Lança na conta corrente associados
+						_oCtaCorr := ClsCtaCorr():New ()
 						_oCtaCorr:Assoc    = _sFornec
 						_oCtaCorr:Loja     = _sLojFor
 						_oCtaCorr:TM       = _sTM
@@ -766,12 +780,31 @@ static function _AtuSZIMudas ()
 						_oCtaCorr:Origem   = 'SF2460I'
 						_oCtaCorr:Obs      = alltrim (sc5 -> c5_obs)
 						_oCtaCorr:VctoSE2  = _aSE1[i,9]
+						
+						_sTxtEvent = ''
 						if _oCtaCorr:PodeIncl ()
 							if ! _oCtaCorr:Grava (.F., .F.)
-								U_AvisaTI ("Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+				//				U_AvisaTI ("Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+								_sTxtEvent = "Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + alltrim (_oCtaCorr:UltMsg)
 							endif
 						else
-							U_AvisaTI ("Gravacao do SZI nao permitida na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+					//		U_AvisaTI ("Gravacao do SZI nao permitida na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+							_sTxtEvent = "Gravacao do SZI nao permitida na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + alltrim (_oCtaCorr:UltMsg)
+						endif
+
+						if ! empty (_sTxtEvent)
+							_oEvento := ClsEvent():new ()
+							_oEvento:CodEven    = 'SF2020'
+							_oEvento:Texto      = _sTxtEvent
+							_oEvento:Recno      = sf2 -> (recno ())
+							_oEvento:Alias      = 'SF2'
+							_oEvento:NFSaida    = sf2 -> f2_doc
+							_oEvento:SerieSaid  = sf2 -> f2_serie
+							_oEvento:Cliente    = sf2 -> f2_cliente
+							_oEvento:LojaCli    = sf2 -> f2_loja
+							_oEvento:ParcTit    = _aSE1[i,4]
+							_oEvento:AvisarZZU  = {'122'}  // 122 = grupo da TI
+							_oEvento:Grava ()
 						endif
 					next
 				endif
@@ -779,7 +812,7 @@ static function _AtuSZIMudas ()
 		endif
 	endif
 return
-//
+
 // --------------------------------------------------------------------------
 // Histórico NF
 Static Function _HistNf()
