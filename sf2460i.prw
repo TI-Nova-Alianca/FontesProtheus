@@ -701,7 +701,7 @@ static function _AtuSZIMudas ()
 			_oSQL:_sQuery += "   and SD2.D2_DOC      = '" + sf2 -> f2_doc   + "'"
 			_oSQL:_sQuery += "   and SD2.D2_SERIE    = '" + sf2 -> f2_serie + "'"
 	//		_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446','5456')" 
-			_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446','5456','2722')" 
+			_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446','5456','2722')"
 			_aProdOK := aclone (_oSQL:Qry2Array ())
 			
 			_sTProd := '0'
