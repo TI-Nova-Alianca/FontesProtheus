@@ -212,8 +212,9 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 			u_help ("Consulta desconhecida no programa " + procname (),, .t.)
 			_lContinua = .F.
 		endcase
-			U_Log2 ('debug', '[' + procname () + ']' +_sQuery)
-			_aRecnos := aclone (U_Qry2Array (_sQuery))
+		_sQuery += " ORDER BY ZN_DATA, ZN_HORA"
+	//	U_Log2 ('debug', '[' + procname () + ']' +_sQuery)
+		_aRecnos := aclone (U_Qry2Array (_sQuery))
 	endif
 	
 	if len (_aRecnos) == 0 //.and. empty (_sMsgInf)
@@ -237,8 +238,8 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 				endif
 			Next
 		next
-		U_Log2 ('debug', aHeader)
-		U_Log2 ('debug', aCols)
+//		U_Log2 ('debug', aHeader)
+//		U_Log2 ('debug', aCols)
 
 		N := 1
 		_aSize := MsAdvSize()

@@ -40,6 +40,8 @@
 // 20/02/2023 - Claudia - Transformado bloqueio em aviso. GLPI: 13193
 // 09/08/2023 - Robert  - Valid.dupliciadade B1_CODBAR passa a permitir itens 'irmaos'.
 //                        e tratamento especifico para itens 8146/8302/8531.
+// 20/10/2023 - Robert  - Desabilitadas chamadas da U_PerfMon() por que nao estou usando para nada.
+//
 
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -58,7 +60,7 @@ User Function ITEM()
 		// e deixar de usar um programa mais estruturado.
 		if paramixb [2] == "MODELVLDACTIVE"  // Valida a abertura da tela (executa apenas uma vez na abertura da tela)
 		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
-			U_PerfMon ('I', 'AbrirEdicaoMATA010')  // Deixa variavel pronta para posterior medicao de tempos de execucao
+		//	U_PerfMon ('I', 'AbrirEdicaoMATA010')  // Deixa variavel pronta para posterior medicao de tempos de execucao
 			_xRet = .T.
 			oObj := paramixb [1]
 			nOper := oObj:nOperation
@@ -73,7 +75,7 @@ User Function ITEM()
 
 		elseif paramixb [2] == 'BUTTONBAR'  // Chamado uma vez apos montar os campos na tela, antes de montar a barra de botoes.
 		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
-			U_PerfMon ('F', 'AbrirEdicaoMATA010')  // Finaliza medicao de tempos de execucao
+		//	U_PerfMon ('F', 'AbrirEdicaoMATA010')  // Finaliza medicao de tempos de execucao
 			oObj := paramixb [1]
 			if oObj:IsCopy ()
 				// Limpa campos que nao devem ser copiados.
@@ -98,7 +100,7 @@ User Function ITEM()
 				_MT010Alt ()
 			endif
 			_xRet = NIL
-			U_PerfMon ('F', 'GravarMATA010')
+		//	U_PerfMon ('F', 'GravarMATA010')
 
 		elseif paramixb [2] == 'FORMPRE'  // Chamado a cada campo que tiver validacao de usuario.
 			_xRet = NIL
@@ -114,7 +116,7 @@ User Function ITEM()
 		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
 			_xRet = NIL
 			// Deixa variavel pronta para posterior medicao de tempos de execucao
-			U_PerfMon ('I', 'GravarMATA010')
+		//	U_PerfMon ('I', 'GravarMATA010')
 		ElseIf paramixb [2] == "FORMCOMMITTTSPRE"  //Pré validações do Commit
 		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
 			_xRet = NIL

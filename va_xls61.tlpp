@@ -16,6 +16,8 @@
 // 27/10/2022 - Robert - Populados campos de pesos min/medio/max
 //                     - Varre arquivo gerado apontando inconsitencias
 // 21/11/2022 - Robert - Ajustado caminho das imagens no site.
+// 20/10/2023 - Robert - Exportava itens filhos (garrafas) mais de 1 vez, pois
+//                       o 'teste de paternidade' estava desabilitado.
 //
 
 // --------------------------------------------------------------------------
@@ -89,11 +91,12 @@ Static Function _Gera()
 	_oSQL:_sQuery += " SELECT '2' AS ORIGEM, P.* "
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " P "
 	_oSQL:_sQuery += _sWhereSB1
-//	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Neste momento quero apenas os pais
-//	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SB1") + " F "
-//	_oSQL:_sQuery +=                 " WHERE F.D_E_L_E_T_ = ''"
-//	_oSQL:_sQuery +=                   " AND F.B1_FILIAL  = P.B1_FILIAL"
-//	_oSQL:_sQuery +=                   " AND F.B1_CODPAI  = P.B1_COD)"
+	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"  // Neste momento nao quero nenhum 'filho'
+	_oSQL:_sQuery +=                      " FROM " + RetSQLName ("SB1") + " F "
+	_oSQL:_sQuery +=                     " WHERE F.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                       " AND F.B1_FILIAL  = P.B1_FILIAL"
+	_oSQL:_sQuery +=                       " AND F.B1_COD     = P.B1_COD"
+	_oSQL:_sQuery +=                       " AND F.B1_CODPAI != '')"
 	_oSQL:_sQuery += ")"
 	_oSQL:_sQuery += "SELECT CASE WHEN P.B1_MSBLQL = '1' THEN 'Suspenso' ELSE 'Ativo' END AS STATUS"
 	_oSQL:_sQuery +=      " ,P.B1_CODBAR AS GTIN" //CASE LEN (RTRIM (P.B1_CODBAR)) WHEN 14 THEN 'GTIN_14' WHEN 13 THEN 'GTIN_13' ELSE '' END AS TIPO_GTIN"
