@@ -723,29 +723,34 @@ return _aMatAux
 // --------------------------------------------------------------------------
 // Gera listagem dos dados e metodos de um objeto.
 user function LogObj (_oObj, _lAtrib, _lMetod)
-	local _aMetodos := aclone (ClassMethArr(_oObj))
+	local _aMetodos := {}
 	local _nMetodo  := 0
 	local _aDet     := {}
 	local _nDet     := 0
 	local _sRet     := ''
 
-	u_log2 ('debug', '')
-	if _lAtrib == NIL .or. _lAtrib
-		u_log2 ('debug', "Dados da classe " + GetClassName (_oObj) + ':')
-		u_log2 ('debug', ClassDataArr (_oObj))
-	endif
-	if _lMetod == NIL .or. _lMetod
-		u_log2 ('debug', "Metodos da classe " + GetClassName (_oObj) + ':')
-		for _nMetodo = 1 to len (_aMetodos)
-			_aDet = aclone (ClassMethArr(_oObj)[_nMetodo])
-			_sRet += strtran (_aDet[1], chr (13) + chr (10), '') + ' ('
-			for _nDet = 1 to len (_aDet [2])
-				_sRet += alltrim (_aDet [2, _nDet]) + iif (_nDet < len (_aDet [2]), ', ', ')')
+	if valtype (_oObj) != 'O'
+		U_Log2 ('erro', '[' + procname () + ']Variavel recebida nao eh do tipo OBJETO.')
+	else
+		u_log2 ('debug', '')
+		_aMetodos := aclone (ClassMethArr(_oObj))
+		if _lAtrib == NIL .or. _lAtrib
+			u_log2 ('debug', "Dados da classe " + GetClassName (_oObj) + ':')
+			u_log2 ('debug', ClassDataArr (_oObj))
+		endif
+		if _lMetod == NIL .or. _lMetod
+			u_log2 ('debug', "Metodos da classe " + GetClassName (_oObj) + ':')
+			for _nMetodo = 1 to len (_aMetodos)
+				_aDet = aclone (ClassMethArr(_oObj)[_nMetodo])
+				_sRet += strtran (_aDet[1], chr (13) + chr (10), '') + ' ('
+				for _nDet = 1 to len (_aDet [2])
+					_sRet += alltrim (_aDet [2, _nDet]) + iif (_nDet < len (_aDet [2]), ', ', ')')
+				next
+				_sRet += iif (len (_aDet [2]) == 0, ')', '')
+				u_log2 ('debug', _sRet)
+				_sRet = ''
 			next
-			_sRet += iif (len (_aDet [2]) == 0, ')', '')
-			u_log2 ('debug', _sRet)
-			_sRet = ''
-		next
+		endif
 	endif
 return _sRet
 //

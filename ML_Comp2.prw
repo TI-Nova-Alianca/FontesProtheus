@@ -42,17 +42,17 @@
 // 16 - Lista com a estrutura. Nao informar, pois eh de uso interno da funcao para chamada recursiva.
 //
 // Retorno: array com a estrutura nivel a nivel, sendo que cada linha tem os seguintes dados:
-// 1 - Nivel
-// 2 - Codigo do componente
-// 3 - Quantidade do componente neste nivel
-// 4 - Quantidade acumulada do componente (depende da quantidade do pai, do campo G1_FIVAR e do estoque.)
-// 5 - Saldo em estoque
-// 6 - Saldo em poder de terceiros
-// 7 - Caminho de itens percorridos para chegar ateh o componente atual (codigos concatenados em uma string)
-// 8 - Numero de dias de producao, acumulado pela estrutura.
-// 8 - Saldo empenhado
-// 9 - Saldo em pedidos
-// 10 - Array com as operacoes
+// 1  - Nivel
+// 2  - Codigo do componente
+// 3  - Quantidade do componente neste nivel
+// 4  - Quantidade acumulada do componente (depende da quantidade do pai, do campo G1_FIVAR e do estoque.)
+// 5  - Saldo em estoque
+// 6  - Saldo em poder de terceiros
+// 7  - Caminho de itens percorridos para chegar ateh o componente atual (codigos concatenados em uma string)
+// 8  - Numero de dias de producao, acumulado pela estrutura.
+// 9  - Saldo empenhado
+// 10 - Saldo em pedidos
+// 11 - Array com as operacoes
 //
 // -------------------------------------------------------------------------------------------------------------
 User Function ML_Comp2 (_sItem, _nQtid, _sFilSG1, _dDtValid, _lSaldoAtu, _lSaldoTer, _lSaldoEmp, _lSaldoPre, _lDias, _sRoteiro, _lSetup, _sFilSG2, _lInclPai, _lLerSG2, _sRevisao, _aLista)

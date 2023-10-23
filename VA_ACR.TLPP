@@ -22,7 +22,8 @@
 #XTranslate .EstrHistCustDAcum    => 8
 #XTranslate .EstrHistEhUva        => 9
 #XTranslate .EstrHistMaiorNivelVD => 10
-#XTranslate .EstrHistQtColunas    => 10
+#XTranslate .EstrHistDtCustD      => 11
+#XTranslate .EstrHistQtColunas    => 11
 
 // --------------------------------------------------------------------------
 user function VA_ACR (_lAuto)
@@ -48,7 +49,7 @@ user function VA_ACR (_lAuto)
 		do while .T.
 			FormBatch( cCadastro, aSays, aButtons)
 			U_Log2 ('debug', '[' + procname () + ']nOpca=' + cvaltochar (nOpca))
-			If nOpca == 1
+			if nOpca == 1
 				Processa( { |lEnd| _Gera() } )
 			else
 				exit
@@ -90,17 +91,19 @@ static function _Gera ()
 	//              Titulo                  Campo        Masc               Tam Dec Valid Usado Tipo F3     Context CBox Relacao Alteravel
 	aadd (_aHeader, {"Produto",             "PRODUTO",   "",                15, 0,  "",   "",   "C", "SB1", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Descricao",           "DESCRICAO", "",                60, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Cus.rep.atu.",        "CUSTD",     "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"C.rep.calculado",     "CUSTACUM",  "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo ME",            "CUSTOME",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo VD",            "CUSTOVD",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo MO",            "CUSTOMO",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo BN",            "CUSTOBN",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo Outros",        "CUSTOOUT",  "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Rev.Atual",           "REVATU",    "",                 3, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Rev.estrut",          "REVATU",    "",                 3, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
 
 	// Busca produtos cuja estrutura vai ser analisada.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT B1_COD, B1_DESC, B1_REVATU"
+	_oSQL:_sQuery += "SELECT B1_COD, B1_DESC, B1_REVATU, B1_CUSTD"
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
 	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
@@ -127,6 +130,8 @@ static function _Gera ()
 			GDFieldPut ("PRODUTO",   (_sAliasQ) -> b1_cod,    _n, _aHeader, _aCols)
 			GDFieldPut ("DESCRICAO", (_sAliasQ) -> b1_desc,   _n, _aHeader, _aCols)
 			GDFieldPut ("REVATU",    (_sAliasQ) -> b1_revatu, _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTD",     (_sAliasQ) -> b1_custd,  _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTACUM",  (_nCustoME + _nCustoVD + _nCustoMO + _nCustoBN + _nCustoOUT),  _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTOME",   _nCustoME,               _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTOVD",   _nCustoVD,               _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTOMO",   _nCustoMO,               _n, _aHeader, _aCols)
@@ -177,8 +182,8 @@ static function _Gera ()
 									_aHeader,;                       // [ ParHeader ]
 									_aCols)                          // [ aParCols ]
 
-		_oGetD1:oBrowse:bLDblClick := {|| _DblClick ()}
-		_oGetD1:oBrowse:bRClicked := {|_o, _x, _y| _RClick (_o, _x, _y)}
+		_oGetD1:oBrowse:bLDblClick := {|| allwaystrue ()}
+		_oGetD1:oBrowse:bRClicked := {|_o, _x, _y| _RClick1 (_o, _x, _y)}
 
 		// Define botoes para a barra de ferramentas
 		_bBotaoOK  = {|| _oDlg1:End ()}
@@ -225,10 +230,11 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 			u_help ("Nao localizado cadastro do item '" + _aEstrAux [_nComp, 2] + "'",, .t.)
 			_lContinua = .F.
 		else
-			_aEstrAux [_nComp, 5] = sb1 -> b1_tipo
-			_aEstrAux [_nComp, 6] = sb1 -> b1_desc
-			_aEstrAux [_nComp, 8] = sb1 -> b1_custd
-			_aEstrAux [_nComp, 9] = (sb1 -> b1_grupo == '0400')
+			_aEstrAux [_nComp, 5]  = sb1 -> b1_tipo
+			_aEstrAux [_nComp, 6]  = sb1 -> b1_desc
+			_aEstrAux [_nComp, 8]  = sb1 -> b1_custd
+			_aEstrAux [_nComp, 9]  = (sb1 -> b1_grupo == '0400')
+			_aEstrAux [_nComp, 10] = sb1 -> b1_datref
 		endif
 	next
 
@@ -244,6 +250,7 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 		_aEstrHist [len (_aEstrHist), .EstrHistRevAtu]       = _aEstrAux [_nComp, 12]
 		_aEstrHist [len (_aEstrHist), .EstrHistTipoComp]     = _aEstrAux [_nComp, 5]
 		_aEstrHist [len (_aEstrHist), .EstrHistCustDUnit]    = _aEstrAux [_nComp, 8]
+		_aEstrHist [len (_aEstrHist), .EstrHistDtCustD]      = _aEstrAux [_nComp, 10]
 		_aEstrHist [len (_aEstrHist), .EstrHistDescri]       = alltrim (_aEstrAux [_nComp, 6])
 		_aEstrHist [len (_aEstrHist), .EstrHistEhUva]        = _aEstrAux [_nComp, 9]
 		_aEstrHist [len (_aEstrHist), .EstrHistMaiorNivelVD] = .F.  // Vai ser revisado mais adante
@@ -352,24 +359,90 @@ return
 
 
 // --------------------------------------------------------------------------
-// Funcao executada pelo duplo clique do mouse.
-static function _DblClick ()
-//	local _sCampo := aHeader [_oGetD1:oBrowse:nColPos, 2]
+// Funcao executada pelo clique do botao direito do mouse (no browse 1)
+static function _RClick1 (_o, _x, _y) //, _sMomento)
+	local _oMenu1   := NIL
+	Local _oMenuIt1 := {}
+	local _sProduto := ''
+ 
+	MENU _oMenu1 POPUP
+//	if _sMomento == '1'
+		_sProduto = GDFieldGet ("PRODUTO", _oGetD1:nAt, .f., _oGetD1:aHeader, _oGetD1:aCols)
+		U_Log2 ('debug', '[' + procname () + ']_sProduto = ' + _sProduto)
+		aAdd (_oMenuIt1, MenuAddItem ("Simulacoes estrutura"          ,,, .T.,,,, _oMenu1, {|| processa ({||_SimEstru (_sProduto, .f.)}) },,,,,{|| .T.}))
+//	elseif _sMomento == '2'
+//		_sProduto = GDFieldGet ("COMP", _oGetDEstr:nAt, .f., _oGetDEstr:aHeader, _oGetDEstr:aCols)
+//		U_Log2 ('debug', '[' + procname () + ']_sProduto = ' + _sProduto)
+//		aAdd (_oMenuIt1, MenuAddItem ("Alterar cust.repos.no cadastro",,, .T.,,,, _oMenu1, {|| _AltCustD (_sProduto)},,,,,{|| .T.}))
+//	endif
+	ENDMENU
+
+//	if _sMomento == '1'
+		_oMenu1:Activate (_x + 15, _y + 205)
+//	elseif _sMomento == '2'
+//		_oMenu1:Activate (_x + 25, _y + 225)
+//	endif
 return
 
 
 // --------------------------------------------------------------------------
-// Funcao executada pelo clique do botao direito do mouse.
-static function _RClick (_o, _x, _y)
-	local _oMenu     := NIL
-	Local _oMenuItem := {}
-	local _sProduto  := GDFieldGet ("PRODUTO", _oGetD1:nAt, .f., _oGetD1:aHeader, _oGetD1:aCols)
- 
-	MENU _oMenu POPUP 
-	aAdd( _oMenuItem, MenuAddItem ("Simulacoes estrutura"    ,,, .T.,,,, _oMenu, {|| processa ({||_SimEstru (_sProduto, .f.)}) },,,,,{|| .T.}) ) 
-	ENDMENU
+// Altera custo de reposicao do componente, no cadastro.
+static function _AltCustD ()
+	local _sProduto  := ''
+	local _sDescr    := ''
+	local _nNovoCust := 0
+	local _aAreaAnt := U_ML_SRArea ()
+	static _sMasc    := X3Picture ("B1_CUSTD")
 
-	_oMenu:Activate (_x + 15, _y + 205)
+	_sProduto = GDFieldGet ("COMP",  _oGetDEstr:nAt, .F., _oGetDEstr:aHeader, _oGetDEstr:aCols)
+	_sDescr   = GDFieldGet ("DESCR", _oGetDEstr:nAt, .F., _oGetDEstr:aHeader, _oGetDEstr:aCols)
+	U_Log2 ('debug', '[' + procname () + ']_sProduto = ' + _sProduto)
+	_nNovoCust = GDFieldGet ("CUSREP", _oGetDEstr:nAt, .F., _oGetDEstr:aHeader, _oGetDEstr:aCols)
+	U_Log2 ('debug', '[' + procname () + ']_nNovoCust = ' + cvaltochar (_nNovoCust))
+	do while .T.
+		_nNovoCust = u_Get ('Informe novo custo de reposicao para o item ' + alltrim (_sProduto) + ' ' + _sDescr, 'N', 12, _sMasc, '', _nNovoCust, .F., '.t.')
+		if _nNovoCust == NIL
+			u_help ("Alteracao de cadastro cancelada.",, .T.)
+			exit
+		endif
+		if _nNovoCust < 0
+			u_help ("Custo de reposicao nao pode ser negativo.",, .t.)
+		else
+			u_help ('Agora eu atualizaria o cadastro')
+			sb1 -> (dbsetorder (1))
+			if ! sb1 -> (dbseek (xfilial ("SB1") + _sProduto, .F.))
+				u_help ("Produto nao localizado no cadastro!",, .t.)
+			else
+				if sb1 -> b1_custd != _nNovoCust
+					// Cria variaveis para uso na gravacao do evento de alteracao
+					regtomemory ("SB1", .F., .F.)
+					m->b1_custd = _nNovoCust
+
+					// Grava evento de alteracao
+					_oEvento := ClsEvent():new ()
+					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), funname () + ' Alter.manual custo repos.', .F.)
+					reclock ("SB1", .f.)
+					sb1 -> b1_custd = m->b1_custd
+					msunlock ()
+					GDFieldPut ("CUSREP", _nNovoCust, _oGetDEstr:nAt, _oGetDEstr:aHeader, _oGetDEstr:aCols)
+
+					// Atualiza browse na tela
+					_oGetDEstr:oBrowse:Refresh()
+					_oGetDEstr:Show ()
+
+					// Avisa o sistema Mercanet de que houve alteracao no cadastro deste item.
+					U_AtuMerc ("SB1", sb1 -> (recno ()))
+
+				endif
+			endif
+
+			// Vou recalcular o custo de toda a estrutura.
+			// Se ficar lento, avaliarei posteriormente a ideia de racalcular apenas o 'trecho que interessa'
+			_RecCust (_oGetDEstr:aHeader, _oGetDEstr:aCols)
+			exit
+		endif
+	enddo
+	U_ML_SRArea (_aAreaAnt)
 return
 
 
@@ -401,19 +474,22 @@ static function _SimEstru (_sProduto, _lUltComp)
 		_aAux = aclone (_aEstruts [_nPosEstr, 2])
 		
 		_aHeader = {}
-		//              Titulo             Campo       Masc                 Tam Dec Valid Usado Tipo F3  Context CBox Relacao Alteravel
-		aadd (_aHeader, {"Indice",         "INDICE",   "",                   10, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Nivel",          "NIVEL",    "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Tipo",           "TIPO",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Componente",     "COMP",     "",                   15, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Descricao",      "DESCR",    "",                   60, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Quant(acum)",    "QUANT",    "@E 999,999.9999999", 14, 7,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Cus.std.acum.",  "CUSTACUM", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Cus.std.atual",  "CUSREP",   "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Ult.comp",       "ULTCOMP1", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Ult.comp-1",     "ULTCOMP2", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Ult.comp-2",     "ULTCOMP3", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Rev.atual",      "REVATU",   "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		//              Titulo             Campo        Masc                 Tam Dec Valid Usado Tipo F3  Context CBox Relacao Alteravel
+		aadd (_aHeader, {"Indice",         "INDICE",    "",                   10, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Nivel",          "NIVEL",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Tipo",           "TIPO",      "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Componente",     "COMP",      "",                   15, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Descricao",      "DESCR",     "",                   60, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Quant(acum)",    "QUANT",     "@E 999,999.9999999", 14, 7,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Cus.calculado",  "CUSTACUM",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Cus.cadastro",   "CUSREP",    "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Dt.cus.std",     "DTCUSREP",  "@D",                  8, 0,  "",   "",  "D", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Ult.comp",       "VULTCOMP1", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Dt.Ult.comp",    "DULTCOMP1", "@D",                  8, 0,  "",   "",  "D", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Forn.Ult.comp",  "FULTCOMP1", "",                   60, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Ult.comp-1",     "VULTCOMP2", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Ult.comp-2",     "VULTCOMP3", "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Rev.estrut",     "REVATU",    "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 
 		_aCols = {}
 		for _nCompon = 1 to len (_aAux)
@@ -428,6 +504,7 @@ static function _SimEstru (_sProduto, _lUltComp)
 			GDFieldPut ("DESCR",    iif (_nCompon == 1, '', space (_aAux [_nCompon, .EstrHistNivel] * 5) + '+---') + _aAux [_nCompon, .EstrHistDescri], _n, _aHeader, _aCols)
 			GDFieldPut ("QUANT",    _aAux [_nCompon, .EstrHistQuantAcum], _n, _aHeader, _aCols)
 			GDFieldPut ("CUSREP",   _aAux [_nCompon, .EstrHistCustDUnit], _n, _aHeader, _aCols)
+			GDFieldPut ("DTCUSREP", _aAux [_nCompon, .EstrHistDtCustD],   _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTACUM", _aAux [_nCompon, .EstrHistCustDAcum], _n, _aHeader, _aCols)
 			GDFieldPut ("REVATU",   _aAux [_nCompon, .EstrHistRevAtu],    _n, _aHeader, _aCols)
 
@@ -445,7 +522,7 @@ static function _SimEstru (_sProduto, _lUltComp)
 				// Estou num componente que tem filhos. Nao preciso ler ultimas compras.
 			else
 				_oSQL := ClsSQL():New ()
-				_oSQL:_sQuery := "SELECT CUSREPUNI"
+				_oSQL:_sQuery := "SELECT CUSREPUNI, D1_DTDIGIT, D1_FORNECE, D1_LOJA"
 				_oSQL:_sQuery += " FROM VA_ULTCOMP ('', 'zz', '" + _aAux [_nCompon, .EstrHistCodComp] + "', 3)"
 			//	_oSQL:Log ('[' + procname () + '][' + _aAux [_nCompon, .EstrHistCodComp] + ']')
 				_aUltCom := aclone (_oSQL:Qry2Array (.F., .F.))
@@ -453,9 +530,11 @@ static function _SimEstru (_sProduto, _lUltComp)
 
 			// Acrescenta custo calculado nas ultimas compras do componente.
 			// (pode nao haver tantas ultimas compras quanto solicitado).
-			GDFieldPut ("ULTCOMP1", iif (len (_aUltCom) >= 1, _aUltCom [1, 1], 0), _n, _aHeader, _aCols)
-			GDFieldPut ("ULTCOMP2", iif (len (_aUltCom) >= 2, _aUltCom [2, 1], 0), _n, _aHeader, _aCols)
-			GDFieldPut ("ULTCOMP3", iif (len (_aUltCom) >= 3, _aUltCom [3, 1], 0), _n, _aHeader, _aCols)
+			GDFieldPut ("VULTCOMP1", iif (len (_aUltCom) >= 1, _aUltCom [1, 1], 0), _n, _aHeader, _aCols)
+			GDFieldPut ("DULTCOMP1", iif (len (_aUltCom) >= 1, stod (_aUltCom [1, 2]), ctod ('')), _n, _aHeader, _aCols)
+			GDFieldPut ("FULTCOMP1", iif (len (_aUltCom) >= 1, alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + _aUltCom [1, 3] + _aUltCom [1, 4], "A2_NOME")), ''), _n, _aHeader, _aCols)
+			GDFieldPut ("VULTCOMP2", iif (len (_aUltCom) >= 2, _aUltCom [2, 1], 0), _n, _aHeader, _aCols)
+			GDFieldPut ("VULTCOMP3", iif (len (_aUltCom) >= 3, _aUltCom [3, 1], 0), _n, _aHeader, _aCols)
 			
 		next
 
@@ -483,7 +562,7 @@ static function _SimEstru (_sProduto, _lUltComp)
 									_aCols)                              // [ aParCols ]
 
 		_oGetDEstr:oBrowse:bLDblClick := {|| allwaystrue ()}
-		_oGetDEstr:oBrowse:bRClicked := {|_o, _x, _y| allwaystrue ()}
+		_oGetDEstr:oBrowse:bRClicked := {|| allwaystrue ()} // {|_o, _x, _y| _RClick1 (_o, _x, _y)}
 
 		// Define botoes para a barra de ferramentas
 		_bBotaoOK  = {|| _oDlgEstr:End ()}
@@ -491,11 +570,21 @@ static function _SimEstru (_sProduto, _lUltComp)
 		_aBotAdic  = {}
 		aadd (_aBotAdic, {"", {|| aHeader := aclone (_oGetDEstr:aHeader), aCols := aclone (_oGetDEstr:aCols), U_aColsXLS ()}, "Exp.planilha"})
 		aadd (_aBotAdic, {"", {|| _RecCust (_oGetDEstr:aHeader, @_oGetDEstr:aCols)}, "Recalcular custo"})
+		aadd (_aBotAdic, {"", {|| _AltCustD ()}, "Alterar cus.repos.cadastro"})
 		
 		// durante testes, rodo via script e nao tenho interface com o usuario.
 		if type ("oMainWnd") == "O"
 			activate dialog _oDlgEstr on init (EnchoiceBar (_oDlgEstr, _bBotaoOK, _bBotaoCan,, _aBotAdic))
 		endif
+
+		// Replica na array de estruturas as possiveis alteracoes que o usuario tenha feito
+		U_Log2 ('debug', '[' + procname () + ']_aAux antes')
+		U_Log2 ('debug', _aAux)
+		for _nCompon = 1 to len (_aCols)
+			_aAux [_nCompon, .EstrHistCustDUnit] = GDFieldGet ("CUSREP", _nCompon, .F., _aHeader, _aCols)
+		next
+		U_Log2 ('debug', '[' + procname () + ']_aAux depois')
+		U_Log2 ('debug', _aAux)
 	endif
 return
 
@@ -569,15 +658,16 @@ static function _ValidPerg ()
 return
 
 /*
-na consulta da estrutura:
+melhorias:
 - mostrar data da ultima atualização do standard e tb ultimas compras (com fornecedor)
+- b1_custd a dir. da descricao na tela principal
+- custo total (acumulado) a dir. da descricao na tela principal
+- coluna com data somente da ultima compra
+
 - no caso de uvas, diferenciar compra X complemento de safra (por que o volume de mosto já terminou)
 - tela 1 se somar as colunas, nao bate com a abertura da estrutura
-- coluna com data somente da ultima compra
-- opcao de informar custo repos.unitario (somente em tela) e recalcular o custo
 - % de participacao de cada tipo na tela principal
 - % de participacao de cada nivel na tela da estrutura
-- custo total (acumulado) e b1_custd a dir. da descricao na tela principal
 - atalho na segunda tela pra alterar o custo std no cadastro do componente (recalcular depois)
 - va_ccr do item 4439 nao bateu (NF 238340 do fornecedor 000851)
 */
