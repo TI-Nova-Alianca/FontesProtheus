@@ -1,7 +1,7 @@
 // Programa.:  BatZAB
 // Autor....:  Robert Koch
 // Data.....:  31/08/2022
-// Descricao:  Verifica necessidade de enviar avisos represados para o NaWeb
+// Descricao:  Verifica necessidade de enviar para o NaWeb os avisos 'represados'.
 //             Criado para ser executado via batch.
 //
 // #TipoDePrograma    #Batch
