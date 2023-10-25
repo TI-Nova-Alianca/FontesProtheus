@@ -37,6 +37,7 @@
 // 10/03/2023 - Robert - Criado tratamento para comecar a importar titulos de IRF (GLPI 9047)
 // 17/04/2023 - Robert - Busca valores em separado para IRF 'do mes' e 'do mes futuro'.
 // 05/09/2023 - Robert - Melhorada msg ao usuario quando a remessa vier sem fornecedor.
+// 24/10/2023 - Robert - Passa a usar VA_VTITULOS_CPAGAR3 e nao mais VA_VTITULOS_CPAGAR2 (GLPI 9047)
 //
 
 #include "colors.ch"
@@ -109,9 +110,10 @@ static function _Incluir ()
 		// Monta uma string com a query principal para ser usada em mais de um local.
 		_sCTE += "WITH CTE AS ("
 		_sCTE +=  " SELECT *"
-		_sCTE +=        ", MIN (VENCTO) OVER (PARTITION BY EMISSAO) AS MINVCTO"  // Menor VENCTO agrupado por EMISSAO
-		_sCTE +=        ", MAX (VENCTO) OVER (PARTITION BY EMISSAO) AS MAXVCTO"  // Maior VENCTO agrupado por EMISSAO
-		_sCTE +=  " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR2"
+	//	_sCTE +=        ", MIN (VENCTO) OVER (PARTITION BY EMISSAO) AS MINVCTO"  // Menor VENCTO agrupado por EMISSAO
+	//	_sCTE +=        ", MAX (VENCTO) OVER (PARTITION BY EMISSAO) AS MAXVCTO"  // Maior VENCTO agrupado por EMISSAO
+	//	_sCTE +=  " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR2"
+		_sCTE +=  " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR3"
 		_sCTE += " )"
 
 		_oSQL := ClsSQL ():New ()
@@ -148,21 +150,21 @@ static function _Incluir ()
 				_dEmis = lastday (_dEmis)  
 			endif
 			
-			// Se for titulo de IRF, pode ser gerado no Metadados em dois 'momentos' distintos.
-			// Preciso ler os campos VALOR_DARF_IRF_MES e VALOR_DARF_IRF_FUTURA e gerar 2 titulos.
-			// A bronca eh saber quando ler de um campo, e quando ler do outro outro.
-			// Farei um acoxambramento do tipo "antes de usar um deles, confiro se ja usei antes".
-			if (_sAliasQ) -> TpItemCP == '04'
-				if (_sAliasQ) -> vencto == (_sAliasQ) -> MinVcto  // Eh o valor de IRF 'deste mes'
-					U_Log2 ('debug', '[' + procname () + "]Encontrei titulo de IRF 'do mes'")
-					_nVlrTit = (_sAliasQ) -> DarfIrfMes
-				elseif (_sAliasQ) -> vencto == (_sAliasQ) -> MaxVcto  // Eh o valor de IRF 'do proximo mes'
-					U_Log2 ('debug', '[' + procname () + "]Encontrei titulo de IRF 'do mes futuro'")
-					_nVlrTit = (_sAliasQ) -> DarfIrfFut
-				endif
-			else
+	//		// Se for titulo de IRF, pode ser gerado no Metadados em dois 'momentos' distintos.
+	//		// Preciso ler os campos VALOR_DARF_IRF_MES e VALOR_DARF_IRF_FUTURA e gerar 2 titulos.
+	//		// A bronca eh saber quando ler de um campo, e quando ler do outro outro.
+	//		// Farei um acoxambramento do tipo "antes de usar um deles, confiro se ja usei antes".
+	//		if (_sAliasQ) -> TpItemCP == '04'
+	//			if (_sAliasQ) -> vencto == (_sAliasQ) -> MinVcto  // Eh o valor de IRF 'deste mes'
+	//				U_Log2 ('debug', '[' + procname () + "]Encontrei titulo de IRF 'do mes'")
+	//				_nVlrTit = (_sAliasQ) -> DarfIrfMes
+	//			elseif (_sAliasQ) -> vencto == (_sAliasQ) -> MaxVcto  // Eh o valor de IRF 'do proximo mes'
+	//				U_Log2 ('debug', '[' + procname () + "]Encontrei titulo de IRF 'do mes futuro'")
+	//				_nVlrTit = (_sAliasQ) -> DarfIrfFut
+	//			endif
+	//		else
 				_nVlrTit = (_sAliasQ) -> valor
-			endif
+	//		endif
 
 			_lContinua = _GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, (_sAliasQ) -> Natureza, _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
 
@@ -447,6 +449,11 @@ static function _Excluir ()
 //				endif
 			else
 				u_log2 ('info', "Titulo nao encontrado no SE2 (ja deve estar excluido): " + xfilial ("SE2") + substr ((_sAliasQ) -> SerieDoc, 1, 3) + U_TamFixo (cvaltochar ((_sAliasQ) -> num), 9, ' ') + substr ((_sAliasQ) -> SerieDoc, 4, 1))
+				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+				_oSQL:_sQuery +=   " SET STATUSREGISTRO = '06'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
+				_oSQL:Log ()
+				_oSQL:Exec ()
 			endif
 			(_sAliasQ) -> (dbskip ())
 		enddo
