@@ -127,6 +127,7 @@
 // 21/07/2023 - Robert  - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra() - GLPI 13956
 // 18/08/2023 - Claudia - Casting  da quantidade na rotina _TrEstGrid . GLPI 13656
 // 24/08/2023 - Claudia - Criada a Ação GravaTituloPgUnimed. GLPI: 13948 
+// 25/10/2023 - Cláudia - Incluida a tag <PrcVenItem> na ação BuscaMargemContrib. GLPI: 14414
 //
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -2466,6 +2467,7 @@ Static Function _EnvMargem ()
 	local _aNaWeb    := {}
 	local _XmlRet    := ""
 	local _x         := 0
+	local _lContPrc  :=.F.
 
 //	u_logIni ()
 
@@ -2511,6 +2513,10 @@ Static Function _EnvMargem ()
 			For _x:=1 to Len(_aItem)
 				_aNaWeb := STRTOKARR(_aItem[_x,1],"|")
 
+				if Len(_aNaWeb) == 13
+					_lContPrc :=.T.
+				endif
+
 				_XmlRet += "<BuscaItensPedBloqItem>"
 				_XmlRet += "<Filial>"        + _wFilial 	  + "</Filial>"
 				_XmlRet += "<Pedido>"		 + _wPedido       + "</Pedido>"
@@ -2529,6 +2535,9 @@ Static Function _EnvMargem ()
 				_XmlRet += "<Financeiro>" 	 + alltrim(_aNaWeb[11]) + "</Financeiro>"
 				_XmlRet += "<MargemVlr>" 	 + alltrim(_aNaWeb[12]) + "</MargemVlr>"
 				_XmlRet += "<MargemPercent>" + alltrim(_aNaWeb[13]) + "</MargemPercent>"
+				if _lContPrc
+					_XmlRet += "<PrcVenItem>" + alltrim(_aNaWeb[13]) + "</PrcVenItem>"
+				endif
 				_XmlRet += "</BuscaItensPedBloqItem>"
 			Next
 			_XmlRet += "</BuscaItensPedBloq>"
