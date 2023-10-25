@@ -387,17 +387,17 @@ return
 
 // --------------------------------------------------------------------------
 // Altera custo de reposicao do componente, no cadastro.
-static function _AltCustD ()
+static function _AltCustD (_nLinha, _aHeader, _aCols)
 	local _sProduto  := ''
 	local _sDescr    := ''
 	local _nNovoCust := 0
 	local _aAreaAnt := U_ML_SRArea ()
 	static _sMasc    := X3Picture ("B1_CUSTD")
 
-	_sProduto = GDFieldGet ("COMP",  _oGetDEstr:nAt, .F., _oGetDEstr:aHeader, _oGetDEstr:aCols)
-	_sDescr   = GDFieldGet ("DESCR", _oGetDEstr:nAt, .F., _oGetDEstr:aHeader, _oGetDEstr:aCols)
+	_sProduto = GDFieldGet ("COMP",  _nLinha, .F., _aHeader, _aCols)
+	_sDescr   = GDFieldGet ("DESCR", _nLinha, .F., _aHeader, _aCols)
 	U_Log2 ('debug', '[' + procname () + ']_sProduto = ' + _sProduto)
-	_nNovoCust = GDFieldGet ("CUSREP", _oGetDEstr:nAt, .F., _oGetDEstr:aHeader, _oGetDEstr:aCols)
+	_nNovoCust = GDFieldGet ("CUSREP", _nLinha, .F., _aHeader, _aCols)
 	U_Log2 ('debug', '[' + procname () + ']_nNovoCust = ' + cvaltochar (_nNovoCust))
 	do while .T.
 		_nNovoCust = u_Get ('Informe novo custo de reposicao para o item ' + alltrim (_sProduto) + ' ' + _sDescr, 'N', 12, _sMasc, '', _nNovoCust, .F., '.t.')
@@ -424,11 +424,13 @@ static function _AltCustD ()
 					reclock ("SB1", .f.)
 					sb1 -> b1_custd = m->b1_custd
 					msunlock ()
-					GDFieldPut ("CUSREP", _nNovoCust, _oGetDEstr:nAt, _oGetDEstr:aHeader, _oGetDEstr:aCols)
+					GDFieldPut ("CUSREP", _nNovoCust, _nLinha, _aHeader, _aCols)
 
 					// Atualiza browse na tela
 					_oGetDEstr:oBrowse:Refresh()
 					_oGetDEstr:Show ()
+					U_Log2 ('debug', '[' + procname () + ']_aCols depois de alterar o CUSREP')
+					U_Log2 ('debug', _aCols)
 
 					// Avisa o sistema Mercanet de que houve alteracao no cadastro deste item.
 					U_AtuMerc ("SB1", sb1 -> (recno ()))
@@ -438,7 +440,7 @@ static function _AltCustD ()
 
 			// Vou recalcular o custo de toda a estrutura.
 			// Se ficar lento, avaliarei posteriormente a ideia de racalcular apenas o 'trecho que interessa'
-			_RecCust (_oGetDEstr:aHeader, _oGetDEstr:aCols)
+			_RecCust (_aHeader, _aCols)
 			exit
 		endif
 	enddo
@@ -570,7 +572,7 @@ static function _SimEstru (_sProduto, _lUltComp)
 		_aBotAdic  = {}
 		aadd (_aBotAdic, {"", {|| aHeader := aclone (_oGetDEstr:aHeader), aCols := aclone (_oGetDEstr:aCols), U_aColsXLS ()}, "Exp.planilha"})
 		aadd (_aBotAdic, {"", {|| _RecCust (_oGetDEstr:aHeader, @_oGetDEstr:aCols)}, "Recalcular custo"})
-		aadd (_aBotAdic, {"", {|| _AltCustD ()}, "Alterar cus.repos.cadastro"})
+		aadd (_aBotAdic, {"", {|| _AltCustD (_oGetDEstr:nAt, _oGetDEstr:aHeader, @_oGetDEstr:aCols)}, "Alterar cus.repos.cadastro"})
 		
 		// durante testes, rodo via script e nao tenho interface com o usuario.
 		if type ("oMainWnd") == "O"

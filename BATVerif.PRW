@@ -21,6 +21,8 @@
 // 31/08/2021 - Robert - Melhorias controle de loop de execucao e monitor de performance (GLPI 10876).
 // 23/08/2022 - Robert - Apenas alguns desvios condigionais para simulacoes (GLPI 12134)
 // 18/11/2022 - Robert - Verificacoes do setor INF passam a ser enviadas para o NaWeb e nao mais por e-mail.
+// 24/10/2023 - Robert - Guarda tempos de execucoes em array para mostrar todos juntos no final.
+//                     - Passa a mandar todas as notificacoes para o NaWeb e nao mais por e-mail.
 //
 
 // --------------------------------------------------------------------------
@@ -29,20 +31,17 @@ user function BatVerif ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _oVerif    := NIL
 	local _nVerif    := 0
-//	local _aRetVer   := {}
 	local _sMsg      := ""
-	local _sChvPerfM := ''
+	local _aTempos   := {}
+	local _oAviso    := NIL
+	local _oAUtil    := NIL
 
 	u_log2 ('info', 'Iniciando execucao das verificacoes')
 
 	// Executa cada verificacao e envia o resultado aos setores interessados.
 	_nVerif = 1
 
-
-	if "ROBERT" $ upper (GetEnvServer()) .and. dtos (date ()) == '20221121'  // Simulacoes
-		_nVerif = 92
-	endif
-
+	aadd (_aTempos, {'Verif', 'Tempo', 'Descricao', 'Query', 'Avisos'})
 
 	do while .T.
 		U_Log2 ('info', 'Vou ver se devo executar a verificacao ' + cvaltochar (_nVerif))
@@ -52,21 +51,17 @@ user function BatVerif ()
 			exit
 		else
 			if _oVerif:Ativa .and. _oVerif:ViaBatch
+
 				u_log2 ('info', 'Verificacao ' + cvaltochar (_oVerif:Numero) + ' (' + _oVerif:Descricao + ') --> ' + _oVerif:Query)
 				
-				if _nVerif != 42 .and. "ROBERT" $ upper (GetEnvServer()) .and. dtos (date ()) == '20220823'  // Simulacoes
-					U_Log2 ('aviso', '[' + procname () + ']caindo fora do loop (testes)')
-					exit
-				endif
-
-				// Acompanhamento de performance de execucao de rotinas
-				_sChvPerfM = 'BatVerif' + cvaltochar (_oVerif:Numero) + '_F' + cFilAnt
-				U_PerfMon ('I', _sChvPerfM)
+				// Acompanhamento de performance de execucao de rotinas.
+				aadd (_aTempos, {_nVerif, seconds (), _oVerif:Descricao, _oVerif:Query, 0})
 
 				if _oVerif:Executa ()
 		
 					// Vou persistir o tempo de execucao somente se a verificacao foi mesmo executada.
-					U_PerfMon ('F', _sChvPerfM)
+					_aTempos [len (_aTempos), 2] = round (seconds () - _aTempos [len (_aTempos), 2], 2)
+					_aTempos [len (_aTempos), 5] = _oVerif:QtErros
 
 					if _oVerif:QtErros > 0
 
@@ -75,22 +70,24 @@ user function BatVerif ()
 
 						// Envia aos setores interessados.
 						if 'ENG' $ _oVerif:Setores
-							_Envia (_oVerif, {'070'}, _sMsg)
+							_Notif (_oVerif, {'070'}, _sMsg)
 						endif
 						if 'CUS' $ _oVerif:Setores
-							_Envia (_oVerif, {'069'}, _sMsg)
+						//	_Envia (_oVerif, {'069'}, _sMsg)
+							_Notif (_oVerif, {'069'}, _sMsg)
 						endif
 						if 'SAF' $ _oVerif:Setores
-							_Envia (_oVerif, {'075'}, _sMsg)
+							_Notif (_oVerif, {'075'}, _sMsg)
 						endif
 						if 'FIS' $ _oVerif:Setores
-							_Envia (_oVerif, {'019'}, _sMsg)
+							_Notif (_oVerif, {'019'}, _sMsg)
 						endif
 						if 'PCP' $ _oVerif:Setores
-							_Envia (_oVerif, {'047'}, _sMsg)
+						//	_Envia (_oVerif, {'047'}, _sMsg)
+							_Notif (_oVerif, {'047'}, _sMsg)
 						endif
 						if 'CML' $ _oVerif:Setores
-							_Envia (_oVerif, {'003'}, _sMsg)
+							_Notif (_oVerif, {'003'}, _sMsg)
 						endif
 						if 'INF' $ _oVerif:Setores
 						//	_Envia (_oVerif, {'122'}, _sMsg)
@@ -99,12 +96,46 @@ user function BatVerif ()
 					endif
 				else
 					U_help ("Problemas ao executar a verificacao '" + _oVerif:Descricao + ": " + _oVerif:UltMsg,, .T.)
+					_aTempos [len (_aTempos), 2] = 'ERRO'
 				endif
 			endif
 		endif
 		_nVerif ++
+
+//		if _nVerif >= 92
+//			EXIT  // TESTES
+//		ENDIF
+
+
 	enddo
 
+	U_Log2 ('info', _aTempos)
+
+/* Nao to conseguindo usar isto. Ele simplesmente trava na hora de mostrar no naweb.
+	// Mando um aviso pra mim mesmo, nos primeiros dias, para acompanhar o processo.
+	_oAUtil := ClsAUtil ():New (_aTempos)
+	//
+	// Como pretendo enviar para o NaWeb via web service, preciso 'escapar' alguns
+	// caracteres especiais das queries.
+	for _nVerif = 1 to len (_aTempos)
+	// Nao to conseguindo usar isto. Ele simplesmente trava na hora de mostrar no naweb.
+	//	_oAUtil:_aArray [_nVerif, 4] = U_NoAcento (_oAUtil:_aArray [_nVerif, 4])
+	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], "'", "&#39;")  // Aspas simples
+	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '"', "&#34;")  // Aspas duplas
+	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '<', "&lt;")  // Menor que
+	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '>', "&gt;")  // Maior que
+	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '&', "&amp;")  // & (E comercial)
+	next
+	U_Log2 ('debug', _oAUtil:_aArray)
+	_oAviso := ClsAviso():new ()
+	_oAviso:Tipo       = 'I'  // I=Info;A=Aviso;E=Erro
+	_oAviso:Titulo     = "Acompanhamento verif.em batch"
+	_oAviso:Texto      = _oAUtil:ConvHTM ()
+	_oAviso:DestinAvis = 'robert.koch'
+	_oAviso:Origem     = 'Verificacoes diarias'
+	_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
+	_oAviso:Grava ()
+*/
 	_oBatch:Retorno = 'S'
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
@@ -180,6 +211,12 @@ static function _Notif (_oVerif, _aGrupos, _sMsg)
 		_oAviso:DestinZZU  = _aDest  // Codigos de um grupo da tabela ZZU no formato {grp1, grp2, ...}
 		_oAviso:Origem     = 'Verificacoes diarias'
 		_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
+		_oAviso:IntegNaWeb = .F.  // Nao tenta integrar neste momento (nao ha urgencia)
+		_oAviso:Grava ()
+
+		// Quero uma copia para acompanhamento inicial
+		_oAviso:DestinAvis = 'robert.koch'
+		_oAviso:Titulo     = "(Copia de)" + _oAviso:Titulo
 		_oAviso:Grava ()
 	endif
 return

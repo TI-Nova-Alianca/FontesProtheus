@@ -40,7 +40,7 @@ CLASS ClsAviso
 	data Titulo
 	data DtAviso
 	data HrAviso
-	data Destinatar  // soh pra manter compatibilidade com fontes antigos
+//	data Destinatar  // soh pra manter compatibilidade com fontes antigos
 	data DestinAvis  // Nomes dos usuarios no formato fulano.silva;ciclano.dastantas
 	data DestinZZU   // Codigos de um grupo da tabela ZZU no formato {grp1, grp2, ...}
 	data Texto
@@ -78,7 +78,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsAviso
 	::Tipo       = ""
 	::DtAviso    = date ()
 	::HrAviso    = time ()
-	::Destinatar = ""
+//	::Destinatar = ""
 	::DestinAvis = ''
 	::DestinZZU  = {}
 	::Texto      = ""

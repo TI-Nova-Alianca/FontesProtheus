@@ -95,6 +95,8 @@
 // 14/08/2023 - Robert  - Inativada verificacao 85 (procedure VA_SP_VERIFICA_ETIQ_PRODUCAO nunca ficou funcional).
 // 24/09/2023 - Robert  - Criada verificacao 98 (diferenca estoques Protheus x FullWMS)
 // 27/09/2023 - Robert  - Criada opcao somente com diferenca/todos na verificacao 98
+// 24/10/2023 - Robert  - Melhorada documentacao de diversas verificacoes
+//                      - Desmarcadas diversas verificacoes que nao precisam ser rodadas via batch.
 //
 
 #include "protheus.ch"
@@ -139,7 +141,7 @@ CLASS ClsVerif
 
 	// Declaracao dos Metodos da Classe
 	method New ()
-	method ConvHTM ()
+	method ConvHTM ()  // Converte o resultado para HTML
 	method Executa ()
 	method GeraHelp ()
 	method GeraQry ()
@@ -173,25 +175,40 @@ METHOD New (_nQual) Class ClsVerif
 	::MesAtuEstq = substr (dtos (GetMv ("MV_ULMES") + 1), 1, 6)
 	::QuandoUsar = "A qualquer momento"
 
+	// Para determinar qual a ultima verificacao, vou comecar por um numero
+	// alto e ir buscando para tras, ateh encontrar uma verificacao definida.
+	// Jah tentei diversas formas de fazer isso, mas no final sempre acabo
+	// criando somente o CASE que define a query e esqueco de atualizar o
+	// atributo :UltVerif.
+	for ::Numero = 150 to 1 step -1  // Manter aqui sempre um numero maior que o da ultima verificacao.
+		::UltMsg = ''
+		::GeraQry (.T.)
+		if ! empty (::Query)
+			::UltVerif = ::Numero
+			::Numero = 0
+			exit
+		endif
+	next
+
 	// Se recebi um numero de verificacao definido, nao preciso ficar testando a existencia de todas.
 	if valtype (_nQual) == 'N'
 //		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Recebi um numero de verificacao definido: ' + cvaltochar (_nQual))
 		::Numero = _nQual
-	else
+	//else
 		// Para determinar qual a ultima verificacao, vou comecar por um numero
 		// alto e ir buscando para tras, ateh encontrar uma verificacao definida.
 		// Jah tentei diversas formas de fazer isso, mas no final sempre acabo
 		// criando somente o CASE que define a query e esqueco de atualizar o
 		// atributo :UltVerif.
-		for ::Numero = 150 to 1 step -1  // Manter aqui sempre um numero maior que o da ultima verificacao.
-			::UltMsg = ''
-			::GeraQry (.T.)
-			if ! empty (::Query)
-				::UltVerif = ::Numero
-				::Numero = 0
-				exit
-			endif
-		next
+	//	for ::Numero = 150 to 1 step -1  // Manter aqui sempre um numero maior que o da ultima verificacao.
+	//		::UltMsg = ''
+	//		::GeraQry (.T.)
+	//		if ! empty (::Query)
+	//			::UltVerif = ::Numero
+	//			::Numero = 0
+	//			exit
+	//		endif
+	//	next
 	endif
 
 	::GeraQry (.T.)
@@ -428,90 +445,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Dica     += chr (13) + chr (10) + "O processo usado para encontrar as diferenças é, basicamente, o seguinte: partindo da tabela SB9 (saldo final de determinado mês), acrescentar entradas e saídas do período (kardex) e comparar esse resultado com a tabela SB9 do final do período." + chr (13) + chr (10)
 		::Dica     += chr (13) + chr (10) + 'Tabelas envolvidas: SB9, SD1, SD2, SD3'
 		::Query := ""
-/*
-		::Query += "WITH C AS ("
-		::Query += " SELECT B2_FILIAL AS FILIAL,"
-		::Query +=        " B2_LOCAL AS ALMOX,"
-		::Query +=        " B1_TIPO AS TIPO,"
-		::Query +=        " B2_COD AS PRODUTO,"
-		::Query +=        " RTRIM(B1_DESC) AS DESCRICAO,"
-		::Query +=        " B1_UM AS UN_MED,"
-		::Query +=        " ISNULL((SELECT B9_QINI"
-		::Query +=                  " FROM " + RetSQLName ("SB9") + " SB9"
-		::Query +=                 " WHERE SB9.D_E_L_E_T_ = ''"
-		::Query +=                   " AND SB9.B9_FILIAL  = SB2.B2_FILIAL"
-		::Query +=                   " AND SB9.B9_COD     = SB2.B2_COD"
-		::Query +=                   " AND SB9.B9_LOCAL   = SB2.B2_LOCAL"
-		::Query +=                   " AND SB9.B9_DATA    = '" + dtos (::Param01) + "'), 0) AS QT_ANT_SB9,"
-		::Query +=        " ISNULL(SUM(D1.ENT_SD1), 0) AS ENT_SD1,"
-		::Query +=        " ISNULL(SUM(D2.SAI_SD2), 0) AS SAI_SD2,"
-		::Query +=        " ISNULL(SUM(D3.ENT_SD3), 0) AS ENT_SD3,"
-		::Query +=        " ISNULL(SUM(D3.SAI_SD3), 0) AS SAI_SD3,"
-		::Query +=        " ISNULL((SELECT B9_QINI"
-		::Query +=                  " FROM " + RetSQLName ("SB9") + " SB9"
-		::Query +=                 " WHERE SB9.D_E_L_E_T_ = ''"
-		::Query +=                   " AND SB9.B9_FILIAL  = SB2.B2_FILIAL"
-		::Query +=                   " AND SB9.B9_COD     = SB2.B2_COD"
-		::Query +=                   " AND SB9.B9_LOCAL   = SB2.B2_LOCAL"
-		::Query +=                   " AND SB9.B9_DATA    = '" + dtos (::Param02) + "'), 0) AS QT_FIM_SB9"
-		::Query +=   " FROM " + RetSQLName ("SB1") + " SB1,"
-		::Query +=              RetSQLName ("SB2") + " SB2 "
-		::Query +=      " LEFT JOIN (SELECT D1_COD, D1_LOCAL, SUM (D1_QUANT) AS ENT_SD1"
-		::Query +=                   " FROM " + RetSQLName ("SD1") + " SD1, "
-		::Query +=                              RetSQLName ("SF4") + " SF4 "
-		::Query +=                  " WHERE SD1.D_E_L_E_T_ != '*'"
-		::Query +=                    " AND SD1.D1_FILIAL   = '" + xfilial ("SD1") + "'"
-		::Query +=                    " AND SD1.D1_DTDIGIT BETWEEN '" + dtos (::Param01 + 1) + "' AND '" + dtos (::Param02) + "'"
-		::Query +=                    " AND SF4.D_E_L_E_T_ != '*'"
-		::Query +=                    " AND SF4.F4_FILIAL   = '" + xfilial ("SF4") + "'"
-		::Query +=                    " AND SF4.F4_CODIGO   = SD1.D1_TES"
-		::Query +=                    " AND SF4.F4_ESTOQUE  = 'S'"
-		::Query +=                  " GROUP BY	D1_COD, D1_LOCAL) AS D1"
-		::Query +=           " ON (D1.D1_COD   = SB2.B2_COD"
-		::Query +=           " AND D1.D1_LOCAL = SB2.B2_LOCAL)"
-		::Query +=      " LEFT JOIN (SELECT D3_COD, D3_LOCAL, "
-		::Query +=                        " SUM (CASE WHEN SD3.D3_TM <  '5' THEN SD3.D3_QUANT ELSE 0 END) AS ENT_SD3,"
-		::Query +=                        " SUM (CASE WHEN SD3.D3_TM >= '5' THEN SD3.D3_QUANT ELSE 0 END) AS SAI_SD3"
-		::Query +=                   " FROM " + RetSQLName ("SD3") + " SD3 "
-		::Query +=                  " WHERE SD3.D_E_L_E_T_ != '*'"
-		::Query +=                    " AND SD3.D3_FILIAL   = '" + xfilial ("SD3") + "'"
-		::Query +=                    " AND SD3.D3_ESTORNO != 'S'"
-		::Query +=                    " AND SD3.D3_EMISSAO BETWEEN '" + dtos (::Param01 + 1) + "' AND '" + dtos (::Param02) + "'"
-		::Query +=                  " GROUP BY D3_COD, D3_LOCAL) AS D3"
-		::Query +=           " ON (D3.D3_COD = SB2.B2_COD"
-		::Query +=           " AND D3.D3_LOCAL = SB2.B2_LOCAL)"
-		::Query +=      " LEFT JOIN (SELECT D2_COD, D2_LOCAL, SUM (D2_QUANT) AS SAI_SD2"
-		::Query +=                   " FROM " + RetSQLName ("SD2") + " SD2, "
-		::Query +=                              RetSQLName ("SF4") + " SF4 "
-		::Query +=                  " WHERE SD2.D_E_L_E_T_ != '*'
-		::Query +=                    " AND SD2.D2_FILIAL   = '" + xfilial ("SD2") + "'"
-		::Query +=                    " AND SD2.D2_EMISSAO BETWEEN '" + dtos (::Param01 + 1) + "' AND '" + dtos (::Param02) + "'"
-		::Query +=                    " AND SF4.D_E_L_E_T_ != '*'"
-		::Query +=                    " AND SF4.F4_FILIAL   = '" + xfilial ("SF4") + "'"
-		::Query +=                    " AND SF4.F4_CODIGO   = SD2.D2_TES"
-		::Query +=                    " AND SF4.F4_ESTOQUE  = 'S'"
-		::Query +=                  " GROUP BY	D2_COD, D2_LOCAL) AS D2"
-		::Query +=           " ON (D2.D2_COD = SB2.B2_COD
-		::Query +=           " AND D2.D2_LOCAL = SB2.B2_LOCAL)"
-		::Query += " WHERE SB1.D_E_L_E_T_ = ''"
-		::Query +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-		::Query +=   " AND SB1.B1_COD     = SB2.B2_COD"
-		::Query +=   " AND SB1.B1_TIPO    NOT IN ('MO', 'AP', 'GF')"
-		::Query +=   " AND SB2.D_E_L_E_T_ = ''"
-		::Query +=   " AND SB2.B2_FILIAL  = '" + xfilial ("SB2") + "'"
-		::Query += " GROUP BY B2_FILIAL, B2_COD, B2_LOCAL, B1_TIPO, B1_DESC, B1_UM"
-		::Query += " )"
-		::Query += " SELECT ALMOX, TIPO, PRODUTO, DESCRICAO,"
-		::Query +=        " QT_ANT_SB9 AS QT_SB9_" + dtos (::Param01) + ","
-		::Query +=        " ENT_SD1 + ENT_SD3 AS ENTRADAS,"
-		::Query +=        " SAI_SD2 + SAI_SD3 AS SAIDAS,"
-		::Query +=        " QT_FIM_SB9 AS QT_SB9_" + dtos (::Param02) + ","
-		::Query +=        " QT_ANT_SB9 + ENT_SD1 + ENT_SD3 - SAI_SD2 - SAI_SD3 - QT_FIM_SB9 AS DIFERENCA,"
-		::Query +=        " UN_MED"
-		::Query += " FROM C"
-		::Query += " WHERE ABS (QT_ANT_SB9 + ENT_SD1 + ENT_SD3 - SAI_SD2 - SAI_SD3 - QT_FIM_SB9) > 0.01"
-		::Query += " ORDER BY FILIAL, PRODUTO, ALMOX"
-*/
 		// Monta uma CTE de parametros para poder criar colunas, depois, com as datas do SB9
 		::Query += " WITH PARAMETROS AS"
 		::Query += " ("
@@ -1599,7 +1532,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Setores    = 'CUS'
 		::Descricao  = 'OP teve consumo no mes atual e apontamento em meses posteriores'
 		::Sugestao   = 'Revise datas de movimentacoes da OP'
-		::QuandoUsar = "Antes de rodar o custo medio e fazer a virada de saldos no estoque."
+		::QuandoUsar = "Antes de iniciar as rotinas de fechamento de custo médio."
+		::Dica       = 'Esta verificação não aponta erros inadmissíveis, mas procura-se manter toda a movimentação de cada OP dentro do mesmo mês."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SD3'
+		::Sugestao   = "Revise movimentação e a possibilidade de estornar/ajustar alguma movimentação."
+		::ViaBatch   = .F.  // Deve ser usada soh antes das rotinas de fachamento.
 		::Query := ""
 		::Query += "WITH C AS ("
 		::Query += "SELECT D3_FILIAL AS FILIAL, D3_OP AS OP, MAX (D3_EMISSAO) AS MAIOR_RE,"
@@ -1667,8 +1604,10 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 29
 		::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'ENG/FAT'
-		::Descricao  = "Produto tem peso liquido (campo '" + alltrim (RetTitle ("B1_PESO")) + "') maior que peso bruto (campo '" + alltrim (RetTitle ("B1_PESBRU")) + "') no cadastro."
-		::Sugestao   = 'Revise cadastro do produto.'
+		::Descricao  = "Cadastro produto tem o campo " + upper (alltrim (RetTitle ("B1_PESO"))) + " maior que o campo " + upper (alltrim (RetTitle ("B1_PESBRU")))
+		::QuandoUsar = 'A qualquer momento.'
+		::Dica       = 'Tabelas envolvidas: SB1'
+		::Sugestao   = 'Revise o cadastro do produto.'
 		::Query := ""
 		::Query += " SELECT B1_TIPO AS TIPO, B1_COD AS PRODUTO, SB1.B1_DESC AS DESCRICAO, SB1.B1_UM AS UN_MED, SB1.B1_PESO AS PESO_LIQ, SB1.B1_PESBRU AS PESO_BRUTO"
 		::Query +=  " FROM " + RetSQLName ("SB1") + " SB1 "  
@@ -1814,6 +1753,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::GrupoPerg  = "U_VALID006"
 		::ValidPerg (_lDefault)
 		::QuandoUsar = "Apos fazer a virada de saldos do estoque."
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " WITH _SBJ AS ("
 		::Query += " SELECT BJ_FILIAL, SBJ.BJ_COD, SBJ.BJ_LOCAL, SBJ.BJ_DATA, SUM (SBJ.BJ_QINI) AS QT_SBJ"
@@ -1919,7 +1859,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 39
 		::Setores    = 'CUS'
 		::Descricao  = "Transferência entre filiais com custos diferentes"
-		::Sugestao   = ""
+		::Sugestao   = "Verifique movimentacao."
+		::QuandoUsar = "Após rodar o custo médio."
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT D1_DTDIGIT AS DT_DIGIT "
 		::Query +=      " , D1_FILIAL AS FILIAL_NFE "
@@ -1950,7 +1892,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	
 	case ::Numero == 40
 		::Setores    = 'CUS'
-		::Descricao  = "Transferência entre filiais - Uma TES altera estoque e a outra não altera"
+		::Descricao  = "Transferência entre filiais - Um TES altera estoque o a outro não altera"
 		::Sugestao   = ""
 		::Query := ""
 		::Query += " SELECT"
@@ -2050,6 +1992,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Sugestao   += "Se foi executado o cálculo para fazer o fechamento de estoque, então serão os valores apurados até o dia 31 do mês a ser fechado."
 		::Sugestao   += "Essa quantidade e valor devem ser os mesmos a que você chegará se emitir o kardex diário (MATR900)."
 		::Sugestao   += "Para saber o motivo de ficarem negativos, você teria que emitir esse relatório para analisar, preferencialmente um almoxarifado por vez. Lembrar de parametrizar o intervalo de datas desde o primeiro dia do mês que está aberto no estoque. Já a data final, depende de qual cálculo de médio foi realizado antes de consultar essa verificação (se foi até a data atual, ou até o último dia do mês a encerrar)."
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT"
 		::Query += "	'Quantidade ou valor negativo para fechamento' AS PROBLEMA"
@@ -2072,6 +2015,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Setores    = 'CUS'
 		::Descricao  = "Quantidade sem valor para fechamento ou vice-versa"
 		::Sugestao   = ""
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT 'Quantidade sem valor para fechamento ou vice-versa' AS PROBLEMA"
 		::Query +=       ", B2_LOCAL AS ALMOX"
@@ -2098,6 +2042,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Setores    = 'CUS'
 		::Descricao  = "NF de saída com custo zerado ou negativo"
 		::Sugestao   = ""
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT"	
 		::Query += "	'NF de saída com custo zerado ou negativo' AS PROBLEMA"
@@ -2374,6 +2319,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Setores    = 'CUS'
 		::Descricao  = "Produto tipo BN com saldo para fechamento"
 		::Sugestao   = ""
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT"
 		::Query += " 	'Produto tipo BN com saldo para fechamento' AS PROBLEMA"
@@ -2905,6 +2851,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 63
 		::Setores    = 'CUS'
 		::Descricao  = "OP com multiplos custos de producao"
+		::QuandoUsar = 'Após o recálculo do custo médio e antes da virada de saldos.'
+		::Dica       = 'Mesmo trabalhando com apontamentos parciais (palete a palete), desejamos que todos entrem ao mesmo custo.'
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SD3'
+		::Sugestao   = 'Revise a movimentação e parâmetros envolvendo o custo médio.'
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " WITH C"
 		::Query += " AS"
@@ -2916,7 +2867,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += " 	   ,SD3.D3_EMISSAO AS DATA_MOVTO"
 		::Query += " 	   ,ROUND(SD3.D3_CUSTO1 / (SD3.D3_QUANT + SD3.D3_PERDA), 4) AS CUSTO_UNIT"
 		::Query += " 	   ,SD3.D3_NUMSEQ AS SEQUENCIAL"
-		::Query += " 	FROM " + RetSQLName ("SD3") + "  SD3"   
+		::Query += " 	FROM " + RetSQLName ("SD3") + "  SD3"
+
+		// Nao sei por que o SQL teima em pesquisar a SD3 por R_E_C_N_O_
+		// na hora de ler OPs. Jah tentei atualizar estatisticas, etc.
+		::Query +=                " WITH (INDEX (SD30101))"
+
 		::Query += " 		," + RetSQLName ("SC2") + "  SC2" 
 		::Query += " 		," + RetSQLName ("SB1") + "  SB1" 
 		::Query += " 	WHERE SB1.D_E_L_E_T_ = ''"
@@ -3153,6 +3109,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 67
 		::Setores    = 'CUS'
 		::Descricao  = 'Lançamento padrao referenciando mais de uma tabela'	
+		::QuandoUsar = 'A qualquer momento.'
+		::Dica       = 'Os lctos padrão costumam ser rodados pelo sistema em momentos específicos em que determinada tabela está posicionada.'
+		::Dica      += 'Não é comum usar mais de uma tabela por que não temos certeza de que esteja posicionada.'
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: CT5'
+		::Sugestao   = 'Revise cadastro do lcto padrão.'
 		::Query := ""
 		::Query += " (SELECT"
 		::Query += " 		CT5.CT5_LANPAD"
@@ -3190,6 +3151,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 68
 		::Setores    = 'CUS'
 		::Descricao  = 'Quantidade para fechamento diferente do final do kardex'
+		::QuandoUsar = 'Imediatamente após rodar o custo médio, e desde que seja a rodada de médio PARA FECHAMENTO e não o médio que roda diariamente de forma automática.'
+		::Dica       = 'Esta verificação parte do último fechamento, acrescenta entradas e saídas, compõe um saldo final para o mês e, em seguida, verifica se esse saldo bate com o camp B2_QFIM, que foi calculado pela rotina de custo médio."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SB9 (ult.fech.); SD1, SD2 e SD3 (kardex); SB2 (qt.para fechto.)'
+		::Sugestao   = "Revise movimentação e, principalmente, se o custo médio foi executado até a data correta (até o último dia do mês)."
+		::ViaBatch   = .F.  // Deve ser usada imediatamente apos rodar o custo medio
 		::Query := ""
 		::Query += " WITH C"
 		::Query += " AS"
@@ -3516,10 +3482,14 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 84
 		::Setores    = 'CUS/CTB/INF'
-		::Descricao  = "Inconsistencia virada saldos estoque"
+		::Descricao  = "Inconsistência virada saldos estoque"
 		::Sugestao   = "Revise se a virada de saldos foi finalizada corretamente."
 		::GrupoPerg = "U_VALID007"
 		::ValidPerg (_lDefault)
+		::QuandoUsar = 'Após a virada de saldos (fechamento de estoque).'
+		::Dica       = 'As tabelas de fechamento de estoque por almox, por lote e por endereços devem refletir a mesma data do parâmetro MV_ULMES.'
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SB9 (fechto.almox.), SBJ (fechto.lotes), SBK (fechto.endereços)'
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " WITH C AS ("
 		::Query += " SELECT CASE WHEN MV_ULMES != dbo.VA_DTOC(ULT_FECHTO_SB9) THEN 'PARAMETRO MV_ULMES UNCONSISTENTE COM A TABELA SB9'"
@@ -3593,7 +3563,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 87
 		::Filiais   = '01'  // Gero todas as filiais juntas.
 		::Setores   = 'FIS/INF'
-		::Descricao = 'Parametrizacoes TSS'
+		::Descricao = 'Parametrização TSS para envio de DANFe'
 		::Sugestao  = 'Rodar wizard de configuracao do TSS'
 		::Query := ""
 		::Query += "WITH C AS ("
@@ -3642,7 +3612,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 89
 		::Filiais   = '01'  // Gero todas as filiais juntas.
 		::Setores   = 'FIS/INF'
-		::Descricao = 'Parametrizacoes TSS'
+		::Descricao = 'TSS em homologação'
 		::Sugestao  = 'Verificar parametrizacao para cada tipo de documento'
 		::Query := ""
 		::Query += "SELECT 'Parametro setado para HOMOLOGACAO' as PROBLEMA"
@@ -3668,10 +3638,13 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 90
 		::Filiais   = '01'  // Usamos o modulo de manutencao somente ma filial 01.
 		::Setores   = 'INF/MNT'
-		::Descricao = 'Inconsistencia movimentos OS x Estoque'
+		::Descricao = 'Inconsistência movto. insumos OS x Estoque'
 		::Sugestao  = 'Verificar movimentacao tabelas STL x SD3'
 		::GrupoPerg = "U_VALID002"
 		::ValidPerg (_lDefault)
+		::QuandoUsar = 'A qualquer momento.'
+		::Dica       = 'A movimentação dos insumos das OS (ordens de serviço da manutenção de ativos) é gravada na tabela STL e deve ser refletida na tabela de movimentos de estoque (SD3).'
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: STL, SD3'
 		::Query := ""
 		::Query += "WITH D3 AS ("
 		::Query +=    "SELECT D3_NUMSEQ, D3_COD, D3_EMISSAO, D3_OP, D3_LOCAL, D3_LOTECTL, D3_LOCALIZ, SUM (D3_QUANT) AS QT_SD3"
@@ -3768,7 +3741,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Sugestao  = "Custo dos movimentos RE5 na tabela SD3 deve ser igual ao custo da NF que os gerou. Tente refazer custo das entradas."
 		::GrupoPerg = "U_VALID028"
 		::ValidPerg (_lDefault)
-		::QuandoUsar = "Apos rodar o custo medio."
+		::QuandoUsar = "Após rodar o recálculo do custo médio."
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " WITH C AS ("
 		::Query += " SELECT D3_FILIAL, D3_EMISSAO, D3_DOC, D3_FORNDOC"
@@ -3792,10 +3766,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=  " ORDER BY D3_FILIAL, D3_EMISSAO, D3_DOC, D3_COD"
 
 	case ::Numero == 94
-		::Setores   = 'PCP'
-		::Descricao = "O.P. em aberto"
-		::Sugestao  = "Verificar se as OPs encontram-se realmente em producao. Caso ainda nao iniciadas, avaliar a opcao de exclui-las."
-		::QuandoUsar = "Antes de fazer contagem de inventario de estoques."
+		::Setores    = 'PCP/CUS'
+		::Descricao  = "O.P. em aberto"
+		::Dica       = "Esta verificação não apresenta especificamente erros. Serve apenas como auxílio às rotinas de contagem de estoques."
+		::Sugestao   = "Verificar se as OPs encontram-se realmente em producao. Caso ainda nao iniciadas, avaliar a opcao de exclui-las."
+		::QuandoUsar = "Antes de fazer contagem de inventário de estoques."
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += "SELECT SC2.C2_NUM + SC2.C2_ITEM + SC2.C2_SEQUEN + SC2.C2_ITEMGRD AS OP,"
 		::Query +=       " SC2.C2_PRODUTO AS PRODUTO, SB1.B1_TIPO AS TIPO, SB1.B1_DESC AS DESCRICAO,"
@@ -3835,12 +3811,13 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 
 	case ::Numero == 96
-		::Setores   = 'CUS/CTB'
-		::Descricao = "Saldo negativo tabela fechamentos por lote/endereco"
-		::Sugestao  = "Verificar a movimentação, emitir kardex por lote, conferir se os movimentos foram gravados corretamente em todas as tabelas (SD5 quando usa lotes, e SDB quando usa endereçamento). Ajustar manualmente nas tabelas SBJ / SBK ou reabrir o mês e fechar novamente."
-		::QuandoUsar = "A qualquer momento."
+		::Setores    = 'CUS/CTB'
+		::Descricao  = "Saldo negativo tabela fechamentos por lote/endereco"
+		::Sugestao   = "Verificar a movimentação, emitir kardex por lote, conferir se os movimentos foram gravados corretamente em todas as tabelas (SD5 quando usa lotes, e SDB quando usa endereçamento). Ajustar manualmente nas tabelas SBJ / SBK ou reabrir o mês e fechar novamente."
+		::QuandoUsar = "Antes de iniciar o processo de fechamento de estoques e novamente após a virada de saldos."
 		::Dica       = "Verificado, na atualização da release 22.10, que saldos negativos no último fechamento de lotes/endereços (tabelas SBJ e SBK) impede que o processo de recálculo do saldo atual funcione corretamente. O sistema parece deixar de atualizar os saldos."
 		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SBJ e SBK (Fechamentos), SD1, SD2, SD3, SDA, SBD, SD5 (movimentos)'
+		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " WITH ULT_FECH AS"
 		::Query += " ("
@@ -4288,14 +4265,10 @@ METHOD VerifParam () Class ClsVerif
 	local _lRet := .T.
 	do case
 		case ::Numero == 4
-			if ::Param01 >= ::Param02
-				::UltMsg = "Data inicial deve ser menor que data final."
+			if ::Param01 > ::Param02
+				::UltMsg = "Data inicial deve ser menor ou igual a data final."
 				_lRet = .F.
 			endif
-	//		if ::Param01 != lastday (::Param01) .or. ::Param02 != lastday (::Param02)
-	//			::UltMsg = "Datas devem ser os ultimos dias de cada mes (corresponde as datas de gravacao do arquivo SB9)."
-	//			_lRet = .F.
-	//		endif
 
 		case ::Numero == 85
 			if empty (::Param03) .or. empty (::Param04)
