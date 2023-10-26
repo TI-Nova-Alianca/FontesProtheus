@@ -12,6 +12,7 @@
 
 // Historico de alteracoes:
 // 08/11/2022 - Robert - Passa a usar a funcao U_AmbTeste().
+// 25/10/2023 - Robert - Passa a usar URI http://naweb.novaalianca.coop.br/prcnotificacoesws.aspx (e nao mais 'naweb17')
 //
 
 #INCLUDE "protheus.ch"

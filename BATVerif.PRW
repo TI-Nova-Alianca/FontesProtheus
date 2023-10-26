@@ -66,7 +66,7 @@ user function BatVerif ()
 					if _oVerif:QtErros > 0
 
 						// Prepara mensagem em formato HTM para envio por e-mail.
-						_sMsg := _oVerif:ConvHTM (50)  // Converte poucas linhas para os e-mails nao ficarem pesados demais.
+						_sMsg := _oVerif:ConvHTM (100)  // Converte poucas linhas para as mensagens nao ficarem pesadas demais.
 
 						// Envia aos setores interessados.
 						if 'ENG' $ _oVerif:Setores
@@ -109,33 +109,6 @@ user function BatVerif ()
 
 	enddo
 
-	U_Log2 ('info', _aTempos)
-
-/* Nao to conseguindo usar isto. Ele simplesmente trava na hora de mostrar no naweb.
-	// Mando um aviso pra mim mesmo, nos primeiros dias, para acompanhar o processo.
-	_oAUtil := ClsAUtil ():New (_aTempos)
-	//
-	// Como pretendo enviar para o NaWeb via web service, preciso 'escapar' alguns
-	// caracteres especiais das queries.
-	for _nVerif = 1 to len (_aTempos)
-	// Nao to conseguindo usar isto. Ele simplesmente trava na hora de mostrar no naweb.
-	//	_oAUtil:_aArray [_nVerif, 4] = U_NoAcento (_oAUtil:_aArray [_nVerif, 4])
-	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], "'", "&#39;")  // Aspas simples
-	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '"', "&#34;")  // Aspas duplas
-	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '<', "&lt;")  // Menor que
-	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '>', "&gt;")  // Maior que
-	//	_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '&', "&amp;")  // & (E comercial)
-	next
-	U_Log2 ('debug', _oAUtil:_aArray)
-	_oAviso := ClsAviso():new ()
-	_oAviso:Tipo       = 'I'  // I=Info;A=Aviso;E=Erro
-	_oAviso:Titulo     = "Acompanhamento verif.em batch"
-	_oAviso:Texto      = _oAUtil:ConvHTM ()
-	_oAviso:DestinAvis = 'robert.koch'
-	_oAviso:Origem     = 'Verificacoes diarias'
-	_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
-	_oAviso:Grava ()
-*/
 	_oBatch:Retorno = 'S'
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
@@ -211,12 +184,6 @@ static function _Notif (_oVerif, _aGrupos, _sMsg)
 		_oAviso:DestinZZU  = _aDest  // Codigos de um grupo da tabela ZZU no formato {grp1, grp2, ...}
 		_oAviso:Origem     = 'Verificacoes diarias'
 		_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
-		_oAviso:IntegNaWeb = .F.  // Nao tenta integrar neste momento (nao ha urgencia)
-		_oAviso:Grava ()
-
-		// Quero uma copia para acompanhamento inicial
-		_oAviso:DestinAvis = 'robert.koch'
-		_oAviso:Titulo     = "(Copia de)" + _oAviso:Titulo
 		_oAviso:Grava ()
 	endif
 return

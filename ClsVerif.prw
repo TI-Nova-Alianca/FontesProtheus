@@ -175,40 +175,25 @@ METHOD New (_nQual) Class ClsVerif
 	::MesAtuEstq = substr (dtos (GetMv ("MV_ULMES") + 1), 1, 6)
 	::QuandoUsar = "A qualquer momento"
 
-	// Para determinar qual a ultima verificacao, vou comecar por um numero
-	// alto e ir buscando para tras, ateh encontrar uma verificacao definida.
-	// Jah tentei diversas formas de fazer isso, mas no final sempre acabo
-	// criando somente o CASE que define a query e esqueco de atualizar o
-	// atributo :UltVerif.
-	for ::Numero = 150 to 1 step -1  // Manter aqui sempre um numero maior que o da ultima verificacao.
-		::UltMsg = ''
-		::GeraQry (.T.)
-		if ! empty (::Query)
-			::UltVerif = ::Numero
-			::Numero = 0
-			exit
-		endif
-	next
-
 	// Se recebi um numero de verificacao definido, nao preciso ficar testando a existencia de todas.
 	if valtype (_nQual) == 'N'
 //		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Recebi um numero de verificacao definido: ' + cvaltochar (_nQual))
 		::Numero = _nQual
-	//else
+	else
 		// Para determinar qual a ultima verificacao, vou comecar por um numero
 		// alto e ir buscando para tras, ateh encontrar uma verificacao definida.
 		// Jah tentei diversas formas de fazer isso, mas no final sempre acabo
 		// criando somente o CASE que define a query e esqueco de atualizar o
 		// atributo :UltVerif.
-	//	for ::Numero = 150 to 1 step -1  // Manter aqui sempre um numero maior que o da ultima verificacao.
-	//		::UltMsg = ''
-	//		::GeraQry (.T.)
-	//		if ! empty (::Query)
-	//			::UltVerif = ::Numero
-	//			::Numero = 0
-	//			exit
-	//		endif
-	//	next
+		for ::Numero = 150 to 1 step -1  // Manter aqui sempre um numero maior que o da ultima verificacao.
+			::UltMsg = ''
+			::GeraQry (.T.)
+			if ! empty (::Query)
+				::UltVerif = ::Numero
+				::Numero = 0
+				exit
+			endif
+		next
 	endif
 
 	::GeraQry (.T.)
