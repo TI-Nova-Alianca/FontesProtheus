@@ -50,6 +50,7 @@
 // 26/10/2021 - Claudia - Alterado o modo de gravação do evento SC5009.
 // 18/01/2022 - CLaudia - Retirada busca de frete negociado, conforme GLPI: 11482
 // 08/03/2022 - Claudia - Alterada regra de % de acrescimo financeiro. GLPI: 11658
+// 25/10/2023 - Cláudia - Incluida a gravação do campo C6_PRCVEN. GLPI: 14414
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -87,6 +88,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	local _aCampos    := {}
 	local _aCpos      := {}
 	local _aNaWeb     := {}
+	Local _nPosPrcVen := aScan(aHeader, {|x| AllTrim(x[2])=="C6_PRCVEN"})
 	Local _nPosValor  := aScan(aHeader, {|x| AllTrim(x[2])=="C6_VALOR"})
 	Local _nPosTes    := aScan(aHeader, {|x| AllTrim(x[2])=="C6_TES"})
 	Local _nPosprd    := aScan(aHeader, {|x| AllTrim(x[2])=="C6_PRODUTO"})
@@ -117,6 +119,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	aadd (_aCampos, {"c6_Quant2",  "C", 15, 0})
 	aadd (_aCampos, {"c6_Preco",   "N", 15, 2})
 	aadd (_aCampos, {"c6_Preco2",  "C", 15, 0})
+	aadd (_aCampos, {"c6_prcven",  "N", 15, 2})
 	aadd (_aCampos, {"c6_Custo",   "N", 15, 2})
 	aadd (_aCampos, {"c6_Custo2",  "C", 15, 0})
 	aadd (_aCampos, {"c6_PerCom",  "N", 6,  2})
@@ -376,7 +379,8 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 						_trb -> c6_quant   = aCols[_ix,_nPosqtd]
 						_trb -> c6_quant2  = transform (c6_quant, "@E 999999.99")
 						_trb -> c6_preco   = aCols[_ix,_nPosValor]
-
+						_trb -> c6_prcven  = aCols[_ix,_nPosPrcVen]
+					
 						_trb -> c6_preco2  = transform (c6_preco, "@E 999,999.99")
 						_trb -> c6_custo   = (_trb-> c6_quant * FBUSCACPO('SB1',1,xFilial('SB1') + aCols[_ix,_nPosprd],'SB1->B1_CUSTD'))
 						_trb -> c6_custo2  = transform (c6_custo, "@E 999999.99")
@@ -432,7 +436,8 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 										_trb -> c6_frete2	,;
 										_trb -> c6_Finan2	,;
 										_trb -> c6_total2 	,;
-										_trb -> c6_mper2	})
+										_trb -> c6_mper2	,;
+										str(_trb -> c6_prcven)   })
 
 						
 						msunlock()
@@ -507,7 +512,8 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 					_trb -> c6_frete2	,;
 					_trb -> c6_Finan2	,;
 					_trb -> c6_total2 	,;
-					_trb -> c6_mper2	})
+					_trb -> c6_mper2	,;
+					str(_trb -> c6_prcven)   })
 
 				
 	// bonificacao
@@ -530,7 +536,8 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 					"0"					,;
 					"0"					,;
 					_trb -> c6_total2 	,;
-					_trb -> c6_mper2	})
+					_trb -> c6_mper2	,;
+					"0"					})
 
 	
 	_xtotFrete :=0
@@ -556,7 +563,8 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 					"0"					,;
 					"0"					,;
 					_trb -> c6_total2 	,;
-					_trb -> c6_mper2	})
+					_trb -> c6_mper2	,;
+					"0"					})
 
 	
 	// Define titulos das colunas
@@ -575,7 +583,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	
 	_trb -> (dbgotop ())
 
-	m->c5_vaMCont = _nTotMrg
+	m->c5_vaMCont := _nTotMrg
 
 	if _lMostra
 		_sMsgFrt = _oEventoCF:Texto
@@ -616,6 +624,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 			_sTxtEvent += "|" + alltrim(_aNaWeb[_x,10]) 
 			_sTxtEvent += "|" + alltrim(_aNaWeb[_x,11]) 
 			_sTxtEvent += "|" + alltrim(_aNaWeb[_x,12]) 
+			_sTxtEvent += "|" + alltrim(strtran(_aNaWeb[_x,13],".",",")) 
 
 			_GravaNaWeb(_sTxtEvent)
 		Next 
