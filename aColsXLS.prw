@@ -14,12 +14,13 @@
 // 15/09/2010 - Robert - Nao gera mais aviso em tela quando o MS-Excel nao estiver instalado.
 // 08/02/2012 - Robert - Criada possibilidade de usar os titulos dos campos do aHeader em vez de nomes de campos.
 // 02/09/2017 - Robert - Nao exporta mais a coluna 'deletado' no final.
+// 26/10/2023 - Robert - Permite passar um aHeader alternativo como parametro.
 //
 
 #include "rwmake.ch"
 
 // --------------------------------------------------------------------------
-user function aColsXLS (_aCols, _lTitHead)
+user function aColsXLS (_aCols, _lTitHead, _aHdr2, _sDelet)
 	local _aAreaAnt := U_ML_SRArea ()
 	local _sNomeArq := CriaTrab ({}, .F.)
 	local _sArq     := MsDocPath () + "\" + _sNomeArq + ".CSV"
@@ -50,18 +51,10 @@ user function aColsXLS (_aCols, _lTitHead)
 		endif
 		
 		// Se nao tem aHeader, 'inventa' um.
-		if type ("aHeader") == "A" .and. len (aHeader) > 0
+		if valtype (_aHdr2) == "A" .and. len (_aHdr2) > 0
+			_aHeader = aclone (_aHdr2)
+		elseif type ("aHeader") == "A" .and. len (aHeader) > 0
 			_aHeader = aclone (aheader)
-/*
-			aadd (_aHeader, {"Deletado", ;
-			"Deletado", ;
-			"", ;
-			3, ;
-			0, ;
-			"", ;
-			"", ;
-			"C"})
-*/
 		else
 			_aHeader = {}
 			

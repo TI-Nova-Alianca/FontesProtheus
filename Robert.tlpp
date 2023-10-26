@@ -147,13 +147,12 @@ user function robert ()
 		// _sFuncao += '_VACCR2 ()'
 		// _sFuncao += '_VA_VEF ()'
 		// _sFuncao += '_VA_XLS ()'
-		_sFuncao += '_verif ()'
+		// _sFuncao += '_verif ()'
 		// U_GravaSX1 ("VA_ACR", "01", "0345")
 		// U_GravaSX1 ("VA_ACR", "02", "0345")
 		// U_GravaSX1 ("VA_ACR", "03", 'PA/VD')  // Tipos a listar
-		// U_GravaSX1 ("VA_ACR", "04", 'PS/')  // Tipos componentes a ignorar
-		// U_GravaSX1 ("VA_ACR", "05", 2)  // Mostrar uvas na estrutura ]S/N]
-		// U_GravaSX1 ("VA_ACR", "06", 1)  // Abrir subniveis dos VD [S/N]
+		// U_GravaSX1 ("VA_ACR", "04", 2)  // Mostrar uvas na estrutura ]S/N]
+		// U_GravaSX1 ("VA_ACR", "05", 2)  // Considerar subniveis dos VD [S/N]
 		// _sFuncao += 'U_VA_ACR (.t.)'
 		if ! empty (_sFuncao)
 			&(_sFuncao)
@@ -3432,8 +3431,6 @@ return
 // --------------------------------------------------------------------------
 // Testes verificacoes genericas.
 static function _verif ()
-	local _nVerif := 0
-	//local _sHtmHlp := ''
 	// _oVerif := ClsVerif():New (4)
 	// _oVerif:SetParam ('01', stod ('20230401'))
 	// _oVerif:SetParam ('02', stod ('20230630'))
@@ -3484,35 +3481,9 @@ static function _verif ()
 	// fclose (_nHdl)
 	// ShellExecute ("Open", _sArq, "", "", 1)
 
-	U_MudaLog ('U_BatVerif.log')
-	u_batverif ()
-/*
-	// estou com problemas para enviar a query ao naweb
-	//_oSQL := ClsSQL ():New ()
-	//_oSQL:_sQuery = "delete naweb.dbo.Notificacoes where NotificacaoOrigem = '[PROTHEUS]Verificacoes diarias'"
-	//_oSQL:Exec ()
-	_oVerif := ClsVerif():New (92)
-	_aTempos= {}
-	aadd (_aTempos, {92, seconds (), _oVerif:Descricao, _oVerif:Query, 0})
-	_oAUtil := ClsAUtil ():New (_aTempos)
-	for _nVerif = 1 to len (_aTempos)
-		_oAUtil:_aArray [_nVerif, 4] = U_NoAcento (_oAUtil:_aArray [_nVerif, 4])
-		_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], "'", "&#39;")  // Aspas simples
-		_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '"', "&#34;")  // Aspas duplas
-		_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '<', "&lt;")  // Menor que
-		_oAUtil:_aArray [_nVerif, 4] = strtran (_oAUtil:_aArray [_nVerif, 4], '>', "&gt;")  // Maior que
-	next
+//	U_MudaLog ('U_BatVerif.log')
+//	u_batverif ()
 
-	U_Log2 ('debug', _oAUtil:_aArray)
-	_oAviso := ClsAviso():new ()
-	_oAviso:Tipo       = 'I'  // I=Info;A=Aviso;E=Erro
-	_oAviso:Titulo     = "teste html"
-	_oAviso:Texto      = _oAUtil:ConvHTM ()
-	_oAviso:DestinAvis = 'robert.koch'
-	_oAviso:Origem     = 'Verificacoes diarias'
-	_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
-	_oAviso:Grava ()
-*/
 return
 
 /*
