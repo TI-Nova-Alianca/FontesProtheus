@@ -2537,6 +2537,8 @@ Static Function _EnvMargem ()
 				_XmlRet += "<MargemPercent>" + alltrim(_aNaWeb[13]) + "</MargemPercent>"
 				if _lContPrc
 					_XmlRet += "<PrcVenItem>" + alltrim(_aNaWeb[13]) + "</PrcVenItem>"
+				else
+					_XmlRet += "<PrcVenItem> 0 </PrcVenItem>"
 				endif
 				_XmlRet += "</BuscaItensPedBloqItem>"
 			Next
