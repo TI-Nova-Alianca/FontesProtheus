@@ -2513,7 +2513,7 @@ Static Function _EnvMargem ()
 			For _x:=1 to Len(_aItem)
 				_aNaWeb := STRTOKARR(_aItem[_x,1],"|")
 
-				if Len(_aNaWeb) == 13
+				if Len(_aNaWeb) == 14
 					_lContPrc :=.T.
 				endif
 
@@ -2536,7 +2536,7 @@ Static Function _EnvMargem ()
 				_XmlRet += "<MargemVlr>" 	 + alltrim(_aNaWeb[12]) + "</MargemVlr>"
 				_XmlRet += "<MargemPercent>" + alltrim(_aNaWeb[13]) + "</MargemPercent>"
 				if _lContPrc
-					_XmlRet += "<PrcVenItem>" + alltrim(_aNaWeb[13]) + "</PrcVenItem>"
+					_XmlRet += "<PrcVenItem>" + alltrim(_aNaWeb[14]) + "</PrcVenItem>"
 				else
 					_XmlRet += "<PrcVenItem> 0 </PrcVenItem>"
 				endif
