@@ -128,6 +128,7 @@
 // 18/08/2023 - Claudia - Casting  da quantidade na rotina _TrEstGrid . GLPI 13656
 // 24/08/2023 - Claudia - Criada a Ação GravaTituloPgUnimed. GLPI: 13948 
 // 25/10/2023 - Cláudia - Incluida a tag <PrcVenItem> na ação BuscaMargemContrib. GLPI: 14414
+// 27/10/2023 - Claudia - Incluida a rotina GravaPgtoContaCorrente. GLPI: 14346
 //
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -297,6 +298,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 			_IncManut()
 		case _sAcao == 'GravaTituloPgUnimed'
 			_GrvTituloUnimed ()
+		case _sAcao == 'GravaPgtoContaCorrente'
+			_GrvPgtoContaCorrente ()
 		otherwise
 			_SomaErro ("A acao especificada no XML eh invalida: " + _sAcao)
 		endcase
@@ -3119,6 +3122,108 @@ Static Function _GrvTituloUnimed()
 		_oCtaCorr:Serie    = 'UNJ'
 		_oCtaCorr:Origem   = "NAWEB"
 		_oCtaCorr:Parcela  = ''
+
+		if _oCtaCorr:PodeIncl ()
+			if ! _oCtaCorr:Grava (.F., .F.)
+				_sErroWS   += 'Titulo Nº ' + _sNumero + ' não gravado!' + _oCtaCorr:UltMsg
+			else
+				if empty(_sErroWS)
+					_sMsgRetWS += 'Titulo Nº ' + _sNumero + ' gravado com sucesso!' + _oCtaCorr:UltMsg
+				endif
+			endif
+		else
+			_sErroWS   += "Atualização da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'" + " não permitido. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg
+		endif
+	EndIf
+
+	u_logFim ()
+Return
+
+// --------------------------------------------------------------------------
+// Grava baixas de títulos no conta corrente - associados
+Static Function _GrvPgtoContaCorrente()
+	local _oCtaCorr := NIL
+	local _sUsuario := ""
+	local _sFilial  := ""
+	local _sFornece := ""
+	local _sLoja    := ""
+	local _sDtEmi   := ""
+	local _sDtVenc  := ""
+	local _sOBS     := ""
+
+	u_logIni ()
+
+	/* 	<WSAlianca>
+			<User>daiana.ribas</User>
+			<IDAplicacao>gg2gj256y5f2c5b89</IDAplicacao>
+			<Empresa>01</Empresa>
+			<Filial>07</Filial>
+			<Fornecedor>002382</Fornecedor>
+			<Loja>01</Loja>
+			<Sequencial>02</Sequencial>
+			<Parcela>A</Parcela>
+			<TipoMovimento>29</TipoMovimento>
+			<MesReferencia>032023</MesReferencia>
+			<DtEmissao>20230824</DtEmissao>
+			<DtVencimento>20230831</DtVencimento>
+			<Valor>394,43</Valor>
+			<OBs>NOME DO TIPO DE MOVIMENTO + MES E ANO DE REFERENCIA + NOME DO ASSOCIADO</OBs>
+			<TipoPrograma>1</TipoPrograma>
+			<Acao>GravaPgtoContaCorrente</Acao>
+		</WSAlianca> 
+		
+		TipoPrograma : 
+		* 1 - Unimed
+		* 2 - Analises
+		*/
+		
+	If empty(_sErroWS)
+		_sUsuario   := _ExtraiTag ("_oXML:_WSAlianca:_User"				, .T., .F.)
+		_sFilial   	:= _ExtraiTag ("_oXML:_WSAlianca:_Filial"			, .T., .F.)
+		_sFornece   := _ExtraiTag ("_oXML:_WSAlianca:_Fornecedor"		, .T., .F.)
+		_sLoja  	:= _ExtraiTag ("_oXML:_WSAlianca:_Loja"				, .T., .F.)
+		if alltrim(_sTipoPrg) == '1'
+			_sSeq       := _ExtraiTag ("_oXML:_WSAlianca:_Sequencial"		, .T., .F.)
+			_sTpMov     := '29'
+			_sParcela   := ''
+			_sSerie     := 'UNJ'
+		else
+			_sSeq       := ''
+			_sParcela   := _ExtraiTag ("_oXML:_WSAlianca:_Parcela"			, .T., .F.)
+			_sTpMov     := _ExtraiTag ("_oXML:_WSAlianca:_TipoMovimento"	, .T., .F.)
+			_sSerie     := 'ANS'
+		endif
+		_sMesRef  	:= _ExtraiTag ("_oXML:_WSAlianca:_MesReferencia"	, .T., .F.)
+		_sDtEmi     := _ExtraiTag ("_oXML:_WSAlianca:_DtEmissao"		, .T., .F.)
+		_sDtVenc    := _ExtraiTag ("_oXML:_WSAlianca:_DtVencimento"		, .T., .F.)
+		_sOBS     	:= _ExtraiTag ("_oXML:_WSAlianca:_OBs"				, .T., .F.)
+		_sTipoPrg  	:= _ExtraiTag ("_oXML:_WSAlianca:_TipoPrograma"		, .T., .F.)
+		
+		_nValor     := Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_Valor", .T., .F.),",","."))
+		
+		If alltrim(_sTipoPrg) == '1'
+			_sNumero := alltrim(_sMesRef) + alltrim(_sSeq)
+		Else
+			_sNumero := Day2Str(date()) + Month2Str(Date()) + Year2Str(Date())
+		EndIf		
+	EndIf
+
+	If empty(_sErroWS)
+		_oCtaCorr:= ClsCtaCorr():New ()
+		_oCtaCorr:Assoc    = _sFornece
+		_oCtaCorr:Loja     = _sLoja
+		_oCtaCorr:TM       = _sTpMov
+		_oCtaCorr:DtMovto  = stod(_sDtEmi)
+		_oCtaCorr:VctoSE2  = stod(_sDtVenc)
+		_oCtaCorr:Valor    = _nValor
+		_oCtaCorr:SaldoAtu = _nValor
+		_oCtaCorr:Usuario  = _sUsuario
+		_oCtaCorr:Histor   = _sOBS
+		_oCtaCorr:MesRef   = _sMesRef
+		_oCtaCorr:Doc      = _sNumero
+		_oCtaCorr:Serie    = _sSerie
+		_oCtaCorr:Origem   = "NAWEB"
+		_oCtaCorr:Parcela  = _sParcela
 
 		if _oCtaCorr:PodeIncl ()
 			if ! _oCtaCorr:Grava (.F., .F.)
