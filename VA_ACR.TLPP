@@ -694,8 +694,8 @@ static function _ValidPerg ()
 	local _aDefaults := {}
 
 	//                     PERGUNT                           TIPO TAM DEC VALID F3      Opcoes          Help
-	aadd (_aRegsPerg, {01, "Produto inicial               ", "C", 15, 0,  "",   "SB1 ", {},             ""})
-	aadd (_aRegsPerg, {02, "Produto final                 ", "C", 15, 0,  "",   "SB1 ", {},             ""})
+	aadd (_aRegsPerg, {01, "Produto inicial a analisar    ", "C", 15, 0,  "",   "SB1 ", {},             ""})
+	aadd (_aRegsPerg, {02, "Produto final a analisar      ", "C", 15, 0,  "",   "SB1 ", {},             ""})
 	aadd (_aRegsPerg, {03, "Tipos produtos a analisar     ", "C", 60, 0,  "",   "    ", {},             ""})
 //	aadd (_aRegsPerg, {04, "Tipos compon.ignorar(ex:MP/PS)", "C", 60, 0,  "",   "    ", {},             ""})
 	aadd (_aRegsPerg, {04, "Mostrar uvas na estrutura     ", "N",  1, 0,  "",   "    ", {"Sim", "Nao"}, ""})
