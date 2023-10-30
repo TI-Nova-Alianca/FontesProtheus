@@ -53,7 +53,7 @@ User Function MT275TOk ()
 		_oSQL:_sQuery +=   " where empr_codemp       = 1"
 		_oSQL:_sQuery +=     " and item_cod_item_log = ''" + alltrim (m->dd_produto) + "''"
 		_oSQL:_sQuery +=     " and lote              = ''" + alltrim (m->dd_lotectl) + "''"
-		_oSQL:_sQuery +=     " and posicao           = ''" + alltrim (m->dd_vaposf)  + "''"
+		_oSQL:_sQuery +=     " and endereco          = ''" + alltrim (m->dd_vaposf)  + "''"
 		_oSQL:_sQuery += " ')"
 		_oSQL:Log ('[' + procname () + ']')
 		_aSldFull := aclone (_oSQL:Qry2Array (.f., .f.))

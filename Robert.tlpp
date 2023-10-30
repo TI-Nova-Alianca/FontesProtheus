@@ -3481,8 +3481,8 @@ static function _verif ()
 	// fclose (_nHdl)
 	// ShellExecute ("Open", _sArq, "", "", 1)
 
-//	U_MudaLog ('U_BatVerif.log')
-//	u_batverif ()
+	U_MudaLog ('U_BatVerif.log')
+	u_batverif ()
 
 return
 

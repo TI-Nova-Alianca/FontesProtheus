@@ -23,10 +23,12 @@
 // 18/11/2022 - Robert - Verificacoes do setor INF passam a ser enviadas para o NaWeb e nao mais por e-mail.
 // 24/10/2023 - Robert - Guarda tempos de execucoes em array para mostrar todos juntos no final.
 //                     - Passa a mandar todas as notificacoes para o NaWeb e nao mais por e-mail.
+// 29/10/2023 - Robert - Passa a aceitar parametros d verificacao inicial e final.
+//                     - Criado envio para auditoria (grupo 015)
 //
 
 // --------------------------------------------------------------------------
-user function BatVerif ()
+user function BatVerif (_nVerifIni, _nVerifFim)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _oVerif    := NIL
@@ -38,18 +40,24 @@ user function BatVerif ()
 
 	u_log2 ('info', 'Iniciando execucao das verificacoes')
 
+	_nVerifIni = iif (_nVerifIni == NIL, 1, _nVerifIni)
+	if _nVerifFim == NIL
+		_oVerif := ClsVerif ():New ()
+		_nVerifFim = _oVerif:UltVerif
+	endif
+
 	// Executa cada verificacao e envia o resultado aos setores interessados.
-	_nVerif = 1
+	_nVerif = _nVerifIni
 
 	aadd (_aTempos, {'Verif', 'Tempo', 'Descricao', 'Query', 'Avisos'})
 
-	do while .T.
+	do while _nVerif <= _nVerifFim
 		U_Log2 ('info', 'Vou ver se devo executar a verificacao ' + cvaltochar (_nVerif))
 		_oVerif := ClsVerif ():New (_nVerif)
-		if _nVerif > _oVerif:UltVerif  // Jah passei por todas.
-			U_Log2 ('info', 'Cheguei ao final da lista')
-			exit
-		else
+	//	if _nVerif > _oVerif:UltVerif  // Jah passei por todas.
+	//		U_Log2 ('info', 'Cheguei ao final da lista')
+	//		exit
+	//	else
 			if _oVerif:Ativa .and. _oVerif:ViaBatch
 
 				u_log2 ('info', 'Verificacao ' + cvaltochar (_oVerif:Numero) + ' (' + _oVerif:Descricao + ') --> ' + _oVerif:Query)
@@ -89,9 +97,11 @@ user function BatVerif ()
 						if 'CML' $ _oVerif:Setores
 							_Notif (_oVerif, {'003'}, _sMsg)
 						endif
+						if 'AUD' $ _oVerif:Setores
+							_Notif (_oVerif, {'015'}, _sMsg)
+						endif
 						if 'INF' $ _oVerif:Setores
-						//	_Envia (_oVerif, {'122'}, _sMsg)
-							_Notif (_oVerif, {'122'}, _sMsg)  // Gera notificacao para NaWeb.
+							_Notif (_oVerif, {'122'}, _sMsg)
 						endif
 					endif
 				else
@@ -99,7 +109,7 @@ user function BatVerif ()
 					_aTempos [len (_aTempos), 2] = 'ERRO'
 				endif
 			endif
-		endif
+	//	endif
 		_nVerif ++
 
 	enddo
@@ -195,7 +205,7 @@ static function _Notif (_oVerif, _aGrupos, _sMsg)
 	if len (_aDest) > 0
 		_oAviso := ClsAviso():new ()
 		_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
-		_oAviso:Titulo     = "Verif.Protheus " + _oVerif:Descricao
+		_oAviso:Titulo     = "Verif.Protheus " + cvaltochar (_oVerif:Numero) + '-' + _oVerif:Descricao
 		_oAviso:Texto      = _sMsg
 		_oAviso:DestinZZU  = _aDest  // Codigos de um grupo da tabela ZZU no formato {grp1, grp2, ...}
 		_oAviso:Origem     = 'Verificacoes diarias'

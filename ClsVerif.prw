@@ -97,6 +97,7 @@
 // 27/09/2023 - Robert  - Criada opcao somente com diferenca/todos na verificacao 98
 // 24/10/2023 - Robert  - Melhorada documentacao de diversas verificacoes
 //                      - Desmarcadas diversas verificacoes que nao precisam ser rodadas via batch.
+// 29/10/2023 - Robert  - Ao converter para HTML, nao 'escapava' caracteres especiais.
 //
 
 #include "protheus.ch"
@@ -203,8 +204,9 @@ Return Self
 // --------------------------------------------------------------------------
 // Converte o resultado para formato HTML.
 METHOD ConvHTM (_nMaxLin) Class ClsVerif
-	local _sRet  := ""
-	local _oUtil := NIL
+	local _sRet   := ""
+	local _oUtil  := NIL
+	local _sQuery := ''
 
 	if ::ExecutouOK
 		_oUtil := ClsAUtil ():New (::Result)
@@ -215,7 +217,15 @@ METHOD ConvHTM (_nMaxLin) Class ClsVerif
 		_sRet += chr (13) + chr (10) + '</br></br>Sugestao: ' + alltrim (::Sugestao) + '</br>'
 	endif
 	if ! empty (::Query)
-		_sRet += chr (13) + chr (10) + '</br></br>Query para verificacao: ' + alltrim (::Query) + '</br>'
+//		_sRet += chr (13) + chr (10) + '</br></br>Query para verificacao: ' + alltrim (::Query) + '</br>'
+		// Como pretendo enviar para o NaWeb via web service, preciso 'escapar' alguns
+		// caracteres especiais das queries.
+		_sQuery = ::Query
+		_sQuery = strtran (_sQuery, "'", "&#39;")  // Aspas simples
+		_sQuery = strtran (_sQuery, '"', "&#34;")  // Aspas duplas
+		_sQuery = strtran (_sQuery, '<', "&lt;")  // Menor que
+		_sQuery = strtran (_sQuery, '>', "&gt;")  // Maior que
+		_sRet += chr (13) + chr (10) + '</br></br>Query para verificacao: ' + alltrim (_sQuery) + '</br>'
 	endif
 
 Return _sRet
@@ -3857,7 +3867,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 98
 		_sLinkSrv = U_LkServer ('FULLWMS_AX01')
 		::Filiais    = '01'  // Somente operamos com FullWMS na matriz.
-		::Setores    = 'LOG/CUS/INF'
+		::Setores    = 'LOG/CUS/INF/AUD'
 		::Descricao  = "Diferenca estoques Protheus x FullWMS"
 		::Sugestao   = "Verificar manualmente diferença de saldos entre os dois sistemas."
 		::QuandoUsar = "A qualquer momento."
