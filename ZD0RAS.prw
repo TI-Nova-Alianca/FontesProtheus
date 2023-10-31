@@ -16,7 +16,7 @@
 #include "protheus.ch"
 #include "tbiconn.ch"
 
-User Function ZD0RAS(_sTipo, _sFilial, _sTID)
+User Function ZD0RAS(_sTipo, _sFilial, _sTID, _sRID)
     Local   _aZD0 := {}
     Private cPerg := "ZD0RAS"
 	
@@ -28,7 +28,7 @@ User Function ZD0RAS(_sTipo, _sFilial, _sTID)
             _aZD0 := _RegistrosLote(mv_par01, mv_par02)
         EndIf
     else            // registro individual
-        _aZD0 := _RegistroUnico(_sFilial, _sTID)
+        _aZD0 := _RegistroUnico(_sFilial, _sTID, _sRID)
     EndIf
 
     If Len(_aZD0) > 0
@@ -84,7 +84,7 @@ Return _aDados
 //
 // -----------------------------------------------------------------------------------
 // Dados do registro individual
-Static Function _RegistroUnico(_sFilial, _sTID)
+Static Function _RegistroUnico(_sFilial, _sTID, _sRID)
     Local _aDados := {}
 
     _oSQL:= ClsSQL ():New ()
@@ -118,6 +118,7 @@ Static Function _RegistroUnico(_sFilial, _sTID)
     _oSQL:_sQuery += "	WHERE ZD0.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += "	AND ZD0.ZD0_FILIAL   = '" + xFilial('ZD0') + "' "
     _oSQL:_sQuery += "	AND ZD0_TID          = '" + _sTID + "'"
+    _oSQL:_sQuery += "	AND ZD0_RID          = '" + _sRID + "'"
     _oSQL:_sQuery += "	AND ZD0_STABAI IN ('A','E')"
     _oSQL:_sQuery += "	ORDER BY FILIAL, VALOR_PARCELA  DESC "
     u_log(_oSQL:_sQuery)

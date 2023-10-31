@@ -57,8 +57,8 @@
 // 11/08/2021 - Claudia - Validação de nome do cliente, conforme GLPI: 10710
 // 01/09/2021 - Robert  - Criado tratamento para campo C5_INDPRES: sempre 5=venda com entrega fora do estabelecimento (GLPI 10085)
 // 10/09/2021 - Robert  - Campo C5_INDPRES passa a ser importado com '1'.
+// 30/10/2023 - Claudia - Incluida gravação do campo c5_filial no execauto. GLPI: 14435
 //
-
 // --------------------------------------------------------------------------
 User Function EDIM1 (_lAutomat, _sArq, _nRegZZS)
 	Local cCadastro   := "Importacao de arquivos EDI padrao Mercador"
@@ -378,6 +378,7 @@ Static Function _GeraPed (_sSeqPed)
 	if _lContinua
 		_sObsPed = ""
 		_aAutoSC5 = {}
+		aadd (_aAutoSC5, {"C5_FILIAL",  '01', NIL})
 		aadd (_aAutoSC5, {"C5_PEDCLI",  _cabec -> PedCompr, NIL})
 		aadd (_aAutoSC5, {"C5_EMISSAO", stod (left (_cabec -> DtHrEmis, 8)), NIL})
 		aadd (_aAutoSC5, {"C5_CLIENTE", sa1 -> a1_cod, NIL})

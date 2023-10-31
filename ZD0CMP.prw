@@ -14,7 +14,7 @@
 // 20/07/2023 - Claudia - Ajustado calculo de taxa. GLPI: 12280
 //
 // --------------------------------------------------------------------------
-User Function ZD0CMP(_sTipo, _sFilial, _sTrans)
+User Function ZD0CMP(_sTipo, _sFilial, _sTrans, _sReceb)
     Local aArea      := GetArea()
     Local nTaxaCM    := 0
     Local aTxMoeda   := {}
@@ -45,6 +45,7 @@ User Function ZD0CMP(_sTipo, _sFilial, _sTrans)
         _oSQL:_sQuery += " AND ZD0_FILIAL   = '" + _sFilial + "' "
         _oSQL:_sQuery += " AND ZD0_STABAI   = 'R'"
         _oSQL:_sQuery += " AND ZD0_TID      = '" + _sTrans + "' "
+        _oSQL:_sQuery += " AND ZD0_RID      = '" + _sReceb + "' "
         _aZD0 := _oSQL:Qry2Array ()
     else
         _ValidPerg()
