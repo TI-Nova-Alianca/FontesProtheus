@@ -52,6 +52,7 @@
 // 21/06/2023 - Robert - Passa a ter array de status e gravar descritivo junto no campo status_protheus.
 // 24/07/2023 - Robert - Criado status 6 (entradas por sol.transf. que tenha 'aceite negado').
 //                     - Valida saldo alm.orig.antes de tentar transferir solic.manuais.
+// 30/10/2023 - Robert - Nao tenta nova execucao se estiver com ZAG_EXEC=E
 //
 
 #Include "Protheus.ch"
@@ -267,6 +268,12 @@ static function _Entradas (_sEntrID)
 				(_sAliasQ) -> (dbskip ())
 				loop
 			endif
+			if _oTrEstq:Executado == 'E'  // Erro na execucao
+				u_log2 ('aviso', 'Transferencia consta como ERRO na execucao anterior.')
+			//	_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outros erros'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
 			
 			if ! empty (_oTrEstq:MotNAc)
 				U_Log2 ('debug', '[' + procname () + ']Solicitacao de transferencia com NAO ACEITE (motivo = ' + cvaltochar (_oTrEstq:MotNAc))
@@ -356,9 +363,6 @@ static function _Saidas (_sSaidID)
 	_oSQL:_sQuery +=    " and saida_id like 'ZAG%'"
 	_oSQL:_sQuery +=    " and status  = '6'"
 	_oSQL:_sQuery +=    " and tpdoc   = '1'"
-//	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
-//	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
-//	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = estornado
 	_oSQL:_sQuery +=    " and status_protheus not like '3%'"  // 3 = executado
 	_oSQL:_sQuery +=    " and status_protheus not like 'C%'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
 	_oSQL:_sQuery +=    " and status_protheus not like '5%'"  // 5 = estornado
@@ -403,6 +407,12 @@ static function _Saidas (_sSaidID)
 			if _oTrOrig:Executado == 'S'  // Se jah foi executado anteriormente...
 				u_log2 ('aviso', 'Transferencia consta como jah executada na tabela ZAG.')
 				_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+			if _oTrOrig:Executado == 'E'  // Erro na execucao
+				u_log2 ('aviso', 'Transferencia consta como ERRO na execucao anterior. Nao tentarei novamente de forma automatica.')
+				// _AtuSaid ((_sAliasQ) -> saida_id, '2')  // Atualiza a tabela do Fullsoft como 'outros erros'
 				(_sAliasQ) -> (dbskip ())
 				loop
 			endif

@@ -54,64 +54,60 @@ user function BatVerif (_nVerifIni, _nVerifFim)
 	do while _nVerif <= _nVerifFim
 		U_Log2 ('info', 'Vou ver se devo executar a verificacao ' + cvaltochar (_nVerif))
 		_oVerif := ClsVerif ():New (_nVerif)
-	//	if _nVerif > _oVerif:UltVerif  // Jah passei por todas.
-	//		U_Log2 ('info', 'Cheguei ao final da lista')
-	//		exit
-	//	else
-			if _oVerif:Ativa .and. _oVerif:ViaBatch
+		if _oVerif:Ativa .and. _oVerif:ViaBatch .and. (_oVerif:Filiais == '*' .or. cFilAnt $ _oVerif:Filiais)
 
-				u_log2 ('info', 'Verificacao ' + cvaltochar (_oVerif:Numero) + ' (' + _oVerif:Descricao + ') --> ' + _oVerif:Query)
-				
-				// Acompanhamento de performance de execucao de rotinas.
-				aadd (_aTempos, {_nVerif, seconds (), _oVerif:Descricao, _oVerif:Query, 0})
+			u_log2 ('info', 'Verificacao ' + cvaltochar (_oVerif:Numero) + ' (' + _oVerif:Descricao + ') --> ' + _oVerif:Query)
+			
+			// Acompanhamento de performance de execucao de rotinas.
+			aadd (_aTempos, {_nVerif, seconds (), _oVerif:Descricao, _oVerif:Query, 0})
 
-				if _oVerif:Executa ()
-		
-					// Vou persistir o tempo de execucao somente se a verificacao foi mesmo executada.
-					_aTempos [len (_aTempos), 2] = round (seconds () - _aTempos [len (_aTempos), 2], 2)
-					_aTempos [len (_aTempos), 5] = _oVerif:QtErros
+			if _oVerif:Executa ()
 
-					if _oVerif:QtErros > 0
+				// Vou persistir o tempo de execucao somente se a verificacao foi mesmo executada.
+				_aTempos [len (_aTempos), 2] = round (seconds () - _aTempos [len (_aTempos), 2], 2)
+				_aTempos [len (_aTempos), 5] = _oVerif:QtErros
 
-						// Prepara mensagem em formato HTM para envio por e-mail.
-						_sMsg := _oVerif:ConvHTM (100)  // Converte poucas linhas para as mensagens nao ficarem pesadas demais.
+				if _oVerif:QtErros > 0
 
-						// Envia aos setores interessados.
-						if 'ENG' $ _oVerif:Setores
-							_Notif (_oVerif, {'070'}, _sMsg)
-						endif
-						if 'CUS' $ _oVerif:Setores
-						//	_Envia (_oVerif, {'069'}, _sMsg)
-							_Notif (_oVerif, {'069'}, _sMsg)
-						endif
-						if 'SAF' $ _oVerif:Setores
-							_Notif (_oVerif, {'075'}, _sMsg)
-						endif
-						if 'FIS' $ _oVerif:Setores
-							_Notif (_oVerif, {'019'}, _sMsg)
-						endif
-						if 'PCP' $ _oVerif:Setores
-						//	_Envia (_oVerif, {'047'}, _sMsg)
-							_Notif (_oVerif, {'047'}, _sMsg)
-						endif
-						if 'CML' $ _oVerif:Setores
-							_Notif (_oVerif, {'003'}, _sMsg)
-						endif
-						if 'AUD' $ _oVerif:Setores
-							_Notif (_oVerif, {'015'}, _sMsg)
-						endif
-						if 'INF' $ _oVerif:Setores
-							_Notif (_oVerif, {'122'}, _sMsg)
-						endif
+					// Prepara mensagem em formato HTM para envio por e-mail.
+					_sMsg := _oVerif:ConvHTM (100)  // Converte poucas linhas para as mensagens nao ficarem pesadas demais.
+
+					// Envia aos setores interessados.
+					if 'ENG' $ _oVerif:Setores
+						_Notif (_oVerif, {'070'}, _sMsg)
 					endif
-				else
-					U_help ("Problemas ao executar a verificacao '" + _oVerif:Descricao + ": " + _oVerif:UltMsg,, .T.)
-					_aTempos [len (_aTempos), 2] = 'ERRO'
+					if 'CUS' $ _oVerif:Setores
+					//	_Envia (_oVerif, {'069'}, _sMsg)
+						_Notif (_oVerif, {'069'}, _sMsg)
+					endif
+					if 'SAF' $ _oVerif:Setores
+						_Notif (_oVerif, {'075'}, _sMsg)
+					endif
+					if 'FIS' $ _oVerif:Setores
+						_Notif (_oVerif, {'019'}, _sMsg)
+					endif
+					if 'PCP' $ _oVerif:Setores
+					//	_Envia (_oVerif, {'047'}, _sMsg)
+						_Notif (_oVerif, {'047'}, _sMsg)
+					endif
+					if 'CML' $ _oVerif:Setores
+						_Notif (_oVerif, {'003'}, _sMsg)
+					endif
+					if 'AUD' $ _oVerif:Setores
+						_Notif (_oVerif, {'015'}, _sMsg)
+					endif
+					if 'INF' $ _oVerif:Setores
+						_Notif (_oVerif, {'122'}, _sMsg)
+					endif
 				endif
+			else
+				U_help ("Problemas ao executar a verificacao '" + _oVerif:Descricao + ": " + _oVerif:UltMsg,, .T.)
+				_aTempos [len (_aTempos), 2] = 'ERRO'
 			endif
-	//	endif
+		else
+			U_Log2 ('debug', '[' + procname () + ']Verificacao inativa ou nao se destina a esta filial.')
+		endif
 		_nVerif ++
-
 	enddo
 
 	// Mando um aviso pra mim mesmo, nos primeiros dias, para acompanhar o processo.
@@ -128,7 +124,7 @@ user function BatVerif (_nVerifIni, _nVerifFim)
 	U_Log2 ('debug', _oAUtil:_aArray)
 	_oAviso := ClsAviso():new ()
 	_oAviso:Tipo       = 'I'  // I=Info;A=Aviso;E=Erro
-	_oAviso:Titulo     = "Acompanhamento verif.em batch"
+	_oAviso:Titulo     = "Acomp.verif.em batch F" + cFilAnt
 	_oAviso:Texto      = _oAUtil:ConvHTM ()
 	_oAviso:DestinAvis = 'robert.koch'
 	_oAviso:Origem     = 'Verificacoes diarias'
