@@ -20,10 +20,12 @@
 // Campos a serem eliminados quando der no jeito:
 // ZZU_EMP, d1_fim, f1_fim (?), A2_VACAVIS, A2_VALAVIS, A2_VANAVIS, 'A2_VA%DAP'
 // Campos de DAP no SA2 (conferir os programas antes)
-// adicionar tabelas DRE INDL para compactacao
+// adicionar tabelas SCD, DRE INDL, ... para compactacao
 // Criar verificacao de campos que devem estar 'usados': 
 //    D1_VALIRR, D1_VALPIS, D1_VALCOF, D1_VALCSL, D1_BASEIRR, D1_BASEPIS, D1_BASECOF, D1_BASECSL para evitar erro no MATA103REINF
 // Aumentar o tamanho do ZN_DIASVLD
+// Remover do projeto: ML_DOCTRANS, ZZXPEND
+
 
 // Estala de Home Office:
 // 			SEG	TER	QUA	QUI	SEX
@@ -103,6 +105,7 @@ user function robert ()
 		// _sFuncao += '_BatTrSZI ()'
 		// _sFuncao += '_BatXML ()'
 		// _sFuncao += '_batZBE ()'
+		_sFuncao += '_BlEstF ()'
 		// _sFuncao += '_CargSaf ()'
 		// _sFuncao += '_CplSaf23A ()'
 		// _sFuncao += '_CplSaf23B ()'
@@ -2613,12 +2616,12 @@ return
 
 // --------------------------------------------------------------------------
 static function _batfull ()
-//	U_MudaLog ('U_BatFullW.log')
+	U_MudaLog ('U_BatFullW.log')
 //	U_BatFullW ('E') //, 'ZA1012000617078', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
-//	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
 
-	U_MudaLog ('U_BatFullM.log')
-	U_BatFullM ()
+	//U_MudaLog ('U_BatFullM.log')
+	//U_BatFullM ()
 return
 
 // --------------------------------------------------------------------------
@@ -2658,6 +2661,14 @@ return
 static function _BatZBE ()
 	U_MudaLog ("U_BatZBE.log")
 	U_BatZBE ()
+return
+
+// --------------------------------------------------------------------------
+// Bloqueia / desbloqueia estoque FullWMS
+static function _BlEstF ()
+	local _aBloq := {}
+	aadd (_aBloq, {'01', '0151           ', '12816301', 'F-40-7', 60, 'B'})
+	U_BlEstF (_aBloq)
 return
 
 // --------------------------------------------------------------------------
