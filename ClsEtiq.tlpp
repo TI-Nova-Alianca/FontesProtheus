@@ -54,6 +54,7 @@
 // 12/05/2023 - Robert - Gera msg ao tentar imprimir etiq.de OP e campo C2_VABARCX estiver vazio  (GLPI 13561).
 // 07/06/2023 - Robert - Melhorada msg cod barras da OP (GLPI 13695).
 // 18/10/2023 - Robert - Valida qt.prevista da OP antes de permitir incluir nova etiqueta (GLPI 13212)
+// 01/11/2023 - Robert - Manda 1 dia a menos na tb_wms_etiqueta para evitar erro no Full "produto com validade menor que vida util do item"
 //
 
 #Include "Protheus.ch"
@@ -478,7 +479,8 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 		_oSQL:_sQuery +=          "'" + alltrim (::Produto) + "',"
 		_oSQL:_sQuery +=          "'" + alltrim (::LoteProduto) + "',"
 		_oSQL:_sQuery +=          cvaltochar (::Quantidade) + ","
-		_oSQL:_sQuery +=          "'" + dtos (::ValidLote) + "',"
+	//	_oSQL:_sQuery +=          "'" + dtos (::ValidLote) + "',"
+		_oSQL:_sQuery +=          "'" + dtos (::ValidLote - 1) + "',"  // Manda 1 dia a menos para evitar erro no Full "produto com validade menor que vida util do item"
 		_oSQL:_sQuery +=          "'01',"
 		_oSQL:_sQuery +=          "'" + ::Filial + "',"
 		_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
