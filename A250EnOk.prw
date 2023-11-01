@@ -9,6 +9,7 @@
 // 05/01/2021 - Robert - Desabilitados logs desnecessarios.
 // 22/05/2023 - Robert - Funcao F3Array passou a exigir array de definicao de colunas - GLPI 13616
 // 15/08/2023 - Robert - Grava lista de etiq.nao guardadas no arquivo de log (GLPI 14112)
+// 01/11/2023 - Robert - Gravar mais detalhes no log.
 //
 
 // --------------------------------------------------------------------------
@@ -21,6 +22,7 @@ user function A250EnOk ()
 		_lRet = _VerEtiq ()
 	endif
 
+	U_Log2 ('debug', '[' + procname () + ']Retornando ' + cvaltochar (_lRet) + ' para a OP ' + SD3 -> D3_OP)
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
 
@@ -45,8 +47,8 @@ static function _VerEtiq ()
 			_oVerif:SetParam ('04', SD3->D3_COD)
 			_oVerif:Executa ()
 
-		//	U_Log2 ('debug', '[' + procname () + ']Resultado da verificacao:')
-		//	U_Log2 ('debug', _oVerif:Result)
+			U_Log2 ('debug', '[' + procname () + ']Resultado da verificacao:')
+			U_Log2 ('debug', _oVerif:Result)
 
 			_oEtiq := ClsAUtil ():New (_oVerif:Result)
 
@@ -63,8 +65,8 @@ static function _VerEtiq ()
 				endif
 			next
 
-		//	U_Log2 ('debug', '[' + procname () + ']Apaguei linhas canceladas')
-		//	U_Log2 ('debug', _oEtiq:_aArray)
+			U_Log2 ('debug', '[' + procname () + ']Apaguei cabecalho das colunas e linhas com status=cancelada')
+			U_Log2 ('debug', _oEtiq:_aArray)
 
 			if len (_oEtiq:_aArray) > 1  // Primeira linha contem os cabecalhos de colunas.
 				_lRet = .F.
