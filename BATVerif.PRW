@@ -210,6 +210,7 @@ static function _Notif (_oVerif, _aGrupos, _sMsg)
 
 		// Quero uma copia para acompanhamento (pelo menos nos primeiros dias)
 		if valtype (_aDest) == 'A' .and. len (_aDest) >= 1 .and. _aDest [1] != '122'
+			_oAviso:DestinZZU  = {}
 			_oAviso:DestinAvis = 'robert.koch'
 			_oAviso:Titulo     = "(Copia de)" + _oAviso:Titulo + ' enviado a ' + _aDest [1]
 			_oAviso:Grava ()

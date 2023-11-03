@@ -10,6 +10,8 @@
 // 22/05/2023 - Robert - Funcao F3Array passou a exigir array de definicao de colunas - GLPI 13616
 // 15/08/2023 - Robert - Grava lista de etiq.nao guardadas no arquivo de log (GLPI 14112)
 // 01/11/2023 - Robert - Gravar mais detalhes no log.
+// 03/11/2023 - Robert - Soh bloqueava na verificacao de pallets nao guardados se tivesse MAIS DE UM
+//                       caso (isso por que antigamente a primeira linha tinha os cabecalhos de colunas)
 //
 
 // --------------------------------------------------------------------------
@@ -68,7 +70,8 @@ static function _VerEtiq ()
 			U_Log2 ('debug', '[' + procname () + ']Apaguei cabecalho das colunas e linhas com status=cancelada')
 			U_Log2 ('debug', _oEtiq:_aArray)
 
-			if len (_oEtiq:_aArray) > 1  // Primeira linha contem os cabecalhos de colunas.
+//			if len (_oEtiq:_aArray) > 1  // Primeira linha contem os cabecalhos de colunas.
+			if len (_oEtiq:_aArray) > 0
 				_lRet = .F.
 				_sMsgSup = "As seguintes etiquetas geraram apontamentos para esta OP, mas ainda nao foram guardadas (transferidas do almoxarifado " + sd3 -> d3_local + "):"
 				U_F3Array (_oEtiq:_aArray, "Etiquetas nao guardadas", _oVerif:aColsF3, , , _sMsgSup, '', .T., 'C')

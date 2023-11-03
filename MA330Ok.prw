@@ -13,6 +13,7 @@
 //                      - Inseridas tags para catalogacao de fontes
 // 27/07/2020 - Robert  - Verificacao de acesso: passa a validar acesso 115 e nao mais 069.
 // 26/11/2022 - Robert  - Melhoria msg verificacao de pendencias.
+// 03/11/2023 - Robert  - Na leitura do retorno da 'verif.alianca 04' entendia a primeira linha como um erro.
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -58,7 +59,10 @@ user function MA330OK ()
 
 		_oVerif:Executa ()
 		_oAvisos := ClsAUtil ():New (_oVerif:Result)
-		if len (_oAvisos:_aArray) > 0
+		U_Log2 ('debug', '[' + procname () + ']_oAvisos:')
+		U_Log2 ('debug', _oAvisos:_aArray)
+//		if len (_oAvisos:_aArray) > 0
+		if len (_oAvisos:_aArray) > 1  // A primeira linha contem os titulos das colunas
 			if type ("_oBatch") == 'O'
 				_oBatch:Mensagens += 'Erros ou avisos impedem a execucao do calculo'
 			endif

@@ -343,7 +343,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	do case
 	case ::Numero == 1
 		::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-		::Setores    = 'PCP/ENG'
+		::Setores    = 'PCP'
 		::Descricao  = 'Produto deveria ter revisao padrao no cadastro'
 		::QuandoUsar = 'A qualquer momento'
 		::Dica       = 'Encontrei (na tabela SG1) estruturas com diferentes revisões para o produto, mas no seu cadastro não está indicado qual delas é a padrão."
