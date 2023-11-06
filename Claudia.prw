@@ -9,6 +9,8 @@ User Function claudia ()
 
 	u_help("Nada para executar")
 
+	//u_LOG("TESTE")
+
 	//_sTeste:= Encode64('claudia.lionco'+':'+ 'Tim3M@chin3')
 
 	//u_help("reservas")
