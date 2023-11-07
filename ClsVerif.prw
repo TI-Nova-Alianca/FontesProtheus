@@ -2841,6 +2841,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SD3'
 		::Sugestao   = 'Revise a movimentação e parâmetros envolvendo o custo médio.'
 		::ViaBatch   = .F.
+		::GrupoPerg  = "U_VALID028"
+		::ValidPerg (_lDefault)
 		::Query := ""
 		::Query += " WITH C"
 		::Query += " AS"
@@ -2888,12 +2890,14 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += " SELECT"
 		::Query += " 	'OP com multiplos custos de producao' AS PROBLEMA"
 		::Query += "    ,OP"
+		::Query += "    ,PRODUTO"
+		::Query += "    ,COUNT (*) AS NUM_APONTAMENTOS"
 		::Query += "    ,MIN(CUSTO_UNIT) AS MENOR_CUSTO"
 		::Query += "    ,MAX(CUSTO_UNIT) AS MAIOR_CUSTO"
 		::Query += " FROM C"
-		::Query += " GROUP BY OP"
+		::Query += " GROUP BY OP, PRODUTO"
 		::Query += " HAVING MIN(CUSTO_UNIT) < MAX(CUSTO_UNIT) * 0.9"
-		::Query += " ORDER BY OP"		
+		::Query += " ORDER BY ABS (MIN(CUSTO_UNIT) - MAX(CUSTO_UNIT)) DESC"  // Casos piores antes.
 			
 	case ::Numero == 64
 		::Setores    = 'CUS'
@@ -4213,8 +4217,10 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 			aadd (_aRegsPerg, {02, "Data até ", "D", 8,  0,  "",   "      ", {},  									""})
 			
 			if _lDefault
-				::Param01 = dDataBase   // Deixa um valor default para poder gerar a query inicial.
-				::Param02 = dDataBase   // Deixa um valor default para poder gerar a query inicial.
+//				::Param01 = dDataBase   // Deixa um valor default para poder gerar a query inicial.
+//				::Param02 = dDataBase   // Deixa um valor default para poder gerar a query inicial.
+				::Param01 = stod (::MesAtuEstq + '01')  // Deixa um valor default para poder gerar a query inicial.
+				::Param02 = stod (::MesAtuEstq + '01')  // Deixa um valor default para poder gerar a query inicial.
 			EndIf
 
 		case ::GrupoPerg == "U_VALID046"

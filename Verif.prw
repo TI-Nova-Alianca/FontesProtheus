@@ -83,7 +83,10 @@ User Function Verif (_nQual, _aParam)
 				if _aVerif [_nVerif, 1]
 					_oVerif = _aVerif [_nVerif, 5]
 					_oVerif:ComTela = .T.
+					U_Log2 ('debug', '[' + procname () + ']::Numero    = ' + cvaltochar (_oVerif:Numero))
+					U_Log2 ('debug', '[' + procname () + ']::GrupoPerg = ' + _oVerif:GrupoPerg)
 					if _oVerif:Pergunte ()
+						U_Log2 ('debug', '[' + procname () + ']::Pergunte() retornou .t.')
 						if _oVerif:Executa ()
 							if _oVerif:QtErros == 0
 								u_help ("Nada encontrado para: " + _oVerif:Descricao)

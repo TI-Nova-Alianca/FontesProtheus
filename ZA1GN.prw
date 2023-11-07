@@ -16,28 +16,30 @@
 // 24/02/2023 - Robert - Filtrar D1_TP='VD' em vez de B1_UM='LT' por que temos insumos recebidos em litros.
 //                     - Gera etiquetas pelo metodo ClsEtiq:Grava() e nao mais por U_IncEtqPll()
 // 12/04/2023 - Robert - Passa a gerar etiquetas com controle de semaforo.
+// 06/11/2023 - Robert - Incluida coluna com a data de emissao da NF
 //
 
 // Como tem muitas colunas na array, vou usar nomes mais amigaveis.
 #XTranslate .OK        => 1
 #XTranslate .NF        => 2
-#XTranslate .DtDigit   => 3
-#XTranslate .NomeFor   => 4
-#XTranslate .ItemNF    => 5
-#XTranslate .LoteFor   => 6
-#XTranslate .LoteCtl   => 7
-#XTranslate .CodItem   => 8
-#XTranslate .DescItem  => 9
-#XTranslate .UnMedida  => 10
-#XTranslate .Quant     => 11
-#XTranslate .Fornece   => 12
-#XTranslate .Loja      => 13
-#XTranslate .Serie     => 14
-#XTranslate .DtFabric  => 15
-#XTranslate .DtValid   => 16
-#XTranslate .QtPorEmb  => 17
-#XTranslate .CodNoFor  => 18
-#XTranslate .DescNoFor => 19
+#XTranslate .DtEmis    => 3
+#XTranslate .DtDigit   => 4
+#XTranslate .NomeFor   => 5
+#XTranslate .ItemNF    => 6
+#XTranslate .LoteFor   => 7
+#XTranslate .LoteCtl   => 8
+#XTranslate .CodItem   => 9
+#XTranslate .DescItem  => 10
+#XTranslate .UnMedida  => 11
+#XTranslate .Quant     => 12
+#XTranslate .Fornece   => 13
+#XTranslate .Loja      => 14
+#XTranslate .Serie     => 15
+#XTranslate .DtFabric  => 16
+#XTranslate .DtValid   => 17
+#XTranslate .QtPorEmb  => 18
+#XTranslate .CodNoFor  => 19
+#XTranslate .DescNoFor => 20
 
 // ----------------------------------------------------------------
 User Function ZA1GN (_sNF, _sSerie, _sFornece, _sLoja)
@@ -80,6 +82,7 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "select ' '        AS OK,"  // Manter a mesma ordem dos campos que foi definida nos includes XTranslate mais acima
 		_oSQL:_sQuery +=       " D1_DOC     as NotaFiscal," 
+		_oSQL:_sQuery +=       " dbo.VA_DTOC(D1_EMISSAO) as DtEmis,"
 		_oSQL:_sQuery +=       " dbo.VA_DTOC(D1_DTDIGIT) as DtDigit,"
 		_oSQL:_sQuery +=       " A2_NOME    as Fornecedor,"
 		_oSQL:_sQuery +=       " D1_ITEM    as Linha,"
@@ -99,7 +102,7 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 		_oSQL:_sQuery +=       " ISNULL (SA5.A5_NOMPROD, '')"
 		_oSQL:_sQuery += " from " + RetSQLName ("SD1") + " as SD1 "
 		_oSQL:_sQuery +=          " LEFT JOIN " + RetSQLName ("SA5") + " SA5 "
-		_oSQL:_sQuery +=               " ON (SA5.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=               " ON (SA5.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=               " AND SA5.A5_FILIAL  = '" + xfilial ("SA5") + "'"
 		_oSQL:_sQuery +=               " AND SA5.A5_FORNECE = SD1.D1_FORNECE"
 		_oSQL:_sQuery +=               " AND SA5.A5_LOJA    = SD1.D1_LOJA"
@@ -169,7 +172,8 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 
 		_aCols = {}
 		aadd (_aCols, {.NF,        'Nota Fiscal',       40, ''})
-		aadd (_aCols, {.DtDigit,   'Emissão',           40, ''})
+		aadd (_aCols, {.DtEmis,    'Emissao NF',        40, ''})
+		aadd (_aCols, {.DtDigit,   'Digitacao NF',      40, ''})
 		aadd (_aCols, {.NomeFor,   'Nome fornecedor',   60, ''})
 		aadd (_aCols, {.LoteFor,   'Lote Forn.',        40, ''})
 		aadd (_aCols, {.LoteCtl,   'Lote Interno',      40, ''})

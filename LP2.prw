@@ -22,6 +22,7 @@
 // 27/10/2022 - Robert - Declaracao da variavel local _oAviso
 // 10/11/2022 - Robert - Pequena melhoria nos avisos.
 // 22/11/2022 - Robert - Para tipo CTA_TP_VEND, retornar sempre CC=164006 quando filial 16 (Sara via Spark)
+// 06/11/2023 - Robert - Desabilitado um dos avisos (desnecessario)
 //
 
 // --------------------------------------------------------------------------
@@ -58,6 +59,7 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 			case valtype (_sTipoProd) == "C" .and. _sTipoProd == "VD" ; _xRet = "101030101013"  // VINHOS E DERIVADOS
 			otherwise
 
+			/* Este aviso nao estah tendo utilidade. Robert, 06/11/2023
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
@@ -72,6 +74,7 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 			// Copia do aviso para responsavel contabilidade.
 			_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
 			_oAviso:Grava ()
+			*/
 
 			_xRet = ''
 		endcase
