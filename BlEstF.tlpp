@@ -6,15 +6,47 @@
 // Historico de alteracoes:
 //
 
+// Se a funcao chamadora quiser me passar itens a processar, deve estar neste mesmo formato.
+#XTranslate .BloqFullWAlmox      => 1
+#XTranslate .BloqFullWIdBloq     => 2
+#XTranslate .BloqFullWProduto    => 3
+#XTranslate .BloqFullWLote       => 4
+#XTranslate .BloqFullWEndereco   => 5
+#XTranslate .BloqFullWQuantidade => 6
+#XTranslate .BloqFullWOperacao   => 7
+#XTranslate .BloqFullWResultado  => 8
+#XTranslate .BloqFullWObs        => 9
+#XTranslate .BloqFullWStatusFull => 10
+#XTranslate .BloqFullWQtColunbas => 10
+// 1 - Almoxarifado
+// 2 - Codigo produto
+// 3 - Lote
+// 4 - Endereco (do FullWMS)
+// 5 - Quantidade
+// 6 - Operacao: [B]loquear ou [L]iberar
+// 7 - Para retorno da funcao: .T.=executou com exito; .F.=nao executou
+// 8 - Para retorno da funcao: Observacoes/Descritivo de possiveis erros.
+// 9 - Retorno do campo 'status' do FullWMS
+
 // --------------------------------------------------------------------------
-User Function BlEstF (_aBloq)
-	local _lContinua := .T.
-	local _nLock     := 0
-	local _aAreaAnt  := U_ML_SRArea ()
+User Function BlEstF (_aBlq)
+	local _lContinua  := .T.
+	local _nLock      := 0
+	local _aAreaAnt   := U_ML_SRArea ()
+	private _aBloq    := _aBlq
+	private _sLinkSrv := ''
 	
 	if cEmpAnt + cFilAnt != '0101'
 		u_help ("Esta rotina nao se aplica a esta empresa/filial.",, .t.)
 		_lContinua = .F.
+	endif
+
+	if _lContinua
+		_sLinkSrv = U_LkServer ('FULLWMS_AX01')
+		if empty (_sLinkSrv)
+			u_help ("Linked server para o FullWMS nao definido. Impossivel continuar.",, .t.)
+			_lContinua = .F.
+		endif
 	endif
 
 	// Inicialmente vou usar controle de semaforo, pois preciso ter identificadores
@@ -31,12 +63,12 @@ User Function BlEstF (_aBloq)
 	// Se nao recebi uma array com itens, abro tela para o usuario selecionar.
 	if _lContinua
 		if valtype (_aBloq) == 'A'
-			_lContinua = _Executa (_aBloq)
+			_lContinua = _Executa ()
 		else
 			if aviso ("Selecione o que deseja fazer", {"Bloquear", "Desbloquear"}, 3, "Selecione acao") == 1
-				_lContinua = _Bloq ()
+				//_lContinua = _Bloq ()
 			else
-				_lContinua = _Desbloq ()
+				//_lContinua = _Desbloq ()
 			endif
 		endif
 	endif
@@ -50,69 +82,47 @@ return _lContinua
 
 // --------------------------------------------------------------------------
 // Processa a array de itens
-// Formato de cada linha da array:
-// 1 - Almoxarifado
-// 2 - Codigo produto
-// 3 - Lote
-// 4 - Endereco (do FullWMS)
-// 5 - Quantidade
-// 6 - Operacao: [B]loquear ou [L]iberar
-static function _Executa (_aBloq)
+static function _Executa ()
 	local _lContinua := .T.
 	local _nItem     := 0
 	local _oSQL      := NIL
-	local _sLinkSrv  := ''
 	local _aSldFull  := {}
 	local _sIdOper   := ''
 
-	// Validacoes 'basicas'
+	// Marca todas as linhas como 'ok' para posterior validacao.
+	for _nItem = 1 to len (_aBloq)
+		_aBloq [_nItem, .BloqFullWResultado] = .t.
+	next
+
+	// Validacoes antes de enviar ao FullWMS.
 	sb1 -> (dbsetorder (1))
 	_nItem = 1
 	do while _lContinua .and. _nItem <= len (_aBloq)
 		if _aBloq [_nItem, 1] != '01'
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Esta rotina gera bloqueio apenas para o almoxarifado 01.",, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += 'Esta rotina gera bloqueio apenas para o almoxarifado 01."
 		endif
 		if ! sb1 -> (dbseek (xfilial ("SB1") + _aBloq [_nItem, 2], .f.))
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Cadastro do produto nao localizado!",, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += 'Cadastro do produto nao localizado!'
 		endif
 		if sb1 -> b1_rastro != 'L'
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Produto nao usa controle de lotes.",, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += 'Produto nao usa controle de lotes.'
 		endif
 		if sb1 -> b1_vafullw != 'S'
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Produto nao eh controlado pelo FullWMS.",, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += "Produto nao eh controlado pelo FullWMS."
 		endif
 		if empty (_aBloq [_nItem, 3])
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Lote deve ser informado.",, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += "Lote deve ser informado."
 		endif
 		if empty (_aBloq [_nItem, 4])
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Endereco (no FullWMS) deve ser informado.",, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += "Endereco (no FullWMS) deve ser informado."
 		endif
-		_nItem ++
-	enddo
 
-	if _lContinua
-		_sLinkSrv = U_LkServer ('FULLWMS_AX01')
-		if empty (_sLinkSrv)
-			u_help ("Linked server para o FullWMS nao definido. Impossivel continuar.",, .t.)
-			_lContinua = .F.
-		endif
-	endif
-
-	// Se passou nas validacoes basicas, verifico estoque no FullWMS.
-	_nItem = 1
-	do while _lContinua .and. _nItem <= len (_aBloq)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "select QTD, SITUACAO_LOTE"
 		_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
@@ -127,27 +137,34 @@ static function _Executa (_aBloq)
 		_aSldFull := aclone (_oSQL:Qry2Array (.f., .f.))
 		U_Log2 ('debug', _aSldFull)
 		if len (_aSldFull) == 0
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Lote '" + alltrim (_aBloq [_nItem, 3]) + "' / endereco '" + alltrim (_aBloq [_nItem, 4]) + "' nao localizado no FullWMS.", _oSQL:_sQuery, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += "Lote '" + alltrim (_aBloq [_nItem, 3]) + "' / endereco '" + alltrim (_aBloq [_nItem, 4]) + "' nao localizado no FullWMS."
 		endif
 		if _aSldFull [1, 1] != _aBloq [_nItem, 5]
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Saldo do endereco no FullWMS = " + cvaltochar (_aSldFull [1, 1]) + ". Voce deve informar a mesma quantidade, pois o FullWMS nao faz bloqueio parcial de enderecos.", _oSQL:_sQuery, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += "Saldo do endereco no FullWMS = " + cvaltochar (_aSldFull [1, 1]) + ". Voce deve informar a mesma quantidade, pois o FullWMS nao faz bloqueio parcial de enderecos."
 		endif
 		if _aBloq [_nItem, 6] == 'B' .and. left (_aSldFull [1, 2], 1) == 'B'
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Endereco ja se encontra bloqueado no FullWMS.",_oSQL:_sQuery, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += "Endereco ja se encontra bloqueado no FullWMS."
 		endif
 		if _aBloq [_nItem, 6] == 'L' .and. left (_aSldFull [1, 2], 1) == 'L'
-			u_help ("Item " + cvaltochar (_nItem) + " (produto '" + alltrim (_aBloq [_nItem, 2]) +"'): Endereco ja se encontra liberado no FullWMS.",_oSQL:_sQuery, .t.)
-			_lContinua = .F.
-			exit
+			_aBloq [_nItem, .BloqFullWResultado] = .F.
+			_aBloq [_nItem, 8] += "Endereco ja se encontra liberado no FullWMS."
 		endif
 		_nItem ++
 	enddo
+
+	// Qualquer item com aviso de erro invalida todos os demais.
+	if _lContinua
+		for _nItem = 1 to len (_aBloq)
+			if ! _aBloq [_nItem, .BloqFullWResultado]
+				U_Log2 ('erro', '[' + procname () + ']Abortando o processo por que a linha ' + cvaltochar (_nItem) + ' eh invalida.')
+				_lContinua = .F.
+				exit
+			endif
+		next
+	endif
 
 	// Gravacao dos dados para posterior disponibilizacao para o FullWMS
 	if _lContinua
@@ -164,6 +181,11 @@ static function _Executa (_aBloq)
 			msunlock ()
 			U_Log2 ('debug', '[' + procname () + ']ZBH_IdOper ' + zbh -> zbh_idOper + ' criado para item ' + zbh -> zbh_produt)
 		next
+	endif
+
+	// Aguarda em loop por um retorno do FullWMS
+	if _lContinua
+		_Aguarda ()
 	endif
 
 return _lContinua
@@ -189,3 +211,67 @@ static function _GeraID ()
 	endif
 	_sRet = soma1 (_oSQL:RetQry ())
 return _sRet
+
+
+// --------------------------------------------------------------------------
+// Aguarda pelo retorno do FullWMS.
+static function _Aguarda ()
+	local _sHrIni    := ''
+	local _sTempo    := ''
+	local _sMaxTempo := '00:00:30'
+	local _oSQL      := NIL
+	local _sListaIDs := ''
+	local _nItem     := 0
+	local _aRetFull  := {}
+	local _nRetFull  := 0
+
+	// Gera lista dos IDs a verificar
+	_sListaIDs = ''
+	for _nItem = 1 to len (_aBloq)
+		_sListaIDs += "'" + xfilial ("SBH") + _aBloq [_nItem, 1] + "'" + iif (_nItem < len (_aBloq), ',', '')
+	next
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT bloqueio_id, status, descr_erro"
+	_oSQL:_sQuery +=  " FROM tb_wms_bloqueios"
+	_oSQL:_sQuery += " WHERE bloqueio_id in (" + _sListaIDs + ")"
+	_oSQL:Log ('[' + procname () + ']')
+
+	_sHrIni = time ()
+	do while .t.
+		_sTempo = ElapTime (_sHrIni, time ())
+		U_Log2 ('debug', '[' + procname () + ']Aguardando retorno do FullWMS  ' + ElapTime (_sTempo, _sMaxTempo))
+		MsgRun ("Aguardando retorno do FullWMS", ElapTime (_sTempo, _sMaxTempo), {|| allwaystrue ()})
+		sleep (5000)
+
+		// Verifica retornos do FulLWMS e vai preenchendo na array original de bloqueios.
+		// Poderia ler um a um via SQL, mas acho que ler todos em uma consulta unica
+		// vai dar melhor performance no final.
+		_aRetFull = aclone (_oSQL:Qry2Array (.f., .f.))
+		U_Log2 ('debug', _aRetFull)
+		for _nRetFull = 1 to len (_aRetFull)
+			_nItem = ascan (_aBloq, {|_aVal| _aVal [1] == _aRetFull [_nRetFull, 1]})
+			if _nItem == 0
+				u_help ("Encontrei o ID '" + _aRetFull [_nRetFull, 1] + "' no FullWMS e nao tenho ele no Protheus!",, .t.)
+			else
+				_aBloq [_nItem, 9] = _aRetFull [_nRetFull, 2]
+				if alltrim (_aRetFull [_nRetFull, 2]) == '9'
+					_aBloq [_nItem, .BloqFullWResultado] = .F.
+					_aBloq [_nItem, 8] = _aRetFull [_nRetFull, 3]
+				endif
+			endif
+		next
+
+		// Se todos os itens tiveram retorno, posso cair fora do loop.
+		if ascan (_aBloq, {|_aVal| empty (_aVal [9])}) == 0
+			U_Log2 ('debug', '[' + procname () + ']Todos os itens tiveram retorno, posso cair fora do loop.')
+			exit
+		endif
+		if _sTempo >= _sMaxTempo
+			u_help ("Sem retorno do FullWMS em tempo habil. Cancelando operacao.",, .t.)
+			exit
+		endif
+	enddo
+	U_Log2 ('debug', '[' + procname () + ']_aBloq depois de sair do loop:')
+	U_Log2 ('debug', _aBloq)
+return
