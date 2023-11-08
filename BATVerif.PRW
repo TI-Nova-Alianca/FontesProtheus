@@ -107,6 +107,7 @@ user function BatVerif (_nVerifIni, _nVerifFim)
 		else
 			U_Log2 ('debug', '[' + procname () + ']Verificacao inativa ou nao se destina a esta filial.')
 		endif
+		FreeObj (_oVerif)
 		_nVerif ++
 	enddo
 

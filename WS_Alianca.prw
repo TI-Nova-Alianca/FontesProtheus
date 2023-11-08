@@ -1554,104 +1554,102 @@ static function _IncCarSaf ()
 //	U_PerfMon ('I', 'WSGerarCargaSafra')  // Para metricas de performance
 
 	if empty (_sErroWS) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
-		if empty (_sErroWS) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
-			if empty (_sErroWS) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",              .F., .F.) ; endif
-				if empty (_sErroWS) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",                   .F., .F.) ; endif
-					if empty (_sErroWS) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",                    .F., .F.) ; endif
-						if empty (_sErroWS) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                     .F., .F.) ; endif
-							if empty (_sErroWS) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",        .T., .F.) ; endif
-								if empty (_sErroWS) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",       .T., .F.) ; endif
-									if empty (_sErroWS) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",              .F., .F.) ; endif
-										if empty (_sErroWS) ; _sTombador = _ExtraiTag ("_oXML:_WSAlianca:_Tombador",               .T., .F.) ; endif
-											if empty (_sErroWS) ; _sPlacaVei = _ExtraiTag ("_oXML:_WSAlianca:_PlacaVeiculo",           .T., .F.) ; endif
-												if empty (_sErroWS) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra", .T., .F.)) == 'S') ; endif
-													if empty (_sErroWS) ; _sObs      = _ExtraiTag ("_oXML:_WSAlianca:_Obs",                    .F., .F.) ; endif
-														if empty (_sErroWS) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",                  .F., .F.) ; endif
-															if empty (_sErroWS) ; _sCargaC1  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada1",    .f., .F.) ; endif
-																if empty (_sErroWS) ; _sCargaC2  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada2",    .f., .F.) ; endif
+	if empty (_sErroWS) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
+	if empty (_sErroWS) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",              .F., .F.) ; endif
+	if empty (_sErroWS) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",                   .F., .F.) ; endif
+	if empty (_sErroWS) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",                    .F., .F.) ; endif
+	if empty (_sErroWS) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                     .F., .F.) ; endif
+	if empty (_sErroWS) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",        .T., .F.) ; endif
+	if empty (_sErroWS) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",       .T., .F.) ; endif
+	if empty (_sErroWS) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",              .F., .F.) ; endif
+	if empty (_sErroWS) ; _sTombador = _ExtraiTag ("_oXML:_WSAlianca:_Tombador",               .T., .F.) ; endif
+	if empty (_sErroWS) ; _sPlacaVei = _ExtraiTag ("_oXML:_WSAlianca:_PlacaVeiculo",           .T., .F.) ; endif
+	if empty (_sErroWS) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra", .T., .F.)) == 'S') ; endif
+	if empty (_sErroWS) ; _sObs      = _ExtraiTag ("_oXML:_WSAlianca:_Obs",                    .F., .F.) ; endif
+	if empty (_sErroWS) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",                  .F., .F.) ; endif
+	if empty (_sErroWS) ; _sCargaC1  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada1",    .f., .F.) ; endif
+	if empty (_sErroWS) ; _sCargaC2  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada2",    .f., .F.) ; endif
 
-																	// A partir de 2021 o app de safra manda tambem CPF e inscricao, para os casos em que foi gerado 'lote de entrega'
-																	// pelo caderno de campo, e lah identifica apenas o grupo familiar. A inscricao e o CPF serao conhecidos somente
-																	// no momento em que o associado chegar aqui com o talao de produtor.
-																	if empty (_sErroWS)
-																		_oSQL := ClsSQL ():New ()
-																		_oSQL:_sQuery := ""
-																		_oSQL:_sQuery += " SELECT A2_COD, A2_LOJA"
-																		_oSQL:_sQuery += " FROM " + RetSQLName ("SA2") + " SA2 "
-																		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-																		_oSQL:_sQuery += " AND A2_FILIAL = '" + xfilial ("SA2") + "'"
-																		if ! empty (_sAssoc)
-																			_oSQL:_sQuery += " AND A2_COD    = '" + _sAssoc + "'"
-																		endif
-																		if ! empty (_sLoja)
-																			_oSQL:_sQuery += " AND A2_LOJA   = '" + _sLoja + "'"
-																		endif
-																		if ! empty (_sCPFCarg)
-																			_oSQL:_sQuery += " AND A2_CGC   = '" + _sCPFCarg + "'"
-																		endif
-																		if ! empty (_sInscCarg)
-																			_oSQL:_sQuery += " AND A2_INSCR = '" + _sInscCarg + "'"
-																		endif
-																		_oSQL:Log ()
-																		_aRegSA2 = aclone (_oSQL:Qry2Array (.F., .F.))
-																		if len (_aRegSA2) == 0
-																			_SomaErro ("Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)")
-																		elseif len (_aRegSA2) > 1
-																			_SomaErro ("Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)")
-																		else
-																			_oAssoc := ClsAssoc ():New (_aRegSA2 [1, 1], _aRegSA2 [1, 2])
-																			if valtype (_oAssoc) != 'O'
-																				_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
-																			endif
-																		endif
-																	endif
+	// A partir de 2021 o app de safra manda tambem CPF e inscricao, para os casos em que foi gerado 'lote de entrega'
+	// pelo caderno de campo, e lah identifica apenas o grupo familiar. A inscricao e o CPF serao conhecidos somente
+	// no momento em que o associado chegar aqui com o talao de produtor.
+	if empty (_sErroWS)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT A2_COD, A2_LOJA"
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SA2") + " SA2 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND A2_FILIAL = '" + xfilial ("SA2") + "'"
+		if ! empty (_sAssoc)
+			_oSQL:_sQuery += " AND A2_COD    = '" + _sAssoc + "'"
+		endif
+		if ! empty (_sLoja)
+			_oSQL:_sQuery += " AND A2_LOJA   = '" + _sLoja + "'"
+		endif
+		if ! empty (_sCPFCarg)
+			_oSQL:_sQuery += " AND A2_CGC   = '" + _sCPFCarg + "'"
+		endif
+		if ! empty (_sInscCarg)
+			_oSQL:_sQuery += " AND A2_INSCR = '" + _sInscCarg + "'"
+		endif
+		_oSQL:Log ()
+		_aRegSA2 = aclone (_oSQL:Qry2Array (.F., .F.))
+		if len (_aRegSA2) == 0
+			_SomaErro ("Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)")
+		elseif len (_aRegSA2) > 1
+			_SomaErro ("Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)")
+		else
+			_oAssoc := ClsAssoc ():New (_aRegSA2 [1, 1], _aRegSA2 [1, 2])
+			if valtype (_oAssoc) != 'O'
+				_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
+			endif
+		endif
+	endif
 
-																	// Leitura dos itens de forma repetitiva (tentei ler em array mas nao funcionou e tenho pouco tempo pra ficar testando...)
-																	if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola1", .T., .F.)), 5) ; endif
-																		if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade1",        .T., .F.) ; endif
-																			if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .F., .F.) ; endif
-																				if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote1",             .F., .F.) ; endif
-																					if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe1",           .F., .F.) ; endif
-																						if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante1",        .F., .F.) ; endif
-																							if empty (_sErroWS)
-																								aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
-																							endif
-																							//
-																							if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola2", .F., .F.)), 5) ; endif
-																								if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade2",        .F., .F.) ; endif
-																									if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem2",        .F., .F.) ; endif
-																										if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote2",             .F., .F.) ; endif
-																											if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe2",           .F., .F.) ; endif
-																												if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
-																													if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 2 itens na carga
-																														aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
-																													endif
-																													//
-																													if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola3", .F., .F.)), 5) ; endif
-																														if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade3",        .F., .F.) ; endif
-																															if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem3",        .F., .F.) ; endif
-																																if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif
-																																	if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe3",           .F., .F.) ; endif
-																																		if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
-																																			if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
-																																				aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
-																																			endif
-																																			//u_log2 ('info', 'Itens da carga:')
-																																			//u_log2 ('info', _aItensCar)
-																																			if empty (_sErroWS)
-																																				if len (_aItensCar) == 0
-																																					_SomaErro ("Nenhum item informado para gerar carga.")
-																																				else
-																																					_sCompart = _sCargaC1 + iif (! empty (_sCargaC2), '/', '') + _sCargaC2
+	// Leitura dos itens de forma repetitiva (tentei ler em array mas nao funcionou e tenho pouco tempo pra ficar testando...)
+	if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola1", .T., .F.)), 5) ; endif
+	if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade1",        .T., .F.) ; endif
+	if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .F., .F.) ; endif
+	if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote1",             .F., .F.) ; endif
+	if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe1",           .F., .F.) ; endif
+	if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante1",        .F., .F.) ; endif
+	if empty (_sErroWS)
+		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
+	endif
+	//
+	if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola2", .F., .F.)), 5) ; endif
+	if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade2",        .F., .F.) ; endif
+	if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem2",        .F., .F.) ; endif
+	if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote2",             .F., .F.) ; endif
+	if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe2",           .F., .F.) ; endif
+	if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
+	if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 2 itens na carga
+		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
+	endif
+	//
+	if empty (_sErroWS) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola3", .F., .F.)), 5) ; endif
+	if empty (_sErroWS) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade3",        .F., .F.) ; endif
+	if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem3",        .F., .F.) ; endif
+	if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif
+	if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe3",           .F., .F.) ; endif
+	if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
+	if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
+		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
+	endif
+	//u_log2 ('info', 'Itens da carga:')
+	//u_log2 ('info', _aItensCar)
+	if empty (_sErroWS)
+		if len (_aItensCar) == 0
+			_SomaErro ("Nenhum item informado para gerar carga.")
+		else
+			_sCompart = _sCargaC1 + iif (! empty (_sCargaC2), '/', '') + _sCargaC2
 //			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCargaC1, _sCargaC2)
-																																					U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCompart)
-																																				endif
-																																			endif
+			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCompart)
+		endif
+	endif
 
-//	U_PerfMon ('F', 'WSGerarCargaSafra')  // Para metricas de performance
-																																			u_log2 ('info', 'Finalizando web service de geracao de carga.')
-																																			Return
-//
+	u_log2 ('info', 'Finalizando web service de geracao de carga.')
+Return
 
 
 // --------------------------------------------------------------------------

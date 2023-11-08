@@ -144,7 +144,7 @@ user function AtuMerc (_sAlias, _nRecno)
 		_oSQL:_sQuery +=           "'" + _sChave3 + "',"
 		_oSQL:_sQuery +=           "'" + _sChave4 + "',"
 		_oSQL:_sQuery +=           "'" + _sChave5 + "')"
-		_oSQL:Log ()
+	//	_oSQL:Log ('[' + procname () + ']')
 		if ! _oSQL:Exec ()
 			U_AvisaTI ("Erro ao agendar exportacao para Mercanet: " + _oSQL:_sQuery)
 			_lContinua = .F.
