@@ -21,6 +21,9 @@
 //                         vendedro não possua notas no mes, mas está ativo.
 //  26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
 //  12/01/2022 - Claudia - Criada nova validação para indenização. GLPI: 11361
+//  06/11/2023 - Claudia - Criada validação conforme GLPI: 14465
+//  08/11/2023 - Claudia - Incluido o calculo de valores de verbas, sem necessidade 
+//                         da impressão em relatorio. GLPI: 14475
 //
 // ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -197,16 +200,9 @@ Static Function _GeraPDF_Email()
 				oPrint:Say(nLinha,0470, left((_sAliasQ) -> NOMEREDUZIDO,35) 	 					,oFont12n)
 			EndIf
 			oPrint:Say(nLinha,1045, TransForm((_sAliasQ) -> TOTAL_NF  		, '@E 9,999,999.99')  	,oFont12n)
-			// 20210430
-			//oPrint:Say(nLinha,1045, TransForm(_nIpiNota  					, '@E 9,999,999.99')  	,oFont12n)
-			//oPrint:Say(nLinha,1045, TransForm(_nStNota  					, '@E 9,999,999.99')  	,oFont12n)
-			//oPrint:Say(nLinha,1045, TransForm((_sAliasQ) -> BONIF_NF  		, '@E 9,999,999.99')  	,oFont12n)
-			//oPrint:Say(nLinha,1045, TransForm(_vlrFreSeg  					, '@E 9,999,999.99')  	,oFont12n)
-
 
 			oPrint:Say(nLinha,1245, TransForm((_sAliasQ) -> BASE_TIT  		, '@E 9,999,999.99')  	,oFont12n) 
 			oPrint:Say(nLinha,1475, dtoc(_sDataVenc)  			        							,oFont12n)
-			//oPrint:Say(nLinha,1465, (_sAliasQ) -> PEDIDO       		  					    		,oFont12n)
 			oPrint:Say(nLinha,1645, TransForm((_sAliasQ) -> VALOR_TIT 		,   '@E 999,999.99') 	,oFont12n)
 			oPrint:Say(nLinha,1845, TransForm((_sAliasQ) -> VLR_DESCONTO    , '@E 9,999,999.99') 	,oFont12n)
 			oPrint:Say(nLinha,2045, TransForm((_sAliasQ) -> VLR_RECEBIDO    , '@E 9,999,999.99') 	,oFont12n)
@@ -397,16 +393,17 @@ Static Function _GeraPDF_Email()
 		EndIf
 
 		_nTotDev := 0
+		_nValor := 0
 		For _y := 1 to len(_aDev)
+			If  _aDev[_y,12] == 'P' .and. _aDev[_y,13] == 'CMP'
+				_nValor := _aDev[_y,11] * -1
+			else
+				_nValor := _aDev[_y,11]
+			endif
+
 			If mv_par10 == 2
 				_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 			
-				If  _aDev[_y,12] == 'P' .and. _aDev[_i,13] == 'CMP'
-					_nValor := _aDev[_y,11] * -1
-				else
-					_nValor := _aDev[_y,11]
-				endif
-
 				oPrint:Say(nLinha,0100, alltrim(_aDev[_y,2]) 	 			  	 			,oFont12n)
 				oPrint:Say(nLinha,0600, alltrim(_aDev[_y,3]) 	 			  	 			,oFont12n)
 				oPrint:Say(nLinha,0800, alltrim(_aDev[_y,4]) 	 			  	 			,oFont12n)

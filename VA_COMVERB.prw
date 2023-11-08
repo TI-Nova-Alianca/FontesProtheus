@@ -19,8 +19,9 @@
 //  Historico de alteracoes:
 // 15/01/2021 - Claudia - GLPI: 9077 - Incluida média de percentual de comissão para 
 //						  tipo 5 VERBA EM TITULO DE OUTROS
-// 13/04/2021 - claudia - GLPI: 9824 - Retirado do 6 - VERBA EM TITULO SEM COMISSAO' 
+// 13/04/2021 - Claudia - GLPI: 9824 - Retirado do 6 - VERBA EM TITULO SEM COMISSAO' 
 //                        as NCCs (serie: CV)
+// 08/11/2023 - Claudia - Incluida validação de base de cmissão zerada. GLPI: 14475
 //
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -80,6 +81,7 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg, _sFilial)
 	_oSQL:_sQuery += " 			AND E3_PARCELA = ZA5_PARC"
 	_oSQL:_sQuery += " 			AND E3_CODCLI = ZA5_CLI"
 	_oSQL:_sQuery += " 			AND E3_LOJA = ZA5_LOJA"
+	_oSQL:_sQuery += "          AND E3_BASE <> 0 "
 	_oSQL:_sQuery += " 			AND E3_EMISSAO < '" + dtos(_dtaIni)+"'"
 	_oSQL:_sQuery += " 		)"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " SE1 "
@@ -89,7 +91,6 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg, _sFilial)
 	_oSQL:_sQuery += " 			AND SE1.E1_PREFIXO = E3_PREFIXO"
 	_oSQL:_sQuery += " 			AND SE1.E1_PARCELA = E3_PARCELA)"
 	_oSQL:_sQuery += " WHERE ZA5.D_E_L_E_T_ = ''"
-	//_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
 	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + _sFilial + "' " 
 	_oSQL:_sQuery += " AND ZA5_DTA BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
 	
@@ -141,7 +142,7 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg, _sFilial)
 	_oSQL:_sQuery += " 			AND E3_PARCELA = ZA5_PARC"
 	_oSQL:_sQuery += " 			AND E3_CODCLI = ZA5_CLI"
 	_oSQL:_sQuery += " 			AND E3_LOJA = ZA5_LOJA"
-	//_oSQL:_sQuery += " 			AND E3_EMISSAO < '"+ dtos(_dtaFin) + "'"
+	_oSQL:_sQuery += "          AND E3_BASE <> 0 "
 	_oSQL:_sQuery += " 			AND E3_EMISSAO <= '"+ dtos(_dtaFin) + "'"
 	_oSQL:_sQuery += " 		)"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " SE1 "
@@ -365,7 +366,9 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg, _sFilial)
 	_oSQL:_sQuery += " 			AND E3_PARCELA = ZA5_PARC"
 	_oSQL:_sQuery += " 			AND E3_CODCLI = ZA5_CLI"
 	_oSQL:_sQuery += " 			AND E3_LOJA = ZA5_LOJA"
+	_oSQL:_sQuery += "          AND E3_BASE <> 0 "
 	_oSQL:_sQuery += " 			AND E3_EMISSAO <= '" + dtos(_dtaFin) + "'"
+	//_oSQL:_sQuery += " 			AND E3_EMISSAO BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
 	_oSQL:_sQuery += " 		)"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " SE1 "
 	_oSQL:_sQuery += " 	ON (SE1.D_E_L_E_T_ = ''"
@@ -374,7 +377,6 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg, _sFilial)
 	_oSQL:_sQuery += " 			AND SE1.E1_PREFIXO = E3_PREFIXO"
 	_oSQL:_sQuery += " 			AND SE1.E1_PARCELA = E3_PARCELA)"
 	_oSQL:_sQuery += " WHERE ZA5.D_E_L_E_T_ = ''"
-	//_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
 	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + _sFilial + "' " 
 	_oSQL:_sQuery += " AND ZA5_DTA BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
 	

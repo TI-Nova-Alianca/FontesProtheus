@@ -11,8 +11,9 @@
 //  #Modulos 		   #FIN 
 //
 //  Historico de alteracoes:
+//  08/11/2023 - Claudia - Incluido parametro de vendedor na execução manual do processo. GLPI: 14475
 //
-// ------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------------
 
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -43,11 +44,13 @@ User function BatVerbas(_nTipo, _sFilial)
 	If _nTipo == 1
 		_dDtaIni  := FirstDate ( Date())
 		_dDtaFin  := LastDate ( Date())
+		_sVend    := ""
 	Else
 		_ValidPerg()
 		If Pergunte(cPerg,.T.)
 			_dDtaIni := mv_par01
 			_dDtaFin := mv_par02
+			_sVend   := mv_par03
 		Else
 			Return
 		EndIf
@@ -58,6 +61,9 @@ User function BatVerbas(_nTipo, _sFilial)
 	u_log ( DTOS(_dDtaIni) +'-' + DTOS(_dDtaFin))
 	_sSQL := " DELETE FROM ZB0010" 
 	_sSQL += " WHERE ZB0_FILIAL= '" +_sFilial +"' AND ZB0_DATA BETWEEN '" + DTOS(_dDtaIni) + "' AND '" + DTOS(_dDtaFin) + "'"
+	if !empty(_sVend)
+		_sSQL += " AND ZB0_VENDCH = '"+ _sVend +"' "
+	EndIf
 	u_log (_sSQL)
 	
 	If TCSQLExec (_sSQL) < 0
@@ -83,6 +89,9 @@ User function BatVerbas(_nTipo, _sFilial)
 		_oSQL:_sQuery += " AND E3_VEND BETWEEN ' ' and 'ZZZ'"
 		_oSQL:_sQuery += " AND E3_EMISSAO BETWEEN '" + dtos (_dDtaIni) + "' AND '" + dtos (_dDtaFin) + "'"
 		_oSQL:_sQuery += " AND E3_BAIEMI = 'B'
+		if !empty(_sVend)
+			_oSQL:_sQuery += " AND E3_VEND = '"+ _sVend +"'"
+		endif
 		_oSQL:_sQuery += " AND SE3.D_E_L_E_T_ = ''
 
 		_oSQL:Log ()
@@ -135,6 +144,7 @@ Static Function _ValidPerg ()
 	//                     PERGUNT         TIPO TAM DEC VALID F3     Opcoes             Help
 	aadd (_aRegsPerg, {01, "Data inicial ", "D", 08, 0,  "",   "   ", {},                ""})
 	aadd (_aRegsPerg, {02, "Data final   ", "D", 08, 0,  "",   "   ", {},                ""})
+	aadd (_aRegsPerg, {03, "Vendedor     ", "C", 03, 0,  "",   "   ", {},                ""})
 
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
