@@ -8,6 +8,7 @@
 // 25/10/2023 - Claudia - Incluidas novas colunas conforme GLPI: 14386
 // 27/10/2023 - Claudia - Acrescentada a unidade de medida. GLPI: 14412
 // 01/11/2023 - Claudia - Acrescentado campo D1_CF. GLPI: 14431
+// 09/11/2023 - Claudia - Incluido o campo de perda de op. GLPI:14457
 //
 // -----------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -47,6 +48,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		   ,SUM(B9_QINI) AS QTD "
 	_oSQL:_sQuery += " 		   ,'' AS OP "
 	_oSQL:_sQuery += " 		   ,'' AS CF "
+	_oSQL:_sQuery += "         ,'' AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SB9010 "
 	_oSQL:_sQuery += " 		WHERE B9_DATA BETWEEN '" + dtos(_DtAntIni) + "' AND '" + dtos(_DtAntFin) + "'"
 	_oSQL:_sQuery += " 		AND D_E_L_E_T_ = '' "
@@ -68,6 +70,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		   ,-SUM(B9_QINI) AS QTD "
 	_oSQL:_sQuery += " 		   ,'' AS OP "
 	_oSQL:_sQuery += " 		   ,'' AS CF "
+	_oSQL:_sQuery += "         ,'' AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SB9010 "
 	_oSQL:_sQuery += " 		WHERE B9_DATA BETWEEN '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
 	_oSQL:_sQuery += " 		AND D_E_L_E_T_ = '' "
@@ -89,6 +92,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		   ,SUM(D1_QUANT) AS QTD "
 	_oSQL:_sQuery += " 		   ,'' AS OP "
 	_oSQL:_sQuery += " 		   ,'' AS CF "
+	_oSQL:_sQuery += "         ,'' AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD1010 "
 	_oSQL:_sQuery += " 		WHERE D1_DTDIGIT BETWEEN  '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
 	_oSQL:_sQuery += " 		AND D_E_L_E_T_ = '' "
@@ -119,6 +123,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		   ,-SUM(D2_QUANT) AS QTD "
 	_oSQL:_sQuery += " 		   ,'' AS OP "
 	_oSQL:_sQuery += " 		   ,'' AS CF "
+	_oSQL:_sQuery += "         ,'' AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD2010 "
 	_oSQL:_sQuery += " 		WHERE D2_COD IN (SELECT "
 	_oSQL:_sQuery += " 				B1_COD "
@@ -153,6 +158,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		   ,SUM(D1_QUANT) AS QTD "
 	_oSQL:_sQuery += " 		   ,'' AS OP "
 	_oSQL:_sQuery += " 		   ,'' AS CF "
+	_oSQL:_sQuery += "         ,'' AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD1010 "
 	_oSQL:_sQuery += " 		WHERE D1_COD IN (SELECT "
 	_oSQL:_sQuery += " 				B1_COD "
@@ -185,6 +191,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		   ,-SUM(D2_QUANT) AS QTD "
 	_oSQL:_sQuery += " 		   ,'' AS OP "
 	_oSQL:_sQuery += " 		   ,'' AS CF "
+	_oSQL:_sQuery += "         ,'' AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD2010 "
 	_oSQL:_sQuery += " 		WHERE D2_EMISSAO BETWEEN '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
 	_oSQL:_sQuery += " 		AND D_E_L_E_T_ = '' "
@@ -214,6 +221,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		   ,SUM(D1_QUANT) AS QTD "
 	_oSQL:_sQuery += " 		   ,'' AS OP "
 	_oSQL:_sQuery += " 		   ,'' AS CF "
+	_oSQL:_sQuery += "         ,'' AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD1010 "
 	_oSQL:_sQuery += " 		WHERE D1_DTDIGIT BETWEEN '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
 	_oSQL:_sQuery += " 		AND D_E_L_E_T_ = '' "
@@ -243,6 +251,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		   ,-SUM(D2_QUANT) AS QTD "
 	_oSQL:_sQuery += " 		   ,'' AS OP "
 	_oSQL:_sQuery += " 		   ,'' AS CF "
+	_oSQL:_sQuery += "         ,'' AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD2010 "
 	_oSQL:_sQuery += " 		WHERE D2_EMISSAO BETWEEN '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
 	_oSQL:_sQuery += " 		AND D_E_L_E_T_ = '' "
@@ -278,6 +287,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 			END) AS QTD "
 	_oSQL:_sQuery += " 		   ,D3_OP AS OP "
 	_oSQL:_sQuery += " 		   ,D3_CF AS CF "
+	_oSQL:_sQuery += "         ,D3_VAPEROP AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD3010 "
 	_oSQL:_sQuery += " 		WHERE D3_OP = '' "
 	_oSQL:_sQuery += " 		AND D3_EMISSAO BETWEEN '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
@@ -292,6 +302,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_EMISSAO "
 	_oSQL:_sQuery += " 				,D3_OP "
 	_oSQL:_sQuery += " 				,D3_CF "
+	_oSQL:_sQuery += "         		,D3_VAPEROP  "
 
 	_oSQL:_sQuery += " 		UNION "
 	//	-- REQUISIÇÃO PARA OP - erro
@@ -312,6 +323,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 			END) AS QTD "
 	_oSQL:_sQuery += " 		   ,D3_OP AS OP "
 	_oSQL:_sQuery += " 		   ,D3_CF AS CF "
+	_oSQL:_sQuery += "         ,D3_VAPEROP AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD3010 "
 	_oSQL:_sQuery += " 		WHERE D3_OP != '' "
 	_oSQL:_sQuery += " 		AND D3_EMISSAO BETWEEN  '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
@@ -326,6 +338,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_EMISSAO "
 	_oSQL:_sQuery += " 				,D3_OP "
 	_oSQL:_sQuery += " 				,D3_CF "
+	_oSQL:_sQuery += "         		,D3_VAPEROP "
 
 	_oSQL:_sQuery += " 		UNION "
 	//	-- Produção Por OP - OK	
@@ -346,6 +359,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 			END) AS QTD "
 	_oSQL:_sQuery += " 		   ,D3_OP AS OP "
 	_oSQL:_sQuery += " 		   ,D3_CF AS CF "
+	_oSQL:_sQuery += "         ,D3_VAPEROP AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD3010 "
 	_oSQL:_sQuery += " 		WHERE D3_OP != '' "
 	_oSQL:_sQuery += " 		AND D3_EMISSAO BETWEEN  '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
@@ -360,6 +374,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_EMISSAO "
 	_oSQL:_sQuery += " 				,D3_OP "
 	_oSQL:_sQuery += " 				,D3_CF "
+	_oSQL:_sQuery += "         		,D3_VAPEROP "
 
 	_oSQL:_sQuery += " 		UNION "
 	//	--transferencias internas
@@ -380,6 +395,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 			END) AS QTD "
 	_oSQL:_sQuery += " 		   ,D3_OP AS OP "
 	_oSQL:_sQuery += " 		   ,D3_CF AS CF "
+	_oSQL:_sQuery += "         ,D3_VAPEROP AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD3010 "
 	_oSQL:_sQuery += " 		WHERE D3_OP = '' "
 	_oSQL:_sQuery += " 		AND D3_EMISSAO BETWEEN  '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
@@ -394,6 +410,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_EMISSAO "
 	_oSQL:_sQuery += " 				,D3_OP "
 	_oSQL:_sQuery += " 				,D3_CF "
+	_oSQL:_sQuery += "         		,D3_VAPEROP "
 
 	_oSQL:_sQuery += " 		UNION  "
 	//	--transferencia interna	
@@ -414,6 +431,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 			END) AS QTD "
 	_oSQL:_sQuery += " 		   ,D3_OP AS OP "
 	_oSQL:_sQuery += " 		   ,D3_CF AS CF "
+	_oSQL:_sQuery += "         ,D3_VAPEROP AS PERDA_OP "
 	_oSQL:_sQuery += " 		FROM SD3010 "
 	_oSQL:_sQuery += " 		WHERE D3_OP = '' "
 	_oSQL:_sQuery += " 		AND D3_EMISSAO BETWEEN  '" + dtos(_DtRefIni) + "' AND '" + dtos(_DtRefFin) + "'"
@@ -428,6 +446,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 				,D3_LOCAL "
 	_oSQL:_sQuery += " 				,D3_OP "
 	_oSQL:_sQuery += " 				,D3_CF "
+	_oSQL:_sQuery += "         		,D3_VAPEROP "
 	_oSQL:_sQuery += "               ) "
 
 	_oSQL:_sQuery += " 	SELECT "
@@ -470,7 +489,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += "  		WHEN CF = 'ER0' THEN 'Estorno de Producao manual' "
 	_oSQL:_sQuery += "  		WHEN CF = 'ER1' THEN 'Estorno de Producao automatica' "
 	_oSQL:_sQuery += "  	END "
-
+	_oSQL:_sQuery += "      ,PERDA_OP "
 	_oSQL:_sQuery += " FROM entSaida "
 	_oSQL:_sQuery += " LEFT JOIN SB1010 SB1 "
 	_oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = '' "
@@ -491,6 +510,7 @@ User Function VA_APUES()
 	_oSQL:_sQuery += " 		,AX "
 	_oSQL:_sQuery += " 		,OP "
 	_oSQL:_sQuery += " 		,CF "
+	_oSQL:_sQuery += " 		,PERDA_OP "
 	_oSQL:Log ()
 	
 	_oSQL:Qry2Xls ()	
