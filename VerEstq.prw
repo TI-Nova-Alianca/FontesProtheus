@@ -37,6 +37,9 @@
 // 14/07/2023 - Robert  - Melhorado tratamento para situacoes que nao tem TES (nao eh ped.venda) - GLPI 13047)
 // 06/09/2023 - Robert  - Grava log de aviso quando retornar alguma mensagem de problema ao programa chamador.
 //                      - Passa a validar estoque tambem no FullWMS.
+// 09/11/2023 - Robert  - Validacao estq Full calculava [disponível = total - indisponível - bloqueado]
+//                        mas pode haver casos em que o mesmo endereco estah indisponivel e bloqueado
+//                        ao mesmo tempo (GLPI 14487)
 //
 
 // -----------------------------------------------------------------------------------------------------------
@@ -200,9 +203,11 @@ static function _VerFull (_sProduto, _nQtdVen, _sLote)
 		_oSQL:_sQuery := "select *"
 		_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
 		_oSQL:_sQuery += " 'select sum (qtd) as total"
-		_oSQL:_sQuery +=        ", sum (case when situacao_rua  like ''9%'' then qtd else 0 end) as indisp"
-		_oSQL:_sQuery +=        ", sum (case when situacao_lote like ''B%'' then qtd else 0 end) as bloq"
-		_oSQL:_sQuery +=        ", sum (case when num_reserva   is not null then qtd else 0 end) as reserva"
+		_oSQL:_sQuery +=        ", sum (case when situacao_rua  like ''9%''"
+		_oSQL:_sQuery +=                     " or situacao_lote like ''B%''"
+		_oSQL:_sQuery +=                     " or num_reserva is not null"
+		_oSQL:_sQuery +=              " then qtd else 0 end)"
+		_oSQL:_sQuery +=         " as nao_dispon"
 		_oSQL:_sQuery +=    " from v_alianca_estoques"
 		_oSQL:_sQuery +=   " where empr_codemp       = 1"
 		_oSQL:_sQuery +=     " and item_cod_item_log = ''" + alltrim (_sProduto) + "''"
@@ -213,17 +218,15 @@ static function _VerFull (_sProduto, _nQtdVen, _sLote)
 		_oSQL:Log ('[' + procname () + ']')
 		_aEstqFull := aclone (_oSQL:Qry2Array (.f., .f.) [1])
 		U_Log2 ('debug', _aEstqFull)
-		_nDispFull = _aEstqFull [1] - _aEstqFull [2] - _aEstqFull [3] - _aEstqFull [4]
+		_nDispFull = _aEstqFull [1] - _aEstqFull [2]
 		if _nDispFull < _nQtdVen
-			_sRet := "Saldo insuficiente (" + cvaltochar (_nDispFull) + ") no FullWMS."
+			_sRet := "Saldo insuf.(" + cvaltochar (_nDispFull) + ") no FullWMS."
 			_sRet += " Prod:" + alltrim (_sProduto)
 			if ! empty (_sLote)
 				_sRet += " Lote:" + alltrim (_sLote)
 			endif
 			_sRet += " Estq:" + cvaltochar (_aEstqFull [1])
-			_sRet += " Indisp:" + cvaltochar (_aEstqFull [2])
-			_sRet += " Bloq:" + cvaltochar (_aEstqFull [3])
-			_sRet += " Reserv:" + cvaltochar (_aEstqFull [4])
+			_sRet += " Bloq/indisp/reserv:" + cvaltochar (_aEstqFull [2])
 		endif
 	endif
 return _sRet
