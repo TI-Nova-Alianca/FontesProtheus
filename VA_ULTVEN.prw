@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 20/01/2022 - Claudia - Incluida a data de emissão da nota e retirada a dt.emissao 
 //                        do pedido. GLPI:11499
+// 13/11/2023 - Claudia - Incluida condição de pgto. GLPI: 14484
 //
 // ----------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -29,8 +30,8 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
     _oSQL   := ClsSQL():New ()
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += " SELECT "
-    _oSQL:_sQuery += " 	    SC6.C6_PRODUTO " "
-    _oSQL:_sQuery += " FROM SC5010 SC5
+    _oSQL:_sQuery += " 	    SC6.C6_PRODUTO " 
+    _oSQL:_sQuery += " FROM SC5010 SC5 "
     _oSQL:_sQuery += " INNER JOIN SC6010 SC6 "
     _oSQL:_sQuery += " 	ON SC6.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 		AND SC6.C6_FILIAL = SC5.C5_FILIAL "
@@ -63,6 +64,7 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
         _oSQL:_sQuery += "    ,SC6.C6_PRCVEN AS PRECO_VENDA "
         _oSQL:_sQuery += "    ,SC6.C6_PRUNIT AS PRECO_UNITARIO "
         _oSQL:_sQuery += "    ,SC6.C6_VALOR AS VALOR "
+        _oSQL:_sQuery += "    ,TRIM(SC5.C5_CONDPAG) + ' - ' + TRIM(SE4.E4_COND) + ' - ' + TRIM(SE4.E4_DESCRI) AS CONDICAO_PGTO "
         _oSQL:_sQuery += " FROM " + RetSQLName ("SC5") + " SC5 "
         _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SC6") + " SC6 "
         _oSQL:_sQuery += " 	ON SC6.D_E_L_E_T_ = '' "
@@ -82,6 +84,9 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
         _oSQL:_sQuery += " 		AND SF2.F2_FILIAL = SC6.C6_FILIAL "
         _oSQL:_sQuery += " 		AND SF2.F2_DOC    = SC6.C6_NOTA "
         _oSQL:_sQuery += " 		AND SF2.F2_SERIE  = SC6.C6_SERIE "
+        _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE4") + " SE4 "
+	    _oSQL:_sQuery += "  ON SE4.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += "      AND SE4.E4_CODIGO = SC5.C5_CONDPAG "
         _oSQL:_sQuery += " WHERE SC5.D_E_L_E_T_ = '' "
         _oSQL:_sQuery += " AND C5_FILIAL  = '" + _sFilial  + "' "
         _oSQL:_sQuery += " AND C5_NUM    <> '" + _sPedido  + "' "
@@ -105,7 +110,8 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
                             _aProd[_i,11]       ,;
                             _aProd[_i,12]       ,;
                             _aProd[_i,13]       ,;
-                            _aProd[_i,14]       })
+                            _aProd[_i,14]       ,;
+                            _aProd[_i,15]       })
         Next
     Next
             
@@ -123,6 +129,7 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
     aadd (_aCols, {12, "Preço de Venda" ,  30,  "@E 9,999,999.99"})
     aadd (_aCols, {13, "Preço Unitario" ,  30,  "@E 9,999,999.99"})
     aadd (_aCols, {14, "Valor"       	,  30,  "@E 9,999,999.99"})
+    aadd (_aCols, {15, "Cond.Pgto  "    ,  35,  "@!"})
     
     U_F3Array (_aDados, "Consulta última venda", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight - 40 , "", "", .T., 'C' )
 
