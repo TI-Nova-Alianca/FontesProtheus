@@ -15,7 +15,7 @@ User Function ZX5_14 ()
 
 	if U_ZZUVL ('051')
 		do while .t.
-			_sSafra = U_Get ('Safra (vazio=todas)', 'C', 4, '', '', U_IniSafra (date ()), .F., '.t.')
+			_sSafra = U_Get ('Cod.tabela (vazio=todas)', 'C', 4, '', '', space (4), .F., '.t.')
 			if _sSafra == NIL .or. empty (_sSafra)
 				U_ZX5A (4, "14", "U_ZX5_14LO ()", "allwaystrue ()", .T.,NIL, _aOrd)
 			else

@@ -24,6 +24,7 @@
 // 15/01/2021 - Robert - Replica tabela 52
 // 10/02/2021 - Robert - Replicacao da tabela 52 nao fazia da 53 (itens) - GLPI 9383.
 // 14/09/2023 - Robert - Tratamento campo ZX5_13PMIN
+// 13/11/2023 - Robert - Tratamento para campos de % acrescimo cfe. classificacoes (PR/AA/A/B/C/D/DS e A/B/D/DS)
 //
 
 // --------------------------------------------------------------------------
@@ -242,6 +243,17 @@ static function _ReplZX513 ()
 				aadd (_aDados, {'ZX5_13PBAG', (_sAliasQ) -> zx5_13pbag})
 				aadd (_aDados, {'ZX5_13GMAG', (_sAliasQ) -> zx5_13gmag})
 				aadd (_aDados, {'ZX5_13PMIN', (_sAliasQ) -> zx5_13pmin})
+				aadd (_aDados, {'ZX5_13AEPR', (_sAliasQ) -> zx5_13AEPR})
+				aadd (_aDados, {'ZX5_13AEAA', (_sAliasQ) -> zx5_13AEAA})
+				aadd (_aDados, {'ZX5_13AEA',  (_sAliasQ) -> zx5_13AEA})
+				aadd (_aDados, {'ZX5_13AEB',  (_sAliasQ) -> zx5_13AEB})
+				aadd (_aDados, {'ZX5_13AEC',  (_sAliasQ) -> zx5_13AEC})
+				aadd (_aDados, {'ZX5_13AED',  (_sAliasQ) -> zx5_13AED})
+				aadd (_aDados, {'ZX5_13AEDS', (_sAliasQ) -> zx5_13AEDS})
+				aadd (_aDados, {'ZX5_13ALA',  (_sAliasQ) -> zx5_13ALA})
+				aadd (_aDados, {'ZX5_13ALB',  (_sAliasQ) -> zx5_13ALB})
+				aadd (_aDados, {'ZX5_13ALD',  (_sAliasQ) -> zx5_13ALD})
+				aadd (_aDados, {'ZX5_13ALDS', (_sAliasQ) -> zx5_13ALDS})
 				_oTab := ClsTabGen ():New ('13')
 				if ! _oTab:Insere (_aDados)
 					u_help (_oTab:UltMsg)
