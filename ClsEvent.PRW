@@ -321,7 +321,7 @@ METHOD Grava () Class ClsEvent
 			_oAviso:DestinAvis = alltrim (::Avisar)
 		endif
 		if ! empty (::AvisarZZU)
-			_oAviso:DestinZZU = alltrim (::AvisarZZU)
+			_oAviso:DestinZZU = aclone (::AvisarZZU)
 		endif
 		_oAviso:Titulo     = 'Evento Protheus ' + _sTextoZN
 		_oAviso:Texto      = _sTextoZN
