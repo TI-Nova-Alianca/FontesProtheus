@@ -32,6 +32,7 @@
 // 28/07/2022 - Robert  - Nao considerava parametro _nQtDias (reprocessava sempre 90 dias) - GLPI 12384
 //                      - Melhorada ordenacao (preferencia para chaves nunca revalidadas)
 //                      - Nao revalida mais as chaves jah marcadas como 'canceladas pelo emitente'
+// 13/11/2023 - Robert  - MG (UF31) passa a mandar 'S:' na tag <S:ENVELOPE> no XML de retorno.
 //
 
 // --------------------------------------------------------------------------
@@ -344,9 +345,13 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 						_sSoapResp = strtran (_sSoapResp, 'env:', '')
 						_sSoapResp = strtran (_sSoapResp, 'soap:', '')
 
-						// Peguei caso da teg ENVELOPE vir com S: na frente. Ex.: <S:Envelope [..]>
-						// Nao sei se isso ocorre noutras UF. por enquanto notei apenas no MS.
-						if _sUF == 'MS' .and. _sTipo == 'CTE'
+						// Peguei caso da tag ENVELOPE vir com S: na frente. Ex.: <S:Envelope [..]>
+						// Nao sei se isso ocorre noutras UF. por enquanto notei apenas em alguns.
+						if (_sUF == 'MS' .and. _sTipo == 'CTE') .or. _sUF == '31'
+							if _lDebug
+								U_Log2 ('debug', '[' + procname () + ']_sUF: ' + _sUF)
+								U_LOG2 ('debug', 'Removendo S: do retorno SOAP response, antes de mandar ao parser: ' + _sSoapResp)
+							endif
 							_sSoapResp = strtran (_sSoapResp, 'S:', '')
 						endif
 
@@ -357,7 +362,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 							loop
 							_oBatch:Retorno = 'N'
 						else
-		
+
 							// Interpreta e da tratamento ao retorno do web service.
 							_TrataRet (_sEstado, _sTipo, _lDebug)
 
@@ -372,7 +377,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 
 	_Evento ('Verificadas ' + cvaltochar (_nQtReval) + ' de ' + cvaltochar (_nQtAReval) + ' chaves pendentes.', .F.)
 
-	// Grava um evento para posterior acompanhamento pelo setor fiscal e demais interessados
+	// Grava um evento de 'revalidei chaves para esta UF' para posterior acompanhamento pelo setor fiscal e demais interessados
 	_oEvento := ClsEvent ():New ()
 	_oEvento:CodEven = 'ZZX001'
 	_oEvento:Chave   = _sEstado + ' - ' + _sTipo
@@ -523,10 +528,10 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 
 		// Grava evento temporario
 		_oEvento := ClsEvent():new ()
-		_oEvento:CodEven   = "ZZX002"
-		_oEvento:Texto     = "Finalizada revalidacao (de chave junto a SEFAZ), com retorno = " + _sRetStat + " Pilha: " + U_LogPCham ()
+		_oEvento:CodEven   = "ZZX001"
+		_oEvento:Texto     = "Finalizada revalidacao (de chave junto a SEFAZ), com retorno = " + _sRetStat
 		_oEvento:ChaveNFe  = zzx -> zzx_chave
-		_oEvento:DiasValid = 30  // Manter o evento por alguns dias, depois disso vai ser deletado.
+		_oEvento:DiasValid = 365  // Manter o evento por alguns dias, depois disso vai ser deletado.
 		_oEvento:Grava ()
 	endif
 return
