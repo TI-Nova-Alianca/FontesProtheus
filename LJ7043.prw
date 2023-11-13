@@ -30,6 +30,7 @@
 // 01/09/2022 - Robert  - Melhorias ClsAviso.
 // 02/10/2022 - Robert  - Removido atributo :DiasDeVida da classe ClsAviso.
 // 24/07/2023 - Claudia - Liberação momentanea de funcionario afastado. GLPI: 13985
+// 13/11/2023 - Claudia - Incluido parametro "VA_LOJASSO". GLPI: 14505
 //
 // ---------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -77,7 +78,11 @@ Static Function _VerFunc(_sCGC,_sTabela,_lRet)
 	_aFun 	 := U_Qry2Array(_sQuery2)  
 
 	If len(_aFun) <= 0 // verifica se eh socio jah que não eh funcionario
-		_lRetAssoc := _VerAssoc(_sCGC,_sTabela,'1',_lRet)
+		if GETMV("VA_LOJASSO") == .T.
+			_lRetAssoc := .T.
+		else
+			_lRetAssoc := _VerAssoc(_sCGC,_sTabela,'1',_lRet)
+		endif
 	Else
 		_lRetFun := .T.
 	EndIf

@@ -1,22 +1,30 @@
-// Programa:   	LJVLDPGT
-// Autor:      	Cláudia Lionço
-// Data:       	08/10/2019
-// Cliente:    	Alianca
-// Descricao:  	P.E. "Valida forma de pagamento" na tela de venda assistida.
-// 				https://tdn.totvs.com/pages/releaseview.action?pageId=201720179
+// Programa.:  LJVLDPGT
+// Autor....:  Cláudia Lionço
+// Data.....:  08/10/2019
+// Cliente..:  Alianca
+// Descricao:  P.E. "Valida forma de pagamento" na tela de venda assistida.
+// 			   https://tdn.totvs.com/pages/releaseview.action?pageId=201720179
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. "Valida forma de pagamento" na tela de venda assistida.
+// #PalavasChave      #valida_forma_de_pagamento
+// #TabelasPrincipais #SA2 
+// #Modulos   		  #LOJA 
 //
 // Historico de alteracoes:
 // 08/01/2020 - Claudia - Alterada validação de associado, pesquisando pelo código e loja base. GLPI 7305
-// 05/04/2021 - Robert  - Incluidas chamadas da funcao PerfMon para monitoramento de tempos de validacao de funcionarios e associados (GLPI 9573)
+// 05/04/2021 - Robert  - Incluidas chamadas da funcao PerfMon para monitoramento de tempos de validacao de 
+//                        funcionarios e associados (GLPI 9573)
 //                      - Nao salvava / restaurava a area de trabalho.
 // 01/09/2022 - Robert  - Eliminadas chamadas da funcao U_PerfMon().
+// 13/11/2023 - Claudia - Incluido parametro "VA_LOJASSO". GLPI: 14505
 //
-
+// --------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 #include 'rwmake.ch' 
 
-// --------------------------------------------------------------------------
 User Function LJVLDPGT()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
@@ -69,7 +77,11 @@ Static Function _VerFunc(sCGC,_lRet)
 	_aFun 	 := U_Qry2Array(_sQuery2)  
 	//
 	If len(_aFun) <= 0 // verifica se eh socio jah que não eh funcionario
-		_lRet = _VerAssoc(sCGC,_lRet)
+		if GETMV("VA_LOJASSO") == .T.
+			_lRet := .T.
+		else
+			_lRet = _VerAssoc(sCGC,_lRet)
+		endif
 	Else
 		_EhFun  := IIf(!empty(_aFun[1,1]),'S','N')
 		_SitFun := alltrim(_aFun[1,2])
@@ -87,28 +99,14 @@ Static Function _VerFunc(sCGC,_lRet)
 				EndIf	
 			EndIf
 		Else
-			_lRet = _VerAssoc(sCGC,_lRet)
+			if GETMV("VA_LOJASSO") == .T.
+				_lRet := .T.
+			else
+				_lRet = _VerAssoc(sCGC,_lRet)
+			endif
 		EndIf
 	EndIf
 	
-//	If len(_aFun) <= 0 // verifica se eh socio jah que não eh funcionario
-//		_lRet = _VerAssoc(sCGC,_lRet)
-//	Else
-//		_EhFun  := IIf(!empty(_aFun[1,1]),'S','N')
-//		_SitFun := alltrim(_aFun[1,2])
-//		If !empty(_aFun[1,2])
-//			If _EhFun == 'S' .and. (_SitFun == '3' .or. _SitFun == '4' )
-//				u_help('Este cliente não faz mais parte do quadro de funcionários! Não é permitida a utilização da forma de pagamento CONVENIO.')
-//				_lRet := .F.
-//			Else
-//				If _EhFun == 'S' .and. (_SitFun != '3' .or. _SitFun != '4' )
-//					_lRet := .T.
-//				EndIf
-//			EndIf
-//		Else
-//			_lRet = _VerAssoc(sCGC,_lRet)
-//		EndIf
-//	EndIf
 Return _lRet
 
 //-----------------------------------------------------------------------------------------
