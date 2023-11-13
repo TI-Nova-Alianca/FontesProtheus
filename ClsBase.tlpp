@@ -1,0 +1,42 @@
+// Programa:  ClsBase
+// Autor:     Robert Koch
+// Data:      13/11/2023
+// Descricao: Declaracao de classe base com metodos e atributos de uso geral,
+//            com intencao de ser herdada por outras classes.
+//            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
+//            apenas para poder incluir no projeto e manter na pasta dos fontes.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Classe
+// #Descricao         #Classe base com metodos e atributos que poderiam ser herdados por outras.
+// #PalavasChave      #classe_base
+// #TabelasPrincipais #
+// #Modulos           #
+
+// Historico de alteracoes:
+//
+
+#Include "Protheus.ch"
+
+// --------------------------------------------------------------------------
+// Funcao declarada apenas para poder compilar este arquivo fonte.
+user function ClsBase ()
+return
+
+
+// ==========================================================================
+CLASS ClsBase
+	public data UltMsg      // Mensagens (geralmente de erro)
+	public METHOD SomaMsg ()
+ENDCLASS
+
+
+// --------------------------------------------------------------------------
+// Adiciona (sempre no inicio, para que a mensagem mais recente seja vista
+// antes) uma mensagem na string ::UltMsg
+METHOD SomaMsg (_sMsg) Class ClsBase
+	local _sMsgAux := alltrim (cvaltochar (_sMsg))
+	if ! alltrim (_sMsgAux) $ ::UltMsg
+		::UltMsg = alltrim (_sMsgAux) + '; ' + ::UltMsg
+	endif
+return
