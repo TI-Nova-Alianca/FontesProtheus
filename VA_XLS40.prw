@@ -19,6 +19,7 @@
 // 14/01/2022 - Robert  - Tratamento para safra 2022.
 //                      - Criada opcao de exportar com descricao resumida.
 // 26/04/2023 - Robert  - Tratamento para safra 2023.
+// 11/11/2023 - Robert  - Tratamento para simulacao nov/20 (GLPI 14483).
 //
 
 #include "VA_INCLU.prw"
@@ -243,6 +244,16 @@ Static Function _Gera()
 			elseif mv_par02 == 4
 				_aPrecos  = aclone (U_PrcUva23 ('07', _sProduto, 15, 'B', 'L', .T., .F.)[4])
 			endif
+		elseif mv_par01 == 'S23A'  // Simulacao nov/20 (GLPI 14483)
+			if mv_par02 == 1
+				_aPrecos  = aclone (U_PrcUvaS1 ('01', _sProduto, 15, 'B', 'L', .T., .F.)[4])
+			elseif mv_par02 == 2
+				_aPrecos  = aclone (U_PrcUvaS1 ('03', _sProduto, 15, 'B', 'E', .T., .F.)[4])
+			elseif mv_par02 == 3
+				_aPrecos  = aclone (U_PrcUvaS1 ('03', _sProduto, 15, 'B', 'L', .T., .F.)[4])
+			elseif mv_par02 == 4
+				_aPrecos  = aclone (U_PrcUvaS1 ('07', _sProduto, 15, 'B', 'L', .T., .F.)[4])
+			endif
 		else
 			u_help ('Sem tratamento de calculo para a safra informada.')
 			exit
@@ -357,7 +368,7 @@ Static Function _Gera()
 
 			// Procura algum grupo de precos que contenha todos os produtos desta coluna.
 			// Basicamente eh a mesma query do programa de calculo de precos.
-			if mv_par01 $ '2022/2023'  // Espero poder apenas acrescentar aqui as proximas safras
+			if mv_par01 $ '2022/2023/S23A'  // Espero poder apenas acrescentar aqui as proximas safras
 				_oSQL := ClsSQL ():New ()
 				_oSQL:_sQuery := "SELECT DISTINCT ZX5_13.ZX5_13GRUP, ZX5_13.ZX5_13DESC, ZX5_13.ZX5_13GBAS"
 				_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_13, "

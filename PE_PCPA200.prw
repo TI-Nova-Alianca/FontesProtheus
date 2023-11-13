@@ -10,12 +10,15 @@
 // #Modulos 		  #todos
 //
 // Historico de alteracoes:
+// 13/11/2023 - Robert - Aproveita rotina jah existente de gravacao de evento
+//                       de alteracao, para notificar o grupo 069 (custos) - GLPI 14490
 //
-//---------------------------------------------------------------------------------------------------------------
+
 #Include "Protheus.ch" 
 #Include "TOTVS.ch"
 #Include "FWMVCDEF.ch"
 
+//---------------------------------------------------------------------------
 User Function PCPA200() 
     Local aParam     := PARAMIXB
     Local xRet       := .T.
@@ -81,6 +84,7 @@ Static Function _GravaLog(_sProduto, _sComponente, _sDesc)
 	_oEvento:CodEven   = "SG1001"
 	_oEvento:Produto   = alltrim(_sProduto)
 	//_oEvento:MailToZZU = {"069"}
+	_oEvento:AvisarZZU = {"069"}
 	
 	_oEvento:Grava()
 Return 

@@ -10,6 +10,10 @@
 // #TabelasPrincipais #SB1 #SG1
 // #Modulos           #EST
 
+// Historico de alteracoes:
+// 13/11/2023 - Robert - Filtrar estruturas pelo campo g1_vacpcus (GLPI 14489)
+//
+
 #include "protheus.ch"
 
 #XTranslate .EstrHistNivel        => 1
@@ -233,12 +237,10 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 
 	// Monta expressao para filtrar componentes
 	_sFiltComp = ".T."
-	if mv_par04 == 2  // Nao considerar uvas
-		_sFiltComp += ".and.sb1->b1_grupo!='0400'"
-	endif
-//	if ! empty (mv_par04)
-//		_sFiltComp += ".and.!sb1->b1_tipo$'" + alltrim (mv_par04) + "'"
+//	if mv_par04 == 2  // Nao considerar uvas
+//		_sFiltComp += ".and.sb1->b1_grupo!='0400'"
 //	endif
+	_sFiltComp += ".and.sg1->g1_vacpcus='S'"
 	U_Log2 ('debug', '[' + procname () + ']Filtro para leitura das estruturas: ' + _sFiltComp)
 
 	sb1 -> (dbsetorder (1))

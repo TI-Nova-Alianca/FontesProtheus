@@ -11,6 +11,7 @@
 // #Modulos           #COOP
 
 // Historico de alteracoes:
+// 09/11/2023 - Robert - Passa a usar tabela S23A para atender consad de nov/23 (GLPI 14483)
 //
 
 #include "VA_INCLU.prw"
@@ -46,7 +47,8 @@ user function PrcUvaS1 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	local _nPBaseMOC := 0
 	local _nGMinAgio := 0
 	local _nPrMinimo := 0
-	local _sSafraPrc := 'S123'  // Ajustar caso seja copiado para o proximo ano!
+//	local _sSafraPrc := 'S123'  // Ajustar caso seja copiado para o proximo ano!
+	local _sSafraPrc := 'S23A'  // Ajustar caso seja copiado para o proximo ano!
 	local _nAgAliAnt := 0
 	local _nAgMOCAnt := 0
 	local _nAgAliPos := 0

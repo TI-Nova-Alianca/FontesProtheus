@@ -817,7 +817,7 @@ Static Function _Importa(_xArq1, _XnomTransp1)
 //					U_Log2 ('debug', '[' + procname () + ']SF1 -> (EOF ()) = ' + cvaltochar (SF1 -> (EOF ())))
 					_xCONT += 1
 					_oEvento := ClsEvent():new ()
-					_oEvento:CodEven    = 'ZZX001'
+					_oEvento:CodEven    = 'ZZX002'
 					_oEvento:Texto      = 'Importacao CTe'
 					_oEvento:NFEntrada  = _xNFiscal
 					_oEvento:SerieEntr  = _xSerie

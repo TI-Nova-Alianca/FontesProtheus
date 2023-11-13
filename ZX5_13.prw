@@ -8,6 +8,7 @@
 // 08/01/2019 - Robert - Passa campos para ordenacao do aCols.
 // 16/05/2023 - Robert - Criado botao para listar as variedades ligadas ao grupo.
 // 17/05/2023 - Robert - Criado botao para simular precos.
+// 10/11/2023 - Robert - Criado botao para exportar a tabela em HTML.
 //
 
 #include "VA_INCLU.prw"
@@ -18,12 +19,13 @@ User Function ZX5_13 ()
 	local _aOrd     := {'ZX5_13SAFR', 'ZX5_13GRUP'}
 	local _aBotAdic := {}
 
-	aadd (_aBotAdic, {"Variedades", {|| U_ZX5_13LV (.t.)}, "Variedades", "Variedades", {|| .T.}})
-	aadd (_aBotAdic, {"Simular",    {|| U_ZX5_13SP ()},    "Sumular",    "Simular",    {|| .T.}})
+	aadd (_aBotAdic, {"Variedades",    {|| U_ZX5_13LV (.t.)}, "Variedades",    "Variedades",    {|| .T.}})
+	aadd (_aBotAdic, {"Simular",       {|| U_ZX5_13SP ()},    "Simular",       "Simular",       {|| .T.}})
+	aadd (_aBotAdic, {"Exportar HTML", {|| U_ZX5_13H  ()},    "Exportar HTML", "Exportar HTML", {|| .T.}})
 
 	if U_ZZUVL ('051')
 		do while .t.
-			_sSafra = U_Get ('Safra (vazio=todas)', 'C', 4, '', '', U_IniSafra (date ()), .F., '.t.')
+			_sSafra = U_Get ('Cod.tabela (vazio=todas)', 'C', 4, '', '', space (4), .F., '.t.')
 			if _sSafra == NIL .or. empty (_sSafra)
 				U_ZX5A (4, "13", "U_ZX5_13LO ()", "allwaystrue ()", .T., NIL, _aOrd, _aBotAdic)
 			else
@@ -144,4 +146,53 @@ User Function ZX5_13SP ()
 	endif
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
+return
+
+// --------------------------------------------------------------------------
+// Exporta tabela em formato HTML
+user function ZX5_13H ()
+	local _sHTML   := ''
+	local _nHdl    := 0
+	local _sArq    := ''
+	local _sCodTab := GDFieldGet ("ZX5_13SAFR")
+	local _sVarUva := ''
+	local _sConduc := ''
+	local _sTipoTab := 'C'  // Por enquanto, apenas [C]ompra
+	local _oTbUva  := NIL
+	
+	if left (GDFieldGet ("ZX5_13GRUP"), 1) == '1'
+		_sVarUva = 'C'
+	elseif left (GDFieldGet ("ZX5_13GRUP"), 1) $ '2/3'
+		_sVarUva = 'F'
+	endif
+
+	if left (GDFieldGet ("ZX5_13GRUP"), 1) == '1'
+		_sConduc = 'L'
+	elseif left (GDFieldGet ("ZX5_13GRUP"), 1) == '2'
+		_sConduc = 'E'
+	elseif left (GDFieldGet ("ZX5_13GRUP"), 1) == '3'
+		_sConduc = 'L'
+	endif
+
+	_oTbUva := ClsTbUva ():New ()
+	_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, 'I')
+
+	if empty (_oTbUva:CodTabela)
+		u_help (_oTbUva:UltMsg,, .t.)
+	else
+		// Exporta para arquivo e manda abrir no navegador.
+		_sHTML = _oTbUva:GeraHTM ()
+		if empty (_sHTML)
+			u_help (_oTbUva:UltMsg,, .t.)
+		else
+			_sArq := 'c:\temp\TabUva_' + _sCodTab + '_' + _sTipoTab + _sVarUva + _sConduc + '.htm'
+			if file (_sArq)
+				delete file (_sArq)
+			endif
+			_nHdl = fcreate (_sArq, 0)
+			fwrite (_nHdl, _sHtml)
+			fclose (_nHdl)
+			ShellExecute ("Open", _sArq, "", "", 1)
+		endif
+	endif
 return
