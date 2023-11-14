@@ -33,6 +33,8 @@
 //                      - Melhorada ordenacao (preferencia para chaves nunca revalidadas)
 //                      - Nao revalida mais as chaves jah marcadas como 'canceladas pelo emitente'
 // 13/11/2023 - Robert  - MG (UF31) passa a mandar 'S:' na tag <S:ENVELOPE> no XML de retorno.
+// 14/11/2023 - Robert  - Muda nome do arquivo de log cfe. UF e layout.
+//                      - Gera aviso para TI caso encontre layout sem definicao na tabela ZZ4.
 //
 
 // --------------------------------------------------------------------------
@@ -66,10 +68,14 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	_oBatch:Mensagens = ''
 	_oBatch:Retorno   = ''
 
+	// Como o log fica extenso e tenho muitas chaves e muitas UF a verificar,
+	// prefiro trabalhar com logs separados.
+	U_MudaLog (procname () + '_' + cvaltochar (_sEstado) + '_' + cvaltochar (_sTipo) + '.log')
+
 	//_nQtDias = iif (_nQtDias == NIL, 0, _nQtDias)
 
 	if _lContinua .and. empty (_sEstado) .and. empty (_sTipo) .and. empty (_sChave)
-		_Evento ("ERRO: Informe estado (UF) + tipo (NFE/CTE) ou chave.", .T.)
+		_Evento ("ERRO: Informe estado (UF) + tipo (NFE/CTE) ou chave.", .T., .f.)
 	endif
 	if _lContinua .and. empty (_sChave) .and. ! empty (_sEstado)
 		do case
@@ -101,7 +107,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			case _sEstado == 'GO' ; _sCodUF = '52' // nao conecta
 			case _sEstado == 'DF' ; _sCodUF = '53'
 			otherwise
-				_Evento ("ERRO: UF '" + _sEstado + "' desconhecida.", .T.)
+				_Evento ("ERRO: UF '" + _sEstado + "' desconhecida.", .T., .f.)
 				_lContinua = .F.
 		endcase
 	endif
@@ -129,9 +135,9 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			// Pelo menos algumas horas entre uma revalidacao e outra
 			_oSQL:_sQuery += " AND (HORAS_DESDE_ULTIMA_REVALIDACAO >= 4 OR ZZX_RETSEF = '')"
 			
-			// Se jah consta como cancelada (e com protocolo
-			// de cancelamento), nem revalido mais.
-			_oSQL:_sQuery +=  " AND NOT (ZZX_RETSEF = '101' AND ZZX_PRTCAN != '')"
+//clausula passada para a view VA_VDFES_A_REVALIDAR			// Se jah consta como cancelada (e com protocolo
+//clausula passada para a view VA_VDFES_A_REVALIDAR			// de cancelamento), nem revalido mais.
+//clausula passada para a view VA_VDFES_A_REVALIDAR			_oSQL:_sQuery +=  " AND NOT (ZZX_RETSEF = '101' AND ZZX_PRTCAN != '')"
 			
 			if ! empty (_sCodUF)  // Permite agendar um batch para cada UF
 				_oSQL:_sQuery += " AND substring (ZZX_CHAVE, 1, 2) = '" + _sCodUF + "'"
@@ -192,17 +198,17 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			_oSQL:Log ()
 			_aRegZZ4 = aclone (_oSQL:Qry2Array ())
 			if len (_aRegZZ4) == 0
-				_Evento ("ERRO: Sem tratamento (ou inativo) na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Query para verificacao: " + _oSQL:_sQuery, .T.)
+				_Evento ("ERRO: Sem tratamento (ou inativo) na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Query para verificacao: " + _oSQL:_sQuery, .T., .t.)
 				_lWSDL_OK = .F.
 				_oBatch:Retorno = 'N'
 			elseif len (_aRegZZ4) > 1
-				_Evento ("ERRO: Existe mais de um tratamento na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Elimine a duplicidade. Query para verificacao: " + _oSQL:_sQuery, .T.)
+				_Evento ("ERRO: Existe mais de um tratamento na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Elimine a duplicidade. Query para verificacao: " + _oSQL:_sQuery, .T., .t.)
 				_lWSDL_OK = .F.
 				_oBatch:Retorno = 'N'
 			else
 				zz4 -> (dbgoto (_aRegZZ4 [1, 1]))
 				if empty (zz4 -> zz4_wsdl)
-					_Evento ("ERRO: Caminho WSDL nao informado para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao, .T.)
+					_Evento ("ERRO: Caminho WSDL nao informado para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao, .T., .t.)
 					_lWSDL_OK = .F.
 					_oBatch:Retorno = 'N'
 				else
@@ -237,17 +243,17 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 						U_Log2 ('debug', 'Parse finalizado')
 					endif
 					if len (_oWSDL:ListOperations()) == 0
-						_Evento ("ERRO na consulta WSDL. Confira o certificado digital e/ou tente novamente mais tarde. " + _oWSDL:cError, .T.)
+						_Evento ("ERRO na consulta WSDL. Confira o certificado digital e/ou tente novamente mais tarde. " + _oWSDL:cError, .T., .f.)
 						_lWSDL_OK = .F.
 						_oBatch:Retorno = 'N'
 					else
 						if empty (zz4 -> zz4_SOper)
-							_Evento ("ERRO: Sem definicao de operacao SOAP na tabela ZZ4.", .T.)
+							_Evento ("ERRO: Sem definicao de operacao SOAP na tabela ZZ4.", .T., .t.)
 							_lWSDL_OK = .F.
 							_oBatch:Retorno = 'N'
 						else
 							if ! _oWSDL:SetOperation (alltrim (zz4 -> zz4_SOper))
-								_Evento ("ERRO na definicao de operacao do WSDL para layout " + zz4 -> zz4_layout + ":" + _oWSDL:cError, .T.)
+								_Evento ("ERRO na definicao de operacao do WSDL para layout " + zz4 -> zz4_layout + ":" + _oWSDL:cError, .T., .f.)
 								_lWSDL_OK = .F.
 								_oBatch:Retorno = 'N'
 							endif
@@ -336,7 +342,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					 
 					// Leitura da mensagem de retorno.
 					if empty (_sSoapResp)
-						_Evento ("ERRO: Retorno vazio para o pacote SOAP", .T.)
+						_Evento ("ERRO: Retorno vazio para o pacote SOAP", .T., .f.)
 						_lWSDL_OK = .F.
 						loop
 						_oBatch:Retorno = 'N'
@@ -357,7 +363,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 
 						_oXMLRet := XmlParser(_sSoapResp, "_", @_sError, @_sWarning )
 						if ! empty (_sError) .or. ! empty (_sWarning)
-							_Evento ("ERRO ao decodificar retorno: " + _sError + _sWarning + '    SOAP response: ' + _sSoapResp, .T.)
+							_Evento ("ERRO ao decodificar retorno: " + _sError + _sWarning + '    SOAP response: ' + _sSoapResp, .T., .f.)
 							_lWSDL_OK = .F.
 							loop
 							_oBatch:Retorno = 'N'
@@ -375,7 +381,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 		(_sAliasQ) -> (dbclosearea ())
 	endif
 
-	_Evento ('Verificadas ' + cvaltochar (_nQtReval) + ' de ' + cvaltochar (_nQtAReval) + ' chaves pendentes.', .F.)
+	_Evento ('Verificadas ' + cvaltochar (_nQtReval) + ' de ' + cvaltochar (_nQtAReval) + ' chaves pendentes.', .F., .f.)
 
 	// Grava um evento de 'revalidei chaves para esta UF' para posterior acompanhamento pelo setor fiscal e demais interessados
 	_oEvento := ClsEvent ():New ()
@@ -418,14 +424,14 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 
 	if _sRetStat $ '656/678'         // Uso indevido
 		u_log2 ('aviso', 'Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.')
-		_Evento ('AVISO: Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.', .T.)
+		_Evento ('AVISO: Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.', .T., .f.)
 		_lWSDL_OK = .F.
 		_lAtuZZX = .F.
 	elseif _sRetStat $ '587/731/526'  // Tags erradas, chave muito antiga, etc.
-		_Evento ("AVISO: Retornou status '" + _sRetStat + "' para a chave " + zzx -> zzx_chave, .F.)
+		_Evento ("AVISO: Retornou status '" + _sRetStat + "' para a chave " + zzx -> zzx_chave, .F., .f.)
 		_lAtuZZX = .F.
 	elseif _sRetStat $ '280'  // Certificado emissor invalido
-		_Evento ("ERRO: Retornou status '" + _sRetStat + "' (certificado emissor invalido)", .T.)
+		_Evento ("ERRO: Retornou status '" + _sRetStat + "' (certificado emissor invalido)", .T., .f.)
 		_lWSDL_OK = .F.
 		_lAtuZZX = .F.
 	else
@@ -446,7 +452,7 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 				u_log2 ('aviso', 'Chave (cancelada).......: ' + _sRetChv)
 				_sRetEvCan = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TREvCa) + ':TEXT')
 				if _sRetEvCan != '110111'
-					_Evento ("ERRO: Status de cancelamento (" + _sRetStat + "), mas evento (" + _sRetEvCan + ") nao corresponde.", .T.)
+					_Evento ("ERRO: Status de cancelamento (" + _sRetStat + "), mas evento (" + _sRetEvCan + ") nao corresponde.", .T., .f.)
 					_lAtuZZX = .F.
 				else
 					_sRetPrCan = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TRPrCa) + ':TEXT')
@@ -482,24 +488,24 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 	// Se pretento atualizar o ZZX, confiro consistencia entre chave, protocolos, etc.
 	if _lAtuZZX
 		if _sRetChv != zzx -> zzx_chave
-			_Evento ("ERRO: Retorno veio para outra chave", .T.)
+			_Evento ("ERRO: Retorno veio para outra chave", .T., .f.)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
 		endif
 		if _sRetStat $ '100/150'
 			if empty (_sRetPrAut)
-				_Evento ("ERRO: Retornou status '" + _sRetStat + "' (autorizado), mas nao consegui ler protocolo de autorizacao para a chave " + zzx -> zzx_chave, .T.)
+				_Evento ("ERRO: Retornou status '" + _sRetStat + "' (autorizado), mas nao consegui ler protocolo de autorizacao para a chave " + zzx -> zzx_chave, .T., .f.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
 			endif
 		elseif _sRetStat == '101'
 			if empty (_sRetPrCan)
-				_Evento ("ERRO: Retornou status '" + _sRetStat + "' (cancelado), mas nao consegui ler protocolo de cancelamento para a chave " + zzx -> zzx_chave, .T.)
+				_Evento ("ERRO: Retornou status '" + _sRetStat + "' (cancelado), mas nao consegui ler protocolo de cancelamento para a chave " + zzx -> zzx_chave, .T., .f.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
 			endif
 		else
-			_Evento ("ERRO: Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno) - " + _sRetMsg, .T.)
+			_Evento ("ERRO: Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno) - " + _sRetMsg, .T., .t.)
 			u_log2 ('info', 'Mensagem................: ' + _sRetMsg)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
@@ -540,11 +546,24 @@ return
 
 // --------------------------------------------------------------------------
 // Grava evento para monitoramento posterior
-static function _Evento (_sMsgEvt, _lErroEvt)
+static function _Evento (_sMsgEvt, _lErroEvt, _lAvisarTI)
 	local _sLinMsg := alltrim (_sMsgEvt)
+	local _oAviso  := NIL
+
 	u_help (alltrim (_sMsgEvt),, _lErroEvt)
 	if ! _sLinMsg $ _sTxtEvt
 		u_log2 ('debug', 'adicionando: ' + _sLinMsg)
 		_sTxtEvt += iif (empty (_sTxtEvt), '', chr (13) + chr (10)) + _sLinMsg
+	endif
+	if _lAvisarTI
+		_oAviso := ClsAviso():new ()
+		_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
+		_oAviso:Titulo     = 'Problema revalidacao chaves DF-e'
+		_oAviso:Texto      = _sMsgEvt
+		_oAviso:DestinZZU  = {'122'}  // 122 = TI
+		_oAviso:Origem     = procname ()
+		_oAviso:DiasDeVida = 2  // Como este programa roda diariamente, nao vejo motivo de encher a caixa postal
+		_oAviso:InfoSessao = .T.  // se .T. inclui informacoes adicionais de sessao na mensagem.
+		_oAviso:Grava ()
 	endif
 return

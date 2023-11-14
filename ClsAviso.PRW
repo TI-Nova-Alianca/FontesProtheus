@@ -21,6 +21,7 @@
 // 05/04/2023 - Robert - Nao grava mais log ao enviar aviso para NaWeb.
 // 03/05/2023 - Robert - Criado atributo IntegNaWeb (default = .T.)
 // 10/05/2023 - Robert - Melhoria pequena nos logs.
+// 13/11/2023 - Robert - Confere tipo de dado dos atributos :DestinAvis e :DestinZZU
 //
 
 #include "protheus.ch"
@@ -113,6 +114,12 @@ METHOD Grava () Class ClsAviso
 
 	::Titulo     = iif (empty (::Titulo), ::Texto, ::Titulo)
 	
+	// Costumo trocar os nomes dos atributos ao instanciar o objeto e perder
+	// um tempao procurando o problema...
+	if valtype (::DestinAvis) != 'C' .or. valtype (::DestinZZU) != 'A'
+		u_help ("Verifique provavel erro no uso da classe " + GetClassName (::Self) + ' pois o(s) atributo(s) :DestinAvis e/ou :DestinZZU esta(ao) com tipo de dado errado.',, .t.)
+	endif
+
 	// Tenho alguns grupos ja usados em outros fontes.
 	if upper (alltrim (::DestinAvis)) == 'GRPTI'
 		::DestinZZU  = {'122'}  // 122 = grupo da TI
