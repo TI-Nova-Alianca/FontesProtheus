@@ -29,7 +29,7 @@ User Function VA_RELCLI()
 	Pergunte(cPerg,.T.)
 	
 	_oSQL := ClsSQL():New ()
-	_oSQL:_sQuery := " SELECT "
+	_oSQL:_sQuery := " SELECT DISTINCT "
     _oSQL:_sQuery += " 	   A1_COD AS CLIENTE "
     _oSQL:_sQuery += "    ,A1_NOME AS NOME "
     _oSQL:_sQuery += "    ,CASE "
@@ -82,8 +82,8 @@ User Function VA_RELCLI()
     EndIf
     If mv_par03 == 3
         _oSQL:_sQuery += " AND A1_MSBLQL = 1 "
-    EndIf
-    _oSQL:_sQuery += " ORDER BY SA1.A1_COD "
+    EndIf, SA1.A1_COD 
+    _oSQL:_sQuery += " ORDER BY SA1.A1_NOME, SA1.A1_COD "
 
 	_oSQL:Log ()
 	
