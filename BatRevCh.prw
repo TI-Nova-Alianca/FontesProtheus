@@ -263,8 +263,13 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			endif
 	
 			// Varre as chaves desta UF / layout / versao
-			do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> UF == _sUF .and. (_sAliasQ) -> layout == _sLayout .and. (_sAliasQ) -> versao == _sVersao 
-				if _lWSDL_OK
+			do while ! (_sAliasQ) -> (eof ()) ;
+				.and. (_sAliasQ) -> UF == _sUF ;
+				.and. (_sAliasQ) -> layout == _sLayout ;
+				.and. (_sAliasQ) -> versao == _sVersao ;
+				.and. _lWSDL_OK
+
+			//	if _lWSDL_OK
 	
 					// Deixa ZZX posicionado para receber o retorno da consulta
 					zzx -> (dbgoto ((_sAliasQ) -> recno))
@@ -273,17 +278,6 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 						(_sAliasQ) -> (dbskip ())
 						loop
 					endif
-
-				/* aguarda atualizar build da base quente
-					// Testa chaves muito antigas para algumas UF que jah sei que nao aceitam mais.
-				//	u_log2 ('debug', left (dtos (zzx -> zzx_emissa), 6))
-				//	u_log2 ('debug', ClsDUtil():SubtrMes (left (dtos (date ()), 6), 5))
-					if left (zzx -> zzx_chave, 2) == '35' .and. left (dtos (zzx -> zzx_emissa), 6) < ClsDUtil ():SubtrMes (left (dtos (date ()), 6), 5) // SP maximo 5 meses
-						u_help ("Chave " + zzx -> zzx_chave + " emitida em " + dtoc (zzx -> zzx_emissa) + ": web service desta UF nao valida mais.")
-						(_sAliasQ) -> (dbskip ())
-						loop
-					endif
-					*/
 
 					// Monta pacote SOAP
 					_sSOAP := '<?xml version="1.0" encoding="utf-8"?>'
@@ -374,7 +368,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 
 						endif
 					endif
-				endif
+			//	endif
 				(_sAliasQ) -> (dbskip ())
 			enddo
 		enddo
@@ -422,17 +416,17 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 		u_log2 ('debug', 'Mensagem................: ' + _sRetMsg)
 	endif
 
-	if _sRetStat $ '656/678'         // Uso indevido
+	if _sRetStat $ '656/678/239'  // Uso indevido, cabecalho XML invalido
 		u_log2 ('aviso', 'Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.')
 		_Evento ('AVISO: Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.', .T., .f.)
-		_lWSDL_OK = .F.
+		_lWSDL_OK = .F.  // Nem adianta prosseguir com este WSDL
 		_lAtuZZX = .F.
 	elseif _sRetStat $ '587/731/526'  // Tags erradas, chave muito antiga, etc.
 		_Evento ("AVISO: Retornou status '" + _sRetStat + "' para a chave " + zzx -> zzx_chave, .F., .f.)
 		_lAtuZZX = .F.
 	elseif _sRetStat $ '280'  // Certificado emissor invalido
 		_Evento ("ERRO: Retornou status '" + _sRetStat + "' (certificado emissor invalido)", .T., .f.)
-		_lWSDL_OK = .F.
+		_lWSDL_OK = .F.  // Nem adianta prosseguir com este WSDL
 		_lAtuZZX = .F.
 	else
 		if _sRetStat $ '100/150'  // Autorizada (100) ou autorizada fora do prazo por ter sido emitida em contingencia (150)
@@ -505,7 +499,7 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 				_oBatch:Retorno = 'N'
 			endif
 		else
-			_Evento ("ERRO: Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno) - " + _sRetMsg, .T., .t.)
+			_Evento ("ERRO: Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno) - " + _sRetMsg, .T., .f.)
 			u_log2 ('info', 'Mensagem................: ' + _sRetMsg)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
