@@ -207,13 +207,12 @@ user function VA_ZZ6Ex (_sMsgLog)
 //			_sNomeLog := alltrim (left (zz6 -> zz6_cmd, _nPosFLog)) + "_" + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 			_sNomeLog := alltrim (left (zz6 -> zz6_cmd, _nPosFLog)) + ".log"
 
-			// Algumas rotinas quero gerar logs mais especificos
-			if 'U_BATREVCH' $ upper (zz6 -> zz6_cmd)
-				_sNomeLog := alltrim (left (zz6 -> zz6_cmd, _nPosFLog))
-				_sNomeLog += "_" + substr (zz6 -> zz6_cmd, 14, 2) + "_" + substr (zz6 -> zz6_cmd, 20, 3)  // Tah bom, eu sei que um espacinho na cahamada vai avacalhar tudo...
-//				_sNomeLog += "_" + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-				_sNomeLog += ".log"
-			endif
+// passado para o fonte U_BatRevCH			// Algumas rotinas quero gerar logs mais especificos
+// passado para o fonte U_BatRevCH			if 'U_BATREVCH' $ upper (zz6 -> zz6_cmd)
+// passado para o fonte U_BatRevCH				_sNomeLog := alltrim (left (zz6 -> zz6_cmd, _nPosFLog))
+// passado para o fonte U_BatRevCH				_sNomeLog += "_" + substr (zz6 -> zz6_cmd, 14, 2) + "_" + substr (zz6 -> zz6_cmd, 20, 3)  // Tah bom, eu sei que um espacinho na cahamada vai avacalhar tudo...
+// passado para o fonte U_BatRevCH				_sNomeLog += ".log"
+// passado para o fonte U_BatRevCH			endif
 		endif
 
 		// Antes de iniciar a execucao, marca o processo como 'iniciado' para poder

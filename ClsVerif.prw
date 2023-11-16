@@ -98,6 +98,7 @@
 // 24/10/2023 - Robert  - Melhorada documentacao de diversas verificacoes
 //                      - Desmarcadas diversas verificacoes que nao precisam ser rodadas via batch.
 // 29/10/2023 - Robert  - Ao converter para HTML, nao 'escapava' caracteres especiais.
+// 14/11/2023 - Robert  - Criada verificacao 99 (DF-e sem revalidacao de chave recente) - GLPI 14514
 //
 
 #include "protheus.ch"
@@ -4022,6 +4023,23 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		endif
 		::Query += " ORDER BY ISNULL (PRT_COD, '') + ISNULL (FULL_COD, '')"
 		::Query +=         ", ISNULL (PRT_LOTE, '') + ISNULL (FULL_LOTE, '')"
+
+
+	case ::Numero == 99
+		::Filiais    = '01'  // Vale para todas as filiais.
+		::Setores    = 'FIS'
+		::Descricao  = "Chaves DF-e sem revalidadacao recente"
+		::Sugestao   = "Verificar se a rotina diaria de revalidacao está operando."
+		::QuandoUsar = "A qualquer momento."
+		::Dica       = "Atualmente existem agendamentos do programa U_BATREVCH para revalidar chaves. Verificar se encontra-se em operação."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: ZZX'
+		::ViaBatch   = .F.  // ainda nao ajustei a rotina de revalidacao
+		::Query := ""
+		::Query += " SELECT V.SIGLA, V.ZZX_CHAVE AS CHAVE, V.ZZX_LAYOUT AS LAYOUT, V.ZZX_VERSAO AS VERSAO, dbo.VA_DTOC (ZZX_EMISSA) AS EMISSAO, V.HORAS_DESDE_ULTIMA_REVALIDACAO, V.ZZX_RETSEF, V.ZZX_PROTOC"
+		::Query += " FROM VA_VDFES_A_REVALIDAR V"
+		::Query += " WHERE (HORAS_DESDE_ULTIMA_REVALIDACAO > 24 OR ZZX_RETSEF = '' OR V.ZZX_PROTOC = '')"
+		::Query += " ORDER BY substring (ZZX_CHAVE, 1, 2), ZZX_DUCC, ZZX_LAYOUT, ZZX_VERSAO desc, ZZX_EMISSA, ZZX_CHAVE"
+
 
 	otherwise
 		::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
