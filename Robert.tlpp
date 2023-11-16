@@ -45,6 +45,7 @@
 user function robert ()
 	local _lContinua := .T.
 	local _sFuncao   := ''
+	local _sHrIni    := time ()
 
 	// REMOVER DEPOIS DOS TESTES DE PERFORMANCE
 //	u_perfmon ('I', 'Prep_env_' + cValToChar (GetServerPort ()))
@@ -127,6 +128,7 @@ user function robert ()
 		// _sFuncao += '_GLPI14182 ()'
 		// _sFuncao += '_GLPI14200 ()'
 		// _sFuncao += '_GLPI14397 ()'
+		// _sFuncao += '_GLPI14483 ()'
 		// _sFuncao += '_ImpGPC ()'
 		// _sFuncao += '_memoria ()'
 		// _sFuncao += '_metaf ()'
@@ -135,7 +137,7 @@ user function robert ()
 		// _sFuncao += '_Rast ()'
 		// _sFuncao += '_reginv ()'
 		// _sFuncao += '_recmail ()'
-		// _sFuncao += '_RevCH ()'
+		_sFuncao += '_RevCH ()'
 		// _sFuncao += '_RelAssoc ()'
 		// _sFuncao += '_SF1()'
 		// _sFuncao += '_SimCtb ()'
@@ -144,7 +146,7 @@ user function robert ()
 		// _sFuncao += '_Sisdevin ()'
 		// _sFuncao += '_ST_MG ()'
 		// _sFuncao += '_SZI ()'
-		_sFuncao += '_TbUva ()'
+		// _sFuncao += '_TbUva ()'
 		// _sFuncao += '_telnet ()'
 		// _sFuncao += '_TrEstq ()'
 		// _sFuncao += '_VACCR2 ()'
@@ -162,7 +164,7 @@ user function robert ()
 		else
 			u_help ('Nada definido.')
 		endif
-		u_log2 ('info', 'Processo finalizado')
+		u_log2 ('info', 'Processo finalizado em ' + ElapTime (_sHrIni, time ()))
 		U_UsoRot ('F', procname (), '')
 	endif
 return
@@ -1354,10 +1356,8 @@ return
 // --------------------------------------------------------------------------
 static function _gerasze()
 	local _oAssoc    := NIL
-	local _sSafra    := '2023'
+	local _sSafra    := '2024'
 	local _sBalanca  := 'LB'
-//	local _sAssoc    := '000161'
-//	local _sLoja     := '01'
 	local _sSerieNF  := ''
 	local _sNumNF    := ''
 	local _sChvNfPe  := ''
@@ -1365,7 +1365,7 @@ static function _gerasze()
 	local _sObs      := 'TESTE ROBERT'
 	local _sCadVit   := '13386'
 	local _sVaried   := '9901'
-	local _sVaried2  := '9924'
+	local _sVaried2  := '9925'
 	local _sEmbalag  := 'G'
 	local _sTombador := '1'
 	local _aItensCar := {}
@@ -1378,7 +1378,7 @@ static function _gerasze()
 //	local _aRegSA2   := {}
 	local _sSivibe   := 'RS-000.013.392'
 	local _sEspumant := ''
-	local _sCompart  := '5126'
+	local _sCompart  := ''
 	local _lAmostra  := .F.
 	_oAssoc := ClsAssoc ():New ('000167', '01')
 	PRIVATE _sErroWS   := ''  // normalmente instanciada pelo programa WS_ALIANCA
@@ -2239,6 +2239,82 @@ return
 
 
 // --------------------------------------------------------------------------
+// Gera simulacoes de pagamentos safra 2023 (versao consad nov/23)
+static function _GLPI14483 ()
+	local _aMenorVl  := {}
+	local _oCarSaf   := NIL
+//	local _aRetPrc   := {}
+	local _aRetPrcS1 := {}
+	/*
+	// Passo 1: gero pre-notas com os detalhes de misturas, etc e o preco efetivo ateh entao.
+	cPerg = "VAGNF3"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2023') // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'Q')    // gerar qual Parcela
+	U_GravaSX1 (cPerg, '07', '')     // DCO inicial
+	U_GravaSX1 (cPerg, '08', 'z')    // DCO final
+	U_GravaSX1 (cPerg, '09', '')     // Prod ini
+	U_GravaSX1 (cPerg, '10', 'z')    // Prod final
+	U_GravaSX1 (cPerg, '11', 0)      // Preco total (especifico safra 2016)
+	U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades (separadas por /)
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades (separadas por /)
+	U_GravaSX1 (cPerg, '14', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '15', 'z')    // Filial final
+	U_VA_GNF3 (.T.)
+	*/
+
+	// Passo 2: altero a tabela de precos da uva (bordo=$2,00 ; isabel=$1,50 ; tintoreas=$1,75)
+	// e rodo novamente alimentando outro campo com os novos precos.
+	// Jah tenho, tambem, a tabela SJ23 que eh da Coop.Sao Joao.
+	dbselectarea ("ZZ9")
+	set filter to zz9_safra = '2023' .and. zz9_parcel = 'Q'
+	count to _nRecCount
+	zz9 -> (dbgotop ())
+	_nRecAtu = 0
+	do while ! zz9 -> (eof ())
+		incproc ()
+		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == 'Q'
+			_sClasFina = iif (zz9 -> zz9_conduc == 'L', zz9 -> zz9_clabd, zz9 -> zz9_classe)
+			if ++_nRecAtu % 100 == 0
+				u_log2 ('info', '[' + cvaltochar (_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']Produto ' + alltrim (zz9 -> zz9_produt) + ' gr.' + zz9 -> zz9_grau + ' ' + _sClasFina)
+			endif
+
+			// Se ha suspeita de mistura, instancia a carga para verificar mais a fundo.
+			_aMenorVl = {}
+			if ! empty (zz9 -> zz9_mistu1) .or. ! empty (zz9 -> zz9_mistu2) .or. ! empty (zz9 -> zz9_mistu3) .or. ! empty (zz9 -> zz9_ccomp)
+				sze -> (dbsetorder (3))  // ZE_FILIAL, ZE_NFGER, ZE_SERIE, R_E_C_N_O_, D_E_L_E_T_
+				if ! sze -> (dbseek (zz9 -> zz9_filial + zz9 -> zz9_nfori + zz9 -> zz9_serior, .F.))
+					u_help ("Nao encotrei nenhuma carga referenciando a contranota '" + zz9 -> zz9_nfori + '/' + zz9 -> zz9_serior + "' da filial '" + zz9 -> zz9_filial + "'",, .t.)
+					exit
+				endif
+				_oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
+				if empty (_oCarSaf:Carga)
+					u_help ("Impossivel instanciar carga (ou carga invalida).",, .t.)
+					exit
+				endif
+				_aMenorVl = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
+			endif
+			if len (_aMenorVl) > 1
+				u_log2 ('info', 'Pre-NF ' + zz9 -> zz9_pre_nf)
+				U_Log2 ('debug', _aMenorVl)
+				_aRetPrcS1 = aclone (U_PrcUvaS1 (zz9 -> zz9_filial, _aMenorVl [1, 1], val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.))
+			else
+				_aRetPrcS1 = aclone (U_PrcUvaS1 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.))
+			endif
+			reclock ("ZZ9", .F.)
+			zz9 -> zz9_vunit  = _aRetPrcS1 [2]
+			zz9 -> zz9_vunit3 = _aRetPrcS1 [5]
+			msunlock ()
+		endif
+		zz9 -> (dbskip ())
+	enddo
+return
+
+// --------------------------------------------------------------------------
+// Simulacoes com cargas de safra
 static function _CargSaf ()
 	local _oCarSaf := NIL
 //	local _nCompart := 0
@@ -2667,11 +2743,10 @@ return
 // Bloqueia / desbloqueia estoque FullWMS
 static function _BlEstF ()
 	local _aBloq := {}
-	aadd (_aBloq, {'01', '0151           ', '12816301', 'D-21-7', 60, 'L', .t., '', ''})
-	aadd (_aBloq, {'01', '0151           ', '12816301', 'D-22-7', 60, 'B', .t., '', ''})
+	aadd (_aBloq, {'', '01', '0345           ', '13042601', 'E-1-1-1', 55, 'B', .t., '', ''})
 	U_BlEstF (@_aBloq)
-	U_Log2 ('debug', '[' + procname () + ']Retorno da funcao:')
-	U_Log2 ('debug', _aBloq)
+	//U_Log2 ('debug', '[' + procname () + ']Retorno da funcao:')
+	//U_Log2 ('debug', _aBloq)
 return
 
 // --------------------------------------------------------------------------
@@ -3088,8 +3163,8 @@ static function _RevCH()
 	// U_BatRevCh ("GO", "NFE", 90)
 	// U_BatRevCh ("MA", "CTE", 90)
 	// U_BatRevCh ("MA", "NFE", 90)
-	// U_BatRevCh ("MG", "CTE", 7) //, '31220510785409000467570000000002091000002094', .t.)
-	// U_BatRevCh ("MG", "NFE", 90)
+	// U_BatRevCh ("MG", "CTE", 90) //, '31230902442313000710570000000015161100015166', .t.)
+	// U_BatRevCh ("MG", "NFE", 90, '31231000506346000166550010014048221036580096', .t.)
 	// U_BatRevCh ("MS", "CTE", 90)
 	// U_BatRevCh ("MS", "NFE", 90)
 	// U_BatRevCh ("MT", "CTE", 90)
@@ -3112,8 +3187,8 @@ static function _RevCH()
 	// U_BatRevCh ("RO", "NFE", 90)
 	// U_BatRevCh ("RR", "CTE", 90)
 	// U_BatRevCh ("RR", "NFE", 90)
-	//U_BatRevCh ("RS", "CTE", 30)
-	U_BatRevCh ("RS", "NFE", 90)
+	// U_BatRevCh ("RS", "CTE", 10) //0, '43230802442313000125570000001696871101696875', .t.)
+ 	U_BatRevCh ("RS", "NFE", 90, '43230888612486000160550100002285321423987847', .t.)
 	// U_BatRevCh ("SC", "CTE", 90)
 	// U_BatRevCh ("SC", "NFE", 90)
 	// U_BatRevCh ("SE", "CTE", 90)
@@ -3388,9 +3463,15 @@ return
 // Testes classe tabela preco uva safra
 static function _TbUva ()
 	local _sHTML  := ''
+	local _nHdl    := 0
+	local _sArq    := ''
+	local _sCodTab := 'S23A'
+	local _sVarUva := 'F'
+	local _sConduc := 'L'
+	local _sTipoTab := 'C'  // Por enquanto, apenas [C]ompra
 	local _oTbUva := ClsTbUva ():New ()
 //	_oTbUva:GeraAtrib ('2023', 'C', 'C', 'L', 'I')  //_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec
-	_oTbUva:GeraAtrib ('2023', 'C', 'F', 'E', 'I')
+	_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, 'D')
 
 	if empty (_oTbUva:CodTabela)
 		U_Log2 ('erro', '[' + procname () + ']' + _oTbUva:UltMsg)
@@ -3452,11 +3533,11 @@ static function _verif ()
 	// _oVerif:SetParam ('02', stod ('20230630'))
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (24)
-	_oVerif:SetParam ('01', '13633101001   ')
-	_oVerif:SetParam ('02', '13633101001   ')
-	_oVerif:SetParam ('03', '4342           ')
-	_oVerif:SetParam ('04', '4342           ')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '13633101001   ')
+	// _oVerif:SetParam ('02', '13633101001   ')
+	// _oVerif:SetParam ('03', '4342           ')
+	// _oVerif:SetParam ('04', '4342           ')
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
 	// _oVerif:SetParam ('02', '')
@@ -3477,6 +3558,7 @@ static function _verif ()
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'zzzzzzzzzz')
 	// _oVerif:SetParam ('05', 2)
+	_oVerif := ClsVerif():New (99)
 	if _oVerif:Executa ()
 		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
 		u_log2 ('debug', _oVerif:Result)

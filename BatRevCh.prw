@@ -51,7 +51,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	local _oWSDL     := NIL
 	local _oSQL      := NIL
 	local _lContinua := .T.
-	local _sCodUF    := ""
+//	local _sCodUF    := ""
 	local _sLayout   := ""
 	local _sVersao   := ""
 	local _sSOAP     := ""
@@ -77,6 +77,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	if _lContinua .and. empty (_sEstado) .and. empty (_sTipo) .and. empty (_sChave)
 		_Evento ("ERRO: Informe estado (UF) + tipo (NFE/CTE) ou chave.", .T., .f.)
 	endif
+/*
 	if _lContinua .and. empty (_sChave) .and. ! empty (_sEstado)
 		do case
 			case _sEstado == 'RO' ; _sCodUF = '11'
@@ -111,7 +112,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 				_lContinua = .F.
 		endcase
 	endif
-
+*/
 	if _lContinua
 		// A verificacao de chaves sempre eh feita em cima do arquivo ZZX (preciso dados adicionais dele)
 		_oSQL := ClsSQL ():New ()
@@ -133,24 +134,23 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			_oSQL:_sQuery += " ZZX_EMISSA >= '" + dtos (date () - _nQtDias) + "'"
 			
 			// Pelo menos algumas horas entre uma revalidacao e outra
-			_oSQL:_sQuery += " AND (HORAS_DESDE_ULTIMA_REVALIDACAO >= 4 OR ZZX_RETSEF = '')"
+			_oSQL:_sQuery += " AND (HORAS_DESDE_ULTIMA_REVALIDACAO >= 24 OR ZZX_RETSEF = '' OR ZZX_PROTOC = '')"
 			
 //clausula passada para a view VA_VDFES_A_REVALIDAR			// Se jah consta como cancelada (e com protocolo
 //clausula passada para a view VA_VDFES_A_REVALIDAR			// de cancelamento), nem revalido mais.
 //clausula passada para a view VA_VDFES_A_REVALIDAR			_oSQL:_sQuery +=  " AND NOT (ZZX_RETSEF = '101' AND ZZX_PRTCAN != '')"
 			
-			if ! empty (_sCodUF)  // Permite agendar um batch para cada UF
-				_oSQL:_sQuery += " AND substring (ZZX_CHAVE, 1, 2) = '" + _sCodUF + "'"
+//			if ! empty (_sCodUF)  // Permite agendar um batch para cada UF
+//				_oSQL:_sQuery += " AND substring (ZZX_CHAVE, 1, 2) = '" + _sCodUF + "'"
+//			endif
+			if ! empty (_sEstado)  // Permite agendar um batch para cada UF
+				_oSQL:_sQuery += " AND SIGLA = '" + _sEstado + "'"
 			endif
 			if ! empty (_sTipo)  // Permite agendar um batch para cada tipo (CTe/NFe/...)
 				_oSQL:_sQuery += " AND UPPER (ZZX_LAYOUT) LIKE '%" + _sTipo + "%'"
 			endif
 		endif
 
-//		// Ordena por UF (chave) + layout + versao para fazer um unico acesso a cada servico.
-//		// Dentro disso, inicia pelas chaves nunca validadas e depois pelas emitidas ha mais tempo.
-//		//_oSQL:_sQuery += " ORDER BY ZZX_CHAVE, ZZX_LAYOUT, ZZX_VERSAO desc, ZZX_DUCC, ZZX_EMISSA"
-		
 		// Como faz uma conexao ao web service da UF e valida todas as chaves
 		// nessa mesma conexao, a ordenacao principal vai ser por UF.
 		_oSQL:_sQuery += " ORDER BY substring (ZZX_CHAVE, 1, 2)"
@@ -266,18 +266,20 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			do while ! (_sAliasQ) -> (eof ()) ;
 				.and. (_sAliasQ) -> UF == _sUF ;
 				.and. (_sAliasQ) -> layout == _sLayout ;
-				.and. (_sAliasQ) -> versao == _sVersao ;
-				.and. _lWSDL_OK
+				.and. (_sAliasQ) -> versao == _sVersao
+			//	.and. _lWSDL_OK
 
-			//	if _lWSDL_OK
+				if _lWSDL_OK
 	
 					// Deixa ZZX posicionado para receber o retorno da consulta
 					zzx -> (dbgoto ((_sAliasQ) -> recno))
-					if zzx -> zzx_emissa < (date () - 180)
-						u_help ("Chave " + zzx -> zzx_chave + " emitida em " + dtoc (zzx -> zzx_emissa) + " (ha mais de 180 dias): nao sera mais verificada pelos web services.")
+					if zzx -> zzx_emissa < (date () - 90)  //180)
+						u_help ("Chave " + zzx -> zzx_chave + " emitida em " + dtoc (zzx -> zzx_emissa) + " (muito antiga): nao sera mais verificada pelos web services.")
 						(_sAliasQ) -> (dbskip ())
 						loop
 					endif
+
+					U_Log2 ('info', '[' + procname () + '](' + cvaltochar (_nQtReval) + ' de ' + cvaltochar (_nQtAReval) + ') Verificando ' + zzx -> zzx_layout + ' ' + zzx -> zzx_chave)
 
 					// Monta pacote SOAP
 					_sSOAP := '<?xml version="1.0" encoding="utf-8"?>'
@@ -285,20 +287,26 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					_sSOAP += '<soap:Header>'
 					_sSoap +=    alltrim (zz4 -> zz4_ACabMs)
 					if zz4 -> zz4_layout == 'NFE'
-						_sSoap +=       '<versaoDados>' + zz4 -> zz4_vLayou + '</versaoDados>'
+//						_sSoap +=       '<versaoDados>' + zz4 -> zz4_vLayou + '</versaoDados>'
+						_sSoap +=       '<versaoDados>' + zz4 -> zz4_VerDad + '</versaoDados>'
 						_sSoap +=       '<cUF>' + zz4 -> zz4_numUF + '</cUF>'
 					elseif zz4 -> zz4_layout == 'CTE'
 						_sSoap +=       '<ctec:cUF>' + zz4 -> zz4_numUF + '</ctec:cUF>'
-						_sSoap +=       '<ctec:versaoDados>' + zz4 -> zz4_vLayou + '</ctec:versaoDados>'
+//						_sSoap +=       '<ctec:versaoDados>' + zz4 -> zz4_vLayou + '</ctec:versaoDados>'
+						_sSoap +=       '<ctec:versaoDados>' + zz4 -> zz4_VerDad + '</ctec:versaoDados>'
 					endif
 					_sSoap +=    alltrim (zz4 -> zz4_FCabMs)
 					_sSOAP += '</soap:Header>'
 					_sSOAP += '<soap:Body>
 					_sSoap += alltrim (zz4 -> zz4_adadm)
 					if zz4 -> zz4_layout == 'NFE'
-						_sSoap +=    '<consSitNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="' + alltrim (zz4 -> zz4_vLayou) + '">'
+//						_sSoap +=    '<consSitNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="' + alltrim (zz4 -> zz4_vLayou) + '">'
+						_sSoap +=    '<consSitNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="' + alltrim (zz4 -> zz4_VerDad) + '">'
 					elseif zz4 -> zz4_layout == 'CTE'
-						_sSoap +=    '<consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="' + alltrim (zz4 -> zz4_vLayou) + '">'
+//						_sSoap +=    '<consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="' + alltrim (zz4 -> zz4_vLayou) + '">'
+						_sSoap +=    '<consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="' + zz4 -> zz4_VerDad + '">'
+
+
 					endif
 					_sSoap +=       '<tpAmb>1</tpAmb>'
 					_sSoap +=       '<xServ>CONSULTAR</xServ>'
@@ -368,7 +376,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 
 						endif
 					endif
-			//	endif
+				endif
 				(_sAliasQ) -> (dbskip ())
 			enddo
 		enddo
@@ -416,88 +424,97 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 		u_log2 ('debug', 'Mensagem................: ' + _sRetMsg)
 	endif
 
-	if _sRetStat $ '656/678/239'  // Uso indevido, cabecalho XML invalido
+	if _sRetStat $ '656/678'  // Uso indevido
 		u_log2 ('aviso', 'Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.')
 		_Evento ('AVISO: Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.', .T., .f.)
 		_lWSDL_OK = .F.  // Nem adianta prosseguir com este WSDL
 		_lAtuZZX = .F.
+
+	elseif _sRetStat $ '239'  // Cabecalho XML invalido
+		u_log2 ('aviso', 'Servico retornou mensagem de cabecalho invalido. Verifique o XML que voce esta enviando!')
+		_Evento ('AVISO: Servico retornou mensagem de cabecalho invalido. Verifique o XML que voce esta enviando!', .T., .f.)
+		_lWSDL_OK = .F.  // Nem adianta prosseguir com este WSDL
+		_lAtuZZX = .F.
+
 	elseif _sRetStat $ '587/731/526'  // Tags erradas, chave muito antiga, etc.
 		_Evento ("AVISO: Retornou status '" + _sRetStat + "' para a chave " + zzx -> zzx_chave, .F., .f.)
 		_lAtuZZX = .F.
+
 	elseif _sRetStat $ '280'  // Certificado emissor invalido
 		_Evento ("ERRO: Retornou status '" + _sRetStat + "' (certificado emissor invalido)", .T., .f.)
 		_lWSDL_OK = .F.  // Nem adianta prosseguir com este WSDL
 		_lAtuZZX = .F.
-	else
-		if _sRetStat $ '100/150'  // Autorizada (100) ou autorizada fora do prazo por ter sido emitida em contingencia (150)
-			_sRetChv  = &('_oXmlRet:' + alltrim (zz4 -> zz4_TRChAu)  + ':TEXT')
-			_sRetPrAut = &('_oXmlRet:' + alltrim (zz4 -> zz4_TRPrAu) + ':TEXT')
-			if _lDebug
-				u_log2 ('debug', 'Chave (autorizada)......: ' + _sRetChv)
-				u_log2 ('debug', 'Protocolo autorizacao...: ' + _sRetPrAut)
-			endif
-		
-		elseif _sRetStat == '101'  // Cancelada
 
-			// Leitura dos eventos vinculados: pode estar em formato de array, caso tenha mais de um evento.
-			_oEvtCanc = &('_oXmlRet:' + alltrim (zz4 -> zz4_TEvCan))
-			if valtype (_oEvtCanc) == 'O'  // Tem apenas um evento
-				_sRetChv  = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TRChCa)  + ':TEXT')
-				u_log2 ('aviso', 'Chave (cancelada).......: ' + _sRetChv)
-				_sRetEvCan = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TREvCa) + ':TEXT')
-				if _sRetEvCan != '110111'
-					_Evento ("ERRO: Status de cancelamento (" + _sRetStat + "), mas evento (" + _sRetEvCan + ") nao corresponde.", .T., .f.)
-					_lAtuZZX = .F.
-				else
-					_sRetPrCan = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TRPrCa) + ':TEXT')
+	elseif _sRetStat $ '100/150'  // Autorizada (100) ou autorizada fora do prazo por ter sido emitida em contingencia (150)
+		_sRetChv  = &('_oXmlRet:' + alltrim (zz4 -> zz4_TRChAu)  + ':TEXT')
+		_sRetPrAut = &('_oXmlRet:' + alltrim (zz4 -> zz4_TRPrAu) + ':TEXT')
+		if _lDebug
+			u_log2 ('debug', 'Chave (autorizada)......: ' + _sRetChv)
+			u_log2 ('debug', 'Protocolo autorizacao...: ' + _sRetPrAut)
+		endif
+
+	elseif _sRetStat == '101'  // Cancelada
+
+		// Leitura dos eventos vinculados: pode estar em formato de array, caso tenha mais de um evento.
+		_oEvtCanc = &('_oXmlRet:' + alltrim (zz4 -> zz4_TEvCan))
+		if valtype (_oEvtCanc) == 'O'  // Tem apenas um evento
+			_sRetChv  = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TRChCa)  + ':TEXT')
+			u_log2 ('aviso', 'Chave (cancelada).......: ' + _sRetChv)
+			_sRetEvCan = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TREvCa) + ':TEXT')
+			if _sRetEvCan != '110111'
+				_Evento ("ERRO: Status de cancelamento (" + _sRetStat + "), mas evento (" + _sRetEvCan + ") nao corresponde.", .T., .f.)
+				_lAtuZZX = .F.
+			else
+				_sRetPrCan = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TRPrCa) + ':TEXT')
+				if _lDebug
+					u_log2 ('aviso', 'Protocolo cancelamento: ' + _sRetPrCan)
+				endif
+			endif
+		else
+			_lAtuZZX = .F.  // Assume como falso, ateh encontrar um evento de cancelamento.
+			for _nEvtCanc = 1 to len (_oEvtCanc)  // Tem mais de um evento
+				_sRetChv  = &('_oEvtCanc [' + cvaltochar (_nEvtCanc) + ']:' + alltrim (zz4 -> zz4_TRChCa)  + ':TEXT')
+				if _lDebug
+					u_log2 ('aviso', 'Chave (evt.cancelamento): ' + _sRetChv)
+				endif
+				_sRetEvCan = &('_oEvtCanc [' + cvaltochar (_nEvtCanc) + ']:' + alltrim (zz4 -> zz4_TREvCa) + ':TEXT')
+				if _sRetEvCan == '110111'  // Se for um evento de cancelamento, nem preciso olhar os demais.
+					_sRetPrCan = &('_oEvtCanc [' + cvaltochar (_nEvtCanc) + ']:' + alltrim (zz4 -> zz4_TRPrCa) + ':TEXT')
 					if _lDebug
 						u_log2 ('aviso', 'Protocolo cancelamento: ' + _sRetPrCan)
 					endif
-				endif
-			else
-				_lAtuZZX = .F.  // Assume como falso, ateh encontrar um evento de cancelamento.
-				for _nEvtCanc = 1 to len (_oEvtCanc)  // Tem mais de um evento
-					_sRetChv  = &('_oEvtCanc [' + cvaltochar (_nEvtCanc) + ']:' + alltrim (zz4 -> zz4_TRChCa)  + ':TEXT')
+					_lAtuZZX = .T.
+					exit
+				else
 					if _lDebug
-						u_log2 ('aviso', 'Chave (evt.cancelamento): ' + _sRetChv)
+						u_log2 ('debug', "Evento (" + _sRetEvCan + ") nao eh cancelamento.")
 					endif
-					_sRetEvCan = &('_oEvtCanc [' + cvaltochar (_nEvtCanc) + ']:' + alltrim (zz4 -> zz4_TREvCa) + ':TEXT')
-					if _sRetEvCan == '110111'  // Se for um evento de cancelamento, nem preciso olhar os demais.
-						_sRetPrCan = &('_oEvtCanc [' + cvaltochar (_nEvtCanc) + ']:' + alltrim (zz4 -> zz4_TRPrCa) + ':TEXT')
-						if _lDebug
-							u_log2 ('aviso', 'Protocolo cancelamento: ' + _sRetPrCan)
-						endif
-						_lAtuZZX = .T.
-						exit
-					else
-						if _lDebug
-							u_log2 ('debug', "Evento (" + _sRetEvCan + ") nao eh cancelamento.")
-						endif
-					endif
-				next
-			endif
+				endif
+			next
 		endif
 	endif
 
 	// Se pretento atualizar o ZZX, confiro consistencia entre chave, protocolos, etc.
 	if _lAtuZZX
-		if _sRetChv != zzx -> zzx_chave
-			_Evento ("ERRO: Retorno veio para outra chave", .T., .f.)
-			_lAtuZZX = .F.
-			_oBatch:Retorno = 'N'
-		endif
-		if _sRetStat $ '100/150'
+//		if _sRetChv != zzx -> zzx_chave
+//			_Evento ("ERRO: Retorno veio para outra chave: '" + _sRetChv + "'", .T., .f.)
+//			_lAtuZZX = .F.
+//			_oBatch:Retorno = 'N'
+//		endif
+		if _sRetChv == zzx -> zzx_chave .and. _sRetStat $ '100/150'
 			if empty (_sRetPrAut)
 				_Evento ("ERRO: Retornou status '" + _sRetStat + "' (autorizado), mas nao consegui ler protocolo de autorizacao para a chave " + zzx -> zzx_chave, .T., .f.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
 			endif
-		elseif _sRetStat == '101'
+		elseif _sRetChv == zzx -> zzx_chave .and. _sRetStat == '101'
 			if empty (_sRetPrCan)
 				_Evento ("ERRO: Retornou status '" + _sRetStat + "' (cancelado), mas nao consegui ler protocolo de cancelamento para a chave " + zzx -> zzx_chave, .T., .f.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
 			endif
+		elseif empty (_sRetChv) .and. _sRetStat == '217'
+			_Evento ("ERRO: Retornou status '" + _sRetStat + "' (nao existe na SEFAZ) - " + _sRetMsg, .T., .f.)
 		else
 			_Evento ("ERRO: Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno) - " + _sRetMsg, .T., .f.)
 			u_log2 ('info', 'Mensagem................: ' + _sRetMsg)
@@ -535,7 +552,6 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 		_oEvento:Grava ()
 	endif
 return
-
 
 
 // --------------------------------------------------------------------------
