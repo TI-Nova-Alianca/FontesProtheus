@@ -39,7 +39,7 @@ Static function _ProcessaTab()
         _sItem    := PADL(ALLTRIM(_aDados[_i, 3]),4,'0')
 		_sProduto := ALLTRIM(_aDados[_i, 4])
 		_sEstado  := alltrim(_aDados[_i, 5])
-        _nValor   := val(strtran(_aDados[_i, 6], ",", ".")) 
+        _nValor   := _ConverteValor(_aDados[_i, 6])
         _sStatus  := alltrim(_aDados[_i, 7])
 
         DbSelectArea("DA0")
@@ -130,27 +130,40 @@ Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
 
     Do Case 
         Case empty(_sFilial)
-            u_help(" Na inclusão de novos registros, o campo <filial> é obrigatório!")
+            _sMsg := " Na inclusão de novos registros, o campo <filial> é obrigatório! Produto:" + _sProduto 
             _lCont := .F.
+            u_help(_sMsg)
+            aadd(_aMsg,{ "ERRO", _sMsg })
+
         Case empty(_sTabela)
-            u_help(" Na inclusão de novos registros, o campo <tabela> é obrigatório!")
+            _sMsg := " Na inclusão de novos registros, o campo <tabela> é obrigatório! Produto:" + _sProduto 
             _lCont := .F.
+            u_help(_sMsg)
+            aadd(_aMsg,{ "ERRO", _sMsg })
 
         Case empty(_sItem)
-            u_help(" Na inclusão de novos registros, o campo <item> é obrigatório!")
+            _sMsg := " Na inclusão de novos registros, o campo <item> é obrigatório! Produto:" + _sProduto 
             _lCont := .F.
+            u_help(_sMsg)
+            aadd(_aMsg,{ "ERRO", _sMsg })
 
         Case empty(_sProduto)
-            u_help(" Na inclusão de novos registros, o campo <produto> é obrigatório!")
+            _sMsg := " Na inclusão de novos registros, o campo <produto> é obrigatório!"
             _lCont := .F.
+            u_help(_sMsg)
+            aadd(_aMsg,{ "ERRO", _sMsg })
 
         Case empty(_sEstado)
-            u_help(" Na inclusão de novos registros, o campo <estado> é obrigatório!")
+            _sMsg := " Na inclusão de novos registros, o campo <estado> é obrigatório! Produto:" + _sProduto 
             _lCont := .F.
+            u_help(_sMsg)
+            aadd(_aMsg,{ "ERRO", _sMsg })
 
         Case empty(_nValor)
-            u_help(" Na inclusão de novos registros, o campo <valor> é obrigatório!")
-            _lCont := .F.
+            _sMsg := " Na inclusão de novos registros, o campo <valor> é obrigatório! Produto:" + _sProduto 
+            u_help(_sMsg)
+            aadd(_aMsg,{ "ERRO", _sMsg })
+            _lCont := .F.            
 
     EndCase
 
@@ -257,6 +270,17 @@ Static Function _RegraST(_sEstado,_sDA0Est,_nValor,_sCliente,_sLoja,_sProduto)
 
     _xRet = U_CalcST4(_sEstado, _sProduto, _nValor, _sCliente, _sLoja, 1, '801')
 Return _xRet
+//
+// ---------------------------------------------------------------------------------------
+// faz tratamentos de valores
+Static Function _ConverteValor(_sValor)
+    Local _nValor := 0
+
+    _sValor := strtran(_sValor, '"', '')
+    _sValor := strtran(_sValor, ",", ".")
+    _nValor := val(_sValor) 
+
+Return _nValor
 //
 // ---------------------------------------------------------------------------------------
 // Mostra Log
