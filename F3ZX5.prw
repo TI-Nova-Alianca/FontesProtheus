@@ -20,11 +20,12 @@
 // 11/08/2012 - Robert  - Criado parametro para receber array com nomes de campos para ordenacao do browse.
 // 12/05/2021 - Claudia - Ajustada a chamada SX5 para R27. GLPI: 8825
 // 01/09/2021 - Robert  - Leitura do SX3 nao filtrava registros deletados.
+// 17/11/2023 - Claudia - Inicializada a variavel _sFilial com "  ", deixando caracteres vazios.
 //
-
+// -----------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
-// -----------------------------------------------------------------------------------
+
 User Function F3ZX5 (_sTabela, _sFiltro, _aCposOrd)
 	local _aOpcoes  := {}
 	local _nOpcao   := 0
@@ -35,7 +36,7 @@ User Function F3ZX5 (_sTabela, _sFiltro, _aCposOrd)
 	local _sCampo   := ""
 	local _aLinha   := {}
 	local _sTxtSup  := ""
-	local _sFilial  := ""
+	local _sFilial  := "  "
 	local _nCpoOrd1 := 0
 	local _nCpoOrd2 := 0
 	local _x        := 0
