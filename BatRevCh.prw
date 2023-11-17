@@ -35,6 +35,7 @@
 // 13/11/2023 - Robert  - MG (UF31) passa a mandar 'S:' na tag <S:ENVELOPE> no XML de retorno.
 // 14/11/2023 - Robert  - Muda nome do arquivo de log cfe. UF e layout.
 //                      - Gera aviso para TI caso encontre layout sem definicao na tabela ZZ4.
+// 17/11/2023 - Robert  - Criado tratamento para codigos de retorno 217 e 613.
 //
 
 // --------------------------------------------------------------------------
@@ -430,11 +431,16 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 		_lWSDL_OK = .F.  // Nem adianta prosseguir com este WSDL
 		_lAtuZZX = .F.
 
-	elseif _sRetStat $ '239'  // Cabecalho XML invalido
+	elseif _sRetStat $ '239/'  // Cabecalho XML invalido
 		u_log2 ('aviso', 'Servico retornou mensagem de cabecalho invalido. Verifique o XML que voce esta enviando!')
 		_Evento ('AVISO: Servico retornou mensagem de cabecalho invalido. Verifique o XML que voce esta enviando!', .T., .f.)
 		_lWSDL_OK = .F.  // Nem adianta prosseguir com este WSDL
 		_lAtuZZX = .F.
+
+	// Encontrei uma boa explicacao sobre o status 613 em https://www.oobj.com.br/bc/article/rejei%C3%A7%C3%A3o-613-chave-de-acesso-difere-da-existente-em-bd-como-resolver-370.html
+	elseif _sRetStat $ '613/'  // Chave de Acesso difere da existente em BD  Rejeicao: Codigo Numerico informado na Chave de Acesso difere do Codigo Numerico da NF-e
+		u_log2 ('aviso', 'Servico retornou Codigo Numerico informado na Chave de Acesso difere do Codigo Numerico da NF-e')
+		_Evento ('AVISO: Servico retornou mensagem de Codigo Numerico informado na Chave de Acesso difere do Codigo Numerico da NF-e.', .T., .f.)
 
 	elseif _sRetStat $ '587/731/526'  // Tags erradas, chave muito antiga, etc.
 		_Evento ("AVISO: Retornou status '" + _sRetStat + "' para a chave " + zzx -> zzx_chave, .F., .f.)
