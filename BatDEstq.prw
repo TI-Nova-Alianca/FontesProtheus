@@ -18,6 +18,7 @@
 // 14/08/2018 - Robert - Desabilitada leitura das filiais 04/05/06/12/14.
 // 08/07/2020 - Robert - Habilitada Sandra como destinataria para conferencias.
 // 31/07/2023 - Robert - Incluido Heleno Facchin como destinatario.
+// 18/11/2023 - Robert - Desabilitado envio para Rodrigo Colleoni.
 //
 
 // --------------------------------------------------------------------------
@@ -150,7 +151,7 @@ user function BatDEstq ()
 		u_log (_smsg)
 		//_sDestin += ";claudia.lionco@novaalianca.coop.br"
 		//_sDestin += ";sandra.sugari@novaalianca.coop.br"
-		_sDestin += ";rodrigo.colleoni@novaalianca.coop.br"
+		//_sDestin += ";rodrigo.colleoni@novaalianca.coop.br"
 		_sDestin += ";fernando.matana@novaalianca.coop.br"
 		_sDestin += ";jocemar.dalcorno@novaalianca.coop.br"
 		_sDestin += ";heleno.facchin@novaalianca.coop.br"
