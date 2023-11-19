@@ -32,6 +32,7 @@
 // 08/02/2023 - Robert - Criada opcao de segregar carga.
 // 22/02/2023 - Robert - Chamada simulacao frete nao tinha objeto ClsCarSaf() instanciado.
 //                     - Novo parametros chamada U_VA_SZNC()
+// 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
 //
 
 // --------------------------------------------------------------------------
@@ -83,14 +84,16 @@ User Function va_rus ()
 	_ValidPerg ()
 	_lContinua = U_VA_RUSLP (.T.)
 
-	if _lContinua .and. empty (U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09LOCA'))
-		u_help ("Relacao balanca X safra nao cadastrada. Verifique tabela 09 do ZX5.")
-		_lContinua = .F.
-	endif
-	if _lContinua
-		_zx509fina = U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09FINA')
-		_zx509orga = U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09ORGA')
-	endif
+//	if _lContinua .and. empty (U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09LOCA'))
+//		u_help ("Relacao balanca X safra nao cadastrada. Verifique tabela 09 do ZX5.")
+//		_lContinua = .F.
+//	endif
+//	if _lContinua
+//		_zx509fina = U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09FINA')
+//		_zx509orga = U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09ORGA')
+		_zx509fina = _oCarSaf:RecebeVini
+		_zx509orga = _oCarSaf:RecebeOrg
+//	endif
 
 	// Cria algumas variaveis private para agilizar o uso, jah que eh uma tela que vai
 	// ficar em uso durante toda a safra.

@@ -39,6 +39,7 @@
 // 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 // 03/02/2023 - Robert - Alimentar campo virtual ZF_GRAUANT
+// 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
 //
 
 #include "totvs.ch"
@@ -298,7 +299,7 @@ User Function va_rus2 (_nOpc, _lFechPort)
 										_oDlg)                               // Objeto onde serah criada
 			
 			// Define botoes da barra de ferramentas.
-			_bBotaoOK  = {|| iif (U_VA_RUS2T (_nOpc), (_lDlgOK := .T., _oDlg:End ()), NIL)}
+			_bBotaoOK  = {|| (_oCarSaf:GeraAtrib ("M"), iif (U_VA_RUS2T (_nOpc, _oCarSaf), (_lDlgOK := .T., _oDlg:End ()), NIL))}
 			_bBotaoCan = {|| _oDlg:End ()}
 			_aBotAdic  = {}
 			if ! inclui
@@ -324,7 +325,8 @@ User Function va_rus2 (_nOpc, _lFechPort)
 
 	// Tratamento caso o usuario tenha confirmado a tela modelo3.
 	if _lContinua .and. _lDlgOK
-		U_VA_RUS2G (_nOpc, _nLock)
+//		U_VA_RUS2G (_nOpc, _nLock)
+		U_VA_RUS2G (_nOpc, _oCarSaf)
 	endif
 
 	// Libera semaforo.

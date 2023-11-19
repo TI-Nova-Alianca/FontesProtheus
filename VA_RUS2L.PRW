@@ -8,6 +8,7 @@
 // 29/01/2020 - Robert - Bloqueia cadastro viticula nao recebido fisicamente apos outubro do ano anterior.
 // 20/02/2020 - Robert - Desabilitada validacao de chave duplicada no ZF_IDSZ9 (cadastros estao desatualizados, nao ajuda em nada. Vai ser passado para NaWeb)
 // 05/01/2022 - Robert - Eliminados campos ZF_NCONF03 e ZF_NCONF04.
+// 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
 //
 
 #include "totvs.ch"
@@ -153,10 +154,10 @@ user function VA_RUS2L ()
 				u_help ("ATENCAO: Cadastro viticola nao renovado para esta safra! Verifique no NaWeb as datas dos mapeamentos da propriedade rural " + _aCadVitic [_nVitic, .CadVitCodigo],, .T.)
 			endif
 
-			if _aCadVitic [_nVitic, .CadVitOrganico] == "O" .and. _zx509orga != 'S'
-				u_help ("Nao ha previsao de recebimento de uvas organicas nesta balanca.",, .t.)
-				_lRet = .F.
-			endif
+// Validacao migrada para ClsCarSaf:PodeGravar()			if _aCadVitic [_nVitic, .CadVitOrganico] == "O" .and. _zx509orga != 'S'
+// Validacao migrada para ClsCarSaf:PodeGravar()				u_help ("Nao ha previsao de recebimento de uvas organicas nesta balanca.",, .t.)
+// Validacao migrada para ClsCarSaf:PodeGravar()				_lRet = .F.
+// Validacao migrada para ClsCarSaf:PodeGravar()			endif
 		endif
 	Endif
 
