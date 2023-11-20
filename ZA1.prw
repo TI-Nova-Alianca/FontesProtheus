@@ -16,6 +16,7 @@
 // 30/03/2023 - Robert - Novos parametros chamada impressao etiq. avulsa.
 // 12/04/2023 - Robert - Criadas funcoes ZA1Inc() e ZA1ITOk() para inclusao manual.
 // 12/05/2023 - Robert - Permite impressao avulsa obrigando a imprimir cod.barra produto (GLPI 13561)
+// 20/11/2023 - Robert - Melhoradas validacoes geracao etiq. para SD5.
 //
 
 // --------------------------------------------------------------------------
@@ -118,40 +119,58 @@ user function ZA1SD5 (_sQueFazer)
 		if ! empty (_sEtiq)
 			u_help ("Ja existem etiquetas geradas para este registro.",, .t.)
 		else
-			_sMsgMult := "Preciso gerar etiquetas para "
-			_sMsgMult += cvaltochar (sd5 -> d5_quant)
-			_sMsgMult += ' ' + fBuscaCpo ("SB1", 1, xfilial ("SB1") + sd5 -> d5_produto, "B1_UM")
-			_sMsgMult += ' do item ' + alltrim (sd5 -> d5_produto) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + sd5 -> d5_produto, "B1_DESC"))
-			_sMsgMult += '. Caso deseje dividir em mais de uma etiqueta, informe agora a quantidade por etiqueta.'
-			_nQtMult = U_Get (_sMsgMult, 'N', 12, '9999999.9999', '', _nQtMult, .f., '.t.')
-			if _nQtMult == NIL  // Usuario cancelou
-				u_help ("Geracao de etiquetas cancelada.",, .t.)
+			if sd5 -> d5_origlan != 'MAN'
+				u_help ("Somente podem ser geradas etiquetas para registros com origem MAN",, .t.)
 			else
-				_nEtiq = 0
-				do while _nEtiq < sd5 -> d5_quant
-					aadd (_aEtiq, min (_nQtMult, sd5 -> d5_quant - _nEtiq))
-					_nEtiq += _aEtiq [len (_aEtiq)]
-					U_Log2 ('debug', _aEtiq)
+				do while .t.
+					_nQtMult = sd5 -> d5_quant
+					_sMsgMult := "Preciso gerar etiquetas para "
+					_sMsgMult += cvaltochar (sd5 -> d5_quant)
+					_sMsgMult += ' ' + fBuscaCpo ("SB1", 1, xfilial ("SB1") + sd5 -> d5_produto, "B1_UM")
+					_sMsgMult += ' do item ' + alltrim (sd5 -> d5_produto) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + sd5 -> d5_produto, "B1_DESC"))
+					_sMsgMult += '. Caso queira dividir em mais de uma etiqueta, informe agora a quantidade por etiqueta.'
+					_nQtMult = U_Get (_sMsgMult, 'N', 12, '9999999.9999', '', _nQtMult, .f., '.t.')
+			//		U_Log2 ('debug', '[' + procname () + ']_nQtMult = ' + cvaltochar (_nQtMult))
+					if _nQtMult == NIL  // Usuario cancelou
+						exit
+					endif
+					if _nQtMult > sd5 -> d5_quant
+						u_help ("Quantidade para etiqueta nao pode ser maior que o saldo original (" + cvaltochar (sd5 -> d5_quant) + ").",, .t.)
+						loop
+					endif
+					exit
 				enddo
-				if U_MsgYesNo ("Confirma a geracao de " + cvaltochar (len (_aEtiq)) + " etiquetas?")
-					for _nEtiq = 1 to len (_aEtiq)
-						if ! _oEtiq:NovaPorSD5 (sd5 -> d5_produto, sd5 -> d5_LoteCtl, sd5 -> d5_local, sd5 -> d5_NumSeq, _aEtiq [_nEtiq], len (_aEtiq), _nEtiq)
-							exit
-						else
-							_sEtiqIni = iif (empty (_sEtiqIni), _oEtiq:Codigo, _sEtiqIni)
-							_sEtiqFim = _oEtiq:Codigo
+				if _nQtMult == NIL  // Usuario cancelou
+					u_help ("Geracao de etiquetas cancelada.",, .t.)
+				else
+					if _nQtMult <= 0
+						u_help ("Quantidade por etiqueta nao definida. Impossivel gerar etiquetas.",, .t.)
+					else
+						_nEtiq = 0
+						do while _nEtiq < sd5 -> d5_quant
+							aadd (_aEtiq, min (_nQtMult, sd5 -> d5_quant - _nEtiq))
+							_nEtiq += _aEtiq [len (_aEtiq)]
+					//		U_Log2 ('debug', '[' + procname () + ']_aEtiq:')
+					//		U_Log2 ('debug', _aEtiq)
+						enddo
+						if U_MsgYesNo ("Confirma a geracao de " + cvaltochar (len (_aEtiq)) + " etiquetas?")
+							procregua (len (_aEtiq))
+							for _nEtiq = 1 to len (_aEtiq)
+								incproc ('Gerando etiquetas')
+								if ! _oEtiq:NovaPorSD5 (sd5 -> d5_produto, sd5 -> d5_LoteCtl, sd5 -> d5_local, sd5 -> d5_NumSeq, _aEtiq [_nEtiq], len (_aEtiq), _nEtiq)
+									exit
+								else
+									_sEtiqIni = iif (empty (_sEtiqIni), _oEtiq:Codigo, _sEtiqIni)
+									_sEtiqFim = _oEtiq:Codigo
+								endif
+							next
+							u_help ("Etiqueta(s) gerada (s): de '" + _sEtiqIni + "' a '" + _sEtiqFim + "'.")
 						endif
-					//	if ! empty (_oEtiq:Codigo)
-					//		_xRet = _oEtiq:Codigo  // Retorna o codigo da etiqueta gerada
-					//		if u_msgyesno ("Etiqueta gerada: " + _oEtiq:Codigo + ". Deseja imprimi-la?")
-					//			U_ZA1SD5 ('I')
-					//		endif
-					//	endif
-					next
-					u_help ("Etiqueta(s) gerada (s): de '" + _sEtiqIni + "' a '" + _sEtiqFim + "'.")
+					endif
 				endif
 			endif
 		endif
+
 	elseif _sQueFazer == 'I'  // Imprimir
 		_xRet = .t.
 		_sEtiq = U_ZA1SD5 ('B')
@@ -162,7 +181,9 @@ user function ZA1SD5 (_sQueFazer)
 			if len (_aEtiq) > 0 .and. U_MsgYesNo ("Encontrei " + cvaltochar (len (_aEtiq)) + " etiquetas. Confirma impressao?")
 				_sImpr = U_Get ("Selecione impressora", 'C', 2, '', 'ZX549', _sImpr, .f., '.t.')
 				if ! empty (_sImpr)
+					procregua (len (_aEtiq))
 					for _nEtiq = 1 to len (_aEtiq)
+						incproc ('imprimindo etiquetas')
 						_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq])
 						if ! _oEtiq:Imprime (_sImpr)
 							_xRet = .F.
@@ -186,7 +207,7 @@ user function ZA1SD5 (_sQueFazer)
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_PROD    = '" + sd5 -> d5_produto + "'"
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_D5NSEQ  = '" + sd5 -> d5_numseq  + "'"
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_APONT  != 'I'"  // Se estiver inutilizada, ok
-			_oSQL:Log ('[' + procname () + ']')
+		//	_oSQL:Log ('[' + procname () + ']')
 			_xRet = alltrim (_oSQL:RetQry (1, .f.))
 		endif
 	endif

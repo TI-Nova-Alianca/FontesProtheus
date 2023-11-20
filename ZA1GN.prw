@@ -17,6 +17,7 @@
 //                     - Gera etiquetas pelo metodo ClsEtiq:Grava() e nao mais por U_IncEtqPll()
 // 12/04/2023 - Robert - Passa a gerar etiquetas com controle de semaforo.
 // 06/11/2023 - Robert - Incluida coluna com a data de emissao da NF
+// 20/11/2023 - Robert - Gravava A2_NOME em vez de D1_ITEM no campo ZA1_ITEM (manut.mal feita em 06/11/23)
 //
 
 // Como tem muitas colunas na array, vou usar nomes mais amigaveis.
@@ -251,7 +252,7 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 							_oEtiq:DocEntrLoja  = _aEtiq [_nEtiq, .Loja]
 							_oEtiq:DocEntrNum   = _aEtiq [_nEtiq, .nf]
 							_oEtiq:DocEntrSerie = _aEtiq [_nEtiq, .Serie]
-							_oEtiq:DocEntrItem  = _aEtiq [_nEtiq, 5]
+							_oEtiq:DocEntrItem  = _aEtiq [_nEtiq, .ItemNF] //5]
 							_oEtiq:QtEtqGrupo   = len (_aPal)
 							_oEtiq:SeqNoGrupo   = _nPal
 							if ! _oEtiq:Grava ((_nLock != 0))

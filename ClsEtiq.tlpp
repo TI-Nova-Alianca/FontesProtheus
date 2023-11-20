@@ -55,6 +55,7 @@
 // 07/06/2023 - Robert - Melhorada msg cod barras da OP (GLPI 13695).
 // 18/10/2023 - Robert - Valida qt.prevista da OP antes de permitir incluir nova etiqueta (GLPI 13212)
 // 01/11/2023 - Robert - Manda 1 dia a menos na tb_wms_etiqueta para evitar erro no Full "produto com validade menor que vida util do item"
+// 20/11/2023 - Robert - Busca :ValidLote no b8_dtvalid e nao mais no d5_dtvalid (data pode ter tido manutencao posterior)
 //
 
 #Include "Protheus.ch"
@@ -793,6 +794,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 						U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando validade fajuta (' + dtoc (::ValidLote) + ') por que o Protheus nao controla rastro deste item, mas o Full vai exigir.')
 					endif
 				endif
+
 			case ! empty (::D5_NUMSEQ)
 				_nRegSD5 = _AchaSD5 (::Produto, ::D5_NUMSEQ)
 				if _nRegSD5 > 0
@@ -800,7 +802,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::AlmDest     = sd5 -> d5_local
 					::AlmOrig     = sd5 -> d5_local
 					::LoteProduto = sd5 -> d5_lotectl
-					::ValidLote   = sd5 -> d5_dtvalid
+	//				::ValidLote   = sd5 -> d5_dtvalid
+	//				U_Log2 ('debug', '[' + procname () + ']Gerei validade ' + cvaltochar (::ValidLote) + ' pelo registro ' + cvaltochar (sd5 -> (recno ())) + ' do SD5')
 
 					_oSQL := ClsSQL ():New ()
 					_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID, B8_DFABRIC"
@@ -810,9 +813,10 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + ::LoteProduto + "'"
 					_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + ::Produto + "'"
 					_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + ::AlmOrig + "'"
-					//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+				//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 					_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na implantacao de saldo/lote numero '" + ::D5_NUMSEQ + "'.", .T.))
 					if len (_aLoteVal) == 1
+						::ValidLote   = stod (_aLoteVal [1, 2])
 						::DtFabrLote  = stod (_aLoteVal [1, 3])
 					endif
 				endif
@@ -822,7 +826,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 			endcase
 		endif
 	endif
-	
+
 	U_ML_SRArea (_aAreaAnt)
 return
 
@@ -1578,7 +1582,7 @@ static function _AchaSD5 (_sProduto, _sNumSeq)
 	_oSQL:_sQuery +=   " AND SD5.D5_NUMSEQ  = '" + _sNumSeq  + "'"
 	_oSQL:_sQuery +=   " AND SD5.D5_ORIGLAN = 'MAN'"  // Soh vou aceitar (por enqto) lotes criados manualmente.
 	_oSQL:_sQuery += " ORDER BY SD5.D5_DATA, SD5.D5_NUMSEQ"
-	//_oSQL:Log ('[' + procname () + ']')
+	_oSQL:Log ('[' + procname () + ']')
 	_nRetSD5 = _oSQL:RetQry (1, .f.)
 return _nRetSD5
 
