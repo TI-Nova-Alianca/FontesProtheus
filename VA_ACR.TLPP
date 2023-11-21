@@ -12,6 +12,8 @@
 
 // Historico de alteracoes:
 // 13/11/2023 - Robert - Filtrar estruturas pelo campo g1_vacpcus (GLPI 14489)
+// 21/11/2023 - Robert - Para a tela inicial, nao acumula mais os subnives por que acabava duplicando
+//                     - Criados parametros de filtro por linha comercial
 //
 
 #include "protheus.ch"
@@ -120,6 +122,7 @@ static function _Gera ()
 	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 	_oSQL:_sQuery +=   " AND SB1.B1_COD     BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
+	_oSQL:_sQuery +=   " AND SB1.B1_CODLIN  BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "'"
 	_oSQL:_sQuery +=   " AND SB1.B1_TIPO    IN " + FormatIn (alltrim (mv_par03), '/')
 	_oSQL:_sQuery +=   " AND SB1.B1_MSBLQL != '1'"
 	_oSQL:_sQuery += " ORDER BY B1_COD"
@@ -130,6 +133,14 @@ static function _Gera ()
 	(_sAliasQ) -> (dbgotop ())
 	do while ! (_sAliasQ) -> (eof ())
 		incproc ('Lendo estrutura do ' + (_sAliasQ) -> b1_cod)
+
+		_nCustoTot = 0
+		_nCustoME  = 0
+		_nCustoVD  = 0
+		_nCustoMO  = 0
+		_nCustoBN  = 0
+		_nCustoOUT = 0
+
 		_LeDados ((_sAliasQ) -> b1_cod, (_sAliasQ) -> b1_revatu, @_aEstrHist, @_nCustoME, @_nCustoVD, @_nCustoMO, @_nCustoBN, @_nCustoOUT)
 
 		if len (_aEstrHist) == 0
@@ -241,7 +252,7 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 //		_sFiltComp += ".and.sb1->b1_grupo!='0400'"
 //	endif
 	_sFiltComp += ".and.sg1->g1_vacpcus='S'"
-	U_Log2 ('debug', '[' + procname () + ']Filtro para leitura das estruturas: ' + _sFiltComp)
+///	U_Log2 ('debug', '[' + procname () + ']Filtro para leitura das estruturas: ' + _sFiltComp)
 
 	sb1 -> (dbsetorder (1))
 
@@ -279,19 +290,6 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 		_aEstrHist [len (_aEstrHist), .EstrHistEhUva]        = _aEstrAux [_nComp, 9]
 		_aEstrHist [len (_aEstrHist), .EstrHistMaiorNivelVD] = .F.  // Vai ser revisado mais adante
 		_aEstrHist [len (_aEstrHist), .EstrHistSomaNoCusto]  = 'S'  // Ateh segunda ordem, todos os componentes devem ser considerados.
-/*
-		// Eventualmente queremos considerar o VD como se fosse uma 'MP comprada'
-		if mv_par05 == 2
-			if _aEstrAux [_nComp, 5] == 'VD'
-				_nFilho = _nComp
-				do while _nFilho <= len (_aEstrAux) .and. _aEstrAux [_nFilho + 1, 1] > _aEstrAux [_nComp, 1]
-					U_Log2 ('debug', '[' + procname () + ']Desconsiderando comp. ' + _aEstrAux [_nFilho+1, 2] + ' (nivel ' + cvaltochar (_aEstrAux [_nFilho+1, 1]) + ' por ser descendente de um VD.')
-					_nFilho ++
-				enddo
-				_nComp = _nFilho
-			endif
-		endif
-*/
 		_nComp ++
 	enddo
 
@@ -328,25 +326,29 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 
 	// Acumula o custo de reposicao dos niveis 'pais' somando o custo de seus filhos.
 	_AtuCust (@_aEstrHist, 1)
-	U_Log2 ('debug', '[' + procname () + ']Custos acumulados:')
-	U_Log2 ('debug', _aEstrHist)
+//	U_Log2 ('debug', '[' + procname () + ']Custos acumulados:')
+//	U_Log2 ('debug', _aEstrHist)
 
 	// Abre os custos do item atual conforme os tipos de seus componentes.
 	for _nComp = 2 to len (_aEstrHist)  // Como o primeiro item eh o proprio pai, nao quero somar seu custo.
-		do case
-		case _aEstrHist [_nComp, .EstrHistTipoComp] == 'ME'
-			_nCustoME += _aEstrHist [_nComp, .EstrHistCustDAcum]
-		case _aEstrHist [_nComp, .EstrHistTipoComp] == 'VD'
-			if _aEstrHist [_nComp, .EstrHistMaiorNivelVD]
-				_nCustoVD += _aEstrHist [_nComp, .EstrHistCustDAcum]
-			endif
-		case _aEstrHist [_nComp, .EstrHistTipoComp] == 'MO'
-			_nCustoMO += _aEstrHist [_nComp, .EstrHistCustDAcum]
-		case _aEstrHist [_nComp, .EstrHistTipoComp] == 'BN'
-			_nCustoBN += _aEstrHist [_nComp, .EstrHistCustDAcum]
-		otherwise
-			_nCustoOUT += _aEstrHist [_nComp, .EstrHistCustDAcum]
-		endcase
+		
+		// Quero apenas os filhos diretos do produto final.
+		if _aEstrHist [_nComp, 1] == 1
+			do case
+			case _aEstrHist [_nComp, .EstrHistTipoComp] == 'ME'
+				_nCustoME += _aEstrHist [_nComp, .EstrHistCustDAcum]
+			case _aEstrHist [_nComp, .EstrHistTipoComp] == 'VD'
+				if _aEstrHist [_nComp, .EstrHistMaiorNivelVD]
+					_nCustoVD += _aEstrHist [_nComp, .EstrHistCustDAcum]
+				endif
+			case _aEstrHist [_nComp, .EstrHistTipoComp] == 'MO'
+				_nCustoMO += _aEstrHist [_nComp, .EstrHistCustDAcum]
+			case _aEstrHist [_nComp, .EstrHistTipoComp] == 'BN'
+				_nCustoBN += _aEstrHist [_nComp, .EstrHistCustDAcum]
+			otherwise
+				_nCustoOUT += _aEstrHist [_nComp, .EstrHistCustDAcum]
+			endcase
+		endif
 	next
 return
 
@@ -366,11 +368,11 @@ static function _AtuCust (_aEst, _nLinha, _nInteracao)
 	_nCusFilhos = 0
 	do while _nLinAux <= len (_aEst) .and. _aEst [_nLinAux, .EstrHistNivel] > _aEst [_nLinha, .EstrHistNivel]
 		_lTemSubNiv = .T.
-		U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + '_nLinha = ' + cvaltochar (_nLinha) + '  _nLinAux = ' + cvaltochar (_nLinAux) + ' dentro do loop da int. ' + strzero (_nInteracao, 2))
+	//	U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + '_nLinha = ' + cvaltochar (_nLinha) + '  _nLinAux = ' + cvaltochar (_nLinAux) + ' dentro do loop da int. ' + strzero (_nInteracao, 2))
 		
 		// Processar somente os filhos, e nao os netos.
 		if _aEst [_nLinAux, .EstrHistNivel] == _aEst [_nLinha, .EstrHistNivel] + 1
-			U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'Vou fazer chamada para o filho da linha ' + cvaltochar (_nLinAux) + ' nivel ' + cvaltochar (_aEst [_nLinAux, .EstrHistNivel]) + ' ' + _aEst [_nLinAux, .EstrHistCodComp])
+	//		U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'Vou fazer chamada para o filho da linha ' + cvaltochar (_nLinAux) + ' nivel ' + cvaltochar (_aEst [_nLinAux, .EstrHistNivel]) + ' ' + _aEst [_nLinAux, .EstrHistCodComp])
 			_AtuCust (@_aEst, _nLinAux, _nInteracao)
 			
 			// Agora que tenho o custo deste filho atualizado, posso soma-lo ao custo do nivel atual.
@@ -378,11 +380,11 @@ static function _AtuCust (_aEst, _nLinha, _nInteracao)
 				_nCusFilhos += _aEst [_nLinAux, .EstrHistCustDAcum]
 				_lSomouSub = .T.
 			else
-				U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'o filho ' + alltrim (_aEst [_nLinAux, .EstrHistCodComp]) + ' nao deve ser somado ao custo.')
+	//			U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'o filho ' + alltrim (_aEst [_nLinAux, .EstrHistCodComp]) + ' nao deve ser somado ao custo.')
 			endif
-			U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'Acumulei para o ' + alltrim (_aEst [_nLinha, .EstrHistCodComp]) + ' o custo de ' + cvaltochar (_aEst [_nLinAux, .EstrHistCustDAcum])+ ' do filho ' + alltrim (_aEst [_nLinAux, .EstrHistCodComp]) + '. _nCusFilhos = ' + cvaltochar (_nCusFilhos))
+	//		U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'Acumulei para o ' + alltrim (_aEst [_nLinha, .EstrHistCodComp]) + ' o custo de ' + cvaltochar (_aEst [_nLinAux, .EstrHistCustDAcum])+ ' do filho ' + alltrim (_aEst [_nLinAux, .EstrHistCodComp]) + '. _nCusFilhos = ' + cvaltochar (_nCusFilhos))
 		else
-			U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'Nao eh filho direto.')
+	//		U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'Nao eh filho direto.')
 		endif
 		_nLinAux ++
 	enddo
@@ -390,7 +392,7 @@ static function _AtuCust (_aEst, _nLinha, _nInteracao)
 	// Se nao tem filhos, fica com seu propro custo.
 	if _lSomouSub // _lTemSubNiv
 		_aEst [_nLinha, .EstrHistCustDAcum] = _nCusFilhos
-		U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinha, .EstrHistNivel] * 2) + 'Gravado ' + cvaltochar (_aEst [_nLinha, .EstrHistCustDAcum]) + ' na linha ' + cvaltochar (_nLinha) + ' (cod. ' + _aEst [_nLinha, .EstrHistCodComp] + ')')
+	//	U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinha, .EstrHistNivel] * 2) + 'Gravado ' + cvaltochar (_aEst [_nLinha, .EstrHistCustDAcum]) + ' na linha ' + cvaltochar (_nLinha) + ' (cod. ' + _aEst [_nLinha, .EstrHistCodComp] + ')')
 	else
 		_aEst [_nLinha, .EstrHistCustDAcum] = _aEst [_nLinha, .EstrHistQuantAcum] * _aEst [_nLinha, .EstrHistCustDUnit]
 	endif
@@ -673,8 +675,8 @@ static function _RecCust (_aHeader, _aCols)
 			endif
 		next
 
-		U_Log2 ('debug', '[' + procname () + ']Estrutura para recalc.custo cfe tela:')
-		U_Log2 ('debug', _aEstrTela)
+	//	U_Log2 ('debug', '[' + procname () + ']Estrutura para recalc.custo cfe tela:')
+	//	U_Log2 ('debug', _aEstrTela)
 		_AtuCust (@_aEstrTela, 1)
 
 		// Atualiza os custos no aCols
@@ -695,13 +697,14 @@ static function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 
-	//                     PERGUNT                           TIPO TAM DEC VALID F3      Opcoes          Help
-	aadd (_aRegsPerg, {01, "Produto inicial a analisar    ", "C", 15, 0,  "",   "SB1 ", {},             ""})
-	aadd (_aRegsPerg, {02, "Produto final a analisar      ", "C", 15, 0,  "",   "SB1 ", {},             ""})
-	aadd (_aRegsPerg, {03, "Tipos produtos a analisar     ", "C", 60, 0,  "",   "    ", {},             ""})
-//	aadd (_aRegsPerg, {04, "Tipos compon.ignorar(ex:MP/PS)", "C", 60, 0,  "",   "    ", {},             ""})
-	aadd (_aRegsPerg, {04, "Mostrar uvas na estrutura     ", "N",  1, 0,  "",   "    ", {"Sim", "Nao"}, ""})
-	aadd (_aRegsPerg, {05, "Considerar subniveis dos VD   ", "N",  1, 0,  "",   "    ", {"Sim", "Nao"}, ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3       Opcoes          Help
+	aadd (_aRegsPerg, {01, "Produto inicial a analisar    ", "C", 15, 0,  "",   "SB1 ",  {},             ""})
+	aadd (_aRegsPerg, {02, "Produto final a analisar      ", "C", 15, 0,  "",   "SB1 ",  {},             ""})
+	aadd (_aRegsPerg, {03, "Tipos produtos a analisar     ", "C", 60, 0,  "",   "    ",  {},             ""})
+	aadd (_aRegsPerg, {04, "Mostrar uvas na estrutura     ", "N",  1, 0,  "",   "    ",  {"Sim", "Nao"}, ""})
+	aadd (_aRegsPerg, {05, "Considerar subniveis dos VD   ", "N",  1, 0,  "",   "    ",  {"Sim", "Nao"}, ""})
+	aadd (_aRegsPerg, {06, "Linha comercial inicial       ", "C", 02, 0,  "",   "ZX539", {},             ""})
+	aadd (_aRegsPerg, {07, "Linha comercial final         ", "C", 02, 0,  "",   "ZX539", {},             ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return
 

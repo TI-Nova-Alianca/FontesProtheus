@@ -62,6 +62,7 @@ CLASS ClsCarSaf from ClsBase
 	public  data PesoBruto   // ZE_PESOBRU
 	public  data PesoTara    // ZE_PESOTAR
 	public  data PortImpTk   // Porta / caminho para impressao do ticket
+	public  data PrcParaNF   // Indica qual (nao QUANTO) eh o preco para gerar contranota: 1=entrada (em desuso);2=compra;5=MOC
 	public  data RecebeOrg   // Indica se esta filial recebe uvas organicas
 	public  data RecebeVini  // Indica se esta filial recebe uvas vifniferas
 	public  data RegSZE      // recno() da tabela SZE.
@@ -81,6 +82,7 @@ CLASS ClsCarSaf from ClsBase
 	public METHOD GeraAtrib ()
 	public METHOD EnderEstq ()  // Enderecar (ou estornar) estoque
 	public METHOD ExclDef ()    // Exclusao definitiva (inclusive tabelas relacionadas)
+	public METHOD GrupoPagto () // Define em qual grupo de pagamento a carga deve ser enquadrada.
 	public METHOD GrvEvt ()
 	public METHOD ImprimeTk ()  // Gera impressao do ticket
 	public METHOD Log ()
@@ -708,6 +710,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::NomeFornec = ''
 	::PesoBruto  = 0
 	::PesoTara   = 0
+	::PrcParaNF  = ''
 	::RecebeOrg  = ''
 	::RecebeVini = ''
 	::RegSZE     = 0
@@ -824,6 +827,21 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::CxOuGranel = iif (::Filial == '03', 'C', 'G')  // Somente Livramento ainda recebe em caixas
 	endif
 
+	// Define qual o tipo de preco a ser usado para geracao de contranota.
+	// Procuro usar as mesmas posicoes retornadas pelas funcoes de calculo do
+	// preco de cada ano: 1=entrada (em desuso);2=compra;5=MOC
+	if _lContinua
+		do case
+		case ::Safra $ '2019/2021/2022/2024'  // Para 2024 ainda nao tenho OK da direcao !!!
+			::PrcParaNF = 1  // pos.2=preco de compra
+		case ::Safra $ '2020/2023'
+			::PrcParaNF = 5  // pos.5=preco MOC
+		otherwise
+			_Super:SomaMsg ("Sem definicao de qual preco devo usar para gerar contranota (entrada/compra/MOC/...)")
+			_lContinua = .F.
+		endcase
+	endif
+
 	// Alimenta array de informacoes da tabela de integracao com medidor de grau.
 	if _lContinua .and. ! empty (::Filial) .and. ! empty (::Safra) .and. ! empty (::Carga)
 		_oSQL := ClsSQL ():New ()
@@ -840,11 +858,100 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::aIntegGrau := aclone (_oSQL:Qry2Array (.F., .F.))
 	endif
 
+	// Se teve problemas, limpa alguns atributos basicos para que tornar o objeto invalido
+	if ! _lContinua
+		::Filial    = ''
+		::Safra     = ''
+		::Carga     = ''
+		::ItItem    = {}
+		::Fornece   = ''
+		::PesoBruto = 0
+		::PesoTara  = 0
+	endif
 	//u_logobj (::Self)
 	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Gerei atributos usando origem = ' + _sOrigem + ' e ficou assim:')
 	//::Log ()
 	U_ML_SRArea (_aAreaAnt)
 return
+
+
+// --------------------------------------------------------------------------
+// Define em qul grupo de pagamentos a carga deve ser enquadrada.
+METHOD GrupoPagto () Class ClsCarSaf
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _lContinua := .T.
+	local _sRetGrpPg := ''
+	local _aVarMVal  := {}
+//	local _sVarMVal  := ''
+	
+	// Grupo pagto.eh definido pela variedade de menor valor presente na carga.
+	_aVarMVal = aclone (::VarMenorVl (::PrcParaNF))
+	if len (_aVarMVal) == 0
+		_Super:SomaMsg ("Nao ha variedade de menor valor definida. Impossivel determinar o grupo para pagamento.")
+	else
+		sb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _aVarMVal [1], .F.))
+			_Super:SomaMsg ("Produto '" + _aVarMVal + "' nao cadastrado. Impossivel determinar o grupo para pagamento.")
+		else
+		
+			// Segue politicas definidas para cada safra.
+			// DEVEM SER CONSISTENTES com o que retorna na tag <regraPagamento>
+			// do metodo ClsAssoc:FechSafra()
+			do case
+			case _sSafra == '2020'
+				// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
+				if alltrim (sb1 -> b1_cod) $ '9925'  // bordo
+					_sRetGrpPg = 'A'
+				elseif alltrim (sb1 -> b1_codpai) $ '9925'  // Alguma possivel nova variacao de bordo
+					_sRetGrpPg = 'A'
+				elseif sb1 -> b1_vaorgan == 'O'  // Organicas
+					_sRetGrpPg = 'A'
+				elseif sb1 -> b1_vattr == 'S'  // Tintorias
+					_sRetGrpPg = 'B'
+				elseif sb1 -> b1_varuva == 'F'
+					if _aVarMVal [3] == 'E'  // Viniferas em espaldeira
+						_sRetGrpPg = 'B'
+					elseif _aVarMVal [3] == 'L'
+						_sRetGrpPg = 'C'
+					else
+						u_help (procname () + ": Sistema de conducao '" + _aVarMVal [3] + "' invalido.",, .t.)
+						_lContinua = .F.
+					endif
+				else
+					_sRetGrpPg = 'C'
+				endif
+
+			case _sSafra $ '2021/2022/2023/2024'  // Ainda nao tenho OK da direcao para 2024 !!!
+				// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
+				if alltrim (sb1 -> b1_cod) $ '9925/9904/9922/9855'  // bordo, niagara, concord
+					_sRetGrpPg = 'A'
+				elseif alltrim (sb1 -> b1_codpai) $ '9925/9904/9922/9855'  // Alguma possivel nova variacao de bordo, niagara, concord
+					_sRetGrpPg = 'A'
+				elseif sb1 -> b1_vaorgan == 'O'  // Organicas
+					_sRetGrpPg = 'A'
+				elseif sb1 -> b1_vattr == 'S'  // Tintorias
+					_sRetGrpPg = 'B'
+				elseif sb1 -> b1_varuva == 'F'
+					if _aVarMVal [3] == 'E'  // Viniferas em espaldeira
+						_sRetGrpPg = 'B'
+					elseif _aVarMVal [3] == 'L'
+						_sRetGrpPg = 'C'
+					else
+						u_help (procname () + ": Sistema de conducao '" + _aVarMVal [3] + "' invalido.",, .t.)
+						_lContinua = .F.
+					endif
+				else
+					_sRetGrpPg = 'C'
+				endif
+
+			otherwise
+				_Super:SomaMsg ("Sem definicao de regras para grupos de pagamento para esta safra.")
+			endcase
+		endif
+	endif
+	U_ML_SRArea (_aAreaAnt)
+return _sRetGrpPg
+
 
 
 // --------------------------------------------------------------------------
@@ -1305,6 +1412,10 @@ return _sRet
 // A lista de 'variedades envolvidas' considera, tambem, cargas compartilhadas.
 // O parametro 'qual preco' deve manter compatibilidade com a funcao de calculo
 // de precos da safra em questao.
+// Retorno: array de 3 posicoes, ordenada pelo preco (1a.posicao=variedade de menor valor)
+// 1 - Codigo variedade
+// 2 - Preco unitario
+// 3 - Forma de conducao [E]spaldeira,[L]atada
 METHOD VarMenorVl (_nQualPrc) class ClsCarSaf
 	local _aProdut   := {}
 	local _nProdut   := 0
@@ -1371,6 +1482,11 @@ METHOD VarMenorVl (_nQualPrc) class ClsCarSaf
 			aadd (_aAux, aclone (_aProdut [_nProdut]))
 		endif
 	next
+
+	// Ordena por codigo de produto para o caso de, a seguir, ter dois
+	// produtos de mesmo preco, ficar ordenado por preco + codigo.
+	// Achei um tanto perigoso ordenar na mesma operacao...
+	_aProdut = asort (_aProdut,,, {|_x, _y| _x[1] < _y [1]})
 
 	// Ordena por preco, de forma que, depois, baste pegar a primeira linha.
 	_aProdut = asort (_aProdut,,, {|_x, _y| _x[2] < _y [2]})

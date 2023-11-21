@@ -215,9 +215,8 @@ static function _VerFull (_sProduto, _nQtdVen, _sLote)
 			_oSQL:_sQuery += " and lote = ''" + alltrim (_sLote) + "''"
 		endif
 		_oSQL:_sQuery += " ')"
-		_oSQL:Log ('[' + procname () + ']')
+	//	_oSQL:Log ('[' + procname () + ']')
 		_aEstqFull := aclone (_oSQL:Qry2Array (.f., .f.) [1])
-		U_Log2 ('debug', _aEstqFull)
 		_nDispFull = _aEstqFull [1] - _aEstqFull [2]
 		if _nDispFull < _nQtdVen
 			_sRet := "Saldo insuf.(" + cvaltochar (_nDispFull) + ") no FullWMS."
@@ -227,6 +226,8 @@ static function _VerFull (_sProduto, _nQtdVen, _sLote)
 			endif
 			_sRet += " Estq:" + cvaltochar (_aEstqFull [1])
 			_sRet += " Bloq/indisp/reserv:" + cvaltochar (_aEstqFull [2])
+			_oSQL:Log ('[' + procname () + ']')
+			U_Log2 ('debug', _aEstqFull)
 		endif
 	endif
 return _sRet
