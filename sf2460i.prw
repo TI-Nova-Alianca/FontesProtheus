@@ -157,6 +157,7 @@
 // 27/02/2023 - Sandra  - Gravar E2_TIPO=TRS e nao mais IMP na funcao _TitSTMG() - GLPI 12779
 // 01/06/2023 - Claudia - Alterada data de vencimento para titulos a pagar ST. GLPI: 13653
 // 20/10/2023 - Robert  - Criado tratamento para venda de tambores a associados (GLPI 14397)
+// 20/11/2023 - Robert  - Verifica C6_QTDVEN antes de dar update no F2_PLIQUI, F2_PBRUTO, F2_VOLUME1
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -238,9 +239,12 @@ User Function sf2460i ()
 	_oSQL:_sQuery +=     " F2_VOLUME1 = ITENS.QTVOLUMES "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " SF2 "
 	_oSQL:_sQuery +=    " INNER JOIN (SELECT D2_FILIAL, D2_DOC, D2_SERIE,"
-	_oSQL:_sQuery +=                       " SUM ((C6_VAPLIQ * D2_QUANT) / C6_QTDVEN) AS PESOLIQ,"
-	_oSQL:_sQuery +=                       " SUM ((C6_VAPBRU * D2_QUANT) / C6_QTDVEN) AS PESOBRUTO,"
-	_oSQL:_sQuery +=                       " SUM ((C6_VAQTVOL * D2_QUANT) / C6_QTDVEN) AS QTVOLUMES"
+//	_oSQL:_sQuery +=                       " SUM ((C6_VAPLIQ * D2_QUANT) / C6_QTDVEN) AS PESOLIQ,"
+//	_oSQL:_sQuery +=                       " SUM ((C6_VAPBRU * D2_QUANT) / C6_QTDVEN) AS PESOBRUTO,"
+//	_oSQL:_sQuery +=                       " SUM ((C6_VAQTVOL * D2_QUANT) / C6_QTDVEN) AS QTVOLUMES"
+	_oSQL:_sQuery +=                       " SUM (CASE WHEN C6_QTDVEN > 0 THEN C6_VAPLIQ  * D2_QUANT / C6_QTDVEN ELSE 0 END) AS PESOLIQ,"
+	_oSQL:_sQuery +=                       " SUM (CASE WHEN C6_QTDVEN > 0 THEN C6_VAPBRU  * D2_QUANT / C6_QTDVEN ELSE 0 END) AS PESOBRUTO,"
+	_oSQL:_sQuery +=                       " SUM (CASE WHEN C6_QTDVEN > 0 THEN C6_VAQTVOL * D2_QUANT / C6_QTDVEN ELSE 0 END) AS QTVOLUMES"
 	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SC6") + " SC6, " 
 	_oSQL:_sQuery +=                             RetSQLName ("SD2") + " SD2 " 
 	_oSQL:_sQuery +=                 " WHERE SC6.D_E_L_E_T_ = ''"

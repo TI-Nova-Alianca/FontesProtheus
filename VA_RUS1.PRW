@@ -17,6 +17,7 @@
 //    02/2019 - Robert - Melhorias gerais para safra 2019
 // 05/02/2019 - Robert - Ajustes para receber uva de associados da Coop.Garibaldi.
 // 03/02/2021 - Robert - Novos parametros funcao U_VA_Rus2().
+// 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
 //
 
 #include "rwmake.ch"
@@ -51,11 +52,11 @@ User Function va_rus1 ()
 	private _ZESNFPROD := ""  // Variavel private para alimentar a tela final de AxInclui
 	private _ZENFPROD  := ""  // Variavel private para alimentar a tela final de AxInclui
 
-	// Este teste parece que vai exigir manutencao eterna...
-	if _ZESAFRA >= '2014' .and. ! cEmpAnt + cFilAnt $ '0101/0103/0107/0109/0110/0111/0112/0113'
-		u_help ("Filial nao liberada para recebimento de safra.")
-		return
-	endif
+// Validacao migrada para ClsCarSaf:PodeGravar()	// Este teste parece que vai exigir manutencao eterna...
+// Validacao migrada para ClsCarSaf:PodeGravar()	if _ZESAFRA >= '2014' .and. ! cEmpAnt + cFilAnt $ '0101/0103/0107/0109/0110/0111/0112/0113'
+// Validacao migrada para ClsCarSaf:PodeGravar()		u_help ("Filial nao liberada para recebimento de safra.")
+// Validacao migrada para ClsCarSaf:PodeGravar()		return
+// Validacao migrada para ClsCarSaf:PodeGravar()	endif
 
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'

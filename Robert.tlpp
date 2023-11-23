@@ -119,7 +119,7 @@ user function robert ()
 		// _sFuncao += '_evtXML ()'
 		// _sFuncao += '_exml ()'
 		// _sFuncao += '_FtSafra ()'
-		// _sFuncao += '_gerasze ()'
+		_sFuncao += '_gerasze ()'
 		// _sFuncao += '_GLPI13221 ()'
 		// _sFuncao += '_GLPI13674 ()'
 		// _sFuncao += '_GLPI13773 ()'
@@ -137,7 +137,7 @@ user function robert ()
 		// _sFuncao += '_Rast ()'
 		// _sFuncao += '_reginv ()'
 		// _sFuncao += '_recmail ()'
-		_sFuncao += '_RevCH ()'
+		// _sFuncao += '_RevCH ()'
 		// _sFuncao += '_RelAssoc ()'
 		// _sFuncao += '_SF1()'
 		// _sFuncao += '_SimCtb ()'
@@ -1363,9 +1363,9 @@ static function _gerasze()
 	local _sChvNfPe  := ''
 	local _sPlacaVei := 'DODGE'
 	local _sObs      := 'TESTE ROBERT'
-	local _sCadVit   := '13386'
+	local _sCadVit   := '13410'  //'13386'
 	local _sVaried   := '9901'
-	local _sVaried2  := '9925'
+	local _sVaried2  := '9959'
 	local _sEmbalag  := 'G'
 	local _sTombador := '1'
 	local _aItensCar := {}
@@ -3157,14 +3157,14 @@ static function _RevCH()
 	// U_BatRevCh ("CE", "NFE", 90)
 	// U_BatRevCh ("DF", "CTE", 90)
 	// U_BatRevCh ("DF", "NFE", 90)
-	// U_BatRevCh ("ES", "CTE", 90)
+	// U_BatRevCh ("ES", "CTE", 90, '32230893561108000304570000000132841174876808', .t.)
 	// U_BatRevCh ("ES", "NFE", 90)
 	// U_BatRevCh ("GO", "CTE", 90)
 	// U_BatRevCh ("GO", "NFE", 90)
 	// U_BatRevCh ("MA", "CTE", 90)
 	// U_BatRevCh ("MA", "NFE", 90)
 	// U_BatRevCh ("MG", "CTE", 90) //, '31230902442313000710570000000015161100015166', .t.)
-	// U_BatRevCh ("MG", "NFE", 90, '31231000506346000166550010014048221036580096', .t.)
+	// U_BatRevCh ("MG", "NFE", 90) //, '31231000506346000166550010014048221036580096', .t.)
 	// U_BatRevCh ("MS", "CTE", 90)
 	// U_BatRevCh ("MS", "NFE", 90)
 	// U_BatRevCh ("MT", "CTE", 90)
@@ -3177,7 +3177,7 @@ static function _RevCH()
 	// U_BatRevCh ("PE", "NFE", 90)
 	// U_BatRevCh ("PI", "CTE", 90)
 	// U_BatRevCh ("PI", "NFE", 90)
-	// U_BatRevCh ("PR", "CTE", 90)
+	U_BatRevCh ("PR", "CTE", 90)
 	// U_BatRevCh ("PR", "NFE", 90)
 	// U_BatRevCh ("RJ", "CTE", 90)
 	// U_BatRevCh ("RJ", "NFE", 90)
@@ -3187,13 +3187,13 @@ static function _RevCH()
 	// U_BatRevCh ("RO", "NFE", 90)
 	// U_BatRevCh ("RR", "CTE", 90)
 	// U_BatRevCh ("RR", "NFE", 90)
-	// U_BatRevCh ("RS", "CTE", 10) //0, '43230802442313000125570000001696871101696875', .t.)
- 	U_BatRevCh ("RS", "NFE", 90, '43230888612486000160550100002285321423987847', .t.)
+	// U_BatRevCh ("RS", "CTE", 60) //0, '43230802442313000125570000001696871101696875', .t.)
+ 	// U_BatRevCh ("RS", "NFE", 90, '43230888612486000160550100002285321423987847', .t.)
 	// U_BatRevCh ("SC", "CTE", 90)
 	// U_BatRevCh ("SC", "NFE", 90)
 	// U_BatRevCh ("SE", "CTE", 90)
 	// U_BatRevCh ("SE", "NFE", 90)
-	// U_BatRevCh ("SP", "CTE", 90)
+	// U_BatRevCh ("SP", "CTE", 90)  //, '35230802442313000559570000000715391100715397', .t.)
 	// U_BatRevCh ("SP", "NFE", 90)
 	// U_BatRevCh ("TO", "CTE", 90)
 	// U_BatRevCh ("TO", "NFE", 90)

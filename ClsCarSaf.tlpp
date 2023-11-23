@@ -25,6 +25,8 @@
 // 13/03/2023 - Robert - Eliminadas algumas linhas comentariadas; eventos deixam de gravar chave=safra+carga
 // 29/04/2023 - Robert - Metodo VarMenorVl() passa a receber parametro indicando qual preco deve verificar.
 //                     - Trocadas diversas chamadas de xfilial() por ::Filial.
+// 13/11/2023 - Robert - Passa a herdar a chasse ClsBase para uso de metodos mais padronizados.
+// 18/11/2023 - Robert - Versao inicial do metodo :PodeGravar().
 //
 
 #Include "Protheus.ch"
@@ -35,13 +37,13 @@ user function ClsCarSaf ()
 return
 
 
-
 // ==========================================================================
-CLASS ClsCarSaf
+CLASS ClsCarSaf from ClsBase
 
 	// Declaracao das propriedades da Classe
 	public  data aIntegGrau  // Registros referentes a esta carga na tabela ZZA (integracao com leitor de grau)
 	public  data Aglutin     // ZE_AGLUTIN - Situacao quanto a aglutinacao de cargas: O=Origem (aglutinada em outra carga);D=Destino (aglutinadora);N=Nenhuma(carga normal)
+	public  data AxEntrada   // Almoxarifado para onde devem ser geradas as NF de entrada da uva
 	public  data Carga       // ZE_CARGA
 	public  data CXouGranel  // Indica se recebe em caixas ou a granel (tombador)
 	public  data CCompart    // ZE_CCompar - array de cargas compartilhadas (mesmo veiculo)
@@ -52,18 +54,23 @@ CLASS ClsCarSaf
 	public  data ItDescri    // Array de Itens da carga - Descricao do produto
 	public  data ItGrau      // Array de Itens da carga - zf_grau
 	public  data ItItem      // Array de Itens da carga - zf_item
+	public  data ItOrganica  // Array de Itens da carga - [C]onvencional/[O]rganica/[B]ordadura/[E]m conversao
 	public  data ItProduto   // Array de Itens da carga - zf_produto
+	public  data ItPropRur   // Array de Itens da carga - Codigo propriedade rural (antigo 'cadastro viticola')
 	public  data Loja        // ze_lojasso
 	public  data NomeFornec  // A2_NOME - nome do fornecedor
 	public  data PesoBruto   // ZE_PESOBRU
 	public  data PesoTara    // ZE_PESOTAR
 	public  data PortImpTk   // Porta / caminho para impressao do ticket
+	public  data PrcParaNF   // Indica qual (nao QUANTO) eh o preco para gerar contranota: 1=entrada (em desuso);2=compra;5=MOC
+	public  data RecebeOrg   // Indica se esta filial recebe uvas organicas
+	public  data RecebeVini  // Indica se esta filial recebe uvas vifniferas
 	public  data RegSZE      // recno() da tabela SZE.
 	public  data Safra       // ZE_SAFRA
 	public  data Segregada   // ZE_SEGREG
 	public  data SerieCtrn   // ze_serie
 	public  data StatusCar   // ze_status
-	public  data UltMsg      // Ultima mensagem gerada
+//	public  data UltMsg      // Ultima mensagem gerada
 
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
@@ -75,9 +82,11 @@ CLASS ClsCarSaf
 	public METHOD GeraAtrib ()
 	public METHOD EnderEstq ()  // Enderecar (ou estornar) estoque
 	public METHOD ExclDef ()    // Exclusao definitiva (inclusive tabelas relacionadas)
+	public METHOD GrupoPagto () // Define em qual grupo de pagamento a carga deve ser enquadrada.
 	public METHOD GrvEvt ()
 	public METHOD ImprimeTk ()  // Gera impressao do ticket
 	public METHOD Log ()
+	public METHOD PodeGravar ()   // Verifica se tudo ok para gravacao.
 	public METHOD SegPesTOk ()  // Verifica se 'tudo ok' com a segunda pesagem.
 	public METHOD SegregarLt () // Segregar lote de estoque (mudar para lote 'NC')
 	public METHOD StatusZZA ()
@@ -112,7 +121,8 @@ METHOD New (_xChvCar) Class ClsCarSaf
 		if sze -> (dbseek (_xChvCar, .F.))
 			::GeraAtrib ("SZE")
 		else
-			::UltMsg += "Problema ao instanciar carga: Nao localizei chave '" + _xChvCar + "' na tabela SZE."
+			//::UltMsg += "Problema ao instanciar carga: Nao localizei chave '" + _xChvCar + "' na tabela SZE."
+			_Super:SomaMsg ("Problema ao instanciar carga: Nao localizei chave '" + _xChvCar + "' na tabela SZE.")
 			U_help (::UltMsg,, .t.)
 		endif
 	endif
@@ -129,7 +139,9 @@ METHOD AddItem () Class ClsCarSaf
 	aadd (::ItDescri,   '')
 	aadd (::ItItem,     '')
 	aadd (::ItGrau,     '')
+	aadd (::ItOrganica, '')
 	aadd (::ItProduto,  '')
+	aadd (::ItPropRur,  '')
 return
 
 
@@ -211,7 +223,8 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Alteracao da carga foi aceita pelo NaWeb')
 			_lRetWSNA = .T.
 		else
-			::UltMsg += "Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
+		//	::UltMsg += "Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
+			_Super:SomaMsg ("Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida))
 			u_help (::UltMsg,, .t.)
 			_lRetWSNA = .F.
 
@@ -350,7 +363,7 @@ return _lRetAtZZA
 // --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
 METHOD DefImprTk (_sFilial, _sCamFixo) Class ClsCarSaf
-	//local _sIdImpr := ''
+	local _lRet := .T.
 
 	_sFilial = iif (empty (_sFilial), ::Filial, _sFilial)
 
@@ -365,7 +378,11 @@ METHOD DefImprTk (_sFilial, _sCamFixo) Class ClsCarSaf
 			::PortImpTk = GetMV ("VA_ITKSAFR")
 		endif
 	endif
-return
+	if empty (::PortImpTk)
+		_Super:SomaMsg ("Nao foi possivel definir porta para impressao de ticket.")
+		_lRet = .F.
+	endif
+return _lRet
 
 
 // --------------------------------------------------------------------------
@@ -675,6 +692,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	// Defaults
 	::aIntegGrau   = {}
 	::Aglutin    = ''
+	::AxEntrada  = ''
 	::Carga      = ''
 	::Contranota = ''
 	::CCompart   = {}
@@ -685,11 +703,16 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::ItDescri   = {}
 	::ItGrau     = {}
 	::ItItem     = {}
+	::ItOrganica = {}
 	::ItProduto  = {}
+	::ItPropRur  = {}
 	::Loja       = ''
 	::NomeFornec = ''
 	::PesoBruto  = 0
 	::PesoTara   = 0
+	::PrcParaNF  = ''
+	::RecebeOrg  = ''
+	::RecebeVini = ''
 	::RegSZE     = 0
 	::Safra      = ''
 	::Segregada  = .F.
@@ -698,7 +721,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::UltMsg     = ''
 
 	do case
-	case _sOrigem == 'M'  // Variaveis M->
+	case _sOrigem == 'M'  // Variaveis M->  (preciso pegar os dados 'da tela')
 		::Filial     = xfilial ("SZE")
 		::Aglutin    = m->ze_aglutin
 		::Safra      = m->ze_safra
@@ -721,7 +744,9 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 			atail (::ItDescri)   = GDFieldGet ("ZF_DESCRI",  _nItemGD)
 			atail (::ItGrau)     = GDFieldGet ("ZF_GRAU",    _nItemGD)
 			atail (::ItItem)     = GDFieldGet ("ZF_ITEM",    _nItemGD)
+			atail (::ItOrganica) = fBuscaCpo ('SB1', 1, xfilial ("SB1") + GDFieldGet ("ZF_PRODUTO", _nItemGD), "B1_VAORGAN")
 			atail (::ItProduto)  = GDFieldGet ("ZF_PRODUTO", _nItemGD)
+			atail (::ItPropRur)  = GDFieldGet ("ZF_CADVITI", _nItemGD)
 		next
 
 	case _sOrigem == "SZE"
@@ -754,21 +779,67 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 			atail (::ItDescri)   = fBuscaCpo ("SB1", 1, xfilial ("SB1") + szf -> zf_produto, "B1_DESC")
 			atail (::ItGrau)     = szf -> zf_grau
 			atail (::ItItem)     = szf -> zf_item
+			atail (::ItOrganica) = fBuscaCpo ('SB1', 1, xfilial ("SB1") + szf -> zf_produto, "B1_VAORGAN")
 			atail (::ItProduto)  = szf -> zf_produto
+			atail (::ItPropRur)  = szf -> zf_cadviti
 
 			szf -> (dbskip ())
 		enddo
 
 	otherwise
 		if ! empty (_sOrigem)  // Se origem vazia, eh por que estou apenas instanciando um objeto vazio.
-			::UltMsg += "Impossivel gerar atributos. Origem '" + _sOrigem + "' desconhecida."
+			_Super:SomaMsg ("Impossivel gerar atributos. Origem '" + _sOrigem + "' desconhecida.")
 			u_help (::UltMsg,, .t.)
 		endif
 		_lContinua = .F.
 	endcase
 
+	// A partir de 2024 pretendo eliminar o conceito de 'balancas' e ficar
+	// apenas com 'filiais'. Criei o conceito de 'balanca' por volta de 2014
+	// quando havia recebimento noutros locais que nao eram nossas filiais e
+	// faziamos o lancamento de todas as NF de produtos na filial 01, mas era
+	// necessario saber, pelo menos, o local fisico onde fora recebida a uva.
+	if _lContinua
+		if ::Safra >= '2024'
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT ZX5_09ORGA, ZX5_09FINA, ZX5_09ALM"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5"
+			_oSQL:_sQuery += " WHERE ZX5.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_TABELA = '09'"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_09SAFR = '" + ::Safra + "'"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_09LOCA = '" + ::Filial + "'"
+			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+			_aZX5 := aclone (_oSQL:Qry2Array (.f., .f.))
+			if len (_aZX5) != 1
+				_Super:SomaMsg ("Sem definicao (ou em duplicidade) de recepcao de uvas organicas e viniferas para a filial '" + ::Filial + "' X safra '" + ::Safra + "'")
+				_lContinua = .F.
+			else
+				::RecebeOrg  = _aZX5 [1, 1]  // Espero receber S ou N
+				::RecebeVini = _aZX5 [1, 2]  // Espero receber a forma de classificacao (1=nao recebe;2=A/B/D;3=PR/AA/A/B/C/D/DS;4=classif.como comum)
+				::AxEntrada  = _aZX5 [1, 3]  // Espero receber um cod. de almox (geralmente '03')
+			endif
+		endif
+	endif
+
 	if _lContinua
 		::CxOuGranel = iif (::Filial == '03', 'C', 'G')  // Somente Livramento ainda recebe em caixas
+	endif
+
+	// Define qual o tipo de preco a ser usado para geracao de contranota.
+	// Procuro usar as mesmas posicoes retornadas pelas funcoes de calculo do
+	// preco de cada ano: 1=entrada (em desuso);2=compra;5=MOC
+	if _lContinua
+		do case
+		case ::Safra $ '2019/2021/2022/2024'  // Para 2024 ainda nao tenho OK da direcao !!!
+			::PrcParaNF = 1  // pos.2=preco de compra
+		case ::Safra $ '2020/2023'
+			::PrcParaNF = 5  // pos.5=preco MOC
+		otherwise
+			_Super:SomaMsg ("Sem definicao de qual preco devo usar para gerar contranota (entrada/compra/MOC/...)")
+			_lContinua = .F.
+		endcase
 	endif
 
 	// Alimenta array de informacoes da tabela de integracao com medidor de grau.
@@ -780,17 +851,107 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + ::Filial + "'"
 		_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
+		_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
 		_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
 		_oSQL:_sQuery += " ORDER BY ZZA.ZZA_PRODUT"
 		//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		::aIntegGrau := aclone (_oSQL:Qry2Array (.F., .F.))
 	endif
 
+	// Se teve problemas, limpa alguns atributos basicos para que tornar o objeto invalido
+	if ! _lContinua
+		::Filial    = ''
+		::Safra     = ''
+		::Carga     = ''
+		::ItItem    = {}
+		::Fornece   = ''
+		::PesoBruto = 0
+		::PesoTara  = 0
+	endif
 	//u_logobj (::Self)
 	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Gerei atributos usando origem = ' + _sOrigem + ' e ficou assim:')
 	//::Log ()
 	U_ML_SRArea (_aAreaAnt)
 return
+
+
+// --------------------------------------------------------------------------
+// Define em qul grupo de pagamentos a carga deve ser enquadrada.
+METHOD GrupoPagto () Class ClsCarSaf
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _lContinua := .T.
+	local _sRetGrpPg := ''
+	local _aVarMVal  := {}
+//	local _sVarMVal  := ''
+	
+	// Grupo pagto.eh definido pela variedade de menor valor presente na carga.
+	_aVarMVal = aclone (::VarMenorVl (::PrcParaNF))
+	if len (_aVarMVal) == 0
+		_Super:SomaMsg ("Nao ha variedade de menor valor definida. Impossivel determinar o grupo para pagamento.")
+	else
+		sb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _aVarMVal [1], .F.))
+			_Super:SomaMsg ("Produto '" + _aVarMVal + "' nao cadastrado. Impossivel determinar o grupo para pagamento.")
+		else
+		
+			// Segue politicas definidas para cada safra.
+			// DEVEM SER CONSISTENTES com o que retorna na tag <regraPagamento>
+			// do metodo ClsAssoc:FechSafra()
+			do case
+			case _sSafra == '2020'
+				// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
+				if alltrim (sb1 -> b1_cod) $ '9925'  // bordo
+					_sRetGrpPg = 'A'
+				elseif alltrim (sb1 -> b1_codpai) $ '9925'  // Alguma possivel nova variacao de bordo
+					_sRetGrpPg = 'A'
+				elseif sb1 -> b1_vaorgan == 'O'  // Organicas
+					_sRetGrpPg = 'A'
+				elseif sb1 -> b1_vattr == 'S'  // Tintorias
+					_sRetGrpPg = 'B'
+				elseif sb1 -> b1_varuva == 'F'
+					if _aVarMVal [3] == 'E'  // Viniferas em espaldeira
+						_sRetGrpPg = 'B'
+					elseif _aVarMVal [3] == 'L'
+						_sRetGrpPg = 'C'
+					else
+						u_help (procname () + ": Sistema de conducao '" + _aVarMVal [3] + "' invalido.",, .t.)
+						_lContinua = .F.
+					endif
+				else
+					_sRetGrpPg = 'C'
+				endif
+
+			case _sSafra $ '2021/2022/2023/2024'  // Ainda nao tenho OK da direcao para 2024 !!!
+				// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
+				if alltrim (sb1 -> b1_cod) $ '9925/9904/9922/9855'  // bordo, niagara, concord
+					_sRetGrpPg = 'A'
+				elseif alltrim (sb1 -> b1_codpai) $ '9925/9904/9922/9855'  // Alguma possivel nova variacao de bordo, niagara, concord
+					_sRetGrpPg = 'A'
+				elseif sb1 -> b1_vaorgan == 'O'  // Organicas
+					_sRetGrpPg = 'A'
+				elseif sb1 -> b1_vattr == 'S'  // Tintorias
+					_sRetGrpPg = 'B'
+				elseif sb1 -> b1_varuva == 'F'
+					if _aVarMVal [3] == 'E'  // Viniferas em espaldeira
+						_sRetGrpPg = 'B'
+					elseif _aVarMVal [3] == 'L'
+						_sRetGrpPg = 'C'
+					else
+						u_help (procname () + ": Sistema de conducao '" + _aVarMVal [3] + "' invalido.",, .t.)
+						_lContinua = .F.
+					endif
+				else
+					_sRetGrpPg = 'C'
+				endif
+
+			otherwise
+				_Super:SomaMsg ("Sem definicao de regras para grupos de pagamento para esta safra.")
+			endcase
+		endif
+	endif
+	U_ML_SRArea (_aAreaAnt)
+return _sRetGrpPg
+
 
 
 // --------------------------------------------------------------------------
@@ -850,6 +1011,7 @@ METHOD Log () Class ClsCarSaf
 		_sLogCar += U_TamFixo (' - '   + alltrim (::ItDescri  [_nItCarga]), 25, ' ')
 		_sLogCar += ' Gr: ' + ::ItGrau [_nItCarga]
 		_sLogCar += ' Sist.cond: ' + ::ItConducao [_nItCarga]
+		_sLogCar += ' Propr.rural: ' + ::ItPropRur [_nItCarga]
 		_sLogCar += chr (13) + chr (10)
 	next
 	if len (::CCompart) > 0
@@ -859,6 +1021,38 @@ METHOD Log () Class ClsCarSaf
 	U_Log2 ('info', _sLogCar)
 	U_Log2 ('info', '-----------------------------------------------')
 return _sLogCar
+
+
+// --------------------------------------------------------------------------
+// Verifica se pode incluir a carga.
+METHOD PodeGravar () Class ClsCarSaf
+	local _lRet  := .T.
+	local _nItem := 0
+
+	// Este teste parece que vai exigir manutencao eterna...
+	if _lRet .and. ::Safra >= '2014' .and. ! cEmpAnt + cFilAnt $ '0101/0103/0107'
+		_Super:SomaMsg ("Filial nao liberada para recebimento nesta safra.")
+		_lRet = .F.
+	endif
+	if _lRet .and. (empty (::AxEntrada) .or. empty (::RecebeOrg) .or. empty (::RecebeVini))
+		u_help ("Parametros de Almox.entrada estoque uva / Recepcao de organicas / Recepcao de viniferas nao definido(s). Verifique se esta filial consta na tabela 09 do arquivo ZX5.")
+		_lRet = .F.
+	endif
+	if _lRet
+		for _nItem = 1 to len (::ItItem)
+			if ::ItOrganica [_nItem] $ 'O/E/B' .and. ::RecebeOrg != 'S'
+				_Super:SomaMsg ("Item " + cvaltochar (_nItem) + ":Nao ha previsao de recebimento de uvas organicas nesta filial.")
+				_lRet = .F.
+			endif
+		next
+	endif
+
+	// Pra ajudar durante depuracao de programas...
+	if ! _lRet
+		U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']Gravacao de carga nao vai ser permitida. Log da carga:')
+		::Log ()
+	endif
+return _lRet
 
 
 // --------------------------------------------------------------------------
@@ -1218,6 +1412,10 @@ return _sRet
 // A lista de 'variedades envolvidas' considera, tambem, cargas compartilhadas.
 // O parametro 'qual preco' deve manter compatibilidade com a funcao de calculo
 // de precos da safra em questao.
+// Retorno: array de 3 posicoes, ordenada pelo preco (1a.posicao=variedade de menor valor)
+// 1 - Codigo variedade
+// 2 - Preco unitario
+// 3 - Forma de conducao [E]spaldeira,[L]atada
 METHOD VarMenorVl (_nQualPrc) class ClsCarSaf
 	local _aProdut   := {}
 	local _nProdut   := 0
@@ -1284,6 +1482,11 @@ METHOD VarMenorVl (_nQualPrc) class ClsCarSaf
 			aadd (_aAux, aclone (_aProdut [_nProdut]))
 		endif
 	next
+
+	// Ordena por codigo de produto para o caso de, a seguir, ter dois
+	// produtos de mesmo preco, ficar ordenado por preco + codigo.
+	// Achei um tanto perigoso ordenar na mesma operacao...
+	_aProdut = asort (_aProdut,,, {|_x, _y| _x[1] < _y [1]})
 
 	// Ordena por preco, de forma que, depois, baste pegar a primeira linha.
 	_aProdut = asort (_aProdut,,, {|_x, _y| _x[2] < _y [2]})

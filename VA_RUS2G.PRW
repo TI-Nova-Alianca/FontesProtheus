@@ -14,6 +14,7 @@
 // 31/01/2023 - Robert - Tratamentos para gravacao de cargas compartilhadas.
 // 03/02/2023 - Robert - Gravacao de eventos cfe. campos ZE_AlManPB,ZE_AlManPT, ZF_AlManGR
 // 10/02/2023 - Robert - Gravacao evento cancelamento carga.
+// 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
 //
 
 #include "totvs.ch"
@@ -21,7 +22,7 @@
 
 // --------------------------------------------------------------------------
 // Gravacao / exclusao dos registros.
-user Function VA_RUS2G (_nOpc)
+user Function VA_RUS2G (_nOpc, _oCarSaf)
 	local _nCampo    := 0
 	local _sCampo    := ""
 	local _lContinua := .T.
@@ -36,6 +37,11 @@ user Function VA_RUS2G (_nOpc)
 
 	u_log2 ('info', 'Iniciando ' + procname ())
 	//U_PerfMon ('I', 'Interno_VA_Rus2G')
+
+	if inclui .and. !_oCarSaf:PodeGravar ()
+		_lContinua = .F.
+		u_help (_oCarSaf:UltMsg,, .t.)
+	endif
 
 	// Confere se jah existe este numero de carga (caso haja problema com os sequenciais).
 	if _lContinua .and. inclui

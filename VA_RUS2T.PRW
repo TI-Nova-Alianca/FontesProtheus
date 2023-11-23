@@ -6,13 +6,14 @@
 //
 // Historico de alteracoes:
 // 01/02/2023 - Robert - Passa a chamar, tambem, o metodo ClsCarSaf.SegPesTOk()
+// 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
 //
 
 #include "totvs.ch"
 #include "VA_Inclu.prw"
 
 // --------------------------------------------------------------------------
-user function VA_RUS2T (_nOpc)
+user function VA_RUS2T (_nOpc, _oCarSaf)
 	local _lRet      := .T.
 	local _nPesoTot  := 0
 	local _nBkpN     := N
@@ -23,17 +24,17 @@ user function VA_RUS2T (_nOpc)
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 
-	if (cEmpAnt + cFilAnt == '0101' .and. ! m->ze_local $ 'LB/QL/GS/GB') ;
-		.or. (cEmpAnt + cFilAnt == '0103' .and. ! m->ze_local $ 'LV') ;
-		.or. (cEmpAnt + cFilAnt == '0107' .and. ! m->ze_local $ 'JC') ;
-		.or. (cEmpAnt + cFilAnt == '0109' .and. ! m->ze_local $ 'SP') ;
-		.or. (cEmpAnt + cFilAnt == '0110' .and. ! m->ze_local $ 'SA') ;
-		.or. (cEmpAnt + cFilAnt == '0111' .and. ! m->ze_local $ 'NP') ;
-		.or. (cEmpAnt + cFilAnt == '0112' .and. ! m->ze_local $ 'PB/AP') ;
-		.or. (cEmpAnt + cFilAnt == '0113' .and. ! m->ze_local $ 'AL')
-		u_help ("Balanca invalida para esta filial ou filial nao autorizada a receber safra.",, .t.)
-		_lRet = .F.
-	endif
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.	if (cEmpAnt + cFilAnt == '0101' .and. ! m->ze_local $ 'LB/QL/GS/GB') ;
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0103' .and. ! m->ze_local $ 'LV') ;
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0107' .and. ! m->ze_local $ 'JC') ;
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0109' .and. ! m->ze_local $ 'SP') ;
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0110' .and. ! m->ze_local $ 'SA') ;
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0111' .and. ! m->ze_local $ 'NP') ;
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0112' .and. ! m->ze_local $ 'PB/AP') ;
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0113' .and. ! m->ze_local $ 'AL')
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		u_help ("Balanca invalida para esta filial ou filial nao autorizada a receber safra.",, .t.)
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		_lRet = .F.
+// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.	endif
 
 	// Em caso de inclusao via web service, tenta validar todos os campos.
 	if _lRet .and. inclui .and. IsInCallStack ("U_GERASZE")
@@ -54,18 +55,25 @@ user function VA_RUS2T (_nOpc)
 	endif
 
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
-	if _lRet
-		if type ("_oCarSaf") != 'O'
-			private _oCarSaf  := ClsCarSaf ():New ()
-		endif
-		_oCarSaf:GeraAtrib ('M')  // Alimenta objeto com dados das variaveis M->
-		if empty (_oCarSaf:Carga)
-			u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
-			_lContinua = .F.
-		endif
-	endif
+// A partir de 2024 quero receber o objeto pronto.	if _lRet
+// A partir de 2024 quero receber o objeto pronto.		if type ("_oCarSaf") != 'O'
+// A partir de 2024 quero receber o objeto pronto.			private _oCarSaf  := ClsCarSaf ():New ()
+// A partir de 2024 quero receber o objeto pronto.		endif
+// A partir de 2024 quero receber o objeto pronto.		_oCarSaf:GeraAtrib ('M')  // Alimenta objeto com dados das variaveis M->
+// A partir de 2024 quero receber o objeto pronto.		if empty (_oCarSaf:Carga)
+// A partir de 2024 quero receber o objeto pronto.			u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+// A partir de 2024 quero receber o objeto pronto.			_lContinua = .F.
+// A partir de 2024 quero receber o objeto pronto.		endif
+// A partir de 2024 quero receber o objeto pronto.	endif
 
 	if _lRet .and. (inclui .or. altera)  // Na exclusao nao precisa validar nada.
+
+		U_Log2 ('debug', '[' + procname () + ']Vou validar a seguinte carga:')
+		_oCarSaf:Log ()
+		if ! _oCarSaf:PodeGravar ()
+			u_help (_oCarSaf:UltMsg,, .t.)
+			_lRet = .F.
+		endif
 
 		// Verifica linha OK para todas as linhas, pois o gatilho de distribuicao de quantidade
 		// pode ter deixado alguma das linhas com quantidade zerada.

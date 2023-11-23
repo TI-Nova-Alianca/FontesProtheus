@@ -14,6 +14,7 @@
 // 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 // 25/01/2023 - Robert - Removidos alguns logs e medicoes de performance.
+// 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
 //
 
 #include "VA_INCLU.prw"
@@ -94,6 +95,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGA   = ' + m->ze_carga)
 
+	_oCarSaf:Safra = _sSafra
 	// Define impressora de ticket
 	_oCarSaf:DefImprTk (cFilAnt, _sIdImpr)
 
@@ -179,6 +181,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 			// Executa a validacao de linha
 			if ! U_VA_RUS2L ()
+				U_Log2 ('erro', 'U_VA_RUS2L() retornou .F.')
 				_sErroWS += 'Erro na validacao do item ' + cvaltochar (_nItemCar)
 				exit
 			else
@@ -190,22 +193,30 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	// Validacoes do programa original.
 	if empty (_sErroWS)  // Variavel private do web service
 
-	//	// Os programas de validacao e gravacao vao gostar de receber o objeto bem alimentadinho...
-	//	_oCarSaf:GeraAtrib ('M')
+		// Os programas de validacao e gravacao vao gostar de receber o objeto bem alimentadinho...
+		_oCarSaf:GeraAtrib ('M')
+		_oCarSaf:Log ()
 
-		if U_VA_RUS2T ()
+		if U_VA_RUS2T (3, _oCarSaf)
 			u_log2 ('debug', 'U_VA_RUS2T() ok')
 			u_log2 ('debug', 'Tentando gravar carga')
 			
 			// Gravacao pelo programa original.
-			if U_VA_RUS2G ()
+			if U_VA_RUS2G (3, _oCarSaf)
 				u_log2 ('info', 'U_VA_RUS2G() ok')
 				_sMsgRetWS = sze -> ze_carga
 				u_log2 ('info', 'Carga gerada: ' + _sMsgRetWS)
+				U_Log2 ('info', '[' + procname () + ']' + _oCarSaf:UltMsg)
 			else
 				u_log2 ('erro', 'U_VA_RUS2G() retornou erro.')
+				U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
 			endif
+		else
+			u_log2 ('erro', 'U_VA_RUS2T() retornou .F.')
+			U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
 		endif
+	else
+		U_help (_sErroWS,, .t.)
 	endif
 
 	// Libera semaforo.
