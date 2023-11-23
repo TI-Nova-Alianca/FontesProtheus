@@ -24,6 +24,11 @@ User Function VA_DA0TAB()
 	Private oReport
 	Private cPerg := "VA_DA0TAB"
 	
+    If ! U_ZZUVL ('156', __cUserID, .T.)
+        u_help("Usuário sem permissão no grupo 156!")
+		return
+	EndIf
+    
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
 	

@@ -25,7 +25,7 @@ user function OM010Mnu ()
 	//aadd (aRotina, {"Importa tabela"		, "U_VA_DA0IMP ()"													,0,4,32,NIL})
 	//aadd (aRotina, {"Exclui produto"		, "U_VA_DA0PRO ()"													,0,4,32,NIL})
 	//aadd (aRotina, {"Log alteração" 		, "U_VA_DA0LOG (da0 -> da0_filial, da0 -> da0_codtab)"				,0,4,32,NIL})
-	//aadd (aRotina, {"Imprime Tabelas" 		, "U_VA_DA0TAB()"													,0,4,32,NIL})
+	aadd (aRotina, {"Imprime Tabelas" 		, "U_VA_DA0TAB()"													,0,4,32,NIL})
 	aadd (aRotina, {"Atu.Discrepância" 		, "U_VA_PERMAX()"													,0,4,32,NIL})
 	
 return
