@@ -56,6 +56,7 @@
 // 18/10/2023 - Robert - Valida qt.prevista da OP antes de permitir incluir nova etiqueta (GLPI 13212)
 // 01/11/2023 - Robert - Manda 1 dia a menos na tb_wms_etiqueta para evitar erro no Full "produto com validade menor que vida util do item"
 // 20/11/2023 - Robert - Busca :ValidLote no b8_dtvalid e nao mais no d5_dtvalid (data pode ter tido manutencao posterior)
+// 24/11/2023 - Robert - Na impressao originada por NF entrada, nao buscava o lote interno (GLPI 14550).
 //
 
 #Include "Protheus.ch"
@@ -329,6 +330,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			endif
 
 		case ! empty (::DocEntrNum)
+			_sLoteImp = ::LoteProduto
 			_sDocImp = 'NF.' + alltrim (::DocEntrNum) + '/' + alltrim (::DocEntrSerie)
 			sa2 -> (dbsetorder (1))
 			if ! sa2 -> (dbseek (xfilial ("SA2") + ::DocEntrForn + ::DocEntrLoja, .F.))
@@ -746,8 +748,10 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 						_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + sd1 -> d1_lotectl + "'"
 						_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + sd1 -> d1_cod     + "'"
 						_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + sd1 -> d1_local   + "'"
-						//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+					//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 						_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na NF de entrada '" + ::DocEntrNum + "'.", .T.))
+					//	U_Log2 ('debug', '[' + procname () + ']_aLoteVal:')
+					//	U_Log2 ('debug', _aLoteVal)
 						if len (_aLoteVal) == 1
 							::LoteProduto = _aLoteVal [1, 1]
 							::ValidLote   = stod (_aLoteVal [1, 2])
