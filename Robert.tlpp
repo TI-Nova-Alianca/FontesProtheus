@@ -119,7 +119,7 @@ user function robert ()
 		// _sFuncao += '_evtXML ()'
 		// _sFuncao += '_exml ()'
 		// _sFuncao += '_FtSafra ()'
-		_sFuncao += '_gerasze ()'
+		// _sFuncao += '_gerasze ()'
 		// _sFuncao += '_GLPI13221 ()'
 		// _sFuncao += '_GLPI13674 ()'
 		// _sFuncao += '_GLPI13773 ()'
@@ -150,15 +150,10 @@ user function robert ()
 		// _sFuncao += '_telnet ()'
 		// _sFuncao += '_TrEstq ()'
 		// _sFuncao += '_VACCR2 ()'
+		_sFuncao += '_VA_ACR ()'
 		// _sFuncao += '_VA_VEF ()'
 		// _sFuncao += '_VA_XLS ()'
 		// _sFuncao += '_verif ()'
-		// U_GravaSX1 ("VA_ACR", "01", "0345")
-		// U_GravaSX1 ("VA_ACR", "02", "0345")
-		// U_GravaSX1 ("VA_ACR", "03", 'PA/VD')  // Tipos a listar
-		// U_GravaSX1 ("VA_ACR", "04", 2)  // Mostrar uvas na estrutura ]S/N]
-		// U_GravaSX1 ("VA_ACR", "05", 2)  // Considerar subniveis dos VD [S/N]
-		// _sFuncao += 'U_VA_ACR (.t.)'
 		if ! empty (_sFuncao)
 			&(_sFuncao)
 		else
@@ -2266,9 +2261,8 @@ static function _GLPI14483 ()
 	U_VA_GNF3 (.T.)
 	*/
 
-	// Passo 2: altero a tabela de precos da uva (bordo=$2,00 ; isabel=$1,50 ; tintoreas=$1,75)
+	// Passo 2: altero a tabela de precos da uva
 	// e rodo novamente alimentando outro campo com os novos precos.
-	// Jah tenho, tambem, a tabela SJ23 que eh da Coop.Sao Joao.
 	dbselectarea ("ZZ9")
 	set filter to zz9_safra = '2023' .and. zz9_parcel = 'Q'
 	count to _nRecCount
@@ -2276,7 +2270,7 @@ static function _GLPI14483 ()
 	_nRecAtu = 0
 	do while ! zz9 -> (eof ())
 		incproc ()
-		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == 'Q'
+		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == 'Q' .and. zz9 -> zz9_conduc = 'E'
 			_sClasFina = iif (zz9 -> zz9_conduc == 'L', zz9 -> zz9_clabd, zz9 -> zz9_classe)
 			if ++_nRecAtu % 100 == 0
 				u_log2 ('info', '[' + cvaltochar (_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']Produto ' + alltrim (zz9 -> zz9_produt) + ' gr.' + zz9 -> zz9_grau + ' ' + _sClasFina)
@@ -2287,7 +2281,7 @@ static function _GLPI14483 ()
 			if ! empty (zz9 -> zz9_mistu1) .or. ! empty (zz9 -> zz9_mistu2) .or. ! empty (zz9 -> zz9_mistu3) .or. ! empty (zz9 -> zz9_ccomp)
 				sze -> (dbsetorder (3))  // ZE_FILIAL, ZE_NFGER, ZE_SERIE, R_E_C_N_O_, D_E_L_E_T_
 				if ! sze -> (dbseek (zz9 -> zz9_filial + zz9 -> zz9_nfori + zz9 -> zz9_serior, .F.))
-					u_help ("Nao encotrei nenhuma carga referenciando a contranota '" + zz9 -> zz9_nfori + '/' + zz9 -> zz9_serior + "' da filial '" + zz9 -> zz9_filial + "'",, .t.)
+					u_help ("Nao encontrei nenhuma carga referenciando a contranota '" + zz9 -> zz9_nfori + '/' + zz9 -> zz9_serior + "' da filial '" + zz9 -> zz9_filial + "'",, .t.)
 					exit
 				endif
 				_oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
@@ -2305,8 +2299,9 @@ static function _GLPI14483 ()
 				_aRetPrcS1 = aclone (U_PrcUvaS1 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.))
 			endif
 			reclock ("ZZ9", .F.)
-			zz9 -> zz9_vunit  = _aRetPrcS1 [2]
-			zz9 -> zz9_vunit3 = _aRetPrcS1 [5]
+			// primeira rodada com agios de organica 15/55/70%    rodada zz9 -> zz9_vunit  = _aRetPrcS1 [2]
+			// primeira rodada com agios de organica 15/55/70%    rodada zz9 -> zz9_vunit3 = _aRetPrcS1 [5]
+			zz9 -> zz9_vunit4 = _aRetPrcS1 [2]  // rodada com agios organicas 15/50/50%
 			msunlock ()
 		endif
 		zz9 -> (dbskip ())
@@ -2317,18 +2312,29 @@ return
 // Simulacoes com cargas de safra
 static function _CargSaf ()
 	local _oCarSaf := NIL
-//	local _nCompart := 0
-//	local _sCompart := ''
-//	local _sCComp   := 11
-//	_oCarSaf = ClsCarSaf ():New ('01'+'2023'+'5099')
-//	_oCarSaf:Log ()
-	_oCarSaf = ClsCarSaf ():New ('01'+'2023'+'5097')
-	_oCarSaf:Log ()
-	if ! _oCarSaf:SegregarLt ()
-		U_Log2 ('debug', '[' + procname () + ']' + _oCarSaf:UltMsg)
-	else
-		U_Log2 ('debug', '[' + procname () + ']Lote segregado com sucesso')
-	endif
+
+	sze -> (dbsetorder (1))
+	dbselectarea ("SZE")
+	set filter to ze_filial = cFilAnt .and. ze_safra = '2022' .and. !ze_status $ 'C/D' // .AND. ZE_CARGA $ '0655/0656/0952/0953'
+	sze -> (dbgotop ())
+	do while ! sze -> (eof ())
+		u_log (sze -> ze_filial + ' ' + sze -> ze_safra + ' ' + sze -> ze_carga)
+		_oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
+		if empty (_oCarSaf:Carga)
+			u_help ("Impossivel instanciar carga (ou carga invalida).", _oCarSaf:UltMsg, .t.)
+			exit
+		endif
+		_xNovo := _oCarSaf:VarMenorVl (_oCarSaf:PrcParaNF) [1, 1]
+		// U_Log2 ('debug', '[' + procname () + ']Novo:' + _xNovo)
+		_xOld := U_VA_RusMV ()
+		if _xNovo != _xOld
+			U_Log2 ('erro', '[' + procname () + ']Diferenca!!! OLD:' + cvaltochar (_xOld) + ' NOVO: ' + cvaltochar (_xNovo))
+			_oCarSaf:Log ()
+		endif
+		//EXIT // DURANTE TESTES
+
+		sze -> (dbskip ())
+	enddo
 return
 
 // --------------------------------------------------------------------------
@@ -2522,19 +2528,19 @@ static function _va_xls ()
 //	U_GravaSX1 (cPerg, '11', stod ('20190311'))
 //	U_VA_XLS19 (.t.)
 
-	Private cPerg   := "VAXLS26"
-	U_GravaSX1 (cPerg, '01', cfilant)      // Filial inicial
-	U_GravaSX1 (cPerg, '02', cfilant)      // Filial final
-	U_GravaSX1 (cPerg, '03', date() - 10)  // Data inicial
-	U_GravaSX1 (cPerg, '04', date ())      // Data final
-	U_GravaSX1 (cPerg, '05', '')           // Produto (produzido) inicial
-	U_GravaSX1 (cPerg, '06', 'z')          // Produto (produzido) final
-	U_GravaSX1 (cPerg, '07', '')           // Componente (consumido) inicial
-	U_GravaSX1 (cPerg, '08', 'z')          // Componente (consumido) final
-	U_GravaSX1 (cPerg, '09', '')           // Numero OP inicial
-	U_GravaSX1 (cPerg, '10', 'z')          // Numero OP final
-	U_GravaSX1 (cPerg, '11', 3)            // Tipos de movimentos a exportar {"Producao", "Consumo/devol", "Todos"}
-	U_VA_XLS26 (.t.)
+//	Private cPerg   := "VAXLS26"
+//	U_GravaSX1 (cPerg, '01', cfilant)      // Filial inicial
+//	U_GravaSX1 (cPerg, '02', cfilant)      // Filial final
+//	U_GravaSX1 (cPerg, '03', date() - 10)  // Data inicial
+//	U_GravaSX1 (cPerg, '04', date ())      // Data final
+//	U_GravaSX1 (cPerg, '05', '')           // Produto (produzido) inicial
+//	U_GravaSX1 (cPerg, '06', 'z')          // Produto (produzido) final
+//	U_GravaSX1 (cPerg, '07', '')           // Componente (consumido) inicial
+//	U_GravaSX1 (cPerg, '08', 'z')          // Componente (consumido) final
+//	U_GravaSX1 (cPerg, '09', '')           // Numero OP inicial
+//	U_GravaSX1 (cPerg, '10', 'z')          // Numero OP final
+//	U_GravaSX1 (cPerg, '11', 3)            // Tipos de movimentos a exportar {"Producao", "Consumo/devol", "Todos"}
+//	U_VA_XLS26 (.t.)
 
 //	Private cPerg   := "VAXLS30"
 //	U_GravaSX1 (cPerg, '01', '000161')  // assoc 
@@ -2598,13 +2604,13 @@ static function _va_xls ()
 //	U_GravaSX1 (cPerg, '03', 'RS-866/2020')  // codigo CR
 //	u_va_xls38 (.T.)
 
-// Private cPerg   := "VAXLS40"
-// U_GravaSX1 (cPerg, '01', '2023')  // safra
-// U_GravaSX1 (cPerg, '02', 2)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
-// U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
-// U_GravaSX1 (cPerg, '04', 2)  // Todos(decimais) / Apenas inteiros
-// U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
-// u_va_xls40 (.T.)
+Private cPerg   := "VAXLS40"
+U_GravaSX1 (cPerg, '01', 'S23A')  // safra
+U_GravaSX1 (cPerg, '02', 2)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
+U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
+U_GravaSX1 (cPerg, '04', 2)  // Todos(decimais) / Apenas inteiros
+U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
+u_va_xls40 (.T.)
 
 //	Private cPerg   := "VAXLS41"
 //	U_GravaSX1 (cPerg, '01', '')  // assoc 
@@ -3466,12 +3472,12 @@ static function _TbUva ()
 	local _nHdl    := 0
 	local _sArq    := ''
 	local _sCodTab := 'S23A'
-	local _sVarUva := 'F'
+	local _sVarUva := 'C'
 	local _sConduc := 'L'
 	local _sTipoTab := 'C'  // Por enquanto, apenas [C]ompra
 	local _oTbUva := ClsTbUva ():New ()
 //	_oTbUva:GeraAtrib ('2023', 'C', 'C', 'L', 'I')  //_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec
-	_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, 'D')
+	_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, 'I')
 
 	if empty (_oTbUva:CodTabela)
 		U_Log2 ('erro', '[' + procname () + ']' + _oTbUva:UltMsg)
@@ -3494,6 +3500,17 @@ static function _TbUva ()
 return
 
 // --------------------------------------------------------------------------
+static function _VA_ACR ()
+	U_GravaSX1 ("VA_ACR", "01", "")
+	U_GravaSX1 ("VA_ACR", "02", "0348")
+	U_GravaSX1 ("VA_ACR", "03", 'PA/VD')  // Tipos a listar
+	U_GravaSX1 ("VA_ACR", "04", 1)  // Considerar subniveis dos VD [S/N]
+	U_GravaSX1 ("VA_ACR", "05", '')  // Linha coml.de
+	U_GravaSX1 ("VA_ACR", "06", 'z')  // Linha coml.ate
+	U_VA_ACR (.t.)
+return
+
+// --------------------------------------------------------------------------
 static function _VACCR2 ()
 	cPerg := 'VA_CCR2'
 	U_GravaSX1 (cPerg, '01', '0345           ')  // prod pai ini
@@ -3505,7 +3522,6 @@ static function _VACCR2 ()
 	U_GravaSX1 (cPerg, '07', 'Z')  // LINHA COML pai fim
 	u_va_ccr2 (.t., .t.)
 return
-
 
 // --------------------------------------------------------------------------
 static function _VA_VEF ()
@@ -3869,46 +3885,196 @@ return
 // Ajusta cadastro produtos em lote
 static function _AtuSB1 ()
 	local _lContinua := .T.
+	local _oSQL      := NIL
+	local _aPrev     := {}
 
-	U_MudaLog ('GLPI12741_B1_GRTRIB.log')
+	_oSQL := ClsSQL():New ()
+
+	U_MudaLog ('GLPI14539_B1_CUSTD.log')
 	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
+	//sb5 -> (dbsetorder (1))
+	//syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
 	sb1 -> (dbgotop ())
 	do while _lContinua .and. ! sb1 -> (eof ())
-		if _lContinua .and. ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-			u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-			_lContinua = .F.
-		endif
+		//if _lContinua .and. ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+		//	u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+		//	_lContinua = .F.
+		//endif
 		//if _lContinua .and. ! syd -> (dbseek (xfilial ("SYD") + sb1 -> b1_posipi, .F.))
 		//	u_log2 ('ERRO', "Nao encontrei SYD '" + sb1 -> b1_posipi + "' para o produto " + sb1 -> b1_cod)
 		//	_lContinua = .F.
 		//endif
-		if _lContinua .and. ! sb1->b1_tipo $ "PA/MR" .and. alltrim (sb1->b1_tipo) != alltrim (sb1->b1_grtrib)
-			u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+		if _lContinua .and. ! sb1->b1_tipo $ 'PA/PI/VD/AP/MO/GF/MM/MC/MR/IA/SG/GG/AI/AN/BN/EP/PP/RE/AT/SL/VA'
+			u_log2 ('info', 'Verificando item ' + sb1 -> b1_tipo + ' ' + sb1 -> b1_cod + ' ' + SB1 -> B1_DESC)
 
-			// Cria variaveis para uso na gravacao do evento de alteracao
-			regtomemory ("SB1", .F., .F.)
-			//regtomemory ("SB5", .F., .F.)
-			//m->b5_vasisde = 'S'
-			m->b1_grtrib = sb1->b1_tipo
+			_oSQL:_sQuery := "SELECT CUSREPUNI, D1_DTDIGIT, D1_FORNECE, D1_LOJA, D1_DOC"
+			_oSQL:_sQuery += " FROM VA_ULTCOMP ('', 'zz', '" + sb1 -> b1_cod + "', 1)"
+			_aUltCom := aclone (_oSQL:Qry2Array (.f., .f.))
+			if len (_aUltCom) == 1 .and. _aUltCom [1, 1] > 0 .and. round (sb1 -> b1_custd, 4) != round (_aUltCom [1, 1], 4)
+				aadd (_aPrev, {sb1 -> b1_tipo, "'" + sb1 -> b1_cod, SB1 -> B1_DESC, sb1 -> b1_custd, _aUltCom [1, 1], "'" + _aUltCom [1, 5], STOD (_aUltCom [1, 2])})
 
-			// Grava evento de alteracao
-			_oEvento := ClsEvent():new ()
-			_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 12741 - ajustar B1_GRTRIB', .F.)
-			reclock ("SB1", .f.)
-			sb1 -> B1_grtrib = m->b1_grtrib
-			msunlock ()
-			//reclock ("SB5", .f.)
-			//sb5->b5_vasisde = m->b5_vasisde
-			//msunlock ()
-			U_AtuMerc ("SB1", sb1 -> (recno ()))
+				// Cria variaveis para uso na gravacao do evento de alteracao
+				regtomemory ("SB1", .F., .F.)
+				//regtomemory ("SB5", .F., .F.)
+				//m->b5_vasisde = 'S'
+				m->b1_CUSTD = ROUND (_aUltCom [1, 1], 4)
+				m->b1_datref = date ()
 
-			// Cai fora no primeiro, para testes.
-			// exit
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 14539 - Atualizar custo repos.pela ultima compra (NF ' + _aUltCom [1, 5] + ' forn.' + _aUltCom [1, 3] + " de " + dtoc (STOD (_aUltCom [1, 2])) + ")", .F.)
+				reclock ("SB1", .f.)
+				sb1 -> B1_custd = m->b1_custd
+				sb1 -> B1_datref = m->b1_datref
+				msunlock ()
+				//reclock ("SB5", .f.)
+				//sb5->b5_vasisde = m->b5_vasisde
+				//msunlock ()
+				U_AtuMerc ("SB1", sb1 -> (recno ()))
+
+				// Cai fora no primeiro, para testes.
+				// exit
+				
+			endif
 		endif
 		sb1 -> (dbskip ())
+
+		// durante testes
+		if len (_aPrev) > 10
+			exit
+		endif
 	enddo
+	u_acolsXLS (_aPrev)
+
+	// Ajusta cadastro produtos em lote (itens das lojas)
+	// sb1 -> (dbsetorder (1))
+	// sb5 -> (dbsetorder (1))
+	// sb1 -> (dbgotop ())
+	// do while ! sb1 -> (eof ())
+	// 	if sb1 -> b1_tipo = 'PA' .and. ! empty (sb1 -> b1_codpai)
+	// 		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+	// 			u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+	// 		else
+	// 			u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
+	// 			if sb1 -> B1_CODBAR != sb1 -> B1_VAEANUN ;
+	// 				.and. substr (sb1 -> b1_codbar, 1, 8) != '78961005' ;
+	// 				.and. substr (sb1 -> b1_vaeanun, 1, 8) = '78961005' ;
+	// 				.and. ! "EXP" $ sb1 -> b1_desc  // Itens de exportacao jah estao corretos
+	// 			
+	// 				// Cria variaveis para uso na gravacao do evento de alteracao
+	// 				regtomemory ("SB1", .F., .F.)
+	// 				regtomemory ("SB5", .F., .F.)
+	// 				m->b1_codgtin = ''
+	// 				m->b1_codbar  = sb1 -> b1_vaeanun
+	// 				m->b5_2codbar = ''
+	// 				m->b5_convdip = 0
+	// 				m->b5_umdipi  = ''
+	// 				
+	// 				// Grava evento de alteracao
+	// 				_oEvento := ClsEvent():new ()
+	// 				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
+	// 				
+	// 				reclock ("SB1", .f.)
+	// 				sb1 -> b1_codgtin = m->b1_codgtin
+	// 				sb1 -> b1_codbar = m->b1_codbar
+	// 				msunlock ()
+	// 				U_AtuMerc ("SB1", sb1 -> (recno ()))
+	// 				reclock ("SB5", .f.)
+	// 				sb5 -> b5_2codbar = m->b5_2codbar
+	// 				sb5 -> b5_convdip = m->b5_convdip
+	// 				sb5 -> b5_umdipi  = m->b5_umdipi
+	// 				msunlock ()
+	// 			else
+	// 				u_log ('nada a alterar')
+	// 			endif
+	// 		endif
+	// 	endif
+	// 	sb1 -> (dbskip ())
+	// enddo
+
+	// Ajusta cadastro produtos em lote (PAs vendidos em caixas)
+	// sb1 -> (dbsetorder (1))
+	// sb5 -> (dbsetorder (1))
+	// sb1 -> (dbgotop ())
+	// do while ! sb1 -> (eof ())
+	// 	if sb1 -> b1_tipo = 'PA' .and. empty (sb1 -> b1_codpai)
+	// 		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+	// 			u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+	// 		else
+	// 			u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
+	// 			if ! '789' $ sb1 -> b1_codbar .and. ! "EXP" $ sb1 -> b1_desc  // exportacao jah estao corretos
+	// 				if sb1->b1_codbar != sb1 -> b1_vaDunCx .or. sb5->b5_2codbar != sb1 -> b1_vaEanUn .or. sb5->b5_convdip != sb1 -> b1_conv .or. sb5->b5_umdipi != sb1 -> b1_segum
+	// 			
+	// 					// Cria variaveis para uso na gravacao do evento de alteracao
+	// 					regtomemory ("SB1", .F., .F.)
+	// 					regtomemory ("SB5", .F., .F.)
+	// 					m->b1_codgtin = ''
+	// 					if left (sb1 -> b1_vaduncx, 3) != '000' 
+	// 						m->b1_codbar  = sb1 -> b1_vaDunCx
+	// 					endif
+	// 					if substr (sb1 -> b1_vaeanun, 1, 3) = '789'
+	// 						m->b5_2codbar = sb1 -> b1_vaEanUn
+	// 					endif
+	// 					m->b5_convdip = sb1 -> b1_convml
+	// 					m->b5_umdipi  = sb1 -> b1_segum
+	// 					
+	// 					// Grava evento de alteracao
+	// 					_oEvento := ClsEvent():new ()
+	// 					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
+	// 					
+	// 					reclock ("SB1", .f.)
+	// 					sb1 -> b1_codgtin = m->b1_codgtin
+	// 					sb1 -> b1_codbar = m->b1_codbar
+	// 					msunlock ()
+	// 					U_AtuMerc ("SB1", sb1 -> (recno ()))
+	// 					reclock ("SB5", .f.)
+	// 					sb5 -> b5_2codbar = m->b5_2codbar
+	// 					sb5 -> b5_convdip = m->b5_convdip
+	// 					sb5 -> b5_umdipi  = m->b5_umdipi
+	// 					msunlock ()
+	// 					//exit
+	// 				else
+	// 					u_log ('nada a alterar')
+	// 				endif
+	// 			endif
+	// 		endif
+	// 	endif
+	// 	sb1 -> (dbskip ())
+	// enddo
+
+
+	// Ajusta cadastro de produtos em lote (altera unidades conforme cadastro da caixa)
+	// sb1 -> (dbgotop ())
+	// do while ! sb1 -> (eof ())
+	// 	if sb1 -> b1_tipo == 'PA' .and. ! empty (sb1 -> b1_codpai)
+	// 		_aArea := sb1 -> (getarea ())
+	// 		_sLinPai = posicione ("SB1", 1, xfilial ("SB1") + sb1 -> b1_codpai, "B1_VALINEN")
+	// 		_sDescPai = sb1 -> b1_desc
+	// 		sb1 -> (restarea (_aArea))
+	// 		if ! empty (_sLinPai) .and. alltrim (_sLinPai) != '999' .and. _sLinPai != sb1 -> b1_vaLinEn
+	// 			u_log (sb1 -> b1_cod, sb1 -> b1_desc, sb1 -> b1_valinen, '->', _sLinPai, '(', sb1 -> b1_codpai, _sDescPai)
+	// 			_sCodAnt = sb1 -> b1_valinen
+	// 			reclock ("SB1", .f.)
+	// 			sb1 -> b1_valinen = _sLinPai
+	// 			msunlock ()
+	// 			_oEvento := ClsEvent ():New ()
+	// 			_oEvento:Produto  = sb1 -> b1_cod
+	// 			_oEvento:Texto   += "Produto " + alltrim (sb1 -> b1_cod) + "-" + alltrim (sb1 -> b1_desc) 
+	// 			_oEvento:Texto   += chr (13) + chr (10)
+	// 			_oEvento:Texto   += "Campo B1_VALINEN (" + alltrim (RetTitle ("B1_VALINEN")) + "):"
+	// 			_oEvento:Texto   += " alterado de '" + alltrim (_sCodAnt) + "' para '" + alltrim (sb1 -> b1_valinen) + "' cfe. cadastro do codigo pai."
+	// 			_oEvento:Alias    = 'SB1'
+	// 			_oEvento:CodEven  = "ALT001"
+	// 			_oEvento:CodAlias = sb1 -> b1_cod
+	// 			_oEvento:Recno    = sb1 -> (recno ())
+	// 			//u_log (_oEvento:Texto)
+	// 			_oEvento:Grava ()
+	// 			//exit
+	// 		endif
+	// 	endif
+	// 	sb1 -> (dbskip ())
+	// enddo
+	// u_log ('finalizado')
 return
 
 /*
@@ -6963,138 +7129,6 @@ return
 		U_AtuMerc ("SA1", sa1 -> (recno ()))
 		//exit
 	next
-return
-*/
-/*
-	// Ajusta cadastro produtos em lote (itens das lojas)
-	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if sb1 -> b1_tipo = 'PA' .and. ! empty (sb1 -> b1_codpai)
-			if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-				u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-			else
-				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
-				if sb1 -> B1_CODBAR != sb1 -> B1_VAEANUN ;
-					.and. substr (sb1 -> b1_codbar, 1, 8) != '78961005' ;
-					.and. substr (sb1 -> b1_vaeanun, 1, 8) = '78961005' ;
-					.and. ! "EXP" $ sb1 -> b1_desc  // Itens de exportacao jah estao corretos
-				
-					// Cria variaveis para uso na gravacao do evento de alteracao
-					regtomemory ("SB1", .F., .F.)
-					regtomemory ("SB5", .F., .F.)
-					m->b1_codgtin = ''
-					m->b1_codbar  = sb1 -> b1_vaeanun
-					m->b5_2codbar = ''
-					m->b5_convdip = 0
-					m->b5_umdipi  = ''
-					
-					// Grava evento de alteracao
-					_oEvento := ClsEvent():new ()
-					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
-					
-					reclock ("SB1", .f.)
-					sb1 -> b1_codgtin = m->b1_codgtin
-					sb1 -> b1_codbar = m->b1_codbar
-					msunlock ()
-					U_AtuMerc ("SB1", sb1 -> (recno ()))
-					reclock ("SB5", .f.)
-					sb5 -> b5_2codbar = m->b5_2codbar
-					sb5 -> b5_convdip = m->b5_convdip
-					sb5 -> b5_umdipi  = m->b5_umdipi
-					msunlock ()
-				else
-					u_log ('nada a alterar')
-				endif
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
-
-	// Ajusta cadastro produtos em lote (PAs vendidos em caixas)
-	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if sb1 -> b1_tipo = 'PA' .and. empty (sb1 -> b1_codpai)
-			if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-				u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-			else
-				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
-				if ! '789' $ sb1 -> b1_codbar .and. ! "EXP" $ sb1 -> b1_desc  // exportacao jah estao corretos
-					if sb1->b1_codbar != sb1 -> b1_vaDunCx .or. sb5->b5_2codbar != sb1 -> b1_vaEanUn .or. sb5->b5_convdip != sb1 -> b1_conv .or. sb5->b5_umdipi != sb1 -> b1_segum
-				
-						// Cria variaveis para uso na gravacao do evento de alteracao
-						regtomemory ("SB1", .F., .F.)
-						regtomemory ("SB5", .F., .F.)
-						m->b1_codgtin = ''
-						if left (sb1 -> b1_vaduncx, 3) != '000' 
-							m->b1_codbar  = sb1 -> b1_vaDunCx
-						endif
-						if substr (sb1 -> b1_vaeanun, 1, 3) = '789'
-							m->b5_2codbar = sb1 -> b1_vaEanUn
-						endif
-						m->b5_convdip = sb1 -> b1_convml
-						m->b5_umdipi  = sb1 -> b1_segum
-						
-						// Grava evento de alteracao
-						_oEvento := ClsEvent():new ()
-						_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
-						
-						reclock ("SB1", .f.)
-						sb1 -> b1_codgtin = m->b1_codgtin
-						sb1 -> b1_codbar = m->b1_codbar
-						msunlock ()
-						U_AtuMerc ("SB1", sb1 -> (recno ()))
-						reclock ("SB5", .f.)
-						sb5 -> b5_2codbar = m->b5_2codbar
-						sb5 -> b5_convdip = m->b5_convdip
-						sb5 -> b5_umdipi  = m->b5_umdipi
-						msunlock ()
-						//exit
-					else
-						u_log ('nada a alterar')
-					endif
-				endif
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
-return
-*/
-/*	// Ajusta cadastro de produtos em lote (altera unidades conforme cadastro da caixa)
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if sb1 -> b1_tipo == 'PA' .and. ! empty (sb1 -> b1_codpai)
-			_aArea := sb1 -> (getarea ())
-			_sLinPai = posicione ("SB1", 1, xfilial ("SB1") + sb1 -> b1_codpai, "B1_VALINEN")
-			_sDescPai = sb1 -> b1_desc
-			sb1 -> (restarea (_aArea))
-			if ! empty (_sLinPai) .and. alltrim (_sLinPai) != '999' .and. _sLinPai != sb1 -> b1_vaLinEn
-				u_log (sb1 -> b1_cod, sb1 -> b1_desc, sb1 -> b1_valinen, '->', _sLinPai, '(', sb1 -> b1_codpai, _sDescPai)
-				_sCodAnt = sb1 -> b1_valinen
-				reclock ("SB1", .f.)
-				sb1 -> b1_valinen = _sLinPai
-				msunlock ()
-				_oEvento := ClsEvent ():New ()
-				_oEvento:Produto  = sb1 -> b1_cod
-				_oEvento:Texto   += "Produto " + alltrim (sb1 -> b1_cod) + "-" + alltrim (sb1 -> b1_desc) 
-				_oEvento:Texto   += chr (13) + chr (10)
-				_oEvento:Texto   += "Campo B1_VALINEN (" + alltrim (RetTitle ("B1_VALINEN")) + "):"
-				_oEvento:Texto   += " alterado de '" + alltrim (_sCodAnt) + "' para '" + alltrim (sb1 -> b1_valinen) + "' cfe. cadastro do codigo pai."
-				_oEvento:Alias    = 'SB1'
-				_oEvento:CodEven  = "ALT001"
-				_oEvento:CodAlias = sb1 -> b1_cod
-				_oEvento:Recno    = sb1 -> (recno ())
-				//u_log (_oEvento:Texto)
-				_oEvento:Grava ()
-				//exit
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
-	u_log ('finalizado')
 return
 */
 /*

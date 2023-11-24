@@ -64,8 +64,8 @@ METHOD New () Class ClsTbUva
 
 	// Aumentar ou diminuir aqui a faixa de graus se necessario.
 	// Uso essa faixa tem uns 10 anos e nao me faltou nada ainda...
-	::GrauIniTab  = 12  // 6
-	::GrauFimTab  = 18  // 26
+	::GrauIniTab  = 6
+	::GrauFimTab  = 26
 
 	::Grupos      = {}
 	::SubGrupos   = {}

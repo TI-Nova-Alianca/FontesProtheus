@@ -54,18 +54,6 @@ user function VA_RUS2T (_nOpc, _oCarSaf)
 		next
 	endif
 
-	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
-// A partir de 2024 quero receber o objeto pronto.	if _lRet
-// A partir de 2024 quero receber o objeto pronto.		if type ("_oCarSaf") != 'O'
-// A partir de 2024 quero receber o objeto pronto.			private _oCarSaf  := ClsCarSaf ():New ()
-// A partir de 2024 quero receber o objeto pronto.		endif
-// A partir de 2024 quero receber o objeto pronto.		_oCarSaf:GeraAtrib ('M')  // Alimenta objeto com dados das variaveis M->
-// A partir de 2024 quero receber o objeto pronto.		if empty (_oCarSaf:Carga)
-// A partir de 2024 quero receber o objeto pronto.			u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
-// A partir de 2024 quero receber o objeto pronto.			_lContinua = .F.
-// A partir de 2024 quero receber o objeto pronto.		endif
-// A partir de 2024 quero receber o objeto pronto.	endif
-
 	if _lRet .and. (inclui .or. altera)  // Na exclusao nao precisa validar nada.
 
 		U_Log2 ('debug', '[' + procname () + ']Vou validar a seguinte carga:')
