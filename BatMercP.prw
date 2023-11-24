@@ -52,6 +52,7 @@
 // 15/06/2022 - Claudia - Ajustado a gravação do usuario que incluiu o pedido. GLPI: 12206
 // 04/07/2022 - Claudia - Gravação do campo de pedido de venda da bonificação.
 // 05/09/2022 - Claudia - Incluida a gravação do campo de municipio. GLPI: 12561
+// 24/11/2023 - Claudia - Incluida gravação do campo c5_filial no execauto. GLPI: 14549
 //
 // -----------------------------------------------------------------------------------------------------------------
 user function BatMercP ()
@@ -274,6 +275,8 @@ static function _LePed ()
 			// Monta array de cabecalho para geracao do pedido.
 			_aAutoSC5 = {}
 			if empty (_sMsgErro)
+			
+				aadd (_aAutoSC5, {"C5_FILIAL" , sa1 -> a1_vafilat		        , NIL})
 				aadd (_aAutoSC5, {"C5_VAPDMER", (_sAliasQ) -> zc5_pedmer		, NIL})
 				aadd (_aAutoSC5, {"C5_EMISSAO", stod ((_sAliasQ) -> zc5_emissa)	, NIL})
 				aadd (_aAutoSC5, {"C5_CLIENTE", _sCliente						, NIL})
