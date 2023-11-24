@@ -16,17 +16,18 @@ User Function VA_RusMV ()
 	local _nProdut   := 0
 	local _lContinua := .T.
 	local _aAux      := {}
+	local _sPrimProd := ''
 
-	u_Log2 ('info', 'Iniciando ' + procname ())
+	// u_Log2 ('info', 'Iniciando ' + procname ())
 
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
-	if type ("_oCarSaf") != 'O'
-		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
-	endif
-	if empty (_oCarSaf:Carga)
-		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
-		_lContinua = .F.
-	endif
+//	if type ("_oCarSaf") != 'O'
+//		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+//	endif
+//	if empty (_oCarSaf:Carga)
+//		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+//		_lContinua = .F.
+//	endif
 
 	// Se existe mistura de variedades, precifica pela de menor valor.
 	// Para isso, varre os itens, monta uma lista de codigos distintos e busca o preco de cada um
@@ -51,45 +52,47 @@ User Function VA_RusMV ()
 		
 	// Se tem apenas um produto, nem perde tempo buscando precos.
 	if _lContinua
-//		if len (_aProdut) > 1
-			for _nProdut = 1 to len (_aProdut)
+		for _nProdut = 1 to len (_aProdut)
 
-				// Manter aqui sempre a mesma politica do VA_RUSN !!!
-				if sze -> ze_safra == '2019'
-					_aProdut [_nProdut, 2] = U_PrcUva19 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3])[1]
-				elseif sze -> ze_safra == '2020'
-					_aProdut [_nProdut, 2] = U_PrcUva20 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F.)[5]  // pos.5=preco MOC
-				elseif sze -> ze_safra == '2021'
-					_aProdut [_nProdut, 2] = U_PrcUva21 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2=preco de compra
-				elseif sze -> ze_safra == '2022'
-					_aProdut [_nProdut, 2] = U_PrcUva22 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2 = preco de compra.
-				elseif sze -> ze_safra == '2023'
-					_aProdut [_nProdut, 2] = U_PrcUva23 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[5]  // pos.5 = preco MOC
-				else
-					u_help (procname () + ": Sem tratamento para verificar precificacao em caso de mistura de variedades nesta safra.",, .t.)
-					_lContinua = .F.
-					exit
-				endif
-			next
-			_aProdut = asort (_aProdut,,, {|_x, _y| _x[2] < _y [2]})
-		//	u_log2 ('info', '_aProdut:')
-		//	u_log2 ('info', _aProdut)
-			
-			// Elimina produtos com precos iguais.
-			if _lContinua
-				_aAux = {}
-				for _nProdut = 1 to len (_aProdut)
-					if ascan (_aAux, {|_aVal| _aVal [2] = _aProdut [_nProdut, 2]}) == 0
-						aadd (_aAux, aclone (_aProdut [_nProdut]))
-					endif
-				next
-				_aProdut = aclone (_aAux)
-				if len (_aProdut) > 1  // Se ainda sobrou mais de um produto com diferentes precos
-					_sMenorVlr = _aProdut [1, 1]
-					u_log2 ('info', 'produto de menor valor: ' + _sMenorVlr)
-				endif
+			// Manter aqui sempre a mesma politica do VA_RUSN !!!
+			if sze -> ze_safra == '2019'
+				_aProdut [_nProdut, 2] = U_PrcUva19 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3])[1]
+			elseif sze -> ze_safra == '2020'
+				_aProdut [_nProdut, 2] = U_PrcUva20 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F.)[5]  // pos.5=preco MOC
+			elseif sze -> ze_safra == '2021'
+				_aProdut [_nProdut, 2] = U_PrcUva21 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2=preco de compra
+			elseif sze -> ze_safra == '2022'
+				_aProdut [_nProdut, 2] = U_PrcUva22 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2 = preco de compra.
+			elseif sze -> ze_safra == '2023'
+				_aProdut [_nProdut, 2] = U_PrcUva23 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[5]  // pos.5 = preco MOC
+			else
+				u_help (procname () + ": Sem tratamento para verificar precificacao em caso de mistura de variedades nesta safra.",, .t.)
+				_lContinua = .F.
+				exit
 			endif
-//		endif
+		next
+		_aProdut = asort (_aProdut,,, {|_x, _y| _x[2] < _y [2]})
+	//	u_log2 ('info', '_aProdut:')
+	//	u_log2 ('info', _aProdut)
+		_sPrimProd = _aProdut [1, 1]
+	endif
+		
+	// Elimina produtos com precos iguais.
+	if _lContinua
+		_aAux = {}
+		for _nProdut = 1 to len (_aProdut)
+			if ascan (_aAux, {|_aVal| _aVal [2] = _aProdut [_nProdut, 2]}) == 0
+				aadd (_aAux, aclone (_aProdut [_nProdut]))
+			endif
+		next
+		_aProdut = aclone (_aAux)
+		if len (_aProdut) > 1  // Se ainda sobrou mais de um produto com diferentes precos
+			_sMenorVlr = _aProdut [1, 1]
+	//		u_log2 ('info', 'produto de menor valor: ' + _sMenorVlr)
+		else
+	//		U_Log2 ('debug', '[' + procname () + ']Sobrou apenas 1 produto: ' + _sPrimProd)
+			_sMenorVlr = _sPrimProd
+		endif
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)

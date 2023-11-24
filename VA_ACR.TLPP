@@ -14,6 +14,8 @@
 // 13/11/2023 - Robert - Filtrar estruturas pelo campo g1_vacpcus (GLPI 14489)
 // 21/11/2023 - Robert - Para a tela inicial, nao acumula mais os subnives por que acabava duplicando
 //                     - Criados parametros de filtro por linha comercial
+// 22/11/2023 - Robert - Acrescentada coluna com custo medio
+// 24/11/2023 - Robert - Ao atualizar o campo B1_CUSTD, nao atualizava o campo B1_DATREF
 //
 
 #include "protheus.ch"
@@ -100,6 +102,7 @@ static function _Gera ()
 	//              Titulo                  Campo        Masc               Tam Dec Valid Usado Tipo F3     Context CBox Relacao Alteravel
 	aadd (_aHeader, {"Produto",             "PRODUTO",   "",                15, 0,  "",   "",   "C", "SB1", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Descricao",           "DESCRICAO", "",                60, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Ult.cus.medio",       "CUSMED",    "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Cus.rep.atu.",        "CUSTD",     "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"C.rep.calculado",     "CUSTACUM",  "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo ME",            "CUSTOME",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
@@ -112,19 +115,69 @@ static function _Gera ()
 	aadd (_aHeader, {"Part.BN %",           "PPARTBN",   "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo Outros",        "CUSTOOUT",  "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Part.Out %",          "PPARTOUT",  "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Rev.estrut",          "REVATU",    "",                 3, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+//	aadd (_aHeader, {"Rev.estrut",          "REVATU",    "",                 3, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
 
 	// Busca produtos cuja estrutura vai ser analisada.
 	_oSQL := ClsSQL ():New ()
+/*
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "SELECT B1_COD, B1_DESC, B1_REVATU, B1_CUSTD"
+	_oSQL:_sQuery +=      ", ISNULL ((SELECT AVG (B2_VACUSTR)"  // Mesmo campo usado no 'custo para transf.entre filiais'
+	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SB2") + " SB2"
+	_oSQL:_sQuery +=                 " WHERE SB2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                   " AND SB2.B2_COD     = B1_COD"
+	_oSQL:_sQuery +=                   " AND SB2.B2_VACUSTR > 0"  // Soh quero se tiver valor
+	_oSQL:_sQuery +=               "), 0) AS CUSMED"
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
 	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 	_oSQL:_sQuery +=   " AND SB1.B1_COD     BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
-	_oSQL:_sQuery +=   " AND SB1.B1_CODLIN  BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "'"
+	_oSQL:_sQuery +=   " AND SB1.B1_CODLIN  BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
 	_oSQL:_sQuery +=   " AND SB1.B1_TIPO    IN " + FormatIn (alltrim (mv_par03), '/')
 	_oSQL:_sQuery +=   " AND SB1.B1_MSBLQL != '1'"
+	_oSQL:_sQuery += " ORDER BY B1_COD"
+*/
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " WITH PRODUTOS AS"
+	_oSQL:_sQuery += " ("
+	_oSQL:_sQuery +=    " SELECT B1_COD, B1_DESC, B1_REVATU, B1_CUSTD"
+	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB1") + " SB1"
+	_oSQL:_sQuery +=     " WHERE SB1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=       " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+	_oSQL:_sQuery +=       " AND SB1.B1_COD     BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
+	_oSQL:_sQuery +=       " AND SB1.B1_CODLIN  BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
+	_oSQL:_sQuery +=       " AND SB1.B1_TIPO    IN " + FormatIn (alltrim (mv_par03), '/')
+	_oSQL:_sQuery +=       " AND SB1.B1_MSBLQL != '1'"
+	if mv_par07 == 1
+		_oSQL:_sQuery +=   " AND SB1.B1_MRP     = 'S'"
+	endif
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " , ULTIMOS_SB9 AS"
+	_oSQL:_sQuery += " ("
+	_oSQL:_sQuery +=    " SELECT B9_COD, MAX (B9_DATA) B9_DATA"
+	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB9") + " ULT"
+	_oSQL:_sQuery +=     " WHERE ULT.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=       " AND ULT.B9_FILIAL  = '01'"  // Atualmente focamos na matriz por que eh onde temos o envase.
+	_oSQL:_sQuery +=       " AND ULT.B9_QINI    > 0"
+	_oSQL:_sQuery +=       " AND ULT.B9_VINI1   > 0"
+	_oSQL:_sQuery +=       " AND EXISTS (SELECT *"
+	_oSQL:_sQuery +=                     " FROM PRODUTOS"
+	_oSQL:_sQuery +=                    " WHERE B1_COD = ULT.B9_COD"
+	_oSQL:_sQuery +=                   ")"
+	_oSQL:_sQuery +=     " GROUP BY ULT.B9_COD"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " SELECT PRODUTOS.*"
+	_oSQL:_sQuery +=      " , ISNULL ((SELECT SUM (B9_VINI1) / SUM (B9_QINI)"
+	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB9") + " SB9"
+	_oSQL:_sQuery +=     " WHERE SB9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=       " AND SB9.B9_FILIAL  = '01'"  // Atualmente focamos na matriz por que eh onde temos o envase.
+	_oSQL:_sQuery +=       " AND SB9.B9_COD     = PRODUTOS.B1_COD"
+	_oSQL:_sQuery +=       " AND SB9.B9_QINI    > 0"
+	_oSQL:_sQuery +=       " AND SB9.B9_VINI1   > 0"
+	_oSQL:_sQuery +=       " AND SB9.B9_DATA    = ULTIMOS_SB9.B9_DATA"
+	_oSQL:_sQuery +=      "), 0) AS CUSMED"
+	_oSQL:_sQuery +=  " FROM PRODUTOS, ULTIMOS_SB9"
+	_oSQL:_sQuery += " WHERE B9_COD = B1_COD"
 	_oSQL:_sQuery += " ORDER BY B1_COD"
 	_oSQL:Log ('[' + procname () + ']')
 	_sAliasQ = _oSQL:Qry2Trb (.f.)
@@ -153,8 +206,9 @@ static function _Gera ()
 			_nCustoTot = _nCustoME + _nCustoVD + _nCustoMO + _nCustoBN + _nCustoOUT
 			GDFieldPut ("PRODUTO",   (_sAliasQ) -> b1_cod,      _n, _aHeader, _aCols)
 			GDFieldPut ("DESCRICAO", (_sAliasQ) -> b1_desc,     _n, _aHeader, _aCols)
-			GDFieldPut ("REVATU",    (_sAliasQ) -> b1_revatu,   _n, _aHeader, _aCols)
+		//	GDFieldPut ("REVATU",    (_sAliasQ) -> b1_revatu,   _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTD",     (_sAliasQ) -> b1_custd,    _n, _aHeader, _aCols)
+			GDFieldPut ("CUSMED",    (_sAliasQ) -> CusMed,      _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTACUM",  _nCustoTot,                _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTOME",   _nCustoME,                 _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTOVD",   _nCustoVD,                 _n, _aHeader, _aCols)
@@ -248,9 +302,6 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 
 	// Monta expressao para filtrar componentes
 	_sFiltComp = ".T."
-//	if mv_par04 == 2  // Nao considerar uvas
-//		_sFiltComp += ".and.sb1->b1_grupo!='0400'"
-//	endif
 	_sFiltComp += ".and.sg1->g1_vacpcus='S'"
 ///	U_Log2 ('debug', '[' + procname () + ']Filtro para leitura das estruturas: ' + _sFiltComp)
 
@@ -297,21 +348,23 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 	// na coluna 'custo VD', seja somado somente o seu custo e nao dos
 	// filhos, pois eh comum termos itens VD dentro de outros VD. Nesses
 	// casos, eu estaria somando mais que uma vez.
-	// Tah, tah, eu sei... o certo mesmo seria um 'custo em partes' aqui!
+	// Sim, sim, eu sei... o certo mesmo seria um 'custo em partes' aqui!
+//	U_Log2 ('debug', '[' + procname () + ']Vou procurar o maior nivel de VD neste estrut:')
+//	U_Log2 ('debug', _aEstrHist)
 	_nComp = 2  // Posso estar analisando um VD como 'pai'
 	do while _nComp <= len (_aEstrHist)
-		U_Log2 ('debug', '[' + procname () + ']Procurando maior VD na linha ' + cvaltochar (_nComp))
+//		U_Log2 ('debug', '[' + procname () + ']Procurando maior VD na linha ' + cvaltochar (_nComp))
 		if _aEstrHist [_nComp, .EstrHistTipoComp] == 'VD'
-			U_Log2 ('debug', '[' + procname () + ']eh VD')
+//			U_Log2 ('debug', '[' + procname () + ']eh VD')
 			_aEstrHist [_nComp, .EstrHistMaiorNivelVD] = .T.
 			_nFilho = _nComp
-			do while _nFilho <= len (_aEstrHist) .and. _aEstrHist [_nFilho+1, .EstrHistNivel] > _aEstrHist [_nComp, .EstrHistNivel]
-				U_Log2 ('debug', '[' + procname () + ']Achei filho na linha ' + cvaltochar (_nFilho+1))
+			do while _nFilho < len (_aEstrHist) .and. _aEstrHist [_nFilho+1, .EstrHistNivel] > _aEstrHist [_nComp, .EstrHistNivel]
+//				U_Log2 ('debug', '[' + procname () + ']Achei filho na linha ' + cvaltochar (_nFilho+1))
 				_aEstrHist [_nFilho+1, .EstrHistMaiorNivelVD] = .F.
 
 				// Usuario pode optar por considerar o VD como se fosse um item comprado.
 				// Isso por que ainda temos dificuldade em abrir o custo dos itens tipo VD.
-				if mv_par05 == 2
+				if mv_par04 == 2
 					_aEstrHist [_nFilho+1, .EstrHistSomaNoCusto] = 'N'
 				endif
 
@@ -321,8 +374,8 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 		endif
 		_nComp ++
 	enddo
-	U_Log2 ('debug', '[' + procname () + ']Maior nivel de VD identificado:')
-	U_Log2 ('debug', _aEstrHist)
+//	U_Log2 ('debug', '[' + procname () + ']Maior nivel de VD identificado:')
+//	U_Log2 ('debug', _aEstrHist)
 
 	// Acumula o custo de reposicao dos niveis 'pais' somando o custo de seus filhos.
 	_AtuCust (@_aEstrHist, 1)
@@ -457,12 +510,14 @@ static function _AltCustD (_nLinha, _aHeader, _aCols)
 					// Cria variaveis para uso na gravacao do evento de alteracao
 					regtomemory ("SB1", .F., .F.)
 					m->b1_custd = _nNovoCust
+					m->b1_datref = date ()
 
 					// Grava evento de alteracao
 					_oEvento := ClsEvent():new ()
 					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), funname () + ' Alter.manual custo repos.', .F.)
 					reclock ("SB1", .f.)
 					sb1 -> b1_custd = m->b1_custd
+					sb1 -> B1_datref = m->b1_datref
 					msunlock ()
 					GDFieldPut ("CUSREP", _nNovoCust, _nLinha, _aHeader, _aCols)
 
@@ -525,14 +580,14 @@ static function _SimEstru (_sProduto, _lUltComp)
 		aadd (_aHeader, {"Quant(acum)",    "QUANT",      "@E 999,999.9999999", 14, 7,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Cus.calculado",  "CUSTACUM",   "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Cus.cadastro",   "CUSREP",     "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Considera",      "CONSNOCUST", "",                    1, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Soma no custo",  "CONSNOCUST", "",                    1, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Dt.cus.std",     "DTCUSREP",   "@D",                  8, 0,  "",   "",  "D", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Ult.comp",       "VULTCOMP1",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Dt.Ult.comp",    "DULTCOMP1",  "@D",                  8, 0,  "",   "",  "D", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Forn.Ult.comp",  "FULTCOMP1",  "",                   60, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Ult.comp-1",     "VULTCOMP2",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Ult.comp-2",     "VULTCOMP3",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Rev.estrut",     "REVATU",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+	//	aadd (_aHeader, {"Rev.estrut",     "REVATU",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 
 		_aCols = {}
 		for _nCompon = 1 to len (_aAux)
@@ -549,7 +604,7 @@ static function _SimEstru (_sProduto, _lUltComp)
 			GDFieldPut ("CUSREP",     _aAux [_nCompon, .EstrHistCustDUnit],   _n, _aHeader, _aCols)
 			GDFieldPut ("DTCUSREP",   _aAux [_nCompon, .EstrHistDtCustD],     _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTACUM",   _aAux [_nCompon, .EstrHistCustDAcum],   _n, _aHeader, _aCols)
-			GDFieldPut ("REVATU",     _aAux [_nCompon, .EstrHistRevAtu],      _n, _aHeader, _aCols)
+	//		GDFieldPut ("REVATU",     _aAux [_nCompon, .EstrHistRevAtu],      _n, _aHeader, _aCols)
 			GDFieldPut ("CONSNOCUST", _aAux [_nCompon, .EstrHistSomaNoCusto], _n, _aHeader, _aCols)
 
 			// Busca ultimas compras do componente.
@@ -697,28 +752,19 @@ static function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 
-	//                     PERGUNT                           TIPO TAM DEC VALID F3       Opcoes          Help
-	aadd (_aRegsPerg, {01, "Produto inicial a analisar    ", "C", 15, 0,  "",   "SB1 ",  {},             ""})
-	aadd (_aRegsPerg, {02, "Produto final a analisar      ", "C", 15, 0,  "",   "SB1 ",  {},             ""})
-	aadd (_aRegsPerg, {03, "Tipos produtos a analisar     ", "C", 60, 0,  "",   "    ",  {},             ""})
-	aadd (_aRegsPerg, {04, "Mostrar uvas na estrutura     ", "N",  1, 0,  "",   "    ",  {"Sim", "Nao"}, ""})
-	aadd (_aRegsPerg, {05, "Considerar subniveis dos VD   ", "N",  1, 0,  "",   "    ",  {"Sim", "Nao"}, ""})
-	aadd (_aRegsPerg, {06, "Linha comercial inicial       ", "C", 02, 0,  "",   "ZX539", {},             ""})
-	aadd (_aRegsPerg, {07, "Linha comercial final         ", "C", 02, 0,  "",   "ZX539", {},             ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3       Opcoes               Help
+	aadd (_aRegsPerg, {01, "Produto inicial a analisar    ", "C", 15, 0,  "",   "SB1 ",  {},                  ""})
+	aadd (_aRegsPerg, {02, "Produto final a analisar      ", "C", 15, 0,  "",   "SB1 ",  {},                  ""})
+	aadd (_aRegsPerg, {03, "Tipos produtos a analisar     ", "C", 60, 0,  "",   "    ",  {},                  ""})
+	aadd (_aRegsPerg, {04, "Considerar subniveis dos VD   ", "N",  1, 0,  "",   "    ",  {"Sim", "Nao"},      ""})
+	aadd (_aRegsPerg, {05, "Linha comercial inicial       ", "C",  2, 0,  "",   "ZX539", {},                  ""})
+	aadd (_aRegsPerg, {06, "Linha comercial final         ", "C",  2, 0,  "",   "ZX539", {},                  ""})
+	aadd (_aRegsPerg, {07, "Itens que entram no MRP       ", "N",  1, 0,  "",   "    ",  {"So MRP", "Todos"}, ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return
 
 /*
 melhorias:
-- OK: mostrar data da ultima atualização do standard e tb ultimas compras (com fornecedor)
-- OK: b1_custd a dir. da descricao na tela principal
-- OK: custo total (acumulado) a dir. da descricao na tela principal
-- OK: coluna com data somente da ultima compra
-- OK: atalho na segunda tela pra alterar o custo std no cadastro do componente (recalcular depois)
-- OK: % de participacao de cada tipo na tela principal
-
-- no caso de uvas, diferenciar compra X complemento de safra (por que o volume de mosto já terminou)
-- tela 1 se somar as colunas, nao bate com a abertura da estrutura
 - % de participacao de cada nivel na tela da estrutura
 - va_ccr do item 4439 nao bateu (NF 238340 do fornecedor 000851)
 */
