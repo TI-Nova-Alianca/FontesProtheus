@@ -4,24 +4,32 @@
 // Cliente....: Nova Alianca
 // Descricao..: Exportacao de saldos em estoque para Excel, com dados de Sisdeclara.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Exportacao de saldos em estoque para Excel, com dados de Sisdeclara.
+// #PalavasChave      #SISDEVIN #SISDECLARA 
+// #TabelasPrincipais #SB1 #SB2 #ZX5
+// #Modulos   		  #EST 
+//
 // Historico de alteracoes:
-// 02/02/2012 - Robert - Filial 04 (antes nao prevista) passa a usar mesmo codigo da 01.
-// 19/05/2012 - Robert - Cadastros de codigos do Sisdeclara movidos do SX5 para ZX5.
-//                     - Passa a ordenar pelo campo B1_PROD.
-// 12/06/2012 - Robert - Para cada filial, somava todas as demais filiais na coluna de saldos.
-// 13/02/2013 - Robert - Campo B1_TPPROD passa a ser padrao no Protheus 11. Criado B1_VACOR em seu lugar.
-// 08/04/2016 - Robert - Programa desabilitado (ver adiante).
-// 19/09/2018 - Andre  - Melhorado relatório 
-// 16/10/2018 - Andre  - Adicionado opção "Detalhado" mostrando saldos nas tabelas SBK e SBF. 
-
-// --------------------------------------------------------------------------
+// 02/02/2012 - Robert  - Filial 04 (antes nao prevista) passa a usar mesmo codigo da 01.
+// 19/05/2012 - Robert  - Cadastros de codigos do Sisdeclara movidos do SX5 para ZX5.
+//                      - Passa a ordenar pelo campo B1_PROD.
+// 12/06/2012 - Robert  - Para cada filial, somava todas as demais filiais na coluna de saldos.
+// 13/02/2013 - Robert  - Campo B1_TPPROD passa a ser padrao no Protheus 11. Criado B1_VACOR em seu lugar.
+// 08/04/2016 - Robert  - Programa desabilitado (ver adiante).
+// 19/09/2018 - Andre   - Melhorado relatório 
+// 16/10/2018 - Andre   - Adicionado opção "Detalhado" mostrando saldos nas tabelas SBK e SBF. 
+// 28/11/2023 - Claudia - Incluida busca de insumos. GLPI: 13780
+//
+// ---------------------------------------------------------------------------------------------------------
 User Function VA_XLS15 (_lAutomat)
 	Local cCadastro := "Exportacao de saldos em estoque para Excel com dados de Sisdeclara"
 	Local aSays     := {}
 	Local aButtons  := {}
 	Local nOpca     := 0
 	Local lPerg     := .F.
-	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
+	private _lAuto  := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
 	Private cPerg   := "VAXLS15"
 	u_logIni ()
@@ -124,14 +132,14 @@ Static Function _Gera()
 		u_help ('Local de Sisdeclara sem tratamento na CTE')
 	endcase
 		if mv_par06 = 1
-			_oSQL:_sQuery +=    " ROUND( SUM (dbo.VA_SALDOESTQ (B2_FILIAL, B1_COD, B2_LOCAL, '" + dtos (mv_par05) + "') * (B1_LITROS)),2) AS LITROS"
+			_oSQL:_sQuery +=    " ROUND( SUM (dbo.VA_SALDOESTQ (B2_FILIAL, B1_COD, B2_LOCAL, '" + dtos (mv_par05) + "') * (B1_LITROS)),2) AS QTD"
 		else
 			if mv_par05 = DATE()
 			_oSQL:_sQuery +=    " SBF.BF_LOCALIZ AS LOCALIZACAOSBF,"
-			_oSQL:_sQuery +=    " ROUND( SUM (BF_QUANT * B1_LITROS),2) AS LITROS"
+			_oSQL:_sQuery +=    " ROUND( SUM (BF_QUANT * B1_LITROS),2) AS QTD"
      		else
      		_oSQL:_sQuery +=    " SBK.BK_LOCALIZ AS LOCALIZACAOSBK,"
-			_oSQL:_sQuery +=    " ROUND( SUM (BK_QINI * B1_LITROS),2) AS LITROS"
+			_oSQL:_sQuery +=    " ROUND( SUM (BK_QINI * B1_LITROS),2) AS QTD"
      		endif
 		endif	
 		if mv_par06 = 1
@@ -350,37 +358,80 @@ Static Function _Gera()
 		endcase
 	_oSQL:_sQuery += ")"
 	if mv_par06 = 1
-	_oSQL:_sQuery += "SELECT COD_SISDECLARA, DESCRI_SISDECLARA, TIPO, ALMOX, COD_ERP, DESCR_ERP, LITROS"
+	_oSQL:_sQuery += "SELECT COD_SISDECLARA, DESCRI_SISDECLARA, TIPO, ALMOX, COD_ERP, DESCR_ERP, QTD"
 	else
 		if lastday(mv_par05) <> mv_par05
-		_oSQL:_sQuery += "SELECT COD_SISDECLARA, DESCRI_SISDECLARA, TIPO, ALMOX, LOCALIZACAOSBF, COD_ERP, DESCR_ERP, LITROS"
+		_oSQL:_sQuery += "SELECT COD_SISDECLARA, DESCRI_SISDECLARA, TIPO, ALMOX, LOCALIZACAOSBF, COD_ERP, DESCR_ERP, QTD"
 		else
-		_oSQL:_sQuery += "SELECT COD_SISDECLARA, DESCRI_SISDECLARA, TIPO, ALMOX, LOCALIZACAOSBK, COD_ERP, DESCR_ERP, LITROS"
+		_oSQL:_sQuery += "SELECT COD_SISDECLARA, DESCRI_SISDECLARA, TIPO, ALMOX, LOCALIZACAOSBK, COD_ERP, DESCR_ERP, QTD"
 		endif
 	endif
 	_oSQL:_sQuery += " FROM CTE"
-	_oSQL:_sQuery += " WHERE LITROS != 0"
+	_oSQL:_sQuery += " WHERE QTD != 0"
+
+	If mv_par07 == 2
+		_oSQL:_sQuery += " 	UNION ALL
+
+		_oSQL:_sQuery += " 	SELECT DISTINCT
+		_oSQL:_sQuery += " 		 RTRIM(ZX5.ZX5_58COD) AS COD_SISDECLARA "
+		_oSQL:_sQuery += " 		,RTRIM(ISNULL(ZX5.ZX5_58DESC, '')) AS DESCRI_SISDECLARA "
+		_oSQL:_sQuery += " 		,RTRIM(SB1.B1_TIPO) AS TIPO "
+		_oSQL:_sQuery += " 		,SB2.B2_LOCAL AS ALMOX "
+		_oSQL:_sQuery += " 		,B1_COD AS COD_ERP "
+		_oSQL:_sQuery += " 		,RTRIM(SB1.B1_DESC) AS DESCR_ERP "
+		_oSQL:_sQuery += " 		,ROUND(SUM(dbo.VA_SALDOESTQ(B2_FILIAL, B1_COD, B2_LOCAL, '20231127')), 2) AS QTD "
+		_oSQL:_sQuery += " 	FROM " + RetSQLName ("SB2") + " SB2 "
+		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SB1") + " SB1 "
+		_oSQL:_sQuery += " 		ON SB1.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " 			AND SB1.B1_FILIAL = '"+xFilial('SB1')+"'"
+		_oSQL:_sQuery += " 			AND SB1.B1_COD = SB2.B2_COD "
+		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SB5") + " SB5 "
+		_oSQL:_sQuery += " 		ON SB5.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " 			AND SB5.B5_FILIAL = '"+xFilial('SB5')+"'"
+		_oSQL:_sQuery += " 			AND SB5.B5_COD = SB2.B2_COD "
+		_oSQL:_sQuery += " 			AND SB5.B5_VAPENO <> '' "
+		_oSQL:_sQuery += " 	LEFT JOIN " + RetSQLName ("ZX5") + " ZX5 "
+		_oSQL:_sQuery += " 		ON (ZX5.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " 				AND ZX5.ZX5_TABELA = '58' "
+		_oSQL:_sQuery += " 				AND ZX5.ZX5_58COD = B5_VAPENO) "
+		_oSQL:_sQuery += " 	WHERE SB2.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " 	AND SB2.B2_COD BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
+		_oSQL:_sQuery += " 	AND SB2.B2_FILIAL = '"+xFilial('SB2')+"'"
+		_oSQL:_sQuery += " 	GROUP BY SB1.B1_COD "
+		_oSQL:_sQuery += " 			,SB1.B1_TIPO "
+		_oSQL:_sQuery += " 			,SB1.B1_DESC "
+		_oSQL:_sQuery += " 			,SB2.B2_LOCAL "
+		_oSQL:_sQuery += " 			,SB5.B5_VACSD01 "
+		_oSQL:_sQuery += " 			,ZX5.ZX5_58COD "
+		_oSQL:_sQuery += " 			,ZX5.ZX5_58DESC "
+		_oSQL:_sQuery += " 	HAVING SUM(dbo.VA_SALDOESTQ(B2_FILIAL, B1_COD, B2_LOCAL, '20231127')) > 0 "
+	EndIf
+
 	_oSQL:_sQuery += " ORDER BY COD_SISDECLARA"
 	_oSQL:Log ()
+
 	_sAliasQ = _oSQL:Qry2Trb (.f.)
+
 	incproc ("Gerando arquivo de exportacao")
 	processa ({ || U_Trb2XLS (_sAliasQ, .F.)})
+
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("SB2")
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	
-	//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                          Help
-	aadd (_aRegsPerg, {01, "Codigo (ERP) inicial          ", "C", 15, 0,  "",   "SB1   ", {},                             ""})
-	aadd (_aRegsPerg, {02, "Codigo (ERP) final            ", "C", 15, 0,  "",   "SB1   ", {},                             ""})
-	aadd (_aRegsPerg, {03, "Codigo (SisD) inicia          ", "C", 15, 0,  "",   "SB5   ", {},                             ""})
-	aadd (_aRegsPerg, {04, "Codigo (SisD) final           ", "C", 15, 0,  "",   "SB5   ", {},                             ""})
-	aadd (_aRegsPerg, {05, "Posicao do estoque em         ", "D", 8,  0,  "",   "      ", {},                             ""})
-	aadd (_aRegsPerg, {06, "Resumido / Almox Ender        ", "N", 1,  0,  "",   "      ", {"Resumido", "Almox Ender"},    ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                          	Help
+	aadd (_aRegsPerg, {01, "Codigo (ERP) inicial          ", "C", 15, 0,  "",   "SB1   ", {},                             	""})
+	aadd (_aRegsPerg, {02, "Codigo (ERP) final            ", "C", 15, 0,  "",   "SB1   ", {},                             	""})
+	aadd (_aRegsPerg, {03, "Codigo (SisD) inicia          ", "C", 15, 0,  "",   "SB5   ", {},                             	""})
+	aadd (_aRegsPerg, {04, "Codigo (SisD) final           ", "C", 15, 0,  "",   "SB5   ", {},                             	""})
+	aadd (_aRegsPerg, {05, "Posicao do estoque em         ", "D", 8,  0,  "",   "      ", {},                             	""})
+	aadd (_aRegsPerg, {06, "Resumido / Almox Ender        ", "N", 1,  0,  "",   "      ", {"Resumido", "Almox Ender"},    	""})
+	aadd (_aRegsPerg, {07, "Busca Insumos                 ", "N", 1,  0,  "",   "      ", {"Não", "Sim"},    				""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
