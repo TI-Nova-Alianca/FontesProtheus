@@ -75,9 +75,9 @@
 // 11/05/2022 - Robert  - Melhoradas valid.venda entr.fut: agora testa se o
 //                        pedido eh de faturamento ou remessa (GLPI 12036).
 // 10/02/2023 - Robert  - Validava lote e endereco mesmo quando a linha estava deletada na GetDados.
+// 29/11/2023 - Claudia - Validar lote apenas na liberação do pedido, nao na importação Mercanet. GLPI: 14568
 //
-
-// --------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 User Function M410LIOK()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _xTIPO     := M->C5_TIPO
@@ -243,6 +243,7 @@ User Function M410LIOK()
 		_sProduto   := GDFieldGet("C6_PRODUTO")
 		_sLote      := GDFieldGet("C6_LOTECTL")
 		_sLocaliz   := GDFieldGet("C6_LOCALIZ")
+		_nQtdLib    := GDFieldGet("C6_QTDLIB")
 		_sTES       := GDFieldGet("C6_TES")
 		_sCtrEstoq  := Posicione("SF4",1 ,xFilial("SF4") + alltrim(_sTES),"F4_ESTOQUE")
 		_sCtrRastro := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_RASTRO")
@@ -250,15 +251,15 @@ User Function M410LIOK()
 
 		If _sCtrEstoq == 'S' // controla estoque
 			// exige lote
-			If _sCtrRastro == 'L' .and. empty(_sLote)
+			If _sCtrRastro == 'L' .and. empty(_sLote) .and. _nQtdLib > 0
 				_lRet := .F.
-				u_help("Informar lote!")
+				u_help("Informar lote!",,.T.)
 			EndIf
 
 			// exigir localização
 			If _sCtrLocal == 'S' .and. empty(_sLocaliz)
 				_lRet := .F.
-				u_help("Informar localização!")
+				u_help("Informar localização!",,.T.)
 			EndIf
 		EndIf
 	EndIf
