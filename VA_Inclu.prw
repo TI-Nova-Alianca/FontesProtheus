@@ -214,7 +214,8 @@
 #XTranslate .TbUvaGruposListaUvas       => 18
 #XTranslate .TbUvaGruposPrecos          => 19
 #XTranslate .TbUvaGruposAgiosGraus      => 20
-#XTranslate .TbUvaGruposQtColunas       => 20
+#XTranslate .TbUvaGruposGraus           => 21
+#XTranslate .TbUvaGruposQtColunas       => 21
 //
 #XTranslate .TbUvaGruposListaUvasCodBase            => 1
 #XTranslate .TbUvaGruposListaUvasDescrBase          => 2
@@ -233,21 +234,21 @@
 #XTranslate .TbUvaGruposListaUvasTintorea           => 15
 #XTranslate .TbUvaGruposListaUvasQtColunas          => 15
 //
-#XTranslate .TbUvaGruposGrausGrau                      => 1
-#XTranslate .TbUvaGruposGrausAgioSobreGrauBase         => 2
-#XTranslate .TbUvaGruposGrausPrCompraCodBase           => 3
-#XTranslate .TbUvaGruposGrausPrCompraCodEmConversao    => 4
-#XTranslate .TbUvaGruposGrausPrCompraCodBordadura      => 5
-#XTranslate .TbUvaGruposGrausPrCompraCodOrganica       => 6
-#XTranslate .TbUvaGruposGrausPrCompraCodFinaClas_comum => 7
-#XTranslate .TbUvaGruposGrausPrCompraCodParaEspumante  => 8
-#XTranslate .TbUvaGruposGrausPrMOCCodBase              => 9
-#XTranslate .TbUvaGruposGrausPrMOCCodEmConversao       => 10
-#XTranslate .TbUvaGruposGrausPrMOCCodBordadura         => 11
-#XTranslate .TbUvaGruposGrausPrMOCCodOrganica          => 12
-#XTranslate .TbUvaGruposGrausPrMOCCodFinaClas_comum    => 13
-#XTranslate .TbUvaGruposGrausPrMOCCodParaEspumante     => 14
-#XTranslate .TbUvaGruposGrausQtColunas                 => 14
+//#XTranslate .TbUvaGruposGrausGrau                      => 1
+//#XTranslate .TbUvaGruposGrausAgioSobreGrauBase         => 2
+//#XTranslate .TbUvaGruposGrausPrCompraCodBase           => 3
+//#XTranslate .TbUvaGruposGrausPrCompraCodEmConversao    => 4
+//#XTranslate .TbUvaGruposGrausPrCompraCodBordadura      => 5
+//#XTranslate .TbUvaGruposGrausPrCompraCodOrganica       => 6
+//#XTranslate .TbUvaGruposGrausPrCompraCodFinaClas_comum => 7
+//#XTranslate .TbUvaGruposGrausPrCompraCodParaEspumante  => 8
+//#XTranslate .TbUvaGruposGrausPrMOCCodBase              => 9
+//#XTranslate .TbUvaGruposGrausPrMOCCodEmConversao       => 10
+//#XTranslate .TbUvaGruposGrausPrMOCCodBordadura         => 11
+//#XTranslate .TbUvaGruposGrausPrMOCCodOrganica          => 12
+//#XTranslate .TbUvaGruposGrausPrMOCCodFinaClas_comum    => 13
+//#XTranslate .TbUvaGruposGrausPrMOCCodParaEspumante     => 14
+//#XTranslate .TbUvaGruposGrausQtColunas                 => 14
 
 // acho que nao vou usar  #XTranslate .TbUvaVariedCod       => 1
 // acho que nao vou usar  #XTranslate .TbUvaVariedDesc      => 2

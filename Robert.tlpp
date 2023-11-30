@@ -154,6 +154,7 @@ user function robert ()
 		// _sFuncao += '_VA_VEF ()'
 		// _sFuncao += '_VA_XLS ()'
 		// _sFuncao += '_verif ()'
+
 		if ! empty (_sFuncao)
 			&(_sFuncao)
 		else
@@ -163,7 +164,6 @@ user function robert ()
 		U_UsoRot ('F', procname (), '')
 	endif
 return
-
 
 // --------------------------------------------------------------------------
 // Ajusta saldo de lote / endereco
@@ -2261,6 +2261,11 @@ static function _GLPI14483 ()
 	U_VA_GNF3 (.T.)
 	*/
 
+	_aRetPrcS1 = aclone (U_PrcUvaS1 ('03', '9908           ', 15.8, 'B ', 'E', .F., .t.))
+	U_Log2 ('debug', _aRetPrcS1)
+	_aRetPrcS1 = aclone (U_PrcUvaS1 ('03', '9908           ', 15.8, 'D ', 'E', .F., .t.))
+	U_Log2 ('debug', _aRetPrcS1)
+	/*
 	// Passo 2: altero a tabela de precos da uva
 	// e rodo novamente alimentando outro campo com os novos precos.
 	dbselectarea ("ZZ9")
@@ -2270,7 +2275,7 @@ static function _GLPI14483 ()
 	_nRecAtu = 0
 	do while ! zz9 -> (eof ())
 		incproc ()
-		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == 'Q' .and. zz9 -> zz9_conduc = 'E'
+		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == 'Q'
 			_sClasFina = iif (zz9 -> zz9_conduc == 'L', zz9 -> zz9_clabd, zz9 -> zz9_classe)
 			if ++_nRecAtu % 100 == 0
 				u_log2 ('info', '[' + cvaltochar (_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']Produto ' + alltrim (zz9 -> zz9_produt) + ' gr.' + zz9 -> zz9_grau + ' ' + _sClasFina)
@@ -2301,11 +2306,12 @@ static function _GLPI14483 ()
 			reclock ("ZZ9", .F.)
 			// primeira rodada com agios de organica 15/55/70%    rodada zz9 -> zz9_vunit  = _aRetPrcS1 [2]
 			// primeira rodada com agios de organica 15/55/70%    rodada zz9 -> zz9_vunit3 = _aRetPrcS1 [5]
-			zz9 -> zz9_vunit4 = _aRetPrcS1 [2]  // rodada com agios organicas 15/50/50%
+			zz9 -> zz9_vunit4 = _aRetPrcS1 [2]  // rodada com agios organicas 15/50/50% e espaldeira=latada+20% (reuniao de 23/11/23)
 			msunlock ()
 		endif
 		zz9 -> (dbskip ())
 	enddo
+	*/
 return
 
 // --------------------------------------------------------------------------
@@ -3475,6 +3481,26 @@ static function _TbUva ()
 	local _sVarUva := 'C'
 	local _sConduc := 'L'
 	local _sTipoTab := 'C'  // Por enquanto, apenas [C]ompra
+/*
+	local _oGrpGraus := NIL
+	local _oGrau     := NIL
+	local _aGraus    := {}
+
+	_oGrpGraus := JsonObject():New()
+	_oGrau := JsonObject():New()
+	_oGrau ['grau'] = 16
+	_oGrau ['agio'] = 0.15
+	U_Log2 ('debug', _oGrau ['grau'])
+	U_Log2 ('debug', _oGrau ['agio'])
+	aadd (_aGraus, _oGrau)
+	_oGrau ['Grau'] = 17
+	_oGrau ['agio'] = 0.25
+	U_Log2 ('debug', _oGrau:toJSON ())
+	aadd (_aGraus, _oGrau)
+	_oGrpGraus:Set (_aGraus)
+	U_Log2 ('debug', _oGrpGraus:toJSON ())
+*/
+
 	local _oTbUva := ClsTbUva ():New ()
 //	_oTbUva:GeraAtrib ('2023', 'C', 'C', 'L', 'I')  //_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec
 	_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, 'I')
@@ -3501,9 +3527,9 @@ return
 
 // --------------------------------------------------------------------------
 static function _VA_ACR ()
-	U_GravaSX1 ("VA_ACR", "01", "")
-	U_GravaSX1 ("VA_ACR", "02", "0348")
-	U_GravaSX1 ("VA_ACR", "03", 'PA/VD')  // Tipos a listar
+	U_GravaSX1 ("VA_ACR", "01", "2626")
+	U_GravaSX1 ("VA_ACR", "02", "2627")
+	U_GravaSX1 ("VA_ACR", "03", 'PA')  // Tipos a listar
 	U_GravaSX1 ("VA_ACR", "04", 1)  // Considerar subniveis dos VD [S/N]
 	U_GravaSX1 ("VA_ACR", "05", '')  // Linha coml.de
 	U_GravaSX1 ("VA_ACR", "06", 'z')  // Linha coml.ate
@@ -3884,18 +3910,59 @@ return
 // --------------------------------------------------------------------------
 // Ajusta cadastro produtos em lote
 static function _AtuSB1 ()
-	local _lContinua := .T.
+	//local _lContinua := .T.
 	local _oSQL      := NIL
 	local _aPrev     := {}
-
-	_oSQL := ClsSQL():New ()
+	local _aDados    := {}
+	local _nDado     := 0
 
 	U_MudaLog ('GLPI14539_B1_CUSTD.log')
+
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " WITH PRODUTOS AS"
+	_oSQL:_sQuery += " ("
+	_oSQL:_sQuery +=    " SELECT B1_COD, R_E_C_N_O_"
+	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB1") + " SB1"
+	_oSQL:_sQuery +=     " WHERE SB1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=       " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+	_oSQL:_sQuery +=       " AND SB1.B1_TIPO    = 'VD'"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " , ULTIMOS_SB9 AS"
+	_oSQL:_sQuery += " ("
+	_oSQL:_sQuery +=    " SELECT B9_COD, MAX (B9_DATA) B9_DATA"
+	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB9") + " ULT"
+	_oSQL:_sQuery +=     " WHERE ULT.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=       " AND ULT.B9_FILIAL  = '01'"  // Atualmente focamos na matriz por que eh onde temos o envase.
+	_oSQL:_sQuery +=       " AND ULT.B9_QINI    > 0"
+	_oSQL:_sQuery +=       " AND ULT.B9_VINI1   > 0"
+	_oSQL:_sQuery +=       " AND EXISTS (SELECT *"
+	_oSQL:_sQuery +=                     " FROM PRODUTOS"
+	_oSQL:_sQuery +=                    " WHERE B1_COD = ULT.B9_COD"
+	_oSQL:_sQuery +=                   ")"
+	_oSQL:_sQuery +=     " GROUP BY ULT.B9_COD"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " SELECT PRODUTOS.*"
+	_oSQL:_sQuery +=      " , ISNULL ((SELECT SUM (B9_VINI1) / SUM (B9_QINI)"
+	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB9") + " SB9"
+	_oSQL:_sQuery +=     " WHERE SB9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=       " AND SB9.B9_FILIAL  = '01'"  // Atualmente focamos na matriz por que eh onde temos o envase.
+	_oSQL:_sQuery +=       " AND SB9.B9_COD     = PRODUTOS.B1_COD"
+	_oSQL:_sQuery +=       " AND SB9.B9_QINI    > 0"
+	_oSQL:_sQuery +=       " AND SB9.B9_VINI1   > 0"
+	_oSQL:_sQuery +=       " AND SB9.B9_DATA    = ULTIMOS_SB9.B9_DATA"
+	_oSQL:_sQuery +=      "), 0) AS CUSMED"
+	_oSQL:_sQuery +=  " FROM PRODUTOS, ULTIMOS_SB9"
+	_oSQL:_sQuery += " WHERE B9_COD = B1_COD"
+	_oSQL:_sQuery += " ORDER BY B1_COD"
+	_oSQL:Log ('[' + procname () + ']')
+	_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 	sb1 -> (dbsetorder (1))
-	//sb5 -> (dbsetorder (1))
-	//syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
-	sb1 -> (dbgotop ())
-	do while _lContinua .and. ! sb1 -> (eof ())
+	for _nDado = 1 to len (_aDados)
+		sb1 -> (dbgoto (_aDados [_nDado, 2]))
+		U_Log2 ('debug', '[' + procname () + ']' + _aDados [_nDado, 1] + ' ' + sb1 -> b1_cod)
+		//sb5 -> (dbsetorder (1))
+		//syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
 		//if _lContinua .and. ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
 		//	u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
 		//	_lContinua = .F.
@@ -3904,46 +3971,35 @@ static function _AtuSB1 ()
 		//	u_log2 ('ERRO', "Nao encontrei SYD '" + sb1 -> b1_posipi + "' para o produto " + sb1 -> b1_cod)
 		//	_lContinua = .F.
 		//endif
-		if _lContinua .and. ! sb1->b1_tipo $ 'PA/PI/VD/AP/MO/GF/MM/MC/MR/IA/SG/GG/AI/AN/BN/EP/PP/RE/AT/SL/VA'
-			u_log2 ('info', 'Verificando item ' + sb1 -> b1_tipo + ' ' + sb1 -> b1_cod + ' ' + SB1 -> B1_DESC)
+//		u_log2 ('info', 'Verificando item ' + sb1 -> b1_tipo + ' ' + sb1 -> b1_cod + ' ' + SB1 -> B1_DESC)
+		if round (sb1 -> b1_custd, 4) != round (_aDados [_nDado, 3], 4)
+			aadd (_aPrev, {sb1 -> b1_tipo, "'" + sb1 -> b1_cod, SB1 -> B1_DESC, sb1 -> b1_custd, _aDados [_nDado, 3]})
 
-			_oSQL:_sQuery := "SELECT CUSREPUNI, D1_DTDIGIT, D1_FORNECE, D1_LOJA, D1_DOC"
-			_oSQL:_sQuery += " FROM VA_ULTCOMP ('', 'zz', '" + sb1 -> b1_cod + "', 1)"
-			_aUltCom := aclone (_oSQL:Qry2Array (.f., .f.))
-			if len (_aUltCom) == 1 .and. _aUltCom [1, 1] > 0 .and. round (sb1 -> b1_custd, 4) != round (_aUltCom [1, 1], 4)
-				aadd (_aPrev, {sb1 -> b1_tipo, "'" + sb1 -> b1_cod, SB1 -> B1_DESC, sb1 -> b1_custd, _aUltCom [1, 1], "'" + _aUltCom [1, 5], STOD (_aUltCom [1, 2])})
+			// Cria variaveis para uso na gravacao do evento de alteracao
+			regtomemory ("SB1", .F., .F.)
+			//regtomemory ("SB5", .F., .F.)
+			//m->b5_vasisde = 'S'
+			m->b1_CUSTD = ROUND (_aDados [_nDado, 3], 4)
+			m->b1_datref = date ()
 
-				// Cria variaveis para uso na gravacao do evento de alteracao
-				regtomemory ("SB1", .F., .F.)
-				//regtomemory ("SB5", .F., .F.)
-				//m->b5_vasisde = 'S'
-				m->b1_CUSTD = ROUND (_aUltCom [1, 1], 4)
-				m->b1_datref = date ()
+			// Grava evento de alteracao
+			_oEvento := ClsEvent():new ()
+			_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 14539 - Atualizar custo repos. dos VD pelo custo medio', .F.)
+			reclock ("SB1", .f.)
+			sb1 -> B1_custd = m->b1_custd
+			sb1 -> B1_datref = m->b1_datref
+		// pra dar pau, mesmo	msunlock ()
+			//reclock ("SB5", .f.)
+			//sb5->b5_vasisde = m->b5_vasisde
+			//msunlock ()
+			U_AtuMerc ("SB1", sb1 -> (recno ()))
 
-				// Grava evento de alteracao
-				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 14539 - Atualizar custo repos.pela ultima compra (NF ' + _aUltCom [1, 5] + ' forn.' + _aUltCom [1, 3] + " de " + dtoc (STOD (_aUltCom [1, 2])) + ")", .F.)
-				reclock ("SB1", .f.)
-				sb1 -> B1_custd = m->b1_custd
-				sb1 -> B1_datref = m->b1_datref
-				msunlock ()
-				//reclock ("SB5", .f.)
-				//sb5->b5_vasisde = m->b5_vasisde
-				//msunlock ()
-				U_AtuMerc ("SB1", sb1 -> (recno ()))
-
-				// Cai fora no primeiro, para testes.
-				// exit
-				
-			endif
+			// Cai fora no primeiro, para testes.
+			// exit
+			
+			// sb1 -> (dbskip ())
 		endif
-		sb1 -> (dbskip ())
-
-		// durante testes
-		if len (_aPrev) > 10
-			exit
-		endif
-	enddo
+	next
 	u_acolsXLS (_aPrev)
 
 	// Ajusta cadastro produtos em lote (itens das lojas)
