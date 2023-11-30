@@ -25,7 +25,7 @@
 #include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
-user function VA_XLS40 (_lAutomat)
+user function VA_XLS40 (_lAutomat, _lAtuZBI)
 	Local cCadastro := "Exportacao de planilha com calculo de precos de uvas safra"
 	Local aSays     := {}
 	Local aButtons  := {}
@@ -58,7 +58,10 @@ user function VA_XLS40 (_lAutomat)
 		FormBatch( cCadastro, aSays, aButtons )
 		
 		If nOpca == 1
-			Processa( { |lEnd| _Gera() } )
+			if cUserName == 'robert.koch'  // Ainda em testes
+				_lAtuZBI = u_MsgYesNo ("Alimentar/atualizar a tabela ZBI?", .t.)
+			endif
+			Processa( { |lEnd| _Gera (_lAtuZBI) } )
 		Endif
 	endif
 return
@@ -78,7 +81,7 @@ Return _lRet
 
 
 // --------------------------------------------------------------------------
-Static Function _Gera()
+Static Function _Gera (_lAtuZBI)
 	local _oSQL      := NIL
 	local _sAliasQ   := NIL
 	local _aVaried   := {}
@@ -260,6 +263,11 @@ Static Function _Gera()
 		endif
 		//u_log (_aPrecos)
 
+		// Alimenta tabela SZI (ainda em desenvolvimento). A intencao eh fazer um programa soh pra isso futuramente.
+		if _lAtuZBI
+			_oSQL := 
+		endif
+
 		// Verifica se deve deixar apenas graus inteiros.
 		_aAux = {}
 		for _nPreco = 1 to len (_aPrecos)
@@ -424,6 +432,7 @@ Static Function _Gera()
 	if ! empty (_sSemPreco)
 		u_help ('Itens sem preco definido: ' + _sSemPreco,, .t.)
 	endif
+
 	u_aColsXLS (_aResult)
 return
 

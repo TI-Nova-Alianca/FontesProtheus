@@ -34,8 +34,9 @@ ENDCLASS
 // --------------------------------------------------------------------------
 // Adiciona (sempre no inicio, para que a mensagem mais recente seja vista
 // antes) uma mensagem na string ::UltMsg
-METHOD SomaMsg (_sMsg) Class ClsBase
-	local _sMsgAux := alltrim (cvaltochar (_sMsg))
+METHOD SomaMsg (_sMsg as character) Class ClsBase
+	//local _sMsgAux := alltrim (cvaltochar (_sMsg))
+	local _sMsgAux := alltrim (_sMsg)
 	if ! alltrim (_sMsgAux) $ ::UltMsg
 		::UltMsg = alltrim (_sMsgAux) + '; ' + ::UltMsg
 	endif

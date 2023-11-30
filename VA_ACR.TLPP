@@ -16,6 +16,8 @@
 //                     - Criados parametros de filtro por linha comercial
 // 22/11/2023 - Robert - Acrescentada coluna com custo medio
 // 24/11/2023 - Robert - Ao atualizar o campo B1_CUSTD, nao atualizava o campo B1_DATREF
+// 29/11/2023 - Robert - Verifica se falta informar B1_REVATU (GLPI 14559)
+//                     - Mostrar B1_CODLIN e B1_UM (1a. e 2a. telas respectivamente) - GLPI 14559
 //
 
 #include "protheus.ch"
@@ -32,7 +34,8 @@
 #XTranslate .EstrHistMaiorNivelVD => 10
 #XTranslate .EstrHistDtCustD      => 11
 #XTranslate .EstrHistSomaNoCusto  => 12
-#XTranslate .EstrHistQtColunas    => 12
+#XTranslate .EstrHistUnidMedida   => 13
+#XTranslate .EstrHistQtColunas    => 13
 
 // --------------------------------------------------------------------------
 user function VA_ACR (_lAutomat)
@@ -89,59 +92,67 @@ static function _Gera ()
 	local _nCustoVD   := 0
 	local _nCustoMO   := 0
 	local _nCustoBN   := 0
+	local _nCustoPS   := 0
 	local _nCustoOUT  := 0
 	local _nCustoTOT  := 0
+	local _oVerif     := NIL
+	local _nColProd   := 0
+	local _lTemAviso  := .F.
 	private _aEstruts := {}  // Deixar private para ser vista pelas funcoes auxiliares.
 	private _oDlg1    := NIL  // Deixar private para ser vista pelas funcoes auxiliares.
 	private _oGetD1   := NIL  // Deixar private para ser vista pelas funcoes auxiliares.
 
 	U_LogSX1 (cPerg)
 
+	// Cria lista de produtos que deveriam ter o campo B1_REVATU informado
+	_oVerif := ClsVerif():New (1)
+	_oVerif:Executa ()
+//	U_Log2 ('debug', '[' + procname () + ']Resultado da verificacao:')
+//	U_Log2 ('debug', _oVerif:Result)
+	if len (_oVerif:Result) >= 1
+		_nColProd = ascan (_oVerif:Result [1], 'PRODUTO')
+		if _nColProd == 0
+			u_help ("Coluna indicando o codigo do produto nao localizada na verificaco 1. Nao vai ser possivel validar produtos sem revisao padrao no cadastro.",, .t.)
+		endif
+	endif
+
 	// Cria aHeader para a tela inicial.
 	_aHeader = {}
-	//              Titulo                  Campo        Masc               Tam Dec Valid Usado Tipo F3     Context CBox Relacao Alteravel
-	aadd (_aHeader, {"Produto",             "PRODUTO",   "",                15, 0,  "",   "",   "C", "SB1", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Descricao",           "DESCRICAO", "",                60, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Ult.cus.medio",       "CUSMED",    "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Cus.rep.atu.",        "CUSTD",     "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"C.rep.calculado",     "CUSTACUM",  "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Custo ME",            "CUSTOME",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Part.ME %",           "PPARTME",   "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Custo VD",            "CUSTOVD",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Part.VD %",           "PPARTVD",   "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Custo MO",            "CUSTOMO",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Part.MO %",           "PPARTMO",   "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Custo BN",            "CUSTOBN",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Part.BN %",           "PPARTBN",   "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Custo Outros",        "CUSTOOUT",  "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-	aadd (_aHeader, {"Part.Out %",          "PPARTOUT",  "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
-//	aadd (_aHeader, {"Rev.estrut",          "REVATU",    "",                 3, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+	//              Titulo                  Campo         Masc               Tam Dec Valid Usado Tipo F3     Context CBox Relacao Alteravel
+	aadd (_aHeader, {"Produto",             "PRODUTO",    "",                15, 0,  "",   "",   "C", "SB1", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Descricao",           "DESCRICAO",  "",                60, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Un.med",              "UN_MED",     "",                 2, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Cus.medio",           "CUSMEDUNIT", "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Cus.rep.atu.",        "CUSTD",      "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"C.rep.calculado",     "CUSTACUM",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Custo ME",            "CUSTOME",    "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Part.ME %",           "PPARTME",    "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Custo VD",            "CUSTOVD",    "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Part.VD %",           "PPARTVD",    "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Custo MO",            "CUSTOMO",    "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Part.MO %",           "PPARTMO",    "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Custo BN",            "CUSTOBN",    "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Part.BN %",           "PPARTBN",    "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Custo PS",            "CUSTOPS",    "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Part.PS %",           "PPARTPS",    "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Custo Outros",        "CUSTOOUT",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Part.Out %",          "PPARTOUT",   "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Rev.estrut",          "REVATU",     "",                 3, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Linha coml.",         "LINCOM",     "",                25, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Avisos",              "AVISOS",     "",               250, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
 
 	// Busca produtos cuja estrutura vai ser analisada.
 	_oSQL := ClsSQL ():New ()
-/*
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT B1_COD, B1_DESC, B1_REVATU, B1_CUSTD"
-	_oSQL:_sQuery +=      ", ISNULL ((SELECT AVG (B2_VACUSTR)"  // Mesmo campo usado no 'custo para transf.entre filiais'
-	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SB2") + " SB2"
-	_oSQL:_sQuery +=                 " WHERE SB2.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=                   " AND SB2.B2_COD     = B1_COD"
-	_oSQL:_sQuery +=                   " AND SB2.B2_VACUSTR > 0"  // Soh quero se tiver valor
-	_oSQL:_sQuery +=               "), 0) AS CUSMED"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
-	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-	_oSQL:_sQuery +=   " AND SB1.B1_COD     BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
-	_oSQL:_sQuery +=   " AND SB1.B1_CODLIN  BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
-	_oSQL:_sQuery +=   " AND SB1.B1_TIPO    IN " + FormatIn (alltrim (mv_par03), '/')
-	_oSQL:_sQuery +=   " AND SB1.B1_MSBLQL != '1'"
-	_oSQL:_sQuery += " ORDER BY B1_COD"
-*/
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " WITH PRODUTOS AS"
 	_oSQL:_sQuery += " ("
-	_oSQL:_sQuery +=    " SELECT B1_COD, B1_DESC, B1_REVATU, B1_CUSTD"
+	_oSQL:_sQuery +=    " SELECT B1_COD, B1_DESC, B1_REVATU, B1_CUSTD, B1_UM, B1_CODLIN, ZX5_39.ZX5_39DESC"
 	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB1") + " SB1"
+	_oSQL:_sQuery +=         " LEFT JOIN " + RetSQLName ("ZX5") + " ZX5_39"
+	_oSQL:_sQuery +=              " ON (ZX5_39.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=             " AND ZX5_39.ZX5_FILIAL  = '" + xfilial ("SB1") + "'"
+	_oSQL:_sQuery +=             " AND ZX5_39.ZX5_TABELA  = '39'"
+	_oSQL:_sQuery +=             " AND ZX5_39.ZX5_39COD   = SB1.B1_CODLIN)
 	_oSQL:_sQuery +=     " WHERE SB1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=       " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 	_oSQL:_sQuery +=       " AND SB1.B1_COD     BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
@@ -192,9 +203,10 @@ static function _Gera ()
 		_nCustoVD  = 0
 		_nCustoMO  = 0
 		_nCustoBN  = 0
+		_nCustoPS  = 0
 		_nCustoOUT = 0
 
-		_LeDados ((_sAliasQ) -> b1_cod, (_sAliasQ) -> b1_revatu, @_aEstrHist, @_nCustoME, @_nCustoVD, @_nCustoMO, @_nCustoBN, @_nCustoOUT)
+		_LeDados ((_sAliasQ) -> b1_cod, (_sAliasQ) -> b1_revatu, @_aEstrHist, @_nCustoME, @_nCustoVD, @_nCustoMO, @_nCustoBN, @_nCustoPS, @_nCustoOUT)
 
 		if len (_aEstrHist) == 0
 			U_Log2 ('aviso', '[' + procname () + ']Item sem estrutura: ' + (_sAliasQ) -> b1_cod)
@@ -203,23 +215,32 @@ static function _Gera ()
 			// Passa para _aCols os dados da array lida
 			aadd (_aCols, aclone (U_LinVazia (_aHeader)))
 			_n = len (_aCols)
-			_nCustoTot = _nCustoME + _nCustoVD + _nCustoMO + _nCustoBN + _nCustoOUT
-			GDFieldPut ("PRODUTO",   (_sAliasQ) -> b1_cod,      _n, _aHeader, _aCols)
-			GDFieldPut ("DESCRICAO", (_sAliasQ) -> b1_desc,     _n, _aHeader, _aCols)
-		//	GDFieldPut ("REVATU",    (_sAliasQ) -> b1_revatu,   _n, _aHeader, _aCols)
-			GDFieldPut ("CUSTD",     (_sAliasQ) -> b1_custd,    _n, _aHeader, _aCols)
-			GDFieldPut ("CUSMED",    (_sAliasQ) -> CusMed,      _n, _aHeader, _aCols)
-			GDFieldPut ("CUSTACUM",  _nCustoTot,                _n, _aHeader, _aCols)
-			GDFieldPut ("CUSTOME",   _nCustoME,                 _n, _aHeader, _aCols)
-			GDFieldPut ("CUSTOVD",   _nCustoVD,                 _n, _aHeader, _aCols)
-			GDFieldPut ("CUSTOMO",   _nCustoMO,                 _n, _aHeader, _aCols)
-			GDFieldPut ("CUSTOBN",   _nCustoBN,                 _n, _aHeader, _aCols)
-			GDFieldPut ("CUSTOOUT" , _nCustoOUT,                _n, _aHeader, _aCols)
-			GDFieldPut ("PPARTME",   _nCustoME*100/_nCustoTot,  _n, _aHeader, _aCols)
-			GDFieldPut ("PPARTVD",   _nCustoVD*100/_nCustoTot,  _n, _aHeader, _aCols)
-			GDFieldPut ("PPARTMO",   _nCustoMO*100/_nCustoTot,  _n, _aHeader, _aCols)
-			GDFieldPut ("PPARTBN",   _nCustoBN*100/_nCustoTot,  _n, _aHeader, _aCols)
-			GDFieldPut ("PPARTOUT",  _nCustoOut*100/_nCustoTot, _n, _aHeader, _aCols)
+			_nCustoTot = _nCustoME +  _nCustoVD + _nCustoMO + _nCustoBN + _nCustoPS + _nCustoOUT
+			GDFieldPut ("PRODUTO",    (_sAliasQ) -> b1_cod,      _n, _aHeader, _aCols)
+			GDFieldPut ("DESCRICAO",  (_sAliasQ) -> b1_desc,     _n, _aHeader, _aCols)
+			GDFieldPut ("LINCOM",     alltrim ((_sAliasQ) -> b1_codlin) + '-' + (_sAliasQ) -> zx5_39desc, _n, _aHeader, _aCols)
+			GDFieldPut ("REVATU",     (_sAliasQ) -> b1_revatu,   _n, _aHeader, _aCols)
+			GDFieldPut ("UN_MED",     (_sAliasQ) -> b1_um,       _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTD",      (_sAliasQ) -> b1_custd,    _n, _aHeader, _aCols)
+			GDFieldPut ("CUSMEDUNIT", (_sAliasQ) -> CusMed,      _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTACUM",   _nCustoTot,                _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOME",    _nCustoME,                 _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOVD",    _nCustoVD,                 _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOMO",    _nCustoMO,                 _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOBN",    _nCustoBN,                 _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOPS",    _nCustoPS,                 _n, _aHeader, _aCols)
+			GDFieldPut ("CUSTOOUT" ,  _nCustoOUT,                _n, _aHeader, _aCols)
+			GDFieldPut ("PPARTME",    _nCustoME*100/_nCustoTot,  _n, _aHeader, _aCols)
+			GDFieldPut ("PPARTVD",    _nCustoVD*100/_nCustoTot,  _n, _aHeader, _aCols)
+			GDFieldPut ("PPARTMO",    _nCustoMO*100/_nCustoTot,  _n, _aHeader, _aCols)
+			GDFieldPut ("PPARTBN",    _nCustoBN*100/_nCustoTot,  _n, _aHeader, _aCols)
+			GDFieldPut ("PPARTPS",    _nCustoPS*100/_nCustoTot,  _n, _aHeader, _aCols)
+			GDFieldPut ("PPARTOUT",   _nCustoOut*100/_nCustoTot, _n, _aHeader, _aCols)
+
+			if _nColProd > 0 .and. ascan (_oVerif:Result, {|_aVal| _aVal [_nColProd] == (_sAliasQ) -> b1_cod}) > 0
+				GDFieldPut ("AVISOS", "Falta revisao padrao no campo B1_REVATU. (Verif.Alianca numero 1)", _n, _aHeader, _aCols)
+				_lTemAviso = .t.
+			endif
 
 			// Guardo a estrutura pronta numa array geral, pois imagino que o
 			// usuario vai consultar mais de uma vez e, jah que gastei tempo
@@ -237,7 +258,7 @@ static function _Gera ()
 		u_help ("Nenhum item selecionado para analise.",, .t.)
 	else
 
-		u_LogACols (_aHeader, _aCols)
+	//	u_LogACols (_aHeader, _aCols)
 		
 		// Abre em planilha para ajudar durante desenvolvimento do programa
 		if _lAuto
@@ -247,6 +268,10 @@ static function _Gera ()
 		// durante testes, rodo via script e nao tenho interface com o usuario.
 		if type ("oMainWnd") != "O"
 			_SimEstru (mv_par01)
+		endif
+
+		if _lTemAviso
+			u_help ("ATENCAO: Verifique a coluna de avisos, pois encontrei alguma inconsistencia nos dados.",, .t.)
 		endif
 
 		_aSize := MsAdvSize()
@@ -293,7 +318,7 @@ return
 
 // --------------------------------------------------------------------------
 // Leitura e preparacao de dados para a tela principal.
-static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD, _nCustoMO, _nCustoBN, _nCustoOUT)
+static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD, _nCustoMO, _nCustoBN, _nCustoPS, _nCustoOUT)
 	local _sFiltComp := ''
 	local _aEstrAux  := {}
 
@@ -321,6 +346,7 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 			_aEstrAux [_nComp, 8]  = sb1 -> b1_custd
 			_aEstrAux [_nComp, 9]  = (sb1 -> b1_grupo == '0400')
 			_aEstrAux [_nComp, 10] = sb1 -> b1_datref
+			_aEstrAux [_nComp, 11] = sb1 -> b1_um
 		endif
 	next
 
@@ -333,6 +359,7 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 		_aEstrHist [len (_aEstrHist), .EstrHistNivel]        = _aEstrAux [_nComp, 1]
 		_aEstrHist [len (_aEstrHist), .EstrHistCodComp]      = _aEstrAux [_nComp, 2]
 		_aEstrHist [len (_aEstrHist), .EstrHistQuantAcum]    = _aEstrAux [_nComp, 4]
+		_aEstrHist [len (_aEstrHist), .EstrHistUnidMedida]   = _aEstrAux [_nComp, 11]
 		_aEstrHist [len (_aEstrHist), .EstrHistRevAtu]       = _aEstrAux [_nComp, 12]
 		_aEstrHist [len (_aEstrHist), .EstrHistTipoComp]     = _aEstrAux [_nComp, 5]
 		_aEstrHist [len (_aEstrHist), .EstrHistCustDUnit]    = _aEstrAux [_nComp, 8]
@@ -391,13 +418,15 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 			case _aEstrHist [_nComp, .EstrHistTipoComp] == 'ME'
 				_nCustoME += _aEstrHist [_nComp, .EstrHistCustDAcum]
 			case _aEstrHist [_nComp, .EstrHistTipoComp] == 'VD'
-				if _aEstrHist [_nComp, .EstrHistMaiorNivelVD]
+				if _aEstrHist [_nComp, .EstrHistMaiorNivelVD]  // Somente o maior nivel
 					_nCustoVD += _aEstrHist [_nComp, .EstrHistCustDAcum]
 				endif
 			case _aEstrHist [_nComp, .EstrHistTipoComp] == 'MO'
 				_nCustoMO += _aEstrHist [_nComp, .EstrHistCustDAcum]
 			case _aEstrHist [_nComp, .EstrHistTipoComp] == 'BN'
 				_nCustoBN += _aEstrHist [_nComp, .EstrHistCustDAcum]
+			case _aEstrHist [_nComp, .EstrHistTipoComp] == 'PS'
+				_nCustoPS += _aEstrHist [_nComp, .EstrHistCustDAcum]
 			otherwise
 				_nCustoOUT += _aEstrHist [_nComp, .EstrHistCustDAcum]
 			endcase
@@ -578,6 +607,7 @@ static function _SimEstru (_sProduto, _lUltComp)
 		aadd (_aHeader, {"Componente",     "COMP",       "",                   15, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Descricao",      "DESCR",      "",                   60, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Quant(acum)",    "QUANT",      "@E 999,999.9999999", 14, 7,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Un.med",         "UN_MED",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Cus.calculado",  "CUSTACUM",   "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Cus.cadastro",   "CUSREP",     "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Soma no custo",  "CONSNOCUST", "",                    1, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
@@ -587,7 +617,7 @@ static function _SimEstru (_sProduto, _lUltComp)
 		aadd (_aHeader, {"Forn.Ult.comp",  "FULTCOMP1",  "",                   60, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Ult.comp-1",     "VULTCOMP2",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Ult.comp-2",     "VULTCOMP3",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
-	//	aadd (_aHeader, {"Rev.estrut",     "REVATU",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Rev.estrut",     "REVATU",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 
 		_aCols = {}
 		for _nCompon = 1 to len (_aAux)
@@ -601,10 +631,11 @@ static function _SimEstru (_sProduto, _lUltComp)
 			GDFieldPut ("COMP",       _aAux [_nCompon, .EstrHistCodComp],     _n, _aHeader, _aCols)
 			GDFieldPut ("DESCR",      iif (_nCompon == 1, '', space (_aAux [_nCompon, .EstrHistNivel] * 5) + '+---') + _aAux [_nCompon, .EstrHistDescri], _n, _aHeader, _aCols)
 			GDFieldPut ("QUANT",      _aAux [_nCompon, .EstrHistQuantAcum],   _n, _aHeader, _aCols)
+			GDFieldPut ("UN_MED",     _aAux [_nCompon, .EstrHistUnidMedida],  _n, _aHeader, _aCols)
 			GDFieldPut ("CUSREP",     _aAux [_nCompon, .EstrHistCustDUnit],   _n, _aHeader, _aCols)
 			GDFieldPut ("DTCUSREP",   _aAux [_nCompon, .EstrHistDtCustD],     _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTACUM",   _aAux [_nCompon, .EstrHistCustDAcum],   _n, _aHeader, _aCols)
-	//		GDFieldPut ("REVATU",     _aAux [_nCompon, .EstrHistRevAtu],      _n, _aHeader, _aCols)
+			GDFieldPut ("REVATU",     _aAux [_nCompon, .EstrHistRevAtu],      _n, _aHeader, _aCols)
 			GDFieldPut ("CONSNOCUST", _aAux [_nCompon, .EstrHistSomaNoCusto], _n, _aHeader, _aCols)
 
 			// Busca ultimas compras do componente.

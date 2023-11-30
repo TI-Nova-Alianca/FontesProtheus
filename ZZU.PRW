@@ -39,7 +39,7 @@
 //                      - Melhorada gravacao de eventos (gravar ALIAS e CHAVE, para posterior consulta)
 //                      - Criada consulta de eventos relacionados ao grupo.
 // 26/04/2023 - Robert  - Implementaca copia de acessos de um usuario para outro.
-// 11/05/2023 - Robert  - Nao copiava o campo zzu_email ao copiar grupos para outro usuario.
+// 11/05/2023 - Robert  - Nao copiava o campo zzu_email ao copiar grupos para outro usuario (GLPI 14086).
 //
 
 // --------------------------------------------------------------------------
