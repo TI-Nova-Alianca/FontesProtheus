@@ -3,11 +3,18 @@
 // Data.......: 19/11/2018
 // Descricao..: Exportacao para planilha de um kardex resumido por CR (cod.Sisdeclara)
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Exportacao para planilha de um kardex resumido por CR (cod.Sisdeclara)
+// #PalavasChave      #SISDEVIN #SISDECLARA 
+// #TabelasPrincipais #VA_FKARDEX_SISDEVIN
+// #Modulos   		  #EST 
+//
 // Historico de alteracoes:
 // 27/09/2019 - Robert - Passa a usar uma funcao do SQL.
 // 05/05/2021 - Robert - Passa a usar o metodo :Qry2XLS da classe ClsSQL em vez do programa U_Trb2XLS(). (GLPI 9973).
+// 28/11/2023 - Claudia - Incluida busca de insumos. GLPI: 13780
 //
-
 // --------------------------------------------------------------------------
 User Function VA_XLS38 (_lAutomat)
 	Local cCadastro := "Exportacao de planilha de movimentos com resumo por codigo Sisdeclara"
@@ -39,37 +46,39 @@ User Function VA_XLS38 (_lAutomat)
 		Endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
-// 'Tudo OK' do FormBatch.
+// 'Tudo OK' do FormBatch
 Static Function _TudoOk()
 	Local _lRet     := .T.
 Return _lRet
-
-
-	
+//
 // --------------------------------------------------------------------------
+// Executa procedure
 Static Function _Gera()
 	local _oSQL      := NIL
-//	local _sAliasQ   := NIL
 	private aHeader  := {}  // Para simular a exportacao de um GetDados.
 	private aCols    := {}  // Para simular a exportacao de um GetDados.
 
 	u_logsx1 (cPerg)
 
+	if mv_par04 == 1
+		_sInsumos := 'N'
+	else
+		_sInsumos := 'S'
+	endif
+
 	_oSQL := ClsSQL():New ()
-	_oSQL:_sQuery := "SELECT * FROM dbo.VA_FKARDEX_SISDEVIN ('" + cFilAnt + "', '" + mv_par03 + "', '" + dtos (mv_par01) + "', '" + dtos (mv_par02) + "')
+	_oSQL:_sQuery := "SELECT * FROM dbo.VA_FKARDEX_SISDEVIN ('" + cFilAnt + "', '" + mv_par03 + "', '" + dtos (mv_par01) + "', '" + dtos (mv_par02) + "', '" + _sInsumos + "')
 	_oSQL:Log ()
-//	_sAliasQ = _oSQL:Qry2Trb (.f.)
+
 	incproc ("Gerando arquivo de exportacao")
-//	processa ({ || U_Trb2XLS (_sAliasQ, .F.)})
+
 	processa ({ || _oSQL:Qry2XLS (.t., .f., .t.)})
-//	(_sAliasQ) -> (dbclosearea ())
+
 	dbselectarea ("SB2")
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -79,6 +88,6 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {01, "Data inicial                  ", "D", 8,  0,  "",   "      ", {},                             ""})
 	aadd (_aRegsPerg, {02, "Data final                    ", "D", 8,  0,  "",   "      ", {},                             ""})
 	aadd (_aRegsPerg, {03, "Codigo CR (Sisdeclara)        ", "C", 15, 0,  "",   "SB5   ", {},                             ""})
-	
+	aadd (_aRegsPerg, {04, "Busca Insumos?                ", "N", 1 , 0,  "",   "      ", {"Nao", "Sim"},                 ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
