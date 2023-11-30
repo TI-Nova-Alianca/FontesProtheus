@@ -349,7 +349,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::QuandoUsar = 'A qualquer momento'
 		::Dica       = 'Encontrei (na tabela SG1) estruturas com diferentes revisões para o produto, mas no seu cadastro não está indicado qual delas é a padrão."
 		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SG1, SB1'
-		::Sugestao   = "Revise o campo '" + alltrim (RetTitle ("B1_REVATU")) + "' no cadastro do produto, pois deveria estar sendo indicada uma das revisões existentes na estrutura do produto."
+		::Sugestao   = "Revise o campo '" + alltrim (RetTitle ("B1_REVATU")) + "' (B1_REVATU) no cadastro do produto, pois deveria estar sendo indicada uma das revisões existentes na estrutura do produto."
 		::Query := ""
 		::Query += "WITH REVISOES AS (SELECT DISTINCT G1_COD, G1_REVINI, G1_REVFIM"
 		::Query +=                     " FROM " + RetSQLName ("SG1") + " SG1 "
