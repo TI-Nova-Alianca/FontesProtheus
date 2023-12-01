@@ -54,12 +54,14 @@ Static Function ReportDef()
 	
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"		,	    				    , 10,/*lPixel*/,{||     },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Tabela"		,       					, 10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"Descrição"		,       					, 30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA4", 	"" ,"Item"		    ,       					, 08,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA5", 	"" ,"Produto"		,       					, 20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA6", 	"" ,"Estado"		,       					, 08,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA7", 	"" ,"Preço Venda"	, "@E 999,999,999.99"   	, 20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA8", 	"" ,"Vlr.ST"	    , "@E 999,999,999.99"   	, 20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA3", 	"" ,"Tipo Frete"	,       					, 12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA4", 	"" ,"% Rapel"		,       					, 12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA5", 	"" ,"Descrição"		,       					, 30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA6", 	"" ,"Item"		    ,       					, 08,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA7", 	"" ,"Produto"		,       					, 20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA8", 	"" ,"Estado"		,       					, 08,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA9", 	"" ,"Preço Venda"	, "@E 999,999,999.99"   	, 20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA10", 	"" ,"Vlr.ST"	    , "@E 999,999,999.99"   	, 20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 
     oBreak := TRBreak():New(oSection1,oSection1:Cell("COLUNA2"),"",.T.,"",.T.)
 Return(oReport)
@@ -79,6 +81,11 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " SELECT "
     _oSQL:_sQuery += " 	   DA0.DA0_FILIAL AS FILIAL "
     _oSQL:_sQuery += "    ,DA0.DA0_CODTAB AS TABELA "
+    _oSQL:_sQuery += "    ,CASE "
+    _oSQL:_sQuery += "          WHEN DA0.DA0_VATPFR = 'C' THEN 'CIF' "
+    _oSQL:_sQuery += "          WHEN DA0.DA0_VATPFR = 'F' THEN 'FOB' "
+    _oSQL:_sQuery += "     END AS TIPO_FRETE "
+    _oSQL:_sQuery += "    ,DA0.DA0_RAPEL AS PERC_RAPEL "
     _oSQL:_sQuery += "    ,DA0.DA0_DESCRI AS DESCRICAO "
     _oSQL:_sQuery += "    ,DA1.DA1_ITEM AS ITEM "
     _oSQL:_sQuery += "    ,DA1.DA1_CODPRO AS PRODUTO "
@@ -110,6 +117,8 @@ Static Function PrintReport(oReport)
         oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aDados[_x, 6] }) 
         oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aDados[_x, 7] }) 
         oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aDados[_x, 8] }) 
+        oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aDados[_x, 9] }) 
+        oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aDados[_x,10] }) 
 
 		oSection1:PrintLine()
         

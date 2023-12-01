@@ -69,7 +69,7 @@ Static function _ProcessaTab()
                     DA0->DA0_ATIVO := '2'
                 msunlock()
 
-                U_AtuMerc ('DA0', da0 -> (recno ()))
+                //U_AtuMerc ('DA0', da0 -> (recno ()))
             EndIf                                                                                                                                  
         EndIf
 	Next

@@ -27,7 +27,7 @@ User Function VA_DA0PRO()
 	pergunte (cPerg, .T.)
 
     Processa({|| _ProcessaDel()}, "Excluindo produto das tabelas de preço...")
-    u_help("Atualizado!")
+    u_help("Finalizado!")
 Return
 //
 // ---------------------------------------------------------------------------------------
@@ -79,6 +79,6 @@ Return
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	//                     PERGUNT              TIPO TAM DEC VALID   F3     Opcoes Help
-	aadd (_aRegsPerg, {01, "Produto           ", "C", 15, 0,  "",   "SN3", {},      ""})
+	aadd (_aRegsPerg, {01, "Produto           ", "C", 15, 0,  "",   "SB1", {},      ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
