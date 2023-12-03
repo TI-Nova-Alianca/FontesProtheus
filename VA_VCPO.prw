@@ -185,7 +185,7 @@
 // 10/07/2023 - Claudia - Acrescentado novo campo de tipo de operação sisdevin F4_VASITO. GLPI: 13778
 // 04/08/2023 - Robert  - Removidas (estavam em desuso) validacos dos campos M->ZZK_ASSOC/M->ZZK_LOJA
 // 09/08/2023 - Robert  - Removida validacao B1_CODBAR (Migrada para PE_MATA010)
-//
+// 01/12/2023 - Robert  - Criada validacao para B1_RASTRO 
 
 // -------------------------------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
@@ -488,6 +488,20 @@ user function VA_VCpo (_sCampo)
 				_lRet = .F.
 			endif
 */
+
+		case _sCampo $ "M->B1_RASTRO" .and. m->b1_rastro = 'L'
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " select STRING_AGG ('Filial ' + B2_FILIAL + '/Alm.' + B2_LOCAL, '; ')"
+			_oSQL:_sQuery += "   from " + RetSQLName ("SB2")
+			_oSQL:_sQuery += "  where D_E_L_E_T_ = ''"
+			_oSQL:_sQuery += "    and B2_COD     = '" + m->b1_cod + "'"
+			_oSQL:_sQuery += "    and (B2_RESERVA != 0 OR B2_QEMP != 0)"
+			if ! empty (_oSQL:RetQry (1, .f.))
+				U_help ("Este item possui saldo em empenhos(de OP) e/ou reserva(ped.venda liberado) em " + _oSQL:_xRetQry)
+				_lRet = .f.
+			endif
+
 
 		case _sCampo $ "M->B1_VALINEN/M->C2_VALINEN/M->C4_VALINEN/M->G5_VALINEN/M->HC_VALINEN"
 			sh1 -> (dbsetorder (1))
