@@ -36,7 +36,8 @@
 // 17/01/2011 - Robert  - Avisa quando a nota jah havia sido exportada para EDI com cliente.
 // 11/08/2011 - Robert  - Atualiza SZI quando NF de venda para associado.
 // 13/10/2011 - Robert  - Passa a usar a funcao VA_ZZ4E para limpeza do ZZ4.
-// 30/09/2012 - Robert  - Criados campos D3_VANFRD, D3_VASERRD e D3_VAITNRD para substituir o D3_VACHVEX no controle de armazens externos.
+// 30/09/2012 - Robert  - Criados campos D3_VANFRD, D3_VASERRD e D3_VAITNRD para substituir o D3_VACHVEX 
+//                        no controle de armazens externos.
 // 21/05/2013 - Robert  - Melhorada query de verificacao se a NF saiu via deposito 04.
 // 24/06/2013 - Robert  - Tratamento de armazem passa a usar a classe ClsAmzGer.
 //                      - Cancelamento remessa para armazem geral passa a ser via batch.
@@ -53,8 +54,9 @@
 // 24/05/2022 - Claudia - Incluido o estorno de rapel. GLPI: 8916
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 // 01/11/2022 - Claudia - Incluido o tipo PX para validação de exclusão de títulos. GLPI: 12713
+// 04/12/2023 - Claudia - Alterada a busca de lcto. conta associado, para exclusão de NF's. GLPI: 14388
 //
-// ---------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
 User Function SF2520E() 
@@ -232,17 +234,18 @@ static function _AtuSZI ()
 	// Se gerou movimento na conta corrente de associados...
 	if _lContinua
 		_sQuery := ""
-		_sQuery += "SELECT R_E_C_N_O_"
-		_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
+		_sQuery += " SELECT R_E_C_N_O_"
+		_sQuery += " 	FROM " + RetSQLName ("SZI") + " SZI"
 		_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_sQUery +=   " AND ZI_FILIAL  = '" + xfilial ("SZI") + "'"
-		_sQUery +=   " AND ZI_TM      = '04'"
-		_sQUery +=   " AND ZI_DATA    = '" + dtos (sf2 -> f2_emissao) + "'"
-		_sQUery +=   " AND ZI_ASSOC   = '" + sa2 -> a2_cod + "'"
-		_sQUery +=   " AND ZI_LOJASSO = '" + sa2 -> a2_loja + "'"
-		_sQUery +=   " AND ZI_DOC     = '" + sf2 -> f2_doc + "'"
-		_sQUery +=   " AND ZI_SERIE   = '" + sf2 -> f2_serie + "'"
+		_sQuery += " AND ZI_FILIAL    = '" + xfilial ("SZI") + "'"
+		_sQuery += " AND ZI_ORIGEM IN ('SF2460I','BATCOMPASS') "  //_sQUery +=   " AND ZI_TM      = '04'"
+		_sQuery += " AND ZI_DATA      = '" + dtos (sf2 -> f2_emissao) + "'"
+		_sQuery += " AND ZI_ASSOC     = '" + sa2 -> a2_cod   + "'"
+		_sQuery += " AND ZI_LOJASSO   = '" + sa2 -> a2_loja  + "'"
+		_sQuery += " AND ZI_DOC       = '" + sf2 -> f2_doc   + "'"
+		_sQuery += " AND ZI_SERIE     = '" + sf2 -> f2_serie + "'"
 		_nRetQry = U_RetSQL (_sQuery)
+
 		if _nRetQry > 0
 			_oCtaCorr = ClsCtaCorr():New (_nRetQry)
 			if ! _oCtaCorr:Exclui ()
