@@ -129,7 +129,9 @@
 // 24/08/2023 - Claudia - Criada a Ação GravaTituloPgUnimed. GLPI: 13948 
 // 25/10/2023 - Cláudia - Incluida a tag <PrcVenItem> na ação BuscaMargemContrib. GLPI: 14414
 // 27/10/2023 - Claudia - Incluida a rotina GravaPgtoContaCorrente. GLPI: 14346
+// 04/12/2023 - Robert  - Refeitas algumas indentacoes.
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -256,8 +258,6 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 			_ExecKardex ()
 		case _sAcao == 'ConsultaKardexLote'
 			_KardexLt ()
-		case _sAcao == 'MonitorProtheus'
-			_MonitProt ()
 		case _sAcao == 'CapitalSocialAssoc'
 			_ExecCapAssoc ()
 		case _sAcao == 'AgendaEntregaFaturamento'
@@ -781,42 +781,42 @@ static function _IncEvt ()
 					_SomaErro ("Codigo do evento " + _oEvento:CodEven + " nao cadastrado na tabela 54 do arquivo ZX5.")
 				endif
 				if empty (_sErroWS) ; _oEvento:Origem     = _ExtraiTag ("_oXML:_WSAlianca:_Origem",         .T., .F.) ;   endif
-					if empty (_sErroWS) ; _oEvento:Texto      = _ExtraiTag ("_oXML:_WSAlianca:_Texto",          .T., .F.) ;   endif
-						if empty (_sErroWS) ; _oEvento:NFSaida    = _ExtraiTag ("_oXML:_WSAlianca:_NFSaida",        .F., .F.) ;   endif
-							if empty (_sErroWS) ; _oEvento:SerieSaid  = _ExtraiTag ("_oXML:_WSAlianca:_SerieSaid",      .F., .F.) ;   endif
-								if empty (_sErroWS) ; _oEvento:ParcTit    = _ExtraiTag ("_oXML:_WSAlianca:_ParcTit",        .F., .F.) ;   endif
-									if empty (_sErroWS) ; _oEvento:NFEntrada  = _ExtraiTag ("_oXML:_WSAlianca:_NFEntrada",      .F., .F.) ;   endif
-										if empty (_sErroWS) ; _oEvento:SerieEntr  = _ExtraiTag ("_oXML:_WSAlianca:_SerieEntr",      .F., .F.) ;   endif
-											if empty (_sErroWS) ; _oEvento:Produto    = _ExtraiTag ("_oXML:_WSAlianca:_Produto",        .F., .F.) ;   endif
-												if empty (_sErroWS) ; _oEvento:PedVenda   = _ExtraiTag ("_oXML:_WSAlianca:_PedVenda",       .F., .F.) ;   endif
-													if empty (_sErroWS) ; _oEvento:Cliente    = _ExtraiTag ("_oXML:_WSAlianca:_Cliente",        .F., .F.) ;   endif
-														if empty (_sErroWS) ; _oEvento:LojaCli    = _ExtraiTag ("_oXML:_WSAlianca:_LojaCli",        .F., .F.) ;   endif
-															if empty (_sErroWS) ; _oEvento:Fornece    = _ExtraiTag ("_oXML:_WSAlianca:_Fornece",        .F., .F.) ;   endif
-																if empty (_sErroWS) ; _oEvento:LojaFor    = _ExtraiTag ("_oXML:_WSAlianca:_LojaFor",        .F., .F.) ;   endif
-																	if empty (_sErroWS) ; _oEvento:MailTo     = _ExtraiTag ("_oXML:_WSAlianca:_MailTo",         .F., .F.) ;   endif
-																		if empty (_sErroWS) ; _oEvento:MailToZZU  = _ExtraiTag ("_oXML:_WSAlianca:_MailToZZU",      .F., .F.) ;   endif
-																			if empty (_sErroWS) ; _oEvento:Alias      = _ExtraiTag ("_oXML:_WSAlianca:_Alias",          .F., .F.) ;   endif
-																				if empty (_sErroWS) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_Recno",     .F., .F.)) ;  endif
-																					if empty (_sErroWS) ; _oEvento:CodAlias   = _ExtraiTag ("_oXML:_WSAlianca:_CodAlias",       .F., .F.) ;   endif
-																						if empty (_sErroWS) ; _oEvento:Chave      = _ExtraiTag ("_oXML:_WSAlianca:_Chave",          .F., .F.) ;   endif
-																							if empty (_sErroWS) ; _oEvento:OP         = _ExtraiTag ("_oXML:_WSAlianca:_OP",             .F., .F.) ;   endif
-																								if empty (_sErroWS) ; _oEvento:Etiqueta   = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",       .F., .F.) ;   endif
-																									if empty (_sErroWS) ; _oEvento:CodProceda = _ExtraiTag ("_oXML:_WSAlianca:_CodProceda",     .F., .F.) ;   endif
-																										if empty (_sErroWS) ; _oEvento:Transp     = _ExtraiTag ("_oXML:_WSAlianca:_Transp",         .F., .F.) ;   endif
-																											if empty (_sErroWS) ; _oEvento:TranspReds = _ExtraiTag ("_oXML:_WSAlianca:_TranspReds",     .F., .F.) ;   endif
-																												if empty (_sErroWS) ; _oEvento:DiasValid  = val (_ExtraiTag ("_oXML:_WSAlianca:_DiasValid", .F., .F.)) ;  endif
-																													if empty (_sErroWS) ; _oEvento:ChaveNFe   = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFe",       .F., .F.) ;   endif
-																														if empty (_sErroWS) ; _oEvento:MotProrTit = _ExtraiTag ("_oXML:_WSAlianca:_MotProrrogTit",  .F., .F.) ;   endif
-																															if empty (_sErroWS) ; _oEvento:Safra      = _ExtraiTag ("_oXML:_WSAlianca:_Safra",          .F., .F.) ;   endif
-																																if empty (_sErroWS) ; _oEvento:CargaSafra = _ExtraiTag ("_oXML:_WSAlianca:_CargaSafra",     .F., .F.) ;   endif
-																																	if empty (_sErroWS)
-																																		if ! _oEvento:Grava ()
-																																			_SomaErro ("Erro na gravacao do objeto evento")
-																																		else
-																																			_sMsgRetWS = "Evento gravado com sucesso"
-																																		endif
-																																	endif
-																																	Return
+				if empty (_sErroWS) ; _oEvento:Texto      = _ExtraiTag ("_oXML:_WSAlianca:_Texto",          .T., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:NFSaida    = _ExtraiTag ("_oXML:_WSAlianca:_NFSaida",        .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:SerieSaid  = _ExtraiTag ("_oXML:_WSAlianca:_SerieSaid",      .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:ParcTit    = _ExtraiTag ("_oXML:_WSAlianca:_ParcTit",        .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:NFEntrada  = _ExtraiTag ("_oXML:_WSAlianca:_NFEntrada",      .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:SerieEntr  = _ExtraiTag ("_oXML:_WSAlianca:_SerieEntr",      .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:Produto    = _ExtraiTag ("_oXML:_WSAlianca:_Produto",        .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:PedVenda   = _ExtraiTag ("_oXML:_WSAlianca:_PedVenda",       .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:Cliente    = _ExtraiTag ("_oXML:_WSAlianca:_Cliente",        .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:LojaCli    = _ExtraiTag ("_oXML:_WSAlianca:_LojaCli",        .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:Fornece    = _ExtraiTag ("_oXML:_WSAlianca:_Fornece",        .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:LojaFor    = _ExtraiTag ("_oXML:_WSAlianca:_LojaFor",        .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:MailTo     = _ExtraiTag ("_oXML:_WSAlianca:_MailTo",         .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:MailToZZU  = _ExtraiTag ("_oXML:_WSAlianca:_MailToZZU",      .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:Alias      = _ExtraiTag ("_oXML:_WSAlianca:_Alias",          .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_Recno",     .F., .F.)) ;  endif
+				if empty (_sErroWS) ; _oEvento:CodAlias   = _ExtraiTag ("_oXML:_WSAlianca:_CodAlias",       .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:Chave      = _ExtraiTag ("_oXML:_WSAlianca:_Chave",          .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:OP         = _ExtraiTag ("_oXML:_WSAlianca:_OP",             .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:Etiqueta   = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",       .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:CodProceda = _ExtraiTag ("_oXML:_WSAlianca:_CodProceda",     .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:Transp     = _ExtraiTag ("_oXML:_WSAlianca:_Transp",         .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:TranspReds = _ExtraiTag ("_oXML:_WSAlianca:_TranspReds",     .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:DiasValid  = val (_ExtraiTag ("_oXML:_WSAlianca:_DiasValid", .F., .F.)) ;  endif
+				if empty (_sErroWS) ; _oEvento:ChaveNFe   = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFe",       .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:MotProrTit = _ExtraiTag ("_oXML:_WSAlianca:_MotProrrogTit",  .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:Safra      = _ExtraiTag ("_oXML:_WSAlianca:_Safra",          .F., .F.) ;   endif
+				if empty (_sErroWS) ; _oEvento:CargaSafra = _ExtraiTag ("_oXML:_WSAlianca:_CargaSafra",     .F., .F.) ;   endif
+				if empty (_sErroWS)
+					if ! _oEvento:Grava ()
+						_SomaErro ("Erro na gravacao do objeto evento")
+					else
+						_sMsgRetWS = "Evento gravado com sucesso"
+					endif
+				endif
+				Return
 
 
 // --------------------------------------------------------------------------
@@ -853,88 +853,88 @@ static function _TrEstq (_sQueFazer)
 	case _sQueFazer == 'INS'  // Inserir
 		_oTrEstq := ClsTrEstq ():New ()
 		if empty (_sErroWS) ; _oTrEstq:FilOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .T., .F.), 2) ;  endif
-			if empty (_sErroWS) ; _oTrEstq:FilDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .T., .F.), 2) ;  endif
-				if empty (_sErroWS) ; _oTrEstq:ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoOrigem",   .T., .F.), 15) ; endif
-					if empty (_sErroWS) ; _oTrEstq:ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoDestino",  .T., .F.), 15) ; endif
-						if empty (_sErroWS) ; _oTrEstq:AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxOrigem",     .T., .F.), 2) ;  endif
-							if empty (_sErroWS) ; _oTrEstq:AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxDestino",    .T., .F.), 2) ;  endif
-								if empty (_sErroWS) ; _oTrEstq:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteOrigem",      .F., .F.), 10) ; endif
-									if empty (_sErroWS) ; _oTrEstq:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteDestino",     .F., .F.), 10) ; endif
-										if empty (_sErroWS) ; _oTrEstq:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoOrigem",  .F., .F.), 15) ; endif
-											if empty (_sErroWS) ; _oTrEstq:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoDestino", .F., .F.), 15) ; endif
-												if empty (_sErroWS) ; _oTrEstq:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_QtdSolic",        .T., .F.)) ;     endif
-													if empty (_sErroWS) ; _oTrEstq:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",          .T., .F.) ;      endif
-														if empty (_sErroWS) ; _oTrEstq:OP       = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .F., .F.), 14) ; endif
-															if empty (_sErroWS) ; _oTrEstq:ImprEtq  =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .F., .F.) ;      endif
-																if empty (_sErroWS)
-																	_oTrEstq:UsrIncl = cUserName
-																	_oTrEstq:DtEmis  = date ()
-																	if _oTrEstq:Grava ()
-																		u_log2 ('INFO', 'Gravou ZAG. ' + _oTrEstq:UltMsg)
-																		_sMsgRetWS = _oTrEstq:UltMsg
-																	else
-																		u_log2 ('erro', 'Nao gravou ZAG. ' + _oTrEstq:UltMsg)
-																		_SomaErro ("Erro na gravacao.")
-																		_sMsgRetWS = _oTrEstq:UltMsg
-																	endif
-																endif
-															case _sQueFazer $ 'AUT/DEL/EXE/NEG'  // [A]utorizar;[D]eletar;[E]xecutar;[N]egar
-																if empty (_sErroWS) ; _sDocZAG = _ExtraiTag ("_oXML:_WSAlianca:_DocTransf", .T., .F.) ; endif
-																	if empty (_sErroWS)
-																		zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
-																		if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-																			_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
-																		else
-																			_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-																			if empty (_oTrEstq:Docto)
-																				_SomaErro ("Nao foi possivel instanciar objeto _oTrEstq")
-																			else
-																				do case
-																				case _sQueFazer == 'AUT'  // Autorizar
-																					_oTrEstq:Libera ()
-																					_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
-																					_sMsgRetWS = _oTrEstq:UltMsg
-																				case _sQueFazer == 'DEL'  // Deletar
-																					if ! _oTrEstq:Exclui ()
-																						_SomaErro (_oTrEstq:UltMsg)
-																					else
-																						_sMsgRetWS = _oTrEstq:UltMsg
-																					endif
-																				case _sQueFazer == 'EXE'  // Executar (pode ter dado erro na tentativa anterior)
-																					if ! _oTrEstq:Executa (.T.)
-																						_SomaErro (_oTrEstq:UltMsg)
-																					else
-																						_sMsgRetWS = _oTrEstq:UltMsg
-																					endif
-																				case _sQueFazer == 'NEG'  // Negar (usuario nao aceitou a transferencia)
-																					_sMotZAG = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .T., .F.)
-																					if empty (_sErroWS)
-																						if ! _oTrEstq:Negar (_sMotZAG)
-																							_SomaErro (_oTrEstq:UltMsg)
-																						else
-																							_sMsgRetWS = _oTrEstq:UltMsg
-																						endif
-																					endif
-																				case _sQueFazer == 'IED'  // Informar Endereco Destino
-																					_sNEndDst = _ExtraiTag ("_oXML:_WSAlianca:_NovoEndDest", .T., .F.)
-																					if empty (_sErroWS)
-																						if ! _oTrEstq:NovoEndDst (_sNEndDst)
-																							_SomaErro (_oTrEstq:UltMsg)
-																						else
-																							_sMsgRetWS = _oTrEstq:UltMsg
-																						endif
-																					endif
-																				otherwise
-																					_SomaErro ("Opcao desconhecida na rotina " + procname ())
-																				endcase
-																			endif
+		if empty (_sErroWS) ; _oTrEstq:FilDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .T., .F.), 2) ;  endif
+		if empty (_sErroWS) ; _oTrEstq:ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoOrigem",   .T., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq:ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoDestino",  .T., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq:AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxOrigem",     .T., .F.), 2) ;  endif
+		if empty (_sErroWS) ; _oTrEstq:AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxDestino",    .T., .F.), 2) ;  endif
+		if empty (_sErroWS) ; _oTrEstq:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteOrigem",      .F., .F.), 10) ; endif
+		if empty (_sErroWS) ; _oTrEstq:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteDestino",     .F., .F.), 10) ; endif
+		if empty (_sErroWS) ; _oTrEstq:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoOrigem",  .F., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoDestino", .F., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_QtdSolic",        .T., .F.)) ;     endif
+		if empty (_sErroWS) ; _oTrEstq:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",          .T., .F.) ;      endif
+		if empty (_sErroWS) ; _oTrEstq:OP       = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .F., .F.), 14) ; endif
+		if empty (_sErroWS) ; _oTrEstq:ImprEtq  =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .F., .F.) ;      endif
+		if empty (_sErroWS)
+			_oTrEstq:UsrIncl = cUserName
+			_oTrEstq:DtEmis  = date ()
+			if _oTrEstq:Grava ()
+				u_log2 ('INFO', 'Gravou ZAG. ' + _oTrEstq:UltMsg)
+				_sMsgRetWS = _oTrEstq:UltMsg
+			else
+				u_log2 ('erro', 'Nao gravou ZAG. ' + _oTrEstq:UltMsg)
+				_SomaErro ("Erro na gravacao.")
+				_sMsgRetWS = _oTrEstq:UltMsg
+			endif
+		endif
+	case _sQueFazer $ 'AUT/DEL/EXE/NEG'  // [A]utorizar;[D]eletar;[E]xecutar;[N]egar
+		if empty (_sErroWS) ; _sDocZAG = _ExtraiTag ("_oXML:_WSAlianca:_DocTransf", .T., .F.) ; endif
+		if empty (_sErroWS)
+			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
+			if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+				_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
+			else
+				_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+				if empty (_oTrEstq:Docto)
+					_SomaErro ("Nao foi possivel instanciar objeto _oTrEstq")
+				else
+					do case
+					case _sQueFazer == 'AUT'  // Autorizar
+						_oTrEstq:Libera ()
+						_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
+						_sMsgRetWS = _oTrEstq:UltMsg
+					case _sQueFazer == 'DEL'  // Deletar
+						if ! _oTrEstq:Exclui ()
+							_SomaErro (_oTrEstq:UltMsg)
+						else
+							_sMsgRetWS = _oTrEstq:UltMsg
+						endif
+					case _sQueFazer == 'EXE'  // Executar (pode ter dado erro na tentativa anterior)
+						if ! _oTrEstq:Executa (.T.)
+							_SomaErro (_oTrEstq:UltMsg)
+						else
+							_sMsgRetWS = _oTrEstq:UltMsg
+						endif
+					case _sQueFazer == 'NEG'  // Negar (usuario nao aceitou a transferencia)
+						_sMotZAG = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .T., .F.)
+						if empty (_sErroWS)
+							if ! _oTrEstq:Negar (_sMotZAG)
+								_SomaErro (_oTrEstq:UltMsg)
+							else
+								_sMsgRetWS = _oTrEstq:UltMsg
+							endif
+						endif
+					case _sQueFazer == 'IED'  // Informar Endereco Destino
+						_sNEndDst = _ExtraiTag ("_oXML:_WSAlianca:_NovoEndDest", .T., .F.)
+						if empty (_sErroWS)
+							if ! _oTrEstq:NovoEndDst (_sNEndDst)
+								_SomaErro (_oTrEstq:UltMsg)
+							else
+								_sMsgRetWS = _oTrEstq:UltMsg
+							endif
+						endif
+					otherwise
+						_SomaErro ("Opcao desconhecida na rotina " + procname ())
+					endcase
+				endif
 
-																		endif
-																	endif
-																otherwise
-																	_SomaErro ("Acao desconhecida na rotina " + procname ())
-																endcase
-																Return
+			endif
+		endif
+	otherwise
+		_SomaErro ("Acao desconhecida na rotina " + procname ())
+	endcase
+Return
 
 
 // --------------------------------------------------------------------------
@@ -951,135 +951,132 @@ static function _TrEstGrid ()
 
 	// Algumas tags serao unicas, como se fosse um cabecalho de tela.
 	if empty (_sErroWS) ; _sFilOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .t., .F.), 2)  ; endif
-		if empty (_sErroWS) ; _sFilDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .t., .F.), 2)  ; endif
-			if empty (_sErroWS) ; _sOP      = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .f., .F.), 14) ; endif
-				if empty (_sErroWS) ; _sImprEtq =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .f., .F.)      ; endif
-					if empty (_sErroWS) .and. type ("_oXML:_WSAlianca:_TransfEstqItens") != 'O'
-						_SomaErro ("Tag '_oXML:_WSAlianca:_TransfEstqItens' deve estar presente no XML.")
-					endif
+	if empty (_sErroWS) ; _sFilDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .t., .F.), 2)  ; endif
+	if empty (_sErroWS) ; _sOP      = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .f., .F.), 14) ; endif
+	if empty (_sErroWS) ; _sImprEtq =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .f., .F.)      ; endif
+	if empty (_sErroWS) .and. type ("_oXML:_WSAlianca:_TransfEstqItens") != 'O'
+		_SomaErro ("Tag '_oXML:_WSAlianca:_TransfEstqItens' deve estar presente no XML.")
+	endif
 
-					// Se eu tiver recebido mais de um item (a tag <item> pode se repetir), o
-					// o tipo do objeto vai ser 'array'. Para trabalhar mais adiante com um
-					// soh trecho de programa, usarei nomes de objetos _oTrEstq1, _oTrEstq2, ...
-					// Tentei trabalhar com uma array e guardar objetos nela, mas comecei a ter
-					// problemas de misturar dados entre os objetos. Entao achei melhor criar
-					// um objeto para cada item do XML recebido. O acesso a cada objeto fica
-					// chato de fazer por que preciso do '&', mas posso criar quantos objetos
-					// forem necessarios.
-					if type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'A'  // Mais de um item no XML
-						if len (_oXML:_WSAlianca:_TransfEstqItens:_Item) > 99
-							_SomaErro ("Limite maximo de 99 itens.")  // Na verdade, espero ficar abaixo de 10
-						endif
-						_nItem = 1
-						do while empty (_sErroWS) .and. _nItem <= len (_oXML:_WSAlianca:_TransfEstqItens:_Item)
-							U_Log2 ('debug', '[' + procname () + ']Lendo item ' + cvaltochar (_nItem) + ' do XML')
-							&('_oTrEstq' + cvaltochar (_nItem)) := ClsTrEstq ():New ()
-							&('_oTrEstq' + cvaltochar (_nItem)):FilOrig  = _sFilOrig
-							&('_oTrEstq' + cvaltochar (_nItem)):FilDest  = _sFilDest
-							&('_oTrEstq' + cvaltochar (_nItem)):OP       = _sOP
-							&('_oTrEstq' + cvaltochar (_nItem)):ImprEtq  = _sImprEtq
-							&('_oTrEstq' + cvaltochar (_nItem)):UsrIncl  = cUserName
-							&('_oTrEstq' + cvaltochar (_nItem)):DtEmis   = date ()
-							if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ItemId",          .T., .F.)      ; endif
-								if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoOrigem",   .T., .F.), 15) ; endif
-									if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoDestino",  .T., .F.), 15) ; endif
-										if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxOrigem",     .T., .F.), 2)  ; endif
-											if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxDestino",    .T., .F.), 2)  ; endif
-												if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteOrigem",      .F., .F.), 10) ; endif
-													if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteDestino",     .F., .F.), 10) ; endif
-														if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",  .F., .F.), 15) ; endif
-															if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino", .F., .F.), 15) ; endif
-																//if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",        .T., .F.))     ; endif
-																if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",  .T., .F.),",","."))      ; endif
+	// Se eu tiver recebido mais de um item (a tag <item> pode se repetir), o
+	// o tipo do objeto vai ser 'array'. Para trabalhar mais adiante com um
+	// soh trecho de programa, usarei nomes de objetos _oTrEstq1, _oTrEstq2, ...
+	// Tentei trabalhar com uma array e guardar objetos nela, mas comecei a ter
+	// problemas de misturar dados entre os objetos. Entao achei melhor criar
+	// um objeto para cada item do XML recebido. O acesso a cada objeto fica
+	// chato de fazer por que preciso do '&', mas posso criar quantos objetos
+	// forem necessarios.
+	if type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'A'  // Mais de um item no XML
+		if len (_oXML:_WSAlianca:_TransfEstqItens:_Item) > 99
+			_SomaErro ("Limite maximo de 99 itens.")  // Na verdade, espero ficar abaixo de 10
+		endif
+		_nItem = 1
+		do while empty (_sErroWS) .and. _nItem <= len (_oXML:_WSAlianca:_TransfEstqItens:_Item)
+			U_Log2 ('debug', '[' + procname () + ']Lendo item ' + cvaltochar (_nItem) + ' do XML')
+			&('_oTrEstq' + cvaltochar (_nItem)) := ClsTrEstq ():New ()
+			&('_oTrEstq' + cvaltochar (_nItem)):FilOrig  = _sFilOrig
+			&('_oTrEstq' + cvaltochar (_nItem)):FilDest  = _sFilDest
+			&('_oTrEstq' + cvaltochar (_nItem)):OP       = _sOP
+			&('_oTrEstq' + cvaltochar (_nItem)):ImprEtq  = _sImprEtq
+			&('_oTrEstq' + cvaltochar (_nItem)):UsrIncl  = cUserName
+			&('_oTrEstq' + cvaltochar (_nItem)):DtEmis   = date ()
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ItemId",          .T., .F.)      ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoOrigem",   .T., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoDestino",  .T., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxOrigem",     .T., .F.), 2)  ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxDestino",    .T., .F.), 2)  ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteOrigem",      .F., .F.), 10) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteDestino",     .F., .F.), 10) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",  .F., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino", .F., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",  .T., .F.),",","."))      ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.)      ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Obs",             .F., .F.)      ; endif
+				_nItem ++
+			enddo
 
+	elseif type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'O'  // Um item apenas no XML
+		_oTrEstq1 := ClsTrEstq ():New ()
+		_oTrEstq1:FilOrig  = _sFilOrig
+		_oTrEstq1:FilDest  = _sFilDest
+		_oTrEstq1:OP       = _sOP
+		_oTrEstq1:ImprEtq  = _sImprEtq
+		_oTrEstq1:UsrIncl  = cUserName
+		_oTrEstq1:DtEmis   = date ()
+		if empty (_sErroWS) ; _oTrEstq1:IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ItemId",          .T., .F.)      ; endif
+		if empty (_sErroWS) ; _oTrEstq1:ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoOrigem",   .T., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoDestino",  .T., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxOrigem",     .T., .F.), 2)  ; endif
+		if empty (_sErroWS) ; _oTrEstq1:AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxDestino",    .T., .F.), 2)  ; endif
+		if empty (_sErroWS) ; _oTrEstq1:LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteOrigem",      .F., .F.), 10) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteDestino",     .F., .F.), 10) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",  .F., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino", .F., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.),",","."))    ; endif
+		if empty (_sErroWS) ; _oTrEstq1:CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.)      ; endif
+		if empty (_sErroWS) ; _oTrEstq1:Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Obs",             .F., .F.)      ; endif
+	endif
 
-																	if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.)      ; endif
-																		if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Obs",             .F., .F.)      ; endif
-																			_nItem ++
-																		enddo
-																	elseif type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'O'  // Um item apenas no XML
-																		_oTrEstq1 := ClsTrEstq ():New ()
-																		_oTrEstq1:FilOrig  = _sFilOrig
-																		_oTrEstq1:FilDest  = _sFilDest
-																		_oTrEstq1:OP       = _sOP
-																		_oTrEstq1:ImprEtq  = _sImprEtq
-																		_oTrEstq1:UsrIncl  = cUserName
-																		_oTrEstq1:DtEmis   = date ()
-																		if empty (_sErroWS) ; _oTrEstq1:IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ItemId",          .T., .F.)      ; endif
-																			if empty (_sErroWS) ; _oTrEstq1:ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoOrigem",   .T., .F.), 15) ; endif
-																				if empty (_sErroWS) ; _oTrEstq1:ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoDestino",  .T., .F.), 15) ; endif
-																					if empty (_sErroWS) ; _oTrEstq1:AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxOrigem",     .T., .F.), 2)  ; endif
-																						if empty (_sErroWS) ; _oTrEstq1:AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxDestino",    .T., .F.), 2)  ; endif
-																							if empty (_sErroWS) ; _oTrEstq1:LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteOrigem",      .F., .F.), 10) ; endif
-																								if empty (_sErroWS) ; _oTrEstq1:LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteDestino",     .F., .F.), 10) ; endif
-																									if empty (_sErroWS) ; _oTrEstq1:EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",  .F., .F.), 15) ; endif
-																										if empty (_sErroWS) ; _oTrEstq1:EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino", .F., .F.), 15) ; endif
-																											//if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.))     ; endif
-																											if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.),",","."))    ; endif
-																												if empty (_sErroWS) ; _oTrEstq1:CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.)      ; endif
-																													if empty (_sErroWS) ; _oTrEstq1:Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Obs",             .F., .F.)      ; endif
-																													endif
+	// Se nao consegui ler as tags do XML, nem adianta prosseguir.
+	if empty (_sErroWS)
 
-																													// Se nao consegui ler as tags do XML, nem adianta prosseguir.
-																													if empty (_sErroWS)
+		// Antes de gravar qualquer coisa, preciso ver se todos os itens podem ser aceitos.
+		_lTodosOK = .T.
+		_nItem = 1
+		//	do while empty (_sErroWS) .and. type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+		do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O'
+			if ! &('_oTrEstq' + cvaltochar (_nItem)):PodeIncl ()
+				U_Log2 ('aviso', '[' + procname () + ']A solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML) nao vai ser aceita:')
+				u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+				_lTodosOK = .F.
+			endif
+			_nItem ++
+		enddo
 
-																														// Antes de gravar qualquer coisa, preciso ver se todos os itens podem ser aceitos.
-																														_lTodosOK = .T.
-																														_nItem = 1
-																														//	do while empty (_sErroWS) .and. type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
-																														do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O'
-																															if ! &('_oTrEstq' + cvaltochar (_nItem)):PodeIncl ()
-																																U_Log2 ('aviso', '[' + procname () + ']A solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML) nao vai ser aceita:')
-																																u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
-																																_lTodosOK = .F.
-																															endif
-																															_nItem ++
-																														enddo
+		// Prepara variavel para dar retorno de cada item. Como quero dar o retorno
+		// para todos os itens, limparei mensagens previas de erro.
+		_sErroWS = ''
+		_sRetGrid = '<RetornoSolicitacao>'
+		_nItem = 1
+		do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+			_sRetGrid += '<Itens>'
+			_sRetGrid += '<ItemId>' + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + '</ItemId>'
 
-																														// Prepara variavel para dar retorno de cada item. Como quero dar o retorno
-																														// para todos os itens, limparei mensagens previas de erro.
-																														_sErroWS = ''
-																														_sRetGrid = '<RetornoSolicitacao>'
-																														_nItem = 1
-																														do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
-																															_sRetGrid += '<Itens>'
-																															_sRetGrid += '<ItemId>' + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + '</ItemId>'
+			// Situacao que nao deverah ocorrer.
+			if ascan (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid) > 0
+				&('_oTrEstq' + cvaltochar (_nItem)):UltMsg = "Tag ItemID (" + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + ") ja informada anteriormente."
+				_lTodosOK = .F.
+			else
+				aadd (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid)
+			endif
 
-																															// Situacao que nao deverah ocorrer.
-																															if ascan (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid) > 0
-																																&('_oTrEstq' + cvaltochar (_nItem)):UltMsg = "Tag ItemID (" + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + ") ja informada anteriormente."
-																																_lTodosOK = .F.
-																															else
-																																aadd (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid)
-																															endif
-
-																															// Se todos estao ok (deverao ser aceitos), jah posso grava-los.
-																															if _lTodosOK
-																																if ! &('_oTrEstq' + cvaltochar (_nItem)):Grava ()
-																																	_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
-																																	U_Log2 ('erro', '[' + procname () + ']Erro ao gravar a solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML):')
-																																	u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
-																																else
-																																	//		_sRetGrid += "<Retorno>OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq + "</Retorno>"
-																																	_sRetGrid += "<Retorno>OK</Retorno>"
-																																	U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
-																																	u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
-																																endif
-																															else  // Vou apenas retornar se os itens seriam ou nao aceitos
-																																if ! empty (&('_oTrEstq' + cvaltochar (_nItem)):UltMsg)
-																																	_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
-																																else
-																																	_sRetGrid += "<Retorno>OK</Retorno>"
-																																endif
-																															endif
-																															_sRetGrid += '</Itens>'
-																															_nItem ++
-																														enddo
-																														_sRetGrid += '</RetornoSolicitacao>'
-																														_sMsgRetWS = _sRetGrid
-																													endif
-																													U_Log2 ('debug', '[' + procname () + ']' + _sMsgRetWS)
-																													return
+			// Se todos estao ok (deverao ser aceitos), jah posso grava-los.
+			if _lTodosOK
+				if ! &('_oTrEstq' + cvaltochar (_nItem)):Grava ()
+					_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
+					U_Log2 ('erro', '[' + procname () + ']Erro ao gravar a solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML):')
+					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+				else
+					//		_sRetGrid += "<Retorno>OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq + "</Retorno>"
+					_sRetGrid += "<Retorno>OK</Retorno>"
+					U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
+					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+				endif
+			else  // Vou apenas retornar se os itens seriam ou nao aceitos
+				if ! empty (&('_oTrEstq' + cvaltochar (_nItem)):UltMsg)
+					_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
+				else
+					_sRetGrid += "<Retorno>OK</Retorno>"
+				endif
+			endif
+			_sRetGrid += '</Itens>'
+			_nItem ++
+		enddo
+		_sRetGrid += '</RetornoSolicitacao>'
+		_sMsgRetWS = _sRetGrid
+	endif
+	U_Log2 ('debug', '[' + procname () + ']' + _sMsgRetWS)
+return
 
 
 // --------------------------------------------------------------------------
@@ -1903,82 +1900,6 @@ Static function _KardexLt()
 Return
 
 
-// --------------------------------------------------------------------------
-// Executa rotina semelhante ao antigo 'monitor' do sistema
-Static function _MonitProt ()
-	local _oRPCSrv := NIL
-	local _aRPCRet := {}
-	local _nRPCRet := 0
-	local _sRetMon := ''
-	local _aServicos := {}
-	local _nServico  := 0
-	local _sAmbs     := ''
-
-	u_logIni ()
-	if empty (_sErroWS)
-		_sAmbs     = _ExtraiTag ("_oXML:_WSAlianca:_Ambientes", .F., .F.)
-
-		// Cria lista de servicos e portas a serem verificados
-		_aServicos = {}
-		//nao precisa, pois estou indo em cada um dos slaves --> aadd (_aServicos, {'Master', 1290, 'ALIANCA'})
-		if empty (_sAmbs) .or. 'SLAVE1' $ upper (_sAmbs); aadd (_aServicos, {'slave1', 1291, 'ALIANCA'}) ; endif
-			if empty (_sAmbs) .or. 'SLAVE2' $ upper (_sAmbs); aadd (_aServicos, {'slave2', 1292, 'ALIANCA'}) ; endif
-				if empty (_sAmbs) .or. 'SLAVE3' $ upper (_sAmbs); aadd (_aServicos, {'slave3', 1293, 'ALIANCA'}) ; endif
-					if empty (_sAmbs) .or. 'SLAVE4' $ upper (_sAmbs); aadd (_aServicos, {'slave4', 1294, 'ALIANCA'}) ; endif
-						if empty (_sAmbs) .or. 'SLAVE5' $ upper (_sAmbs); aadd (_aServicos, {'slave5', 1295, 'ALIANCA'}) ; endif
-							if empty (_sAmbs) .or. 'EXTERNO' $ upper (_sAmbs); aadd (_aServicos, {'externo', 1298, 'ALIANCA'}) ; endif
-								if empty (_sAmbs) .or. 'LOJAS' $ upper (_sAmbs); aadd (_aServicos, {'lojas', 1247, 'ALIANCA'}) ; endif
-									if empty (_sAmbs) .or. 'TESTE' $ upper (_sAmbs); aadd (_aServicos, {'Teste', 1280, 'TESTE'}) ; endif
-										if empty (_sAmbs) .or. 'TESTEFISCAL' $ upper (_sAmbs); aadd (_aServicos, {'TesteFiscal', 1281, 'TESTEFISCAL'}) ; endif
-											if empty (_sAmbs) .or. 'TESTEMEDIO' $ upper (_sAmbs); aadd (_aServicos, {'TesteMedio', 1282, 'TESTEMEDIO'}) ; endif
-
-												_sRetMon := '<monitorProtheus>'
-												for _nServico = 1 to len (_aServicos)
-													u_log ("Vou verificar ", _aServicos [_nServico, 1], _aServicos [_nServico, 2])
-													_oRPCSrv := TRpc ():New (_aServicos [_nServico, 3])
-													if valtype (_oRPCSrv) != "O"
-														u_log ("Protheus: Nao foi possivel instanciar objeto RPC para comunicacao com o servico " + _aServicos [_nServico, 1] + ' na porta ' + cvaltochar (_aServicos [_nServico, 2]))
-													else
-														if ! _oRPCSrv:Connect ('192.168.1.3', _aServicos [_nServico, 2])
-															u_log ("Protheus: Nao foi possivel estabelecer conexao RPC com o servico solicitado: " + _aServicos [_nServico, 1] + ' na porta ' + cvaltochar (_aServicos [_nServico, 2]))
-														else
-															_aRPCRet := _oRPCSrv:CallProc ('GetUserInfoArray ()')
-															if len (_aRPCRet) == 0
-																u_log ("Servidor RPC retornou dados em formato desconhecido.")
-															else
-																for _nRPCRet = 1 to len (_aRPCRet)
-																	_sRetMon += '<sessao>'
-																	_sRetMon += '<servico>'          + _aServicos [_nServico, 1]            + '</servico>'
-																	_sRetMon += '<usuario>'          +             _aRPCRet [_nRPCRet,  1]  + '</usuario>'
-																	_sRetMon += '<computador>'       +             _aRPCRet [_nRPCRet,  2]  + '</computador>'
-																	_sRetMon += '<thread>'           + cvaltochar (_aRPCRet [_nRPCRet,  3]) + '</thread>'
-																	_sRetMon += '<server>'           +             _aRPCRet [_nRPCRet,  4]  + '</server>'
-																	_sRetMon += '<funcao>'           +             _aRPCRet [_nRPCRet,  5]  + '</funcao>'
-																	_sRetMon += '<ambiente>'         +             _aRPCRet [_nRPCRet,  6]  + '</ambiente>'
-																	_sRetMon += '<inicio>'           +    strtran (_aRPCRet [_nRPCRet,  7], chr (10), '')  + '</inicio>'
-																	_sRetMon += '<instrucoes>'       + cvaltochar (_aRPCRet [_nRPCRet,  9]) + '</instrucoes>'
-																	_sRetMon += '<instrPorSegundo>'  + cvaltochar (_aRPCRet [_nRPCRet, 10]) + '</instrPorSegundo>'
-																	_sRetMon += '<obs>'              +    strtran (strtran (alltrim (_aRPCRet [_nRPCRet, 11]), '  ', ' '), '  ', ' ') + '</obs>'
-																	_sRetMon += '<memoria>'          + cvaltochar (_aRPCRet [_nRPCRet, 12]) + '</memoria>'
-																	_sRetMon += '<id_DbAccess>'      +             _aRPCRet [_nRPCRet, 13]  + '</id_DbAccess>'
-																	_sRetMon += '<id_CTree>'         + cvaltochar (_aRPCRet [_nRPCRet, 14]) + '</id_CTree>'
-																	_sRetMon += '<tipoThread>'       +             _aRPCRet [_nRPCRet, 15]  + '</tipoThread>'
-																	_sRetMon += '<tempoInatividade>' +             _aRPCRet [_nRPCRet, 16]  + '</tempoInatividade>'
-																	_sRetMon += '</sessao>'
-																next
-															endif
-														endif
-													endif
-												next
-												_sRetMon += '</monitorProtheus>'
-											endif
-
-											if empty (_sErroWS)
-												_sMsgRetWS := _sRetMon
-											endif
-
-											u_logFim ()
-											return
 //
 // -------------------------------------------------------------------------------------------------
 // Associados - retorna texto do capital social
@@ -2190,25 +2111,6 @@ static function _ApPrEtqCB ()
 							endif
 						endif
 
-	/*
-	// Valida se o codigo de barras pertence ao produto da etiqueta
-	if empty (_sErroWS)
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT count (*)"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
-		_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-		_oSQL:_sQuery +=   " AND SB1.B1_CODBAR  = '" + _sCodBarAp + "'"
-		_oSQL:_sQuery +=   " AND SB1.B1_COD     = '" + _oEtiq:Produto + "'"
-		_oSQL:Log (procname ())
-		if _oSQL:RetQry (1, .f.) == 0
-			_SomaErro ("Codigo de barras inconsistente. Etiqueta refere-se ")
-			_SomaErro ("ao produto '" + alltrim (_oEtiq:Produto) + "' ")
-			_SomaErro ("(" + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _oEtiq:Produto, "B1_DESC")) + ")")
-		endif
-	endif
-*/
 						// Valida codigo de barras lido na embalagem coletiva.
 						if empty (_sErroWS)
 							if ! _oEtiq:ValCbEmb (_sCodBarAp)

@@ -44,6 +44,7 @@
 // 05/08/2023 - Robert  - Removido parametro de filtragem por 'nucleo' do associado.
 //                      - Removidas opcoes 'detalhado' e 'somente NF compra'
 // 29/09/2023 - Robert  - Implementado modelo4 em 132 colunas, mostrando descontos (GLPI 9561)
+// 04/12/2023 - Robert  - Ajustes titulos colunas no modelo 132 colunas
 //
 
 #include "protheus.ch"
@@ -131,19 +132,11 @@ User Function ML_FECHASAFRA (_lAutomat)
 	if mv_par01 < '2020'  // Metodo original
 		processa ({|| RptDetail ()})
 	else  // Busca da classe ClsAssoc.
-//		if mv_par06 == 1  // Detalhado
-//			processa ({|| _Modelo2 (.f.)})
-//		elseif mv_par06 == 2  // Resumido
 		if mv_par01 < '2023'
 			processa ({|| _Modelo3 ()})
 		else
 			processa ({|| _Modelo4 ()})
 		endif
-//		elseif mv_par06 == 3  // Resumido (apenas NF compra)
-//			processa ({|| _Modelo2 (.T.)})
-//		else
-//			u_help ("Modelo sem tratamento.",, .t.)
-//		endif
 	endif
 
 	Set Printer TO
@@ -168,7 +161,6 @@ Return
 // --------------------------------------------------------------------------
 // Modelo original
 Static Function RptDetail()
-//	local _oAssoc := NIL
 	local _oSQL   := NIL
 	local FAT	  := 0
 	local i		  := 0
@@ -253,15 +245,6 @@ Static Function RptDetail()
 	// lista fechamento safra do associado      
 	(_sAliasQ) -> (DBGoTop ())
 	Do While ! (_sAliasQ) -> (Eof ())
-			
-		// se informou o Nucleo filtra por nucleo
-	//	if mv_par04 != '  '
-	//		_oAssoc := ClsAssoc ():New ((_sAliasQ) -> ASSOCIADO, (_sAliasQ) -> LOJA_ASSOC)
-	//		if valtype (_oAssoc) != 'O' .or. _oAssoc:Nucleo != mv_par04
-	//			(_sAliasQ) -> (dbskip ())
-	//			loop
-	//		endif
-	//	endif
 
 		IF _vAnt + _VAntLj  != (_sAliasQ) -> ASSOCIADO + (_sAliasQ) -> LOJA_ASSOC
 			IF _aTotTp[2] = 0
@@ -704,9 +687,9 @@ Static Function RptDetail()
 							_wsaldo += (_sAliasQ) -> VALOR_TOTAL - (_wvlrB + _wvlrC)
 						case ALLTRIM((_sAliasQ) -> REGR_PAG) == "C - 100%"
 							_wtotC += (_sAliasQ) -> VALOR_TOTAL
-					endcase	
-				endif	           		
-       		
+					endcase
+				endif
+
 			elseif (_sAliasQ) -> TIPO_NF = 'C' .and. mv_par01 >= '2019'
 				do case
 					case ALLTRIM((_sAliasQ) -> REGR_PAG) == "A"
@@ -1646,7 +1629,6 @@ static function _Modelo3 ()
 	local _sError    := ''
 	local _sWarning  := ''
 	local _sLinImp   := ''
-//	local _nVaried   := 0
 	local _aResPag   := {}
 	local _nResPag   := 0
 	local _nFatPag   := 0
@@ -1700,47 +1682,22 @@ static function _Modelo3 ()
 			loop
 		endif
 
-		// Filtra por nucleo do associado
-	//	if ! empty (mv_par04) .and. _oAssoc:Nucleo != mv_par04
-	//		u_log ('outro nucleo')
-	//		loop
-	//	endif
-
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
-//		if _lSohCompr
-//		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.,      .t.)
-//			_oAssoc:FSSafra      = mv_par01
-//			_oAssoc:FSNFEntrada  = .f.
-//			_oAssoc:FSNFCompra   = .t.
-//			_oAssoc:FSNFComplem  = .f.
-//			_oAssoc:FSNFPrdProp  = .f.
-//			_oAssoc:FSPrevPagto  = .f.
-//			_oAssoc:FSRegraPagto = .t.
-//			_oAssoc:FSResValEfet = .f.
-//			_oAssoc:FSResVaried  = .f.
-//			_oAssoc:FSFrete      = .f.
-//			_oAssoc:FSLctosCC    = .f.
-//			_oAssoc:FSResVarGC   = .f.
-//			_oAssoc:FSDFunrur    = .t.
-//			_sXmlFech = _oAssoc:FechSafra ()
-//		else
-		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .f.,        .t.,      .t.,      .t.,      .t.)
-			_oAssoc:FSSafra      = mv_par01
-			_oAssoc:FSNFEntrada  = .t.
-			_oAssoc:FSNFCompra   = .t.
-			_oAssoc:FSNFComplem  = .t.
-			_oAssoc:FSNFPrdProp  = .t.
-			_oAssoc:FSPrevPagto  = .t.
-			_oAssoc:FSRegraPagto = .t.
-			_oAssoc:FSResValEfet = .t.
-			_oAssoc:FSResVaried  = .f.
-			_oAssoc:FSFrete      = .t.
-			_oAssoc:FSLctosCC    = (mv_par04 == 1)
-			_oAssoc:FSResVarGC   = .t.
-			_oAssoc:FSDFunrur    = .t.
-			_sXmlFech = _oAssoc:FechSafra ()
-//		endif
+		_oAssoc:FSSafra      = mv_par01
+		_oAssoc:FSNFEntrada  = .t.
+		_oAssoc:FSNFCompra   = .t.
+		_oAssoc:FSNFComplem  = .t.
+		_oAssoc:FSNFPrdProp  = .t.
+		_oAssoc:FSPrevPagto  = .t.
+		_oAssoc:FSRegraPagto = .t.
+		_oAssoc:FSResValEfet = .t.
+		_oAssoc:FSResVaried  = .f.
+		_oAssoc:FSFrete      = .t.
+		_oAssoc:FSLctosCC    = (mv_par04 == 1)
+		_oAssoc:FSResVarGC   = .t.
+		_oAssoc:FSDFunrur    = .t.
+		_sXmlFech = _oAssoc:FechSafra ()
+
 		//u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
 			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
@@ -1761,40 +1718,6 @@ static function _Modelo3 ()
 		@ li, 00 PSAY "Associado: " + _oAssoc:Codigo + '-' + _oAssoc:Loja + ' ' + _oAssoc:Nome
 		li += 2
 
-		// Vou deixar de listar este resumo, para incluir os valores efetivos. Robert, 02/06/2023
-		// // Verifica se tem este tipo de nota no XML
-		// _ValType := _RetType('_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem')
-		// //u_log2 ('debug', _ValType)
-		// if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
-		// 	@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total     Vlr.unit.        Vlr.total'
-		// 	li ++
-		// 	for _nVaried = 1 to len (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem)
-		// 		If li > _nMaxLin - 4
-		// 		IF m_pag >1
-		// 			_roda()
-		// 		endif
-		// 			cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-		// 		endif
-		// 		if _oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_varied:TEXT != 'TOTAIS'
-		// 			_sLinImp = space (23)
-		// 			_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_varied:TEXT, 15) + ' '
-		// 			_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_desc:TEXT, 30) + ' '
-		// 			_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_grau:TEXT), '@E 999.9') + '  '
-		// 			_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_clas:TEXT, 2) + '  '
-		// 			_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '    '
-		// 			_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT) / val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascVUni) + ' '
-		// 			_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
-		// 			@ li, 0 psay _sLinImp
-		// 			li ++
-		// 		else
-		// 			@ li, 0 psay '                                                                                --------------                  -------------'
-		// 			li ++
-		// 			@ li, 0 psay '                                                                                 ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '               ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
-		// 			li += 2
-		// 		endif
-		// 	next
-		// endif
-
 		// Verifica se tem este tipo de tag no XML
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem')
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
@@ -1805,6 +1728,7 @@ static function _Modelo3 ()
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 0 PSAY 'Valores efetivos:                                GRAU/CLAS     CONDUCAO             PESO        VLR.COMPRA       VLR.COMPLEM        VLR.PREMIO         VLR.TOTAL    UNIT.EFETIVO'
+//			@li, 0 PSAY 'Valores efetivos:                     Grau/Clas     Conducao         Peso Kg       Vlr.compra       Vlr.complem       Vlr.premio        Vlr.total   Unit.efetivo'
 			li ++
 			for _nVlEfetiv = 1 to len (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem)
 				_sLinImp := space (7)
@@ -1830,6 +1754,7 @@ static function _Modelo3 ()
 					li ++
 				else
 					@ li, 0 psay space (76) + '------------     -------------     -------------     -------------     -------------'
+//					@ li, 0 psay space (64) + '------------    -------------     -------------    -------------    -------------'
 					li ++
 					_sLinImp += space (68)
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_peso:TEXT), _sMascPeso) + '  '
@@ -1837,6 +1762,13 @@ static function _Modelo3 ()
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vComplem:TEXT), _sMascVTot) + '  '
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vPremio:TEXT), _sMascVTot) + '  '
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valtot:TEXT), _sMascVTot) + '  '
+
+//					_sLinImp += space (63)
+//					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_peso:TEXT), _sMascPeso) + ' '
+//					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vCompra:TEXT), _sMascVTot) + '  '
+//					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vComplem:TEXT), _sMascVTot) + ' '
+//					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vPremio:TEXT), _sMascVTot) + ' '
+//					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valtot:TEXT), _sMascVTot) + '  '
 					@ li, 0 psay _sLinImp
 					li ++
 				endif
@@ -2007,7 +1939,6 @@ static function _Modelo3 ()
 				if _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT != 'TOTAIS' .and. _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dc:TEXT == 'D'
 					_sLinImp := space (23)
 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dtMovto:TEXT, 10) + '  '
-					//_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT, 15) + '  '
 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_hist:TEXT, 50) + '  '
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT), '@E 999,999,999.99') + ' '
 
@@ -2036,27 +1967,18 @@ return
 // Modelo em 132 colunas.
 static function _Modelo4 ()
 	local _lContinua := .T.
-//	local _aAssoc    := {}
-//	local _nAssoc    := 0
 	local _oAssoc    := NIL
-//	local _oSQL      := NIL
 	local _sXmlFech  := ''
 	local _sError    := ''
 	local _sWarning  := ''
 	local _sLinImp   := ''
 	local _aResPag   := {}
-//	local _nResPag   := 0
 	local _nFatPag   := 0
-//	local _aTotResP  := {}
 	local _nRegraPag := 0
 	local _nLctoCC   := 0
 	local _sMesPagto := ''
 	local _nTotDesc  := 0
-//	local _sFtPgHist := ''
-//	local _nItFunr   := 0
 	local _nVlEfetiv := 0
-
-//	local _nFatPag   := 0
 	local _nSldPagto := 0
 	local _nTFatXML  := 0
 	local _nTSldXML  := 0
@@ -2331,7 +2253,7 @@ static function _Modelo4 ()
 		next
 		@ li, 0 psay '                                                                                       --------------'
 		li ++
-		@ li, 0 psay '                                                                                     ' + transform (_nTotDesc, _sMascVTot)
+		@ li, 0 psay '                                                                                        ' + transform (_nTotDesc, _sMascVTot)
 		li += 2
 	endif
 

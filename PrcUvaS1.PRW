@@ -135,9 +135,9 @@ user function PrcUvaS1 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_nAgioOrg = 15
 				elseif sb1 -> b1_vaorgan == 'O'
 					if sb1 -> b1_vacor == 'T' .and. sb1 -> b1_vattr == 'S'  // Tintorias
-						_nAgioOrg = 50 //55
+						_nAgioOrg = 55
 					else
-						_nAgioOrg = 50 //70
+						_nAgioOrg = 70
 					endif
 				endif
 				
