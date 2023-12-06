@@ -104,9 +104,12 @@
 //                        por que interpretei mal a situacao (ver reabertura chamado 13815)
 // 22/09/2023 - Claudia - Voltado o campo F4_VASITO, e incluida validação para venda dentro e fora do RS, 
 //                        para itens granel. GLPI: 13815
+// 06/12/2023 - Claudia - Incluido tipo 70 - Insumos. GLPI: 13781
 //
 // ------------------------------------------------------------------------------------------------------------
-User Function ml_dec (_lAutomat)
+#include "protheus.ch"
+
+User Function ml_dec(_lAutomat)
 	Local cCadastro   := "Arquivo p/ Declaracao Vinicola"
 	Local aSays       := {}
 	Local aButtons    := {}
@@ -226,19 +229,25 @@ Static Function GeraTxt()
 	_nTotNF61 := 0
 
 	// Uma funcao para gerar cada tipo de registro.
-	_Tipo10 ()  			// Identificacao da empresa remetente
-	_Tipo11 ()  			// Dados complementares da empresa
+	_Tipo10()  			// Identificacao da empresa remetente
+	_Tipo11()  			// Dados complementares da empresa
+
 	if mv_par03 == 1  		// Movto. mensal
-		_Tipo20N ()  		// Notas de venda de engarrafados
-		_Tipo20D ()  		// Notas de devolucao de engarrafados
+		_Tipo20N()  		// Notas de venda de engarrafados
+		_Tipo20D()  		// Notas de devolucao de engarrafados
 		if mv_par09 == 1
-			_Tipo30S  ()  	// Movimentacao a granel Saidas.
-			_Tipo30E  ()  	// Movimentacao a granel Entradas.
+			_Tipo30S()  	// Movimentacao a granel Saidas.
+			_Tipo30E()  	// Movimentacao a granel Entradas.
 		endif
+
 	elseif mv_par03 == 2  	// Entradas de uvas
-		_Tipo60 ()  		// Identificacao de notas de uvas
+		_Tipo60()  		// Identificacao de notas de uvas
+
+	elseif mv_par03 == 3  	// Notas de insumos
+		_Tipo70()  		// Declaração de produtos enologicos
+
 	endif
-	_Tipo90 ()  			// Totalizadores
+	_Tipo90()  			// Totalizadores
 
 	// Validacoes cadastro produtos. Era feito no _tipo15(), mas esse tipo de registro nao eh mais gerado.
 	for _nProduto = 1 to len (_aProdutos)
@@ -273,7 +282,7 @@ Static Function GeraTxt()
 		endif
 
 		// Exporta para TXT ordenadamente por grupo de tipo de registro.
-		_aTipos = {'10','11','20','30','60','90'}
+		_aTipos = {'10','11','20','30','60','70','90'}
 		for _nTipo = 1 to len (_aTipos)
 			_trb -> (dbgotop ())
 			do while ! _trb -> (eof ())
@@ -286,7 +295,7 @@ Static Function GeraTxt()
 	endif
 
 	// Gera planilha para conferencia do usuario.
-	if mv_par08 == 1
+	if mv_par08 == 1 .and. mv_par03 != 3
 		U_Trb2XLS ('_trb')
 	endif
 
@@ -330,17 +339,17 @@ Static Function _Tipo11()
 	incproc ('Registro(s) ' + procname ())
 	cLin:=""
 	cLin := cLin + "11"+SM0->M0_TEL+SPACE(01)+SM0->M0_FAX+SPACE(01)+"07"+SubStr(SM0->M0_INSC,1,3)+SubStr(SM0->M0_INSC,4,13)+""+SPACE(01)
-	cLin += U_TamFixo (mv_par04, 30)  // Diretor
+	cLin += U_TamFixo (mv_par04, 30)  								 // Diretor
 	cLin += U_TamFixo (U_RetZX5 ('20', mv_par05, 'ZX5_20NOME'), 30)  // Nome responsavel
-	cLin += padl (alltrim (mv_par05), 10, ' ')  // CRQ responsavel
-	cLin += U_TamFixo (mv_par07, 40)  // e-mail respons (nao o mesmo do CRQ por que nao sao os enologos que geram o arquivo)
+	cLin += padl (alltrim (mv_par05), 10, ' ')  					 // CRQ responsavel
+	cLin += U_TamFixo (mv_par07, 40)  								 // e-mail respons (nao o mesmo do CRQ por que nao sao os enologos que geram o arquivo)
 	cLin += ' '
 	_GravaLin ('11', cLin)
 Return
 //
 // --------------------------------------------------------------------------
 // Notas de venda de engarrafados
-Static Function _Tipo20N ()
+Static Function _Tipo20N()
 	local _sTipoDocF := ''
 	local _sPos      := ''
 	local _vTotLit   := 0
@@ -405,7 +414,6 @@ Static Function _Tipo20N ()
 		_oSQL:_sQuery +=    " AND SD2.D2_DOC     = SF2.F2_DOC "
 		_oSQL:_sQuery +=    " AND SD2.D2_SERIE   = SF2.F2_SERIE "
 		_oSQL:_sQuery +=    " AND SD2.D2_TES     = SF4.F4_CODIGO "
-		//_oSQL:_sQuery +=    " AND SF4.F4_VASISEN <> '99' "
 		_oSQL:_sQuery +=    " AND SF4.F4_VASITO <> '99' "
 
 		// Notas de dez/2019 que continham apenas suco e cujas guias foram digitadas diretamente no site do Sisdevin
@@ -464,7 +472,6 @@ Static Function _Tipo20N ()
 
 			_sNF    := _trb20S -> D2_DOC
 			_sSerie := _trb20S -> D2_SERIE
-			//_sOper  := _trb20S -> F4_VASISEN
 			_sOper  := _trb20S -> F4_VASITO
 			_sTipoDocF  = _TipoDocF (_trb20S -> D2_SERIE)
 			_sDestino := _trb20S -> F2_EST
@@ -497,9 +504,8 @@ Static Function _Tipo20N ()
 			_sMes :=  substr(_trb20S-> D2_EMISSAO, 5,2)
 			_sAno :=  substr(_trb20S-> D2_EMISSAO, 1,4)
 
-			cLin += _sMes
-			cLin += _sAno
-			//cLin +=  _trb20S -> F4_VASISEN
+			cLin +=  _sMes
+			cLin +=  _sAno
 			cLin +=  _trb20S -> F4_VASITO
 			cLin +=  strzero(val(_trb20S -> D2_DOC),10)
 			cLin +=  _sDestino
@@ -511,7 +517,6 @@ Static Function _Tipo20N ()
 			
 			_sNFI    := _trb20S -> D2_DOC
 			_sSerieI := _trb20S -> D2_SERIE
-			//_sOperI  := _trb20S -> F4_VASISEN
 			_sOperI  := _trb20S -> F4_VASITO
 			_sCodCR	 :=	_trb20S -> CODCRSIS
 			
@@ -542,9 +547,6 @@ Static Function _Tipo20N ()
 				x_LITROS := STRZERO(((_trb20S->D2_QUANT - _trb20S->LT_IGNORAR) * _trb20S->B1_LITROS)*100,10)
 				
 				x_UNID   := _trb20S -> D2_UM
-				// if empty (_trb20S -> F4_VASISEN)
-				// 	_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "' nao informado no TES " + _trb20S -> D2_TES + ". Entre em contato com o setor fiscal.")
-				// endif
 				if empty (_trb20S -> F4_VASITO)
 					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASITO")) + "' nao informado no TES " + _trb20S -> D2_TES + ". Entre em contato com o setor fiscal.")
 				endif
@@ -591,7 +593,6 @@ Static Function _Tipo20N ()
 				_sNFi    := _trb20S -> D2_DOC
 				_sSeriei := _trb20S -> D2_SERIE
 				_sOperI  := _trb20S -> F4_VASITO
-				//_sOperI  := _trb20S -> F4_VASISEN
 
 			Enddo
 		Enddo
@@ -603,7 +604,7 @@ Return
 //
 // --------------------------------------------------------------------------
 // Notas de devolucao de engarrafados
-Static Function _Tipo20D ()
+Static Function _Tipo20D()
 	local _sTipoDocF := ''
 	local _sQry20    := ''
 	local _sPos      := ''
@@ -619,7 +620,6 @@ Static Function _Tipo20D ()
 		if _lSoh1Reg
 			_sQry20 += " TOP 1 "
 		endif
-		//_sQry20 +=        " D1_DOC, D1_SERIE, D1_DTDIGIT, F4_VASISEN, F1_EST, B1_COD, D1_UM, D1_QUANT, B1_LITROS, "
 		_sQry20 +=        " D1_DOC, D1_SERIE, D1_DTDIGIT, F4_VASITO, F1_EST, B1_COD, D1_UM, D1_QUANT, B1_LITROS, "
 		_sQry20 +=        " D1_COD, D1_TES, F1_FORNECE, F1_LOJA, B1_DESC, D1_TIPO, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D1_LOTECTL "
 		_sQry20 +=   " FROM " + RetSQLName ("SD1") + " SD1 "
@@ -639,7 +639,7 @@ Static Function _Tipo20D ()
 		_sQry20 +=    " AND SB5.D_E_L_E_T_ = '' "
 		_sQry20 +=    " AND SF1.D_E_L_E_T_ = '' "
 		_sQry20 +=    " AND SD1.D_E_L_E_T_ = '' "
-		_sQry20 +=    " AND SB1.B1_GRPEMB  <> '18' "// DIFERENTE DE GRANEL
+		_sQry20 +=    " AND SB1.B1_GRPEMB  <> '18' "					// DIFERENTE DE GRANEL
 		_sQry20 +=    " AND SB5.B5_COD     = SB1.B1_COD"
 		_sQry20 +=    " AND SB5.B5_VASISDE = 'S' "
 		_sQry20 +=    " AND SF1.F1_FILIAL  = '" + xfilial ("SF1") + "' "
@@ -653,7 +653,6 @@ Static Function _Tipo20D ()
 		_sQry20 +=    " AND SD1.D1_FORNECE = SF1.F1_FORNECE "
 		_sQry20 +=    " AND SD1.D1_LOJA    = SF1.F1_LOJA "
 		_sQry20 +=    " AND SD1.D1_TES     = SF4.F4_CODIGO "
-		//_sQry20 +=    " AND SF4.F4_VASISEN <> '99'"
 		_sQry20 +=    " AND SF4.F4_VASITO <> '99'"
 		_sQry20 += " ORDER BY SF1.F1_DOC, SF1.F1_SERIE, SD1.D1_COD"
 		u_log2 ('debug', _sQry20)
@@ -671,10 +670,9 @@ Static Function _Tipo20D ()
 
 			_sNF    := (_sNF20E) -> D1_DOC
 			_sSerie := (_sNF20E) -> D1_SERIE
-			//_sOper  := (_sNF20E) -> F4_VASISEN
 			_sOper  := (_sNF20E) -> F4_VASITO
-			_sTipoDocF  = _TipoDocF ((_sNF20E) -> D1_SERIE)
-			_sDestino = (_sNF20E) -> f1_est
+			_sTipoDocF = _TipoDocF ((_sNF20E) -> D1_SERIE)
+			_sDestino  = (_sNF20E) -> f1_est
 
 			// Outro pais.
 			if _sDestino == "EX" .or. empty (_sDestino)
@@ -685,7 +683,6 @@ Static Function _Tipo20D ()
 					(_sNF20E) -> (dbskip ())
 				enddo
 				loop
-
 
 				u_log2 ('info', 'vou buscar pais para nf ' + (_sNF20E) -> D1_DOC)
 				if (_sNF20E) -> D1_TIPO $ "D/B"
@@ -715,7 +712,6 @@ Static Function _Tipo20D ()
 
 			cLin += _sMes
 			cLin += _sAno
-			//cLin += (_sNF20E) -> F4_VASISEN
 			cLin += (_sNF20E) -> F4_VASITO
 			cLin += strzero(val((_sNF20E) -> D1_DOC),10)
 			cLin += _sDestino
@@ -727,7 +723,6 @@ Static Function _Tipo20D ()
 
 			_sNFI    := (_sNF20E) -> D1_DOC
 			_sSerieI := (_sNF20E) -> D1_SERIE
-			// _sOperI  := (_sNF20E) -> F4_VASISEN
 			_sOperI  := (_sNF20E) -> F4_VASITO
 			_sCodCR  := (_sNF20E) -> CODCRSIS
 			
@@ -747,9 +742,7 @@ Static Function _Tipo20D ()
 				if val (x_Litros) == 0
 					_Erro ("Produto '" + alltrim ((_sNF20E) -> D1_COD) + "' (cod. sisdeclara '" + alltrim (x_CODPRD) + "') nao tem litragem informada no cadastro, ou a NF de Compra '" + (_sNF20E) -> D1_DOC + "' esta' com quantidade zerada.")
 				endif
-				// if empty ((_sNF20E) -> F4_VASISEN)
-				// 	_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "' nao informado no TES " + (_sNF20E) -> D1_TES + ". Contate setor fiscal.")
-				// endif
+
 				if empty ((_sNF20E) -> F4_VASITO)
 					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASITO")) + "' nao informado no TES " + (_sNF20E) -> D1_TES + ". Contate setor fiscal.")
 				endif
@@ -795,7 +788,6 @@ Static Function _Tipo20D ()
 				(_sNF20E) -> (dbskip ())
 				_sNFI    := (_sNF20E) -> D1_DOC
 				_sSerieI := (_sNF20E) -> D1_SERIE
-				//_sOperI  := (_sNF20E) -> F4_VASISEN
 				_sOperI  := (_sNF20E) -> F4_VASITO
 
 			Enddo
@@ -805,7 +797,7 @@ Return
 //
 // --------------------------------------------------------------------------
 // Movimentacao a granel Saidas
-Static Function _Tipo30S ()
+Static Function _Tipo30S()
 	local _sTipoDocF := ''
 	local _sQuery    := ""
 	local _sAliasQ   := ""
@@ -918,7 +910,6 @@ Static Function _Tipo30S ()
 			_Erro ("Saidas a granel: Registro no M.A. nao informado no cadastro do cliente/fornecedor '" + alltrim ((_sAliasQ) -> nome) + "' (CNPJ " + (_sAliasQ) -> CNPJ + "). Contate setor comercial.")
 		endif
 		if empty ((_sAliasQ) -> ZQ_TPOPER) .or. (_sAliasQ) -> ZQ_TPOPER == '99'
-			//_Erro ("NF " + (_sAliasQ) -> f2_doc + ": Tipo de operacao (" + (_sAliasQ) -> zq_tpoper + ") nao informada ou invalida. Verifique guia '" + (_sAliasQ) -> zq_numero + "' e, possivelmente, o TES '" + (_sAliasQ) -> D2_TES + "' (Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "')")
 			_Erro ("NF " + (_sAliasQ) -> f2_doc + ": Tipo de operacao (" + (_sAliasQ) -> zq_tpoper + ") nao informada ou invalida. Verifique guia '" + (_sAliasQ) -> zq_numero + "' e, possivelmente, o TES '" + (_sAliasQ) -> D2_TES + "' (Campo '" + alltrim (RetTitle ("F4_VASITO")) + "')")
 		endif
   
@@ -1009,7 +1000,7 @@ return
 //
 // --------------------------------------------------------------------------
 // Movimentacao a granel Entradas
-Static Function _Tipo30E ()
+Static Function _Tipo30E()
 	local _sTipoDocF := ''
 	local _sQuery    := ""
 	local _sAliasQ   := ""
@@ -1028,7 +1019,6 @@ Static Function _Tipo30E ()
 	if _lSoh1Reg
 		_sQuery += " TOP 1 "
 	endif
-	//_sQuery +=        " F1_DOC, F1_EST, D1_COD, F1_SERIE, F1_VAGUIA, F4_VASISDE, F1_FORNECE, F1_LOJA, F1_DTDIGIT, D1_DOC, D1_TIPO, "
 	_sQuery +=        " F1_DOC, F1_EST, D1_COD, F1_SERIE, F1_VAGUIA, F4_VASITO, F1_FORNECE, F1_LOJA, F1_DTDIGIT, D1_DOC, D1_TIPO, "
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_VAREGMA ELSE A2_VAREGMA END AS REG_MA,"
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_CGC     ELSE A2_CGC     END AS CNPJ, "
@@ -1053,7 +1043,6 @@ Static Function _Tipo30E ()
 	_sQuery +=  " WHERE SF1.D_E_L_E_T_ = ''"
 	_sQuery +=    " AND SF4.D_E_L_E_T_ = '' "
 	_sQuery +=    " AND SD1.D1_TES     = SF4.F4_CODIGO "
-	//_sQuery +=    " AND SF4.F4_VASISDE <> '99' "
 	_sQuery +=    " AND SF4.F4_VASITO <> '99' "
 	_sQuery +=    " AND SD1.D_E_L_E_T_ = ''"
 	_sQuery +=    " AND SB1.D_E_L_E_T_ = '' "
@@ -1145,13 +1134,11 @@ Static Function _Tipo30E ()
 		cLin += strzero (val ((_sAliasQ) -> F1_DOC), 10)
 		cLin += _sDestino
 		cLin += substr ((_sAliasQ) -> F1_DTDIGIT, 5, 2) + substr ((_sAliasQ) -> F1_DTDIGIT, 1, 4)
-		//cLin += (_sAliasQ) -> F4_VASISDE
 		If alltrim((_sAliasQ) -> F4_VASITO) == '01' .and. alltrim((_sAliasQ) -> ESTADO) == 'RS'
 			_sOperacao := '02'
 		else
 			_sOperacao := (_sAliasQ) -> F4_VASITO
 		endif
-		//cLin += (_sAliasQ) -> F4_VASITO
 		cLin += _sOperacao
 		cLin += U_TamFixo ((_sAliasQ) -> NOME, 40)
 		cLin += U_TamFixo ((_sAliasQ) -> REG_MA, 8)
@@ -1172,10 +1159,6 @@ Static Function _Tipo30E ()
 			if (_sAliasQ) -> Litros < 0.01
 				_Erro ("Litragem zerada para o produto '" + alltrim ((_sAliasQ) -> d1_cod) + "'. Verifique se o campo '" + alltrim (RetTitle ("B1_LITROS")) + "' esta informado em seu cadastro.")
 			endif
-
-			// if empty ((_sAliasQ) -> F4_VASISDE)
-			// 	_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISDE")) + "' nao informado no TES " + (_sAliasQ) -> D1_TES + ". Contate setor fiscal.")
-			// endif
 
 			if empty ((_sAliasQ) -> F4_VASITO)
 				_Erro ("Campo '" + alltrim (RetTitle ("F4_VASITO")) + "' nao informado no TES " + (_sAliasQ) -> D1_TES + ". Contate setor fiscal.")
@@ -1220,7 +1203,6 @@ Static Function _Tipo30E ()
 			_xTotLit += round ((_sAliasQ) -> Litros * 100, 0)
 
 			// Somatorio para mostrar no final total por operação
-			//_sPos = ascan (_aTotOper, {|_aVal| _aVal [1] == "30" .AND. _aVal [2] == (_sAliasQ) -> F4_VASISDE })
 			_sPos = ascan (_aTotOper, {|_aVal| _aVal [1] == "30" .AND. _aVal [2] == (_sAliasQ) -> F4_VASITO })
 			if _sPos > 0
 				_aTotOper [_sPos, 4] += round ((_sAliasQ) -> Litros, 0)
@@ -1237,7 +1219,7 @@ return
 //
 // --------------------------------------------------------------------------
 // Notas de movimentacao de uva
-Static Function _Tipo60 ()
+Static Function _Tipo60()
 	local _sCNPJ     := ""
 	local _sEmpresa  := ""
 	local _oSQL      := NIL
@@ -1257,9 +1239,6 @@ Static Function _Tipo60 ()
 	incproc ('Registro(s) ' + procname ())
 	cLin:=""
 
-	// _sCposV   = " 'VIEW' AS ORIGEM,                               V.SAFRA,                 V.DATA,                 V.ASSOCIADO,              V.LOJA_ASSOC,             V.DOC,               V.SERIE,     V.CAD_VITIC,               V.PESO_LIQ,              V.GRAU,                V.VALOR_UNIT,             V.PRODUTO, SA2.A2_TIPO AS TIPO_CF, SA2.A2_CGC AS CGC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, '' AS F4_VASISDE "
-	// _sCposSD1 = " 'SD1'  AS ORIGEM, SUBSTRING (D1_DTDIGIT, 1, 4) AS SAFRA, SD1.D1_DTDIGIT AS DATA, SD1.D1_FORNECE AS ASSOCIADO, SD1.D1_LOJA AS LOJA_ASSOC, SD1.D1_DOC AS DOC, SD1.D1_SERIE AS SERIE, '' AS CAD_VITIC, SD1.D1_QUANT AS PESO_LIQ, SD1.D1_GRAU AS GRAU, SD1.D1_VUNIT  AS VALOR_UNIT, SD1.D1_COD AS PRODUTO, SA2.A2_TIPO AS TIPO_CF, SD1.D1_DOC AS DOC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASISDE "
-	// _sCposSD2 = " 'SD2'  AS ORIGEM, SUBSTRING (D2_EMISSAO, 1, 4) AS SAFRA, SD2.D2_EMISSAO AS DATA, SD2.D2_CLIENTE AS ASSOCIADO, SD2.D2_LOJA AS LOJA_ASSOC, SD2.D2_DOC AS DOC, SD2.D2_SERIE AS SERIE, '' AS CAD_VITIC, SD2.D2_QUANT AS PESO_LIQ, '14.0'      AS GRAU, SD2.D2_PRCVEN AS VALOR_UNIT, SD2.D2_COD AS PRODUTO, SA1.A1_TIPO AS TIPO_CF, SD2.D2_DOC AS DOC, SA1.A1_INSCR AS INSCR, SA1.A1_COD_MUN AS COD_MUN, SA1.A1_NOME AS NOME_CF, SA1.A1_COD AS CLIFOR, SA1.A1_LOJA AS LOJA, SA1.A1_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASISDE "
 	_sCposV   = " 'VIEW' AS ORIGEM,                               V.SAFRA,                 V.DATA,                 V.ASSOCIADO,              V.LOJA_ASSOC,             V.DOC,               V.SERIE,     V.CAD_VITIC,               V.PESO_LIQ,              V.GRAU,                V.VALOR_UNIT,             V.PRODUTO, SA2.A2_TIPO AS TIPO_CF, SA2.A2_CGC AS CGC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, '' AS F4_VASITO "
 	_sCposSD1 = " 'SD1'  AS ORIGEM, SUBSTRING (D1_DTDIGIT, 1, 4) AS SAFRA, SD1.D1_DTDIGIT AS DATA, SD1.D1_FORNECE AS ASSOCIADO, SD1.D1_LOJA AS LOJA_ASSOC, SD1.D1_DOC AS DOC, SD1.D1_SERIE AS SERIE, '' AS CAD_VITIC, SD1.D1_QUANT AS PESO_LIQ, SD1.D1_GRAU AS GRAU, SD1.D1_VUNIT  AS VALOR_UNIT, SD1.D1_COD AS PRODUTO, SA2.A2_TIPO AS TIPO_CF, SD1.D1_DOC AS DOC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASITO "
 	_sCposSD2 = " 'SD2'  AS ORIGEM, SUBSTRING (D2_EMISSAO, 1, 4) AS SAFRA, SD2.D2_EMISSAO AS DATA, SD2.D2_CLIENTE AS ASSOCIADO, SD2.D2_LOJA AS LOJA_ASSOC, SD2.D2_DOC AS DOC, SD2.D2_SERIE AS SERIE, '' AS CAD_VITIC, SD2.D2_QUANT AS PESO_LIQ, '14.0'      AS GRAU, SD2.D2_PRCVEN AS VALOR_UNIT, SD2.D2_COD AS PRODUTO, SA1.A1_TIPO AS TIPO_CF, SD2.D2_DOC AS DOC, SA1.A1_INSCR AS INSCR, SA1.A1_COD_MUN AS COD_MUN, SA1.A1_NOME AS NOME_CF, SA1.A1_COD AS CLIFOR, SA1.A1_LOJA AS LOJA, SA1.A1_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASITO "
@@ -1498,6 +1477,50 @@ Static Function _Tipo60 ()
 Return
 //
 // --------------------------------------------------------------------------
+// Notas de insumos enologicos
+Static Function _Tipo70()
+	local _oDlg         := NIL
+	private _oTxtBrw1   := NIL
+	private _oGetD1     := NIL
+	private _aHeader    := {}
+	private _aCols1     := {}
+
+	_aHeader   := aclone(U_GeraHead("ZZZ", .T., {}, {"ZZZ_14COD", "ZZZ_14DESC", "ZZZ_14CSIS", "ZZZ_14QNF", "ZZZ_14QCON", "ZZZ_14QTDS"}, .T.))
+	_aHead1    := aclone(_aHeader)
+	_aCols1    := {} 	
+	_aCols1    := _BuscaProd(1)					// incluir os valores das colunas
+	_aSize     := MsAdvSize()					// Define tamanho da tela.
+
+	define MSDialog _oDlg from _aSize [1], _aSize [1] to _aSize [6], _aSize [5] of oMainWnd pixel title "Produtos"
+	
+    //                        Linha                         Coluna                      bTxt oWnd   pict oFont     ?    ?    ?    pixel corTxt    corBack larg                          altura
+    //_oTxtBrw1 := tSay ():New (15,                           7,                          NIL, _oDlg, NIL, _oCour24, NIL, NIL, NIL, .T.,  CLR_BLUE, NIL,    _oDlg:nClientWidth / 2 - 90,  25)
+    _oGetD1 := MsNewGetDados ():New (   40									,;		// Limite superior
+		                                5									,;      // Limite esquerdo
+		                                _oDlg:nClientHeight / 2 - 28		,;      // Limite inferior
+		                                _oDlg:nClientWidth / 2 - 10			,;      // Limite direito    
+		                                GD_UPDATE							,; 		// [ nStyle ]
+		                                "AllwaysTrue ()"					,;  	// [ Linha OK]
+		                                "U_DecValida()"						,;  	// [ uTudoOk ]
+		                                NIL									,; 		// [cIniCpos]
+		                                NIL									,; 		// [ aAlter ]
+		                                NIL									,; 		// [ nFreeze ]
+		                                999									,; 		// [ nMax ]
+		                                NIL									,; 		// [ cFieldOk ]
+		                                NIL									,;		// [ uSuperDel ]
+		                                NIL									,; 		// [ uDelOk ]
+		                                _oDlg								,; 		// [ oWnd ]
+		                                _aHead1								,; 		// [ ParHeader ]
+		                                _aCols1						 		) 		// [ aParCols ]
+    
+     // Define botoes para a barra de ferramentas
+	_bBotaoOK  = {|| iif( U_DecValida(), processa({||_GeraReg70(), _oDlg:End ()}), u_help("Verifique!"))}
+	_bBotaoCan = {|| _oDlg:End ()}
+    
+    activate dialog _oDlg on init (EnchoiceBar(_oDlg, _bBotaoOK, _bBotaoCan,, ), _oGetD1:oBrowse:SetFocus (), "")
+Return
+//
+// --------------------------------------------------------------------------
 // Totalizadores
 Static Function _Tipo90()
 	incproc ('Registro(s) ' + procname ())
@@ -1515,7 +1538,7 @@ Return (_lRet)
 //
 // --------------------------------------------------------------------------
 // Verifica se eh cupom fiscal
-Static Function _TipoDocF (_sSerie)
+Static Function _TipoDocF(_sSerie)
 	local _sRet := space (1)
 
 	if _sSerie $ GetMV ("VA_SERIECF")
@@ -1528,7 +1551,7 @@ return _sRet
 //
 // --------------------------------------------------------------------------
 // Msg de aviso
-static function _Aviso (_sMsg)
+static function _Aviso(_sMsg)
 	if ! _sMsg $ _sAvisos
 		u_log2 ('aviso', _sMsg)
 		_sAvisos += _sMsg + chr (13) + chr (10)
@@ -1537,7 +1560,7 @@ return
 //
 // --------------------------------------------------------------------------
 // Msg de erro
-static function _Erro (_sMsg)
+static function _Erro(_sMsg)
 	if ! _sMsg $ _sErros
 		u_log2 ('erro', _sMsg)
 		_sErros += _sMsg + chr (13) + chr (10)
@@ -1546,7 +1569,7 @@ return
 //
 // --------------------------------------------------------------------------
 // Busca codigo do pais de destino/origem
-static function _DestOri (_sOnde, _sCod, _sLoja, _sNF, _sTipoNF)
+static function _DestOri(_sOnde, _sCod, _sLoja, _sNF, _sTipoNF)
 	local _sRet  := "  "
 	local _sPais := ""
 
@@ -1578,7 +1601,7 @@ return _sRet
 //
 // --------------------------------------------------------------------------
 // Grava linha
-Static Function _GravaLin (_sGrupo, _sLinha, x_CODPRD)
+Static Function _GravaLin(_sGrupo, _sLinha, x_CODPRD)
 	reclock ("_trb", .T.)
 	_trb -> grupo = _sGrupo
 	_trb -> dados = _sLinha
@@ -1586,20 +1609,138 @@ Static Function _GravaLin (_sGrupo, _sLinha, x_CODPRD)
 return
 //
 // --------------------------------------------------------------------------
+// Busca produtos enologicos
+Static Function _BuscaProd(_nTipo)
+	Local _aDados := {}
+	Local _oSQL   := ClsSQL():New ()
+	
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " 	WITH C "
+	_oSQL:_sQuery += " 	AS "
+	_oSQL:_sQuery += " 	(SELECT "
+	_oSQL:_sQuery += " 		 SD1.D1_COD AS PRODUTO "
+	_oSQL:_sQuery += " 		,(SELECT "
+	_oSQL:_sQuery += " 					SB1.B1_DESC "
+	_oSQL:_sQuery += " 				FROM SB1010 SB1 "
+	_oSQL:_sQuery += " 				WHERE SB1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 				AND B1_COD = SD1.D1_COD) "
+	_oSQL:_sQuery += " 			AS DESCRICAO "
+	_oSQL:_sQuery += " 		,SUM(SD1.D1_QUANT) AS QTD_NF "
+	_oSQL:_sQuery += " 		,SB5.B5_VAPENO AS COD_SISDEVIN "
+	_oSQL:_sQuery += " 		,D1_UM AS UM_PROTHEUS "
+	_oSQL:_sQuery += " 		,ZX558.ZX5_58CON AS FATOR_CONVERSAO "
+	_oSQL:_sQuery += " 		,ZX558.ZX5_58UM AS UM_SISDEVIN "
+	_oSQL:_sQuery += " 		,CASE "
+	_oSQL:_sQuery += " 				WHEN ZX5_58CON > 0 THEN SUM(SD1.D1_QUANT) * ZX558.ZX5_58CON "
+	_oSQL:_sQuery += " 				WHEN ZX5_58CON = 0 THEN SUM(SD1.D1_QUANT) "
+	_oSQL:_sQuery += " 			END AS QTD_CONVERTIDA "
+	_oSQL:_sQuery += " 		,ZX5_58ENV AS ENVIA_100 "
+	_oSQL:_sQuery += " 		FROM " + RetSQLName ("SD1") + " SD1 " 
+	_oSQL:_sQuery += " 		INNER JOIN " + RetSQLName ("SF1") + " SF1 " 
+	_oSQL:_sQuery += " 			ON SF1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 			AND SF1.F1_FILIAL = SD1.D1_FILIAL "
+	_oSQL:_sQuery += " 			AND SF1.F1_DOC = SD1.D1_DOC "
+	_oSQL:_sQuery += " 			AND SF1.F1_SERIE = SD1.D1_SERIE "
+	_oSQL:_sQuery += " 			AND SF1.F1_FORNECE = SD1.D1_FORNECE "
+	_oSQL:_sQuery += " 			AND SF1.F1_LOJA = SD1.D1_LOJA "
+	_oSQL:_sQuery += " 			AND F1_TIPO = 'N' "
+	_oSQL:_sQuery += " 		INNER JOIN " + RetSQLName ("SB5") + " SB5 " 
+	_oSQL:_sQuery += " 			ON SB5.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 			AND SB5.B5_COD = SD1.D1_COD "
+	_oSQL:_sQuery += " 			AND SB5.B5_VAPENO <> '' "
+	_oSQL:_sQuery += " 		LEFT JOIN " + RetSQLName ("ZX5") + " ZX558 " 
+	_oSQL:_sQuery += " 			ON ZX558.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 			AND ZX558.ZX5_TABELA = '58' "
+	_oSQL:_sQuery += " 			AND ZX558.ZX5_58COD = B5_VAPENO "
+	_oSQL:_sQuery += " 		WHERE SD1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND D1_EMISSAO BETWEEN '"+ dtos(mv_par01)+"' AND '"+ dtos(mv_par02) +"' "
+	_oSQL:_sQuery += " 		GROUP BY SD1.D1_COD "
+	_oSQL:_sQuery += " 				,SB5.B5_VAPENO "
+	_oSQL:_sQuery += " 				,ZX558.ZX5_58CON "
+	_oSQL:_sQuery += " 				,ZX5_58ENV "
+	_oSQL:_sQuery += " 				,D1_UM "
+	_oSQL:_sQuery += " 				,ZX558.ZX5_58UM) "
+	_oSQL:_sQuery += " 	SELECT "
+	_oSQL:_sQuery += " 		 PRODUTO "
+	_oSQL:_sQuery += " 		,DESCRICAO "
+	_oSQL:_sQuery += " 		,COD_SISDEVIN "
+	_oSQL:_sQuery += " 		,QTD_NF "
+	_oSQL:_sQuery += " 		,QTD_CONVERTIDA "
+	_oSQL:_sQuery += " 		,CASE "
+	_oSQL:_sQuery += " 			WHEN ENVIA_100 = 'S' THEN QTD_CONVERTIDA "
+	_oSQL:_sQuery += " 			ELSE 0 "
+	_oSQL:_sQuery += " 		END AS QTD_PARA_SISDEVIN "
+	_oSQL:_sQuery += "      , 0 "
+	_oSQL:_sQuery += " 	FROM C "
+	_oSQL:_sQuery += " 	ORDER BY ENVIA_100, QTD_PARA_SISDEVIN, DESCRICAO " 
+	_aDados := _oSQL:Qry2Array ()
+
+Return _aDados
+//
+// --------------------------------------------------------------------------
+// Validação da tela de produtos enologicos
+User Function DecValida()
+	Local _lRet := .T.
+	local _x    := 0
+
+	_aCols := _ogetd1:acols
+	For _x := 1 to len(_aCols)
+		If _aCols[_x, 6] == 0
+			u_help("Campo <QTD_PARA_SISDEVIN> não pode ser zerado! Linha:" + alltrim(str(_x)))
+			_lRet := .F.
+		EndIf
+	Next
+Return _lRet
+//
+// --------------------------------------------------------------------------
+// Geração de registro 70 de produtos enologicos
+/*
+	01 Tipo “70”
+	02 CGC/MF CGC/MF da empresa remetente 
+	03 Produto Código do Produto
+	04 Quantidade Quantidade de Produto Utilizada 
+	05 Mês Mês da Declaração 
+	06 Ano Ano da Declaração 
+	07 Operação “05”, “06”, “08” 
+*/
+Static Function _GeraReg70()
+	Local cLin := ""
+	Local _x   := 0
+
+	_aColsN := _ogetd1:acols
+
+	For _x:=1 to Len(_aColsN)
+		_sMes :=  substr(dtos(mv_par01), 5,2)
+		_sAno :=  substr(dtos(mv_par01), 1,4) 
+
+		cLin := "70" 
+		cLin += SM0->M0_CGC 
+		cLin += PADL(alltrim(_aColsN[_x,3]),4,'0') 
+		cLin += StrZero((_aColsN[_x,6] * 100),10)
+		cLin += _sMes
+		cLin += _sAno
+		cLin += "05" 
+		_GravaLin ('70', cLin)
+	Next
+
+	U_aColsXLS(_aColsN)
+Return
+//
+// --------------------------------------------------------------------------
 // Cria Perguntas no SX1
-Static Function _ValidPerg ()
+Static Function _ValidPerg()
 	local _aRegsPerg := {}
 
-    //                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                                  Help
-	aadd (_aRegsPerg, {01, "Emissao NF de                 ", "D", 8,  0,  "",   "     ", {},             ""})
-	aadd (_aRegsPerg, {02, "Emissao NF ate                ", "D", 8,  0,  "",   "     ", {},             ""})
-	aadd (_aRegsPerg, {03, "O que exportar                ", "N", 1,  0,  "",   "     ", {"Movto.mensal", "Entradas de uva"},    ""})
-	aadd (_aRegsPerg, {04, "Nome diretor da empresa       ", "C", 30, 0,  "",   "     ", {},             ""})
-	aadd (_aRegsPerg, {05, "CRQ/CREA responsavel tecnico  ", "C", 10, 0,  "U_ExistZX5 ('20', mv_par05)", "ZX520", {},    ""})
-	aadd (_aRegsPerg, {06, "Arquivo destino               ", "C", 60, 0,  "",   "     ", {},             ""})
-	aadd (_aRegsPerg, {07, "E-mail para contato           ", "C", 40, 0,  "",   "     ", {},             ""})
-	aadd (_aRegsPerg, {08, "Gerar arq.para conferencia    ", "N", 1,  0,  "",   "     ", {"Sim", "Nao"}, ""})
-	aadd (_aRegsPerg, {09, "Exportar guias livre transito?", "N", 1,  0,  "",   "     ", {"Sim", "Nao"}, ""})
-	aadd (_aRegsPerg, {10, "Lotes(PA) a desconsid.(sep. /)", "C", 60, 0,  "",   "     ", {},             ""})
+    //                     PERGUNT                           TIPO TAM DEC VALID 							F3     Opcoes                                			Help
+	aadd (_aRegsPerg, {01, "Emissao NF de                 ", "D", 8,  0,  ""							,"     ", {}												, ""})
+	aadd (_aRegsPerg, {02, "Emissao NF ate                ", "D", 8,  0,  ""							,"     ", {}												, ""})
+	aadd (_aRegsPerg, {03, "O que exportar                ", "N", 1,  0,  ""							,"     ", {"Movto.mensal", "Entradas de uva","NF Insumos"}	, ""})
+	aadd (_aRegsPerg, {04, "Nome diretor da empresa       ", "C", 30, 0,  ""							,"     ", {}												, ""})
+	aadd (_aRegsPerg, {05, "CRQ/CREA responsavel tecnico  ", "C", 10, 0,  "U_ExistZX5 ('20', mv_par05)"	,"ZX520", {}												, ""})
+	aadd (_aRegsPerg, {06, "Arquivo destino               ", "C", 60, 0,  ""							,"     ", {}												, ""})
+	aadd (_aRegsPerg, {07, "E-mail para contato           ", "C", 40, 0,  ""							,"     ", {}												, ""})
+	aadd (_aRegsPerg, {08, "Gerar arq.para conferencia    ", "N", 1,  0,  ""							,"     ", {"Sim", "Nao"}									, ""})
+	aadd (_aRegsPerg, {09, "Exportar guias livre transito?", "N", 1,  0,  ""							,"     ", {"Sim", "Nao"}									, ""})
+	aadd (_aRegsPerg, {10, "Lotes(PA) a desconsid.(sep. /)", "C", 60, 0,  ""							,"     ", {}												, ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
