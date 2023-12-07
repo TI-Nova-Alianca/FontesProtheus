@@ -101,6 +101,7 @@ Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
             _oEvento:Alias     = 'DA1'
             _oEvento:Texto     = "Estado alterado de "+ DA1->DA1_ESTADO +" para "+ _sEstado +". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado
             _oEvento:CodEven   = "DA0002"
+            _oEvento:CodAlias = _sTabela
             _oEvento:Grava()
         EndIf
 
@@ -109,6 +110,7 @@ Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
             _oEvento:Alias     = 'DA1'
             _oEvento:Texto     = "Valor alterado de "+ alltrim(str(DA1->DA1_PRCVEN)) +" para "+ alltrim(str(_nValor))+ ". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado
             _oEvento:CodEven   = "DA0002"
+            _oEvento:CodAlias = _sTabela
             _oEvento:Grava()            
         EndIf
 
@@ -179,6 +181,7 @@ Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
             _oEvento:Alias     = 'DA1'
             _oEvento:Texto     = "Produto incluído "+ _sProduto +". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado + " Valor:" + alltrim(str(_nValor))
             _oEvento:CodEven   = "DA0002"
+            _oEvento:CodAlias = _sTabela
             _oEvento:Grava()
 
             reclock("DA1", .T.)
@@ -223,6 +226,7 @@ Static Function _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
         _oEvento:Alias     = 'DA1'
         _oEvento:Texto     = "Produto Excluído "+ _sProduto +". Filial:"+ _sFilial +" Tabela:"+ _sTabela +" Item:"+ _sItem +" Produto:"+ alltrim(_sProduto) + " Estado:" + _sEstado + " Valor:" + alltrim(str(_nValor))
         _oEvento:CodEven   = "DA0002"
+        _oEvento:CodAlias = _sTabela
         _oEvento:Grava()
 
         _sMsg := "Item " + _sItem + " excluído." + Chr(10) + Chr (13)

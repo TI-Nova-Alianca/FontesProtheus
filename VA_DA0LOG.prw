@@ -11,6 +11,7 @@
 // #Modulos   		  #FAT 
 //
 // Historico de alteracoes:
+// 07/12/2023 - Claudia - Incluido filtro de tabela de preço. GLPI: 14604
 //
 // ---------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -47,8 +48,9 @@ Static Function ReportDef()
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Data"		    ,	    					, 15,/*lPixel*/,{||     },"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"Usuário"		,       					, 25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"Descrição"		,       					,250,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA2", 	"" ,"Tabela"		,       					, 10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA3", 	"" ,"Usuário"		,       					, 25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA4", 	"" ,"Descrição"		,       					,250,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 
 Return(oReport)
 //
@@ -69,12 +71,13 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "    ,USUARIO "
     _oSQL:_sQuery += "    ,TRIM(PRODUTO) "
     _oSQL:_sQuery += "    ,TRIM(DESCRITIVO) "
+    _oSQL:_sQuery += "    ,CODIGO_ALIAS "
     _oSQL:_sQuery += " FROM VA_VEVENTOS "
-    if empty(mv_par01)
-        _oSQL:_sQuery += " WHERE (CODEVENTO LIKE ('%DA0%') "
-        _oSQL:_sQuery += " OR CODEVENTO LIKE ('%DA1%')) "
-    else
-        _oSQL:_sQuery += " WHERE DATA BETWEEN '" + dtos(mv_par01) + "' AND '"+ dtos(mv_par02) + "'"
+    _oSQL:_sQuery += " WHERE (CODEVENTO LIKE ('%DA0%') "
+    _oSQL:_sQuery += " OR CODEVENTO LIKE ('%DA1%')) "
+    _oSQL:_sQuery += " AND CODIGO_ALIAS = '" + mv_par03 + "'"
+    if !empty(mv_par01)
+        _oSQL:_sQuery += " AND DATA BETWEEN '" + dtos(mv_par01) + "' AND '"+ dtos(mv_par02) + "'"
     endif
     _oSQL:_sQuery += " ORDER BY DATA DESC "
     _aDados := aclone (_oSQL:Qry2Array ())
@@ -88,8 +91,9 @@ Static Function PrintReport(oReport)
         EndIf
         
 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| stod(_aDados[_x, 1])   }) 
-		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 2]         }) 
-		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _sDesc                 }) 
+        oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 5]         }) 
+		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aDados[_x, 2]         }) 
+		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _sDesc                 }) 
 
 		oSection1:PrintLine()
 	Next
@@ -104,6 +108,7 @@ Static Function _ValidPerg ()
     //                     PERGUNT             TIPO TAM DEC VALID F3     Opcoes                      Help
     aadd (_aRegsPerg, {01, "Data de         ", "D", 8, 0,  "",   "   ", {},                         		 ""})
     aadd (_aRegsPerg, {02, "Data até        ", "D", 8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {03, "Tabela          ", "C", 3, 0,  "",   "DA0", {},                         		 ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
