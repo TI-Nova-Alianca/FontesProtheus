@@ -377,7 +377,7 @@ static function _A010TOk ()
 		restarea (_aAreaSB1)
 	endif
 
-	if _lRet .and. m->b1_msblql ='2' .and. empty(m->b1_custd)
+	if _lRet .and. m->b1_msblql ='2' .and. empty(m->b1_custd) .and. m->b1_tipo=='PA'
 		u_help("Custo Stand. é obrigatório em produtos liberados. Verifique!")
 		_lRet := .F.
 	endif
