@@ -130,6 +130,7 @@
 // 25/10/2023 - Cláudia - Incluida a tag <PrcVenItem> na ação BuscaMargemContrib. GLPI: 14414
 // 27/10/2023 - Claudia - Incluida a rotina GravaPgtoContaCorrente. GLPI: 14346
 // 04/12/2023 - Robert  - Refeitas algumas indentacoes.
+// 07/12/2023 - Robert  - Tratamento porta X filial para poder manter sessao aberta.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -160,6 +161,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	local _sWarning  := ""
 	local _aUsuario  := {}  // Guarda dados de identificacao do usuario.
 	local _nSegIni   := seconds ()
+	local _sExclFIli := ''
 	private __cUserId  := ''
 	private cUserName  := ''
 	private _sWS_Empr  := ""
@@ -168,14 +170,45 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	private _sErroWS  := ""
 	private _sMsgRetWS := ""
 	private _sAcao     := ""
-//	private _sArqLog   := GetClassName (::Self) + "_" + dtos (date ()) + ".log"
 	private _sArqLog   := GetClassName (::Self) + ".log"
 
 	//WSDLDbgLevel(2)  // Ativa dados para debug no arquivo console.log
 	set century on
 
-	// Validacoes gerais e extracoes de dados basicos.
-	U_ValReqWS (GetClassName (::Self), ::XmlRcv, @_sErroWS, @_sWS_Empr, @_sWS_Filia, @_sAcao)
+	// Como nao consigo (ateh agora) manter uma sessao 'aberta' para atender
+	// solicitacoes de diferentes filiais, estou configurando web services
+	// em portas diferentes, um para cada filial (criar tratamento para outras
+	// filiais conforme surgir necessidade)
+	// Manter compatibilidade com a porta HTTP configurada no arquivo appserver.ini
+	// Pretendo usar as portas mantendo o seguinte padrao:
+	// 79+filial+[1,2,3...] se houver necessidade de balanceamento de carga
+	// Ex.: porta 7901  = filial 01
+	//      porta 79011 = filial 01 (2a. porta do balanceamento de carga)
+	//      porta 79012 = filial 01 (3a. porta do balanceamento de carga)
+	//      porta 7907  = filial 07
+	U_Log2 ('debug', '[' + procname () + ']httpHeadIn->HOST = ' + cvaltochar (httpHeadIn->HOST))
+	_sExclFIli = ''
+	if empty (_sErroWS) .and. ':7901' $ httpHeadIn->HOST
+		_sExclFIli = '01'
+	endif
+
+	// Vou fazer uma validacao basica sem extrair de fato os dados do XML, para ganho de performance.
+	if empty (_sErroWS) .and. ! empty (_sExclFIli) .and. ! '<FILIAL>' + _sExclFIli + '</FILIAL>' $ upper (::XmlRcv)
+		_SomaErro ("Este web service / porta atende somente a requisicoes da filial " + _sExclFIli)
+	endif
+
+	// Validacoes gerais e extracoes de dados basicos do XML.
+	if empty (_sErroWS)
+		U_ValReqWS (GetClassName (::Self), ::XmlRcv, @_sErroWS, @_sWS_Empr, @_sWS_Filia, @_sAcao)
+	endif
+
+	// Faz mais uma validacao de porta X filial depois de ter extraido a 
+	// filial 'mais corretamente' do XML.
+	if empty (_sErroWS) .and. ! empty (_sExclFIli)
+		if _sWS_Filia != _sExclFIli
+			_SomaErro ("Apos ler o XML verifiquei que este web service atende somente a filial " + _sExclFIli)
+		endif
+	endif
 
 	if empty (_sErroWS)
 		_aUsuario = {__cUserId, cUserName}  // Guarda para uso posterior, pois o PREPARE ENVIRONMENT limpa essas variaveis.
@@ -188,7 +221,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 		set century on
 	endif
 	if empty (_sErroWS) .and. cFilAnt != _sWS_Filia
-		u_log2 ('erro', 'Nao consegui acessar a filial solicitada.')
+//		u_log2 ('erro', 'Nao consegui acessar a filial solicitada.')
 		_SomaErro ("Nao foi possivel acessar a filial '" + _sWS_Filia + "' conforme solicitado.")
 	endif
 	if empty (_sErroWS)
@@ -216,8 +249,6 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 			_RastLt ()
 		case _sAcao == 'ZAM'
 			_ZAM ()
-			// nunca consegui fazer funcionar ---> case _sAcao == 'Executar'
-			// nunca consegui fazer funcionar ---> _Exec ()
 		case _sAcao == 'RefazSaldoAtual'
 			_SaldoAtu ()
 		case _sAcao == 'AtuEstru'
@@ -319,7 +350,11 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	// Encerra ambiente. Ficou um pouco mais lento, mas resolveu problema que estava dando de,
 	// a cada execucao, trazer um cFilAnt diferente. Robert, 09/01/2020.
 	// dica em: https://centraldeatendimento.totvs.com/hc/pt-br/articles/360027855031-MP-ADVPL-FINAL-GERA-EXCE%C3%87%C3%83O
-	RPCClearEnv ()
+	if empty (_sExclFIli)
+		RPCClearEnv ()
+	else
+		U_Log2 ('debug', '[' + procname () + ']Vou manter ambiente aberto por que estou numa porta que atende uma filial exclusiva.')
+	endif
 
 	u_log2 ('info', 'Mensagens WS: ' + ::Retorno:Mensagens)
 	// Como algumas opcoes retornam bastante coisa, vou economizar um pouco o log
@@ -385,49 +420,6 @@ static function _ExecBatch ()
 
 	u_logFim ()
 Return
-//
-/* nunca consegui fazer funcionar
-// --------------------------------------------------------------------------
-static function _Exec ()
-	local _sRotina  := ""
-	local _sGrpPerg := ""
-	local _nPerg    := 0
-	local _sResp    := ''
-	local _sTipo    := ''
-
-	// u_logIni ()
-	_sRotina  = alltrim (_ExtraiTag ("_oXML:_WSAlianca:_Rotina", .T., .F.))
-	_sGrpPerg = _ExtraiTag ("_oXML:_WSAlianca:_GrpPerg", .T., .F.)
-
-	if empty (_sErroWS) .and. right (_sRotina, 1) != ')'
-		_SomaErro ("Rotina a ser chamada deve finalizar por )")
-	endif
-
-	// Leitura das perguntas em loop, pois nao sei quantas serao recebidas.
-	if empty (_sErroWS)
-		_nPerg = 1
-		do while .T.
-			_sTipo = _ExtraiTag ("_oXML:_WSAlianca:_TipoParam" + strzero (_nPerg, 2), .F., .F.)
-			_sResp = _ExtraiTag ("_oXML:_WSAlianca:_RespParam" + strzero (_nPerg, 2), .F., .F.)
-			if ! empty (_sTipo) .and. ! empty (_sResp)
-				// Converte tipo de dado, caso necessario.
-				if _sTipo == "D"
-					_sResp = stod (_sResp)
-				elseif _sTipo == "N"
-					_sResp = val (_sResp)
-				endif
-				U_GravaSX1 (_sGrpPerg, strzero (_nPerg, 2), _sResp)
-			else
-				exit
-			endif
-		enddo
-		(&_sComando)
-	endif
-	_sMsgRetWS += _oBatch:Comando + ' ' + _oBatch:Mensagens
-
-	// u_logFim ()
-Return
-*/
 //
 // --------------------------------------------------------------------------
 static function _GrvInsp ()

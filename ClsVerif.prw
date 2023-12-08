@@ -345,6 +345,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 1
 		::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'PCP'
+		::ViaBatch   = .T.
 		::Descricao  = 'Produto deveria ter revisao padrao no cadastro'
 		::QuandoUsar = 'A qualquer momento'
 		::Dica       = 'Encontrei (na tabela SG1) estruturas com diferentes revisões para o produto, mas no seu cadastro não está indicado qual delas é a padrão."
@@ -377,6 +378,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 2
 		::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'ENG'
+		::ViaBatch   = .T.
 		::Descricao  = 'Produto tem revisao padrao informada no seu cadastro, mas o cadastro da propria revisao nao existe'
 		::Sugestao   = "Cadastre a revisão na tabela SG5 (revisões)"
 		::QuandoUsar = 'A qualquer momento'
@@ -399,7 +401,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 
 	case ::Numero == 3
+		::Filiais    = '*'
 		::Setores    = 'CUS/CTB'
+		::ViaBatch   = .T.
 		::Descricao  = 'Movimentacao com data futura'
 		::Sugestao   = 'Revisar a movimentação e avaliar a possibilidade de apagar essa movimentação do banco de dados.'
 		::QuandoUsar = 'A qualquer momento'
@@ -429,7 +433,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 4
 		::Setores   = 'CUS/CTB'
-	//	::GrupoPerg = "U_VALID004"
+		::ViaBatch   = .T.
 		::GrupoPerg = "U_VALID002"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Fech.estq.diferente fech.ant + kardex'
@@ -574,6 +578,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 5
 		::Ativa     = .F.  // A consulta de totais de safra aplicava-se na época em que fazíamos notas de entrada, depois pré-notas e, finalmente, notas de compra. Robert, 29/03/2023.
 		::Setores   = 'SAF'
+		::ViaBatch   = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Conferencia totais gerais safra'
@@ -657,6 +662,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 6
 		::Setores   = 'SAF'
+		::ViaBatch   = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Cadastro de uva incompleto / inconsistente'
@@ -682,6 +688,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 7
 		::Setores   = 'SAF'
+		::ViaBatch   = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Peso bruto/tara da carga inconsistente com a soma dos itens'
@@ -719,6 +726,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 8
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Cargas com NF de produtor repetidas'
@@ -753,6 +761,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 9
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Contranota sem carga de origem'
@@ -825,6 +834,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 10
 		::Ativa     = .F.  // esse controle é feito atualmente pela agronomia através do NaWeb. Robert, 29/03/2023
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Cad.viticola invalido ou nao recebido (fisicamente)'
@@ -860,6 +870,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 11
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'NF entrada uva sem classificacao'
@@ -922,6 +933,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 12
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Pre-NF com diferentes precos p/mesmo produto/grau/classe/conducao'
@@ -979,6 +991,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 13
 		::Setores   = 'SAF/PCP'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Carga sem contranota'
@@ -1006,6 +1019,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 14
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Contranota citada na carga nao existe ou tem dados diferentes'
@@ -1064,6 +1078,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 15
 		::Ativa     = .F.  // Desde 2021 não usamos mais notas de entrada -> pré-nota -> nota de compra. Robert, 29/03/2023
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'NF de entrada sem pre-nota de compra'
@@ -1128,11 +1143,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 16
 		::Ativa     = .F.  // Desde 2021 não usamos mais notas de entrada -> pré-nota -> nota de compra. Robert, 29/03/2023
 		::Setores   = 'SAF'
+		::ViaBatch  = .F.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Pre-nota de compra sem NF de entrada'
 		::Sugestao  = 'Revise notas de entrada e pre-notas'
-		::ViaBatch  = .F.
 		::QuandoUsar = "Antes de gerar as notas de compra."
 		::Query := ""
 		::Query += "SELECT ZZ9_FILIAL AS FILIAL,ZZ9_PRE_NF AS PRE_NF,ZZ9_FORNEC AS ASSOC,ZZ9_LOJA AS LOJA,ZZ9_QUANT AS PESO,"
@@ -1161,6 +1176,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 17
 		::Setores   = 'FIS'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'NF-e nao autorizada junto a SEFAZ'
@@ -1190,12 +1206,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 18
 		::Setores   = 'SAF'
+		::ViaBatch   = .F.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Diferenca entre NF de entrada e de compra'
 		::Sugestao  = 'Revise notas de safra. Pode ter faltado contranota para algum associado.'
 		::QuandoUsar = "Apos gerar as contranotas de compra."
-		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " WITH E AS (SELECT FILIAL,ASSOCIADO,LOJA_ASSOC,PRODUTO,GRAU,SUM(PESO_LIQ) AS PESO_LIQ"
 		::Query += " FROM   VA_VNOTAS_SAFRA"
@@ -1221,6 +1237,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 19
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Dados adicionais inconsistentes na contranota'
@@ -1264,11 +1281,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 20
 		::Ativa     = .F.  // Em 2020, por exemplo, algumas classificacoes (mat.estranho, maturacao, ...) nao foram consideradas.
 		::Setores   = 'SAF'
+		::ViaBatch  = .F.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Cargas com inconsistencia entre classificacoes da uva fina'
 		::Sugestao  = 'Revise notas'
-		::ViaBatch  = .F.
 		::QuandoUsar = "Antes de gerar as pre-notas de compra."
 		::Query := ""
 		::Query += " WITH C AS ("
@@ -1305,9 +1322,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 21
 		::Setores    = 'CUS'
+		::ViaBatch   = .F.
 		::Descricao  = 'OP produzida sem nenhum consumo'
 		::Sugestao   = 'Revise OP'
-		::ViaBatch   = .F.
 		::Query := ""
 		::Query += "SELECT D3_FILIAL AS FILIAL, D3_OP AS OP, D3_COD AS PROD_FINAL, SUM (D3_QUANT) AS QT_PRODUZIDA,"
 		::Query +=       " SUM (D3_PERDA) AS QT_PERDA, dbo.VA_DTOC (MAX (D3_EMISSAO)) AS ULTIMO_MOVTO"
@@ -1329,12 +1346,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 22
 		::Setores    = 'SAF'
+		::ViaBatch   = .F.
 		::GrupoPerg  = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao  = 'Variedade/grau sem preco de compra definido'
 		::Sugestao   = 'Revise cadastro de precos de uvas para safra'
 		::LiberZZU   = {'051','045'} 
-		::ViaBatch   = .F.
 		::QuandoUsar = "Antes de gerar as pre-notas de compra."
 		::Query := ""
 		::Query += "SELECT DISTINCT PRODUTO, DESCRICAO, GRAU"
@@ -1355,13 +1372,13 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 
 	case ::Numero == 23
-		::Setores    = 'SAF'
+		::Setores   = 'SAF'
+		::ViaBatch  = .F.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao  = 'Variacao preco convencional/bordadura/conversao/organica fora do padrao'
 		::Sugestao   = 'Revise cadastro de precos de uvas para safra'
 		::LiberZZU  = {'051'} 
-		::ViaBatch  = .F.
 		::QuandoUsar = "Antes de gerar as pre-notas de compra."
 		::Query := ""
 		::Query += "WITH C AS ("
@@ -1399,11 +1416,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 24
 		::Setores    = 'PCP'
+		::ViaBatch   = .F.
 		::GrupoPerg  = "U_VALID001"
 		::ValidPerg (_lDefault)
 		::Descricao  = 'OP tem etiquetas nao guardadas'
 		::Sugestao   = 'Revise movimentação das etiquetas e batches de integração com FullWMS'
-		::ViaBatch   = .F.
 		::QuandoUsar = 'A qualquer momento, principalmente antes de encerrar alguma OP'
 		::Dica       = 'Devido à integração entre o Protheus e o FullWMS, foi criado o conceito de apontamentos de produção com etiquetas, onde cada etiqueta representa um pallet.'
 		::Dica      += 'Os apontamentos de produção (dos produtos que operam com FullWMS) são feitos em almoxarifado específico (11) onde ficam aguardando integração com o FullWMS.'
@@ -1477,6 +1494,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Ativa     = .F.
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Associado nao consta como patriarca nesta safra'
@@ -1501,6 +1519,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 26
 		::Setores   = 'PCP/CUS/CTB'
+		::ViaBatch  = .T.
 		::Descricao = 'Diferenca saldo estq do produto X lotes X enderecos'
 		::Sugestao  = 'Reprocesse saldo atual; possivelmente nao tenha sido gerado lote inicial (telas MATA805 ou MATA390); verifique fechamento (SB9 x SBJ x SBK); verifique movimentacao.'
 		::Dica      = 'Produtos que controlam rastro (B1_RASTRO=L) e localização (B1_LOCALIZ=S) obrigam o controle de saldos em 3 tabelas distintas:'
@@ -1516,6 +1535,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 27
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = 'OP teve consumo no mes atual e apontamento em meses posteriores'
 		::Sugestao   = 'Revise datas de movimentacoes da OP'
 		::QuandoUsar = "Antes de iniciar as rotinas de fechamento de custo médio."
@@ -1548,9 +1568,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 28
 		::Setores    = 'CUS'
+		::ViaBatch   = .F.
 		::Descricao  = 'OP com valores totais de RE x PR inconsistentes'
 		::Sugestao   = 'Revise custo dos movimentos da OP na tabela SD3.'
-		::ViaBatch   = .F.
 		::GrupoPerg = "U_VALID028"
 		::ValidPerg (_lDefault)
 		::QuandoUsar = "Apos rodar o custo medio."
@@ -1590,6 +1610,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 29
 		::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'ENG/FAT'
+		::ViaBatch  = .T.
 		::Descricao  = "Cadastro produto tem o campo " + upper (alltrim (RetTitle ("B1_PESO"))) + " maior que o campo " + upper (alltrim (RetTitle ("B1_PESBRU")))
 		::QuandoUsar = 'A qualquer momento.'
 		::Dica       = 'Tabelas envolvidas: SB1'
@@ -1605,9 +1626,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 30
 		::Setores    = 'PCP'
+		::ViaBatch   = .T.
 		::Descricao  = "Empenho do endereco (tabela SBF) inconsistente com a composicao do empenho (tabela SDC)."
 		::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo BF_EMPENHO manualmente."
-		::ViaBatch   = .T.
 		::Query := ""
 		::Query += "WITH C AS ("
 		::Query += " SELECT SBF.BF_FILIAL AS FILIAL, SBF.BF_LOCAL AS ALMOX, SBF.BF_LOCALIZ AS ENDERECO,"
@@ -1637,9 +1658,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 31
 		::Setores    = 'PCP'
+		::ViaBatch   = .T.
 		::Descricao  = "Empenho do lote (tabela SB8) inconsistente com a composicao do empenho (tabela SDC)."
 		::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo B8_EMPENHO manualmente."
-		::ViaBatch   = .T.
 		::Query := ""
 		::Query += "WITH C AS ("
 		::Query += " SELECT SB8.B8_FILIAL AS FILIAL, SB8.B8_LOCAL AS ALMOX, "
@@ -1668,6 +1689,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 32
 		::Setores    = 'FIS'
+		::ViaBatch  = .T.
 		::Descricao  = "Pre-notas fiscais de entrada sem classificacao"
 		::Sugestao   = "Classifique (ou exclua, se forem indevidas) as pre-notas no modulo de compras ou estoque."
 		::Query := ""	
@@ -1681,6 +1703,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 33
 		::Setores    = 'PCP'
+		::ViaBatch  = .T.
 		::Descricao  = "Produtos com saldo a enderecar"
 		::Sugestao   = "Execute rotina de enderecamento de produtos ou exclua o documento que gerou o saldo."
 		::Query := ""	
@@ -1698,6 +1721,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 34
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = "Inconsistencia entre tabelas SD3 (mov.internos) e SD5 (mov.lotes)"
 		::Sugestao   = "Verifique movimentacao."
 		::GrupoPerg  = "U_VALID002"
@@ -1734,12 +1758,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 35
 		::Setores    = 'CUS'
+		::ViaBatch   = .F.
 		::Descricao  = "Inconsistencia entre tabelas fechto estoque SB9 x SBJ x SBK"
 		::Sugestao   = "Verifique movimentacao e virada de saldos."
 		::GrupoPerg  = "U_VALID006"
 		::ValidPerg (_lDefault)
 		::QuandoUsar = "Apos fazer a virada de saldos do estoque."
-		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " WITH _SBJ AS ("
 		::Query += " SELECT BJ_FILIAL, SBJ.BJ_COD, SBJ.BJ_LOCAL, SBJ.BJ_DATA, SUM (SBJ.BJ_QINI) AS QT_SBJ"
@@ -1777,9 +1801,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 36
 		::Setores    = 'PCP'
+		::ViaBatch   = .T.
 		::Descricao  = "Empenho lote/endereco (tabela SDC) relacionado a OP inexistente ou ja encerrada."
 		::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo DC_QUANT manualmente."
-		::ViaBatch   = .T.
 		::Query := ""
 		::Query += " SELECT SDC.DC_FILIAL,"
 		::Query +=        " SDC.DC_PRODUTO,"
@@ -1801,6 +1825,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 37
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Almox inexistente na tabela de saldos"
 		::Sugestao   = "Verifique movimentacao e tabela de saldos (SB2)"
 		::QuandoUsar = "A qualquer momento"
@@ -1818,6 +1843,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 38
 		::Setores    = 'PCP'
+		::ViaBatch  = .T.
 		::Descricao  = "Estrutura sobreposta"
 		::Sugestao   = "Verificar estruturas dos itens"
 		::Query := ""
@@ -1844,10 +1870,10 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 39
 		::Setores    = 'CUS'
+		::ViaBatch   = .F.
 		::Descricao  = "Transferência entre filiais com custos diferentes"
 		::Sugestao   = "Verifique movimentacao."
 		::QuandoUsar = "Após rodar o custo médio."
-		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT D1_DTDIGIT AS DT_DIGIT "
 		::Query +=      " , D1_FILIAL AS FILIAL_NFE "
@@ -1878,6 +1904,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	
 	case ::Numero == 40
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Transferência entre filiais - Um TES altera estoque o a outro não altera"
 		::Sugestao   = ""
 		::Query := ""
@@ -1932,6 +1959,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 41
 		::Ativa = .F.  // Ninguem usa e estava demorando 3 horas para rodar... Robert, 10/11/2022
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Movimento fora do período de emissão/encerramento OP"
 		::Sugestao   = ""
 		::Query := ""
@@ -1972,13 +2000,13 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 42
 		::Setores    = 'CUS'
+		::ViaBatch   = .F.
 		::Descricao  = "Quantidade ou valor negativo para fechamento"
 		::Sugestao   := "Toda vez que é rodado o custo médio, o sistema grava na tabela SB2 os campos B2_QFIM e B2_VFIM1 que são, respectivamente, quantidade e valor (custo na moeda 1) que ele encontrou na data final do cálculo."
 		::Sugestao   += "Se foi rodado o médio automaticamente à noite, o cálculo é feito até a data atual, e esses seriam a quantidade e valor que o sistema apurou até o momento."
 		::Sugestao   += "Se foi executado o cálculo para fazer o fechamento de estoque, então serão os valores apurados até o dia 31 do mês a ser fechado."
 		::Sugestao   += "Essa quantidade e valor devem ser os mesmos a que você chegará se emitir o kardex diário (MATR900)."
 		::Sugestao   += "Para saber o motivo de ficarem negativos, você teria que emitir esse relatório para analisar, preferencialmente um almoxarifado por vez. Lembrar de parametrizar o intervalo de datas desde o primeiro dia do mês que está aberto no estoque. Já a data final, depende de qual cálculo de médio foi realizado antes de consultar essa verificação (se foi até a data atual, ou até o último dia do mês a encerrar)."
-		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT"
 		::Query += "	'Quantidade ou valor negativo para fechamento' AS PROBLEMA"
@@ -1999,9 +2027,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 43
 		::Setores    = 'CUS'
+		::ViaBatch   = .F.
 		::Descricao  = "Quantidade sem valor para fechamento ou vice-versa"
 		::Sugestao   = ""
-		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT 'Quantidade sem valor para fechamento ou vice-versa' AS PROBLEMA"
 		::Query +=       ", B2_LOCAL AS ALMOX"
@@ -2026,9 +2054,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 44
 		::Setores    = 'CUS'
+		::ViaBatch   = .F.
 		::Descricao  = "NF de saída com custo zerado ou negativo"
 		::Sugestao   = ""
-		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT"	
 		::Query += "	'NF de saída com custo zerado ou negativo' AS PROBLEMA"
@@ -2052,6 +2080,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 45
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Inconsistencia entre tabelas e parametros"
 		::Sugestao   = ""
 		::Query := ""
@@ -2096,6 +2125,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 46
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Volume de acucar acima do limite"
 		::GrupoPerg  = "U_VALID046"
 		::ValidPerg (_lDefault)
@@ -2132,6 +2162,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 47
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Uva in natura com saldo (fora de período safra)"
 		::Sugestao   = ""
 		::Query := ""
@@ -2158,48 +2189,47 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 48
 		::Ativa      = .F.  // Nao temos previsao de voltar a operar com deposito fechado. Robert, 29/03/2023
+		::Filiais    = '01'
 		::Setores    = 'CUS'
-		if cNumEmp == '0101'  // Nao se aplica as demais filiais.
-			::Descricao  = "NF saida/retorno depósito cujos TES não foram trocados p/TES de fechamento"
-			::Sugestao   = ""
-			::Query := ""
-			::Query += " SELECT "	
-			::Query += " 	'NF saida/retorno depósito cujos TES não foram trocados p/TES de fechamento' AS PROBLEMA"
-			::Query += "    ,'Saida' AS TIPO"
-			::Query += "    ,D2_DOC AS NF"
-			::Query += "    ,D2_TES AS TES"
-			::Query += " FROM " + RetSQLName ("SD2") + " SD2"
-			::Query += " 	 ," + RetSQLName ("SF4") + " SF4"
-			::Query += " WHERE SF4.D_E_L_E_T_ = ''"
-			::Query += " AND SF4.F4_FILIAL = '" + xfilial ("SF4") + "'"
-			::Query += " AND SF4.F4_CODIGO = SD2.D2_TES"
-			::Query += " AND SF4.F4_VATESFM <> ''"
-			::Query += " AND SF4.F4_ESTOQUE = 'N'"
-			::Query += " AND SD2.D_E_L_E_T_ = ''"
-			::Query += " AND SD2.D2_FILIAL = '" + xfilial ("SD2") + "'"
-			::Query += " AND SD2.D2_EMISSAO BETWEEN '" + ::MesAtuEstq + "01' AND '" + dtos (lastday (stod (::MesAtuEstq + '01'))) + "'"
-			::Query += " UNION ALL"
-			::Query += " SELECT"
-			::Query += " 	'NF saida/retorno depósito cujos TES não foram trocados p/TES de fechamento' AS PROBLEMA"
-			::Query += "    ,'Entrada' AS TIPO"
-			::Query += "    ,D1_DOC AS NF"
-			::Query += "    ,D1_TES AS TES"
-			::Query += " FROM " + RetSQLName ("SD1") + " SD1"
-			::Query += " 	 ," + RetSQLName ("SF4") + " SF4"
-			::Query += " WHERE SF4.D_E_L_E_T_ = ''"
-			::Query += " AND SF4.F4_FILIAL = '" + xfilial ("SF4") + "'"
-			::Query += " AND SF4.F4_CODIGO = SD1.D1_TES"
-			::Query += " AND SF4.F4_VATESFM <> ''"
-			::Query += " AND SF4.F4_ESTOQUE = 'N'"
-			::Query += " AND SD1.D_E_L_E_T_ = ''"
-			::Query += " AND SD1.D1_FILIAL = '" + xfilial ("SD1") + "'"
-			::Query += " AND SD1.D1_DTDIGIT BETWEEN '" + ::MesAtuEstq + "01' AND '" + dtos (lastday (stod (::MesAtuEstq + '01'))) + "'"
-		else
-			::Descricao  = " NÃO SE APLICA A ESTA FILIAL"
-		endif
+		::ViaBatch  = .T.
+		::Descricao  = "NF saida/retorno depósito cujos TES não foram trocados p/TES de fechamento"
+		::Sugestao   = ""
+		::Query := ""
+		::Query += " SELECT "	
+		::Query += " 	'NF saida/retorno depósito cujos TES não foram trocados p/TES de fechamento' AS PROBLEMA"
+		::Query += "    ,'Saida' AS TIPO"
+		::Query += "    ,D2_DOC AS NF"
+		::Query += "    ,D2_TES AS TES"
+		::Query += " FROM " + RetSQLName ("SD2") + " SD2"
+		::Query += " 	 ," + RetSQLName ("SF4") + " SF4"
+		::Query += " WHERE SF4.D_E_L_E_T_ = ''"
+		::Query += " AND SF4.F4_FILIAL = '" + xfilial ("SF4") + "'"
+		::Query += " AND SF4.F4_CODIGO = SD2.D2_TES"
+		::Query += " AND SF4.F4_VATESFM <> ''"
+		::Query += " AND SF4.F4_ESTOQUE = 'N'"
+		::Query += " AND SD2.D_E_L_E_T_ = ''"
+		::Query += " AND SD2.D2_FILIAL = '" + xfilial ("SD2") + "'"
+		::Query += " AND SD2.D2_EMISSAO BETWEEN '" + ::MesAtuEstq + "01' AND '" + dtos (lastday (stod (::MesAtuEstq + '01'))) + "'"
+		::Query += " UNION ALL"
+		::Query += " SELECT"
+		::Query += " 	'NF saida/retorno depósito cujos TES não foram trocados p/TES de fechamento' AS PROBLEMA"
+		::Query += "    ,'Entrada' AS TIPO"
+		::Query += "    ,D1_DOC AS NF"
+		::Query += "    ,D1_TES AS TES"
+		::Query += " FROM " + RetSQLName ("SD1") + " SD1"
+		::Query += " 	 ," + RetSQLName ("SF4") + " SF4"
+		::Query += " WHERE SF4.D_E_L_E_T_ = ''"
+		::Query += " AND SF4.F4_FILIAL = '" + xfilial ("SF4") + "'"
+		::Query += " AND SF4.F4_CODIGO = SD1.D1_TES"
+		::Query += " AND SF4.F4_VATESFM <> ''"
+		::Query += " AND SF4.F4_ESTOQUE = 'N'"
+		::Query += " AND SD1.D_E_L_E_T_ = ''"
+		::Query += " AND SD1.D1_FILIAL = '" + xfilial ("SD1") + "'"
+		::Query += " AND SD1.D1_DTDIGIT BETWEEN '" + ::MesAtuEstq + "01' AND '" + dtos (lastday (stod (::MesAtuEstq + '01'))) + "'"
 		
 	case ::Numero == 49
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Produto deveria ter estrutura"
 		::Sugestao   = ""
 		::Query := ""
@@ -2233,6 +2263,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 50
 		::Ativa      = .F.  // Atende de forma muito parcial. Ex: dessulfitados, 'antecede envase' e reprocessados acusariam sempre erro. Robert, 29/03/2023
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Produto deste tipo deveria ter insumos na estrutura"
 		::Sugestao   = ""
 		::Query := ""
@@ -2264,6 +2295,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 51
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Produto deste tipo deveria ter mao de obra na estrutura"
 		::Sugestao   = ""
 		::Query := ""
@@ -2303,9 +2335,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 52
 		::Setores    = 'CUS'
+		::ViaBatch   = .F.
 		::Descricao  = "Produto tipo BN com saldo para fechamento"
 		::Sugestao   = ""
-		::ViaBatch   = .F.
 		::Query := ""
 		::Query += " SELECT"
 		::Query += " 	'Produto tipo BN com saldo para fechamento' AS PROBLEMA"
@@ -2329,6 +2361,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 53
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "NF entrada tem BN sem OP ou OP inconsistente"
 		::Sugestao   = ""
 		::Query := ""
@@ -2370,6 +2403,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 54
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "OP sem mao de obra"
 		::Sugestao   = ""
 		::Query := ""
@@ -2404,6 +2438,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 55
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Centro de custo nao pertence a esta filial"
 		::Query := ""
 		::Query += " SELECT"
@@ -2427,46 +2462,46 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += " ORDER BY D3_OP"
 		
 	case ::Numero == 56
+		::Filiais    = '01'
 		::Ativa      = .F.  // No momento nao temos previsao de voltar a operar com deposito fechado. Robert, 29/03/2023
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::GrupoPerg  = "U_VALID056"
 		::ValidPerg (_lDefault)
-		if cNumEmp == '0101'  // Nao se aplica as demais filiais.
-			::Descricao  = "Produto negativo no almox. retorno simbolico para matriz"
-			::Sugestao   = ""
-			::Query := ""
-			::Query += " SELECT "
-			::Query += " 	'Produto negativo no almox. retiro simbolico para matriz' AS PROBLEMA"
-			::Query += "    ,B2_FILIAL AS Filial"
-			::Query += "    ,B2_LOCAL AS Almox"
-			::Query += "    ,B2_COD AS Produto"
-			::Query += "    ,B1_DESC AS Descricao"
-			::Query += "    ,B2_QFIM AS Sld_quant"
-			::Query += "    ,B2_VFIM1 AS Sld_valor"
-			::Query += " FROM " + RetSQLName ("SB2") + " SB2"
-			::Query += " 	 ," + RetSQLName ("SB1") + " SB1"
-			::Query += " WHERE SB2.D_E_L_E_T_ = ''"
-			::Query += " AND SB2.B2_FILIAL IN (SELECT"
-			::Query += " 		X5_CHAVE"
-			::Query += " 	FROM " + RetSQLName ("SX5") + " SX5"
-			::Query += " 	WHERE SX5.D_E_L_E_T_ = ''"
-			::Query += " 	AND SX5.X5_FILIAL = '" + xfilial ("SX5") + "'"
-			::Query += " 	AND SX5.X5_TABELA = 'ZS')"
-			::Query += " AND SB2.B2_LOCAL = '" + ::Param01 + "'"
-			::Query += " AND (SB2.B2_QFIM < 0"
-			::Query += " OR B2_VFIM1 < 0)"
-			::Query += " AND SB1.D_E_L_E_T_ = ' '"
-			::Query += " AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
-			::Query += " AND SB1.B1_COD = B2_COD"
-			::Query += " ORDER BY B2_FILIAL, B2_LOCAL, B2_COD"
-		else
-			::Descricao  = " NÃO SE APLICA A ESTA FILIAL"
-		endif		
-		
+		::Descricao  = "Produto negativo no almox. retorno simbolico para matriz"
+		::Sugestao   = ""
+		::Query := ""
+		::Query += " SELECT "
+		::Query += " 	'Produto negativo no almox. retiro simbolico para matriz' AS PROBLEMA"
+		::Query += "    ,B2_FILIAL AS Filial"
+		::Query += "    ,B2_LOCAL AS Almox"
+		::Query += "    ,B2_COD AS Produto"
+		::Query += "    ,B1_DESC AS Descricao"
+		::Query += "    ,B2_QFIM AS Sld_quant"
+		::Query += "    ,B2_VFIM1 AS Sld_valor"
+		::Query += " FROM " + RetSQLName ("SB2") + " SB2"
+		::Query += " 	 ," + RetSQLName ("SB1") + " SB1"
+		::Query += " WHERE SB2.D_E_L_E_T_ = ''"
+		::Query += " AND SB2.B2_FILIAL IN (SELECT"
+		::Query += " 		X5_CHAVE"
+		::Query += " 	FROM " + RetSQLName ("SX5") + " SX5"
+		::Query += " 	WHERE SX5.D_E_L_E_T_ = ''"
+		::Query += " 	AND SX5.X5_FILIAL = '" + xfilial ("SX5") + "'"
+		::Query += " 	AND SX5.X5_TABELA = 'ZS')"
+		::Query += " AND SB2.B2_LOCAL = '" + ::Param01 + "'"
+		::Query += " AND (SB2.B2_QFIM < 0"
+		::Query += " OR B2_VFIM1 < 0)"
+		::Query += " AND SB1.D_E_L_E_T_ = ' '"
+		::Query += " AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
+		::Query += " AND SB1.B1_COD = B2_COD"
+		::Query += " ORDER BY B2_FILIAL, B2_LOCAL, B2_COD"
+
+
 	case ::Numero == 57
 		::Ativa      = .F.  // Em tempos muito antigos, remetíamos para estocagem em terceiros controlando apenas poder de terceiros. O estoque era controlado via transferência para outro almoxarifado. Não usamos mais esse procedimento. Robert, 29/03/2023
 		::Descricao  = "Transferencia entre almox.ref.NF cujo TES ja movimentou estoque"
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Query := ""
 		::Query += " SELECT"
 		::Query += " 	'Transferencia entre almox.ref.NF cujo TES ja movimentou estoque' AS PROBLEMA"
@@ -2526,6 +2561,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 58
 		::Ativa      = .F.  // Em tempos muito antigos, remetíamos para estocagem em terceiros controlando apenas poder de terceiros. O estoque era controlado via transferência para outro almoxarifado. Não usamos mais esse procedimento. Robert, 29/03/2023
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Inconsistencia transferencia alm.3os X NF saida"
 		::Query := ""
 		::Query += " WITH D3"
@@ -2633,6 +2669,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 59
 		::Ativa      = .F.  // Jah desativado anteriormente. Em tempos muito antigos, remetíamos para estocagem em terceiros controlando apenas poder de terceiros. O estoque era controlado via transferência para outro almoxarifado. Não usamos mais esse procedimento. Robert, 29/03/2023
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Inconsistencia transferencia almox.3os X NF entrada"
 		::Query := ""
 		::Query += " WITH D3"
@@ -2740,6 +2777,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 60
 		::Ativa      = .F.  // Em tempos muito antigos, remetíamos para estocagem em terceiros controlando apenas poder de terceiros. O estoque era controlado via transferência para outro almoxarifado. Não usamos mais esse procedimento. Robert, 29/03/2023
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Transferencia entre almox. amarrada a diferentes itens da NF"
 		::Query := ""
 		::Query += " SELECT"
@@ -2777,6 +2815,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 61
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Campo D3_NUMSEQ não pode ter repetição"
 		::Query := ""
 		::Query += " SELECT"
@@ -2794,6 +2833,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	
 	case ::Numero == 62
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "Movimentação com data futura"
 		::Query := ""
 		::Query += " SELECT"
@@ -2836,6 +2876,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 63
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "OP com multiplos custos de producao"
 		::QuandoUsar = 'Após o recálculo do custo médio e antes da virada de saldos.'
 		::Dica       = 'Mesmo trabalhando com apontamentos parciais (palete a palete), desejamos que todos entrem ao mesmo custo.'
@@ -2902,6 +2943,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			
 	case ::Numero == 64
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "OP com litragem inconsistente"
 		::Query := ""
 		::Query += " WITH C"
@@ -2946,6 +2988,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 65
 		::Setores    = 'CTB'
+		::ViaBatch  = .T.
 		::Descricao  = 'Confere cadastro de lancamentos padronizados'
 		::Sugestao   = "Revisar o cadastro de lançamentos padrão. Conferir se, no campo ORIGEM, estão informados o mesmo código e sequência do próprio lançamento."
 		::QuandoUsar = "A qualquer momento."
@@ -3075,6 +3118,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	
 	case ::Numero == 66
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = 'Produtos fantasmas nao deveriam ter estoque'	
 		::Query := ""
 		::Query += " SELECT
@@ -3098,6 +3142,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 67
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = 'Lançamento padrao referenciando mais de uma tabela'	
 		::QuandoUsar = 'A qualquer momento.'
 		::Dica       = 'Os lctos padrão costumam ser rodados pelo sistema em momentos específicos em que determinada tabela está posicionada.'
@@ -3140,6 +3185,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 68
 		::Setores    = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao  = 'Quantidade para fechamento diferente do final do kardex'
 		::QuandoUsar = 'Imediatamente após rodar o custo médio, e desde que seja a rodada de médio PARA FECHAMENTO e não o médio que roda diariamente de forma automática.'
 		::Dica       = 'Esta verificação parte do último fechamento, acrescenta entradas e saídas, compõe um saldo final para o mês e, em seguida, verifica se esse saldo bate com o camp B2_QFIM, que foi calculado pela rotina de custo médio."
@@ -3194,6 +3240,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 69
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Grupos: Acesso repetido (deveria estar apenas no grupo GERAL)'
 		::Query := ""
 		::Query += " WITH C AS ("
@@ -3215,6 +3262,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 70
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Usuarios: Diretorio impressao errado, ambiente != cliente ou destino != arquivo'
 		::Query := ""
 		::Query += " SELECT P.USR_ID, U.USR_CODIGO, P.USR_DIRIMP"
@@ -3233,6 +3281,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Ativa     = .F.  // Grupos agora representam funcoes (das pessoas) e nao mais modulos. Robert, 30/08/2021
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Grupos: Grupo deve fornecer apenas acesso a modulos e nao a funcionalidades'
 		::Query := ""
 		::Query += "SELECT TIPO_ACESSO, G.ID_GRUPO, RTRIM (G.DESCRICAO) AS DESCR_GRUPO, ACESSO"
@@ -3247,6 +3296,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 72
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Grupos: Nenhum grupo deveria ter este acesso'
 		::Query := ""
 		::Query += " SELECT G.GR__NOME, GA.GR__CODACESSO, GA.GR__DESCACESSO"
@@ -3262,6 +3312,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 73
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Usuarios: Usuario nao deveria ter acesso a configurar data base. Deve ser um acesso dos grupos.'
 		::Query := ""
 		::Query += "SELECT USR_ID, USR_CODIGO"
@@ -3275,6 +3326,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 74
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Usuarios: Usuario nao deveria ter ACESSOS ligados a ele. Os ACESSOS deveriam ser dados aos grupos.'
 		::Query := ""
 		::Query += "WITH C AS (
@@ -3304,6 +3356,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Ativa     = .F.  // Temos apenas 1 grupo generico por enquanto. Robert, 30/08/2021
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Grupos: Todos os grupos genericos deveriam ter estes acessos.'
 		::Query := ""
 		::Query += "SELECT G.TIPO_GRUPO, G.ID_GRUPO, G.GRUPO, G.DESCRICAO"
@@ -3320,6 +3373,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 76
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Grupos: Todos os grupos deveriam ter privilegio 000002.'
 		::Query := ""
 		::Query += "SELECT G.GR__ID, G.GR__CODIGO, G.GR__NOME"
@@ -3336,6 +3390,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 77
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Pessoa do Metadados referenciando mais de um usuario no Protheus'
 		::Query := ""
 		::Query += "SELECT *"
@@ -3348,6 +3403,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 78
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Usuarios Protheus nao relacionados a nenhuma pessoa do Metadados'
 		::Query := ""
 		::Query += "SELECT PROTHEUS_ID, PROTHEUS_USER, PROTHEUS_NOME, PROTHEUS_CARGO"
@@ -3375,6 +3431,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 79
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Pessoas demitidas cujo usuario nao foi bloqueado no Protheus'
 		::Query := ""
 		::Query += "SELECT *"
@@ -3390,6 +3447,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 80
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Ninguem deveria ter ACESSO A TODAS AS EMP/FILIAIS setado no configurador. Usar para isso os grupos FILIAL_'
 		::Query := ""
 		::Query += " SELECT 'GRUPO ' + GR__ID AS CODIGO, GR__CODIGO, GR__NOME"
@@ -3409,6 +3467,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 81
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Ninguem deveria ter acesso a filiais setado no configurador. Usar para isso os grupos FILIAL_'
 		::Query := ""
 		::Query += " SELECT 'GRUPO ' + SYS_GRP_FILIAL.GR__ID AS CODIGO, SYS_GRP_GROUP.GR__CODIGO, SYS_GRP_GROUP.GR__NOME, CAST (STRING_AGG (RTRIM (SYS_GRP_FILIAL.GR__FILIAL), ',') AS VARCHAR (50)) AS FILIAIS"
@@ -3432,6 +3491,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 82
 		::Filiais   = '*'
 		::Setores   = 'CUS'
+		::ViaBatch  = .T.
 		::Descricao = 'Itens de mao de obra devem estar amarrados ao CC correspondente'
 		::Query := "" 
 		::Query += "SELECT 'Item de mao de obra amarrado a CC errado' as PROBLEMA, B1_COD, B1_CCCUSTO, B1_GCCUSTO, B1_DESC"
@@ -3444,6 +3504,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 83
 		::Setores    = 'PCP/MNT'
+		::ViaBatch  = .T.
 		::Descricao  = "Empenho item (tabela SD4) relacionado a OP/OS inexistente ou ja encerrada."
 		::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo D4_QUANT manualmente."
 		::Query := ""
@@ -3461,7 +3522,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=    " AND SD4.D_E_L_E_T_ = ''"
 		::Query +=    " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
 		::Query +=    " AND SD4.D4_QUANT  != 0"
-
 		::Query +=    " AND NOT EXISTS (SELECT *"
 		::Query +=                      " FROM " + RetSQLName ("SC2") + " SC2 "
 		::Query +=                     " WHERE SC2.D_E_L_E_T_ = ''"
@@ -3472,6 +3532,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 84
 		::Setores    = 'CUS/CTB/INF'
+		::ViaBatch  = .T.
 		::Descricao  = "Inconsistência virada saldos estoque"
 		::Sugestao   = "Revise se a virada de saldos foi finalizada corretamente."
 		::GrupoPerg = "U_VALID007"
@@ -3505,6 +3566,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 85
 		::Ativa     = .F.  // A procedure VA_SP_VERIFICA_ETIQ_PRODUCAO nunca ficou boa. Vou elimina-la.
 		::Setores   = 'PCP/PROD/LOG'
+		::ViaBatch  = .T.
 		::Descricao = 'Problemas em etiquetas de producao'
 		::Sugestao  = 'Verificar movimentacao da etiqueta. Possivelmente falte algum processo.'
 		::GrupoPerg = "U_VALID008"
@@ -3522,6 +3584,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 86
 		::Filiais   = '01'  // Gero todas as filiais juntas.
 		::Setores   = 'SAF'
+		::ViaBatch  = .T.
 		::Descricao = 'Inconsistencia frete safra'
 		::Sugestao  = 'Verificar calculo do frete (tabela SZF) e gravacao das tabelas SD1 e SF1.'
 		::GrupoPerg = "U_VALID009"
@@ -3553,6 +3616,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 87
 		::Filiais   = '01'  // Gero todas as filiais juntas.
 		::Setores   = 'FIS/INF'
+		::ViaBatch  = .T.
 		::Descricao = 'Parametrização TSS para envio de DANFe'
 		::Sugestao  = 'Rodar wizard de configuracao do TSS'
 		::Query := ""
@@ -3583,6 +3647,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 88
 		::Filiais    = '01'  // Gero todas as filiais juntas.
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Gatilhos fazendo referência a uma sequência errada'
 		::QuandoUsar = 'A qualquer momento'
 		::Sugestao   = 'Ajustar configurações dos gatilhos no configurador.'
@@ -3602,6 +3667,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 89
 		::Filiais   = '01'  // Gero todas as filiais juntas.
 		::Setores   = 'FIS/INF'
+		::ViaBatch  = .T.
 		::Descricao = 'TSS em homologação'
 		::Sugestao  = 'Verificar parametrizacao para cada tipo de documento'
 		::Query := ""
@@ -3628,6 +3694,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 90
 		::Filiais   = '01'  // Usamos o modulo de manutencao somente ma filial 01.
 		::Setores   = 'INF/MNT'
+		::ViaBatch  = .T.
 		::Descricao = 'Inconsistência movto. insumos OS x Estoque'
 		::Sugestao  = 'Verificar movimentacao tabelas STL x SD3'
 		::GrupoPerg = "U_VALID002"
@@ -3678,6 +3745,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 91
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Profile poderia ser excluido para usuarios demitidos.'
 		::Query := " SELECT U.USR_ID, U.USR_CODIGO"
 		::Query +=       ", CASE WHEN U.D_E_L_E_T_ = '*' THEN 'DELETADO' ELSE '' END AS USR_DELETADO"
@@ -3711,6 +3779,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 92
 		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 		::Setores    = 'INF'
+		::ViaBatch  = .T.
 		::Descricao  = 'Usuarios: Timeout nao deveria estar configurado no usuario nem no grupo'
 		::Query := ""
 		::Query += " SELECT 'Usuario ' as origem, U.USR_ID, U.USR_CODIGO, U.USR_TIMEOUT"
@@ -3727,6 +3796,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 93
 		::Setores   = 'CUS/CTB'
+		::ViaBatch  = .T.
 		::Descricao = "Nao levou custo correto da NF para a OP"
 		::Sugestao  = "Custo dos movimentos RE5 na tabela SD3 deve ser igual ao custo da NF que os gerou. Tente refazer custo das entradas."
 		::GrupoPerg = "U_VALID028"
@@ -3757,6 +3827,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 94
 		::Setores    = 'PCP/CUS'
+		::ViaBatch  = .T.
 		::Descricao  = "O.P. em aberto"
 		::Dica       = "Esta verificação não apresenta especificamente erros. Serve apenas como auxílio às rotinas de contagem de estoques."
 		::Sugestao   = "Verificar se as OPs encontram-se realmente em producao. Caso ainda nao iniciadas, avaliar a opcao de exclui-las."
@@ -3782,6 +3853,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 95
 		::Setores   = 'PCP'
+		::ViaBatch  = .T.
 		::Descricao = "OP encerrada com empenhos em aberto"
 		::Sugestao  = "Verificar se as OPs encontram-se realmente em producao."
 		::QuandoUsar = "A qualquer momento."
@@ -3802,6 +3874,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 96
 		::Setores    = 'CUS/CTB'
+		::ViaBatch  = .T.
 		::Descricao  = "Saldo negativo tabela fechamentos por lote/endereco"
 		::Sugestao   = "Verificar a movimentação, emitir kardex por lote, conferir se os movimentos foram gravados corretamente em todas as tabelas (SD5 quando usa lotes, e SDB quando usa endereçamento). Ajustar manualmente nas tabelas SBJ / SBK ou reabrir o mês e fechar novamente."
 		::QuandoUsar = "Antes de iniciar o processo de fechamento de estoques e novamente após a virada de saldos."
@@ -3836,6 +3909,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 97
 		::Setores    = 'CTB'
+		::ViaBatch  = .T.
 		::Descricao  = "Pre-lancamentos contabeis aguardando efetivacao"
 		::Sugestao   = "Encontrados pré-lançamentos contábeis (CT2_TPSALD=9). Verificar se devem ser conferidos/efetivados, ou excluídos definitivamente. Verificar se há necessidade de corrigir o lançamento padrão que originou eles."
 		::QuandoUsar = "A qualquer momento."
@@ -3864,6 +3938,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		_sLinkSrv = U_LkServer ('FULLWMS_AX01')
 		::Filiais    = '01'  // Somente operamos com FullWMS na matriz.
 		::Setores    = 'LOG/CUS/INF/AUD'
+		::ViaBatch  = .T.
 		::Descricao  = "Diferenca estoques Protheus x FullWMS"
 		::Sugestao   = "Verificar manualmente diferença de saldos entre os dois sistemas."
 		::QuandoUsar = "A qualquer momento."
@@ -4028,6 +4103,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 99
 		::Filiais    = '01'  // Vale para todas as filiais.
 		::Setores    = 'FIS'
+		::ViaBatch  = .T.
 		::Descricao  = "Chaves DF-e sem revalidadacao recente"
 		::Sugestao   = "Verificar se a rotina diaria de revalidacao está operando."
 		::QuandoUsar = "A qualquer momento."
