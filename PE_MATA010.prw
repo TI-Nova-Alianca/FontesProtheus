@@ -42,6 +42,7 @@
 //                        e tratamento especifico para itens 8146/8302/8531.
 // 20/10/2023 - Robert  - Desabilitadas chamadas da U_PerfMon() por que nao estou usando para nada.
 // 07/12/2023 - Claudia - Obrigar informar custo ao liberar um produto. GLPI: 14602
+// 08/12/2023 - Claudia - Não realizar a cópia dos campos B1_RASTRO e B1_LOCALIZ. GLPI: 14607
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -150,6 +151,8 @@ static function _NaoCopia ()
 	oModelB1:LoadValue("B1_UCALSTD",'')
 	oModelB1:LoadValue("B1_VARMAAL",'00000000000000') // CARREGAR PADRÃO
 	oModelB1:LoadValue("B1_VAFULLW",'')
+	oModelB1:LoadValue("B1_RASTRO",'')
+	oModelB1:LoadValue("B1_LOCALIZ",'')
 	// Atualiza campos na tela do usuario
 	oView := FwViewActive()
 	oView:Refresh ()
