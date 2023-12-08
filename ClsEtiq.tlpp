@@ -57,6 +57,9 @@
 // 01/11/2023 - Robert - Manda 1 dia a menos na tb_wms_etiqueta para evitar erro no Full "produto com validade menor que vida util do item"
 // 20/11/2023 - Robert - Busca :ValidLote no b8_dtvalid e nao mais no d5_dtvalid (data pode ter tido manutencao posterior)
 // 24/11/2023 - Robert - Na impressao originada por NF entrada, nao buscava o lote interno (GLPI 14550).
+// 07/12/2023 - Robert - No metodo :Recebe3() passa a gravar tambem o produto no evento de recebimento da etiqueta.
+//                     - Apesar de popular o atributo ::LoteProduto na geracao de atributos, sobrepunha (desnecessariamente) no metodo ::CmdImpr().
+//                     - Tratamento temporario e especifico para 8 etiq.impressas com lote errado - GLPI 14605
 //
 
 #Include "Protheus.ch"
@@ -282,6 +285,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 		_sDImpImp  = iif (::Impressa == 'S', 'Reimpr:', 'Dt.Impr:') + dtoc (date ()) + ' ' + time ()
 		_sVldLtImp = dtoc (::ValidLote)
 		_sDtFabImp = dtoc (::DtFabrLote)
+		_sLoteImp  = ::LoteProduto
 		if ::B1_VAFullW == 'S'
 			if empty (::B1_CodBar)
 				::SomaMsg ("Produto '" + alltrim (::Produto) + "' sem cod.DUN14 no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.")
@@ -299,7 +303,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 				_lContinua = .F.
 			else
 				_sDocImp  = 'Solic.transf:' + substr (::IdZAG, 1, 10) + '/' + substr (::IdZAG, 11, 2)
-				_sLoteImp = ::LoteProduto
+	//			_sLoteImp = ::LoteProduto
 				_sAlmOri  = zag -> zag_almori
 				_sObsImp1 = left ('Tr.alm.' + zag -> zag_almori + ' -> ' + zag -> zag_almdst + ' (' + alltrim (zag -> zag_usrinc) + ')', 31)
 				if zag -> zag_almdst != '01'  // Nao imprimir para nao aparecer 'devolucao', etc.
@@ -309,7 +313,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 
 		case ! empty (::OP)
 			_sOPImp   = substr (::OP, 1, 6) + '.' + substr (::OP, 7, 2) + '.' + substr (::OP, 9)
-			_sLoteImp = iif (! empty (::OP), substr (::OP, 1, 8), '')
+	//		_sLoteImp = iif (! empty (::OP), substr (::OP, 1, 8), '')
 			_sAlmOri = ::AlmOrig
 
 			// O cod.barras da OP sobrepoe o do produto, pois vai ser usado no apontamento.
@@ -330,7 +334,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			endif
 
 		case ! empty (::DocEntrNum)
-			_sLoteImp = ::LoteProduto
+	//		_sLoteImp = ::LoteProduto
 			_sDocImp = 'NF.' + alltrim (::DocEntrNum) + '/' + alltrim (::DocEntrSerie)
 			sa2 -> (dbsetorder (1))
 			if ! sa2 -> (dbseek (xfilial ("SA2") + ::DocEntrForn + ::DocEntrLoja, .F.))
@@ -342,7 +346,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			endif
 
 		case ! empty (::D5_NUMSEQ)  // Etiqueta gerada com base na tabela SD5.
-			_sLoteImp = ::LoteProduto
+	//		_sLoteImp = ::LoteProduto
 			_sAlmOri  = ::AlmOrig
 
 		otherwise
@@ -672,6 +676,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 			do case
 			case ! empty (::OP)
 				::LoteProduto = substring (::OP, 1, 8)
+
 				::AlmDest = sb1 -> b1_locpad
 				sc2 -> (dbsetorder (1))
 				if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
@@ -828,6 +833,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				::SomaMsg ("Impossivel determinar atributos adicionais (parte 2). Origem de etiqueta desconhecida.")
 				u_help (::UltMsg,, .t.)
 			endcase
+	//		U_Log2 ('debug', '[' + procname () + ']terminei o CASE com ::LoteProduto = ' + cvaltochar (::LoteProduto))
 		endif
 	endif
 
@@ -1520,6 +1526,7 @@ METHOD Recebe3 () Class ClsEtiq
 		_oEvento:Recno      = ZA1 -> (recno ())
 		_oEvento:OP         = ::OP
 		_oEvento:Etiqueta   = ::Codigo
+		_oEvento:Produto    = ::Produto
 		_oEvento:DiasValid  = 999
 		_oEvento:Grava ()
 
