@@ -19,9 +19,9 @@
 User Function VA_DA0PRO()
     private cPerg := "VA_DA0PRO"
 
-	//if ! U_ZZUVL ('129', __cUserID, .T.)
-	//	return
-	//endif
+	if ! U_ZZUVL ('156', __cUserID, .T.)
+		return
+	endif
 
 	_ValidPerg ()
 	pergunte (cPerg, .T.)
