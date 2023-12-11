@@ -185,7 +185,7 @@ METHOD AtuZAG (_sCampo, _xValor) Class ClsTrEstq
 
 	if ::RegZAG > 0
 		zag -> (dbgoto (::RegZAG))
-		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando campo ' + _sCampo + ' com conteudo ' + cvaltochar (_xValor))
+	//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando campo ' + _sCampo + ' com conteudo ' + cvaltochar (_xValor))
 		reclock ("ZAG", .F.)
 		zag -> &(_sCampo) = _xValor
 		msunlock ()
@@ -853,8 +853,8 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		_oSQL:_sQuery +=   " AND ZAG_SEQ    = '" + ::Seq + "'"
 		//_oSQL:Log ()
 		_aLib := aclone (_oSQL:Qry2Array (.F., .F.))
-		u_log2 ('debug', 'Liberadores alm ' + ::AlmOrig + '(origem) :' + alltrim (_aLib [1, 1]))
-		u_log2 ('debug', 'Liberadores alm ' + ::AlmDest + '(destino):' + alltrim (_aLib [1, 2]))
+		// u_log2 ('debug', 'Liberadores alm ' + ::AlmOrig + '(origem) :' + alltrim (_aLib [1, 1]))
+		// u_log2 ('debug', 'Liberadores alm ' + ::AlmDest + '(destino):' + alltrim (_aLib [1, 2]))
 		//u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
 			u_log2 ('info', 'Usuario ' + _sUserName + ' tem liberacao para o almox. origem')
@@ -1251,7 +1251,7 @@ METHOD PodeIncl () Class ClsTrEstq
 
 	// Verifica possiveis inconsistencias entre tabelas e disponibilidade de saldos 
 	if _lContinua
-		U_Log2 ('debug', '[' + procname () + ']Vou validar estoque')
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou validar estoque')
 
 		// Quando avarias recebidas do FullWMS, nao quero mais validar
 		// o estoque do FullWMS por que lah jah foi dado baixa.

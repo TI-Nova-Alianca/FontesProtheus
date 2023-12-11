@@ -237,7 +237,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 
 	// Executa a acao especificada no XML.
 	if empty (_sErroWS)
-		u_log2 ('info', 'Acao solicitada ao web service: ' + _sAcao)
+		U_Log2 ('info', '[' + procname () + ']Acao solicitada ao web service: ' + _sAcao)
 		U_UsoRot ('I', _sAcao, '')
 
 		do case
@@ -356,13 +356,14 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 		U_Log2 ('debug', '[' + procname () + ']Vou manter ambiente aberto por que estou numa porta que atende uma filial exclusiva.')
 	endif
 
-	u_log2 ('info', 'Mensagens WS: ' + ::Retorno:Mensagens)
+
 	// Como algumas opcoes retornam bastante coisa, vou economizar um pouco o log
 	if _sAcao $ 'ConsultaKardex/ConsultaDeOrcamentos'
-		u_log2 ('info', 'Retorno   WS: [nao gravarei log para esta acao por eh muito longo] (' + cvaltochar (seconds () - _nSegIni) + 's.)')
+		u_log2 ('info', 'Mensagens WS: (nao gravarei log para esta acao por eh muito longo)')
 	else
-		u_log2 ('info', 'Retorno   WS: ' + ::Retorno:Resultado + ' (' + cvaltochar (seconds () - _nSegIni) + 's.)')
+		u_log2 ('info', 'Mensagens WS: ' + ::Retorno:Mensagens)
 	endif
+	u_log2 ('info', 'Retorno   WS: ' + ::Retorno:Resultado + ' (' + cvaltochar (seconds () - _nSegIni) + 's.)')
 	u_log2 ('info', '')  // Apenas para gerar uma linha vazia
 Return .T.
 //
@@ -1051,7 +1052,7 @@ static function _TrEstGrid ()
 				else
 					//		_sRetGrid += "<Retorno>OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq + "</Retorno>"
 					_sRetGrid += "<Retorno>OK</Retorno>"
-					U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
+			//		U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
 					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
 				endif
 			else  // Vou apenas retornar se os itens seriam ou nao aceitos
@@ -1380,30 +1381,6 @@ Static function _ExecConsOrc()
 	endif
 	If empty(_sErroWS)
 		_oSQL := ClsSQL():New ()
-		/*
-		if _sModelo == '2019'
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += "with C AS ("
-			_oSQL:_sQuery += "SELECT *,"
-			_oSQL:_sQuery +=       " ORDEM AS CHAVE_ORDENACAO_1, "
-			_oSQL:_sQuery +=       " 999999999999999 - SUM (REA) OVER (PARTITION BY DESC_N1, DESC_N2) AS CHAVE_ORDENACAO_2"
-			_oSQL:_sQuery +=  " FROM VA_FCONS_ORCAMENTO_524 "
-			_oSQL:_sQuery +=  " ('" + _wFilialIni + "'"
-			_oSQL:_sQuery +=   ",'" + _wFilialFin + "'"
-			_oSQL:_sQuery +=   ",'" + _wAno       + "'"
-			_oSQL:_sQuery +=   ",'" + substr (_wDataInicial, 5, 2) + "'"
-			_oSQL:_sQuery +=   ",'" + substr (_wDataFinal, 5, 2) + "')"		
-			_oSQL:_sQuery += ")"
-			_oSQL:_sQuery += " SELECT ORDEM, DESC_N1, DESC_N2, CONTA, DESCRICAO, FILIAL, CC,"
-			_oSQL:_sQuery +=        " SUM (ORC_ANO) AS ORC_ANO, "
-			_oSQL:_sQuery +=        " SUM (ORC) AS ORC,"
-			_oSQL:_sQuery +=        " SUM (REA) AS REA,"
-			_oSQL:_sQuery +=        " SUM (REA_ANT) AS REA_ANT"
-			_oSQL:_sQuery +=   " FROM C"		
-			_oSQL:_sQuery +=  " GROUP BY ORDEM, DESC_N1, DESC_N2, CHAVE_ORDENACAO_1, CHAVE_ORDENACAO_2, CONTA, DESCRICAO, FILIAL, CC"
-			_oSQL:_sQuery +=  " ORDER BY CHAVE_ORDENACAO_1, CHAVE_ORDENACAO_2, CONTA"
-		elseif _sModelo == '2020'
-		*/
 		_oSQL:_sQuery += "with C AS ("
 		_oSQL:_sQuery +=  " SELECT ORDEM, DESC_N1, DESC_N2, NIVEL, CONTA, DESCRICAO,"
 		_oSQL:_sQuery +=         " SUM (ORC_ANO)    AS ORC_ANO,"
@@ -1429,14 +1406,10 @@ Static function _ExecConsOrc()
 		_oSQL:_sQuery +=   ",'" + substr (_wDataInicial, 5, 2) + "'"
 		_oSQL:_sQuery +=   ",'" + substr (_wDataFinal, 5, 2) + "'"
 		_oSQL:_sQuery +=   "," + _aPerfNA [1] + "," + _aPerfNA [2] + "," + _aPerfNA [3] + "," + _aPerfNA [4] + "," + _aPerfNA [5] + ")"
-		//_oSQL:_sQuery += " WHERE ORDEM != 3"  // Nao queremos mais visualizar esta ordem, mas ela eh usada nos calculos.
 		_oSQL:_sQuery += " GROUP BY ORDEM,DESC_N1,DESC_N2,NIVEL,CONTA,DESCRICAO, DESTACAR, FILTRACC"
 		_oSQL:_sQuery += ")"
 		_oSQL:_sQuery += " SELECT * FROM C"
 		_oSQL:_sQuery += " ORDER BY ORDEM, DESC_N1, DESC_N2, 999999999999999 - SUM(REA_PER) OVER (PARTITION BY DESC_N1, DESC_N2), CONTA"
-		//else
-		//	_SomaErro ("Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento no web service.")
-		//endif
 		_oSQL:Log ()
 	endif
 
@@ -1632,7 +1605,6 @@ static function _IncCarSaf ()
 			_SomaErro ("Nenhum item informado para gerar carga.")
 		else
 			_sCompart = _sCargaC1 + iif (! empty (_sCargaC2), '/', '') + _sCargaC2
-//			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCargaC1, _sCargaC2)
 			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCompart)
 		endif
 	endif
@@ -1652,17 +1624,17 @@ static function _CanCarSaf ()
 	u_log2 ('info', 'Iniciando web service de cancelamento de carga de safra.')
 
 	if empty (_sErroWS) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",  .T., .F.) ; endif
-		if empty (_sErroWS) ; _sCarga    = _ExtraiTag ("_oXML:_WSAlianca:_Carga",  .T., .F.) ; endif
-			if empty (_sErroWS) ; _sMotCanWS = _ExtraiTag ("_oXML:_WSAlianca:_MotivoCancCarga", .T., .F.) ; endif
-				if empty (_sErroWS)
-					sze -> (dbsetorder (1))  // ZE_FILIAL, ZE_SAFRA, ZE_CARGA, R_E_C_N_O_, D_E_L_E_T_
-					if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
-						_SomaErro ("Carga '" + _sCarga + "' nao encontrada para a safra '" + _sSafra + "' na filial '" + xfilial ("SZE") + "'.")
-					else
-						U_VA_RUS2 (5, .F.)
-					endif
-				endif
-				Return
+	if empty (_sErroWS) ; _sCarga    = _ExtraiTag ("_oXML:_WSAlianca:_Carga",  .T., .F.) ; endif
+	if empty (_sErroWS) ; _sMotCanWS = _ExtraiTag ("_oXML:_WSAlianca:_MotivoCancCarga", .T., .F.) ; endif
+	if empty (_sErroWS)
+		sze -> (dbsetorder (1))  // ZE_FILIAL, ZE_SAFRA, ZE_CARGA, R_E_C_N_O_, D_E_L_E_T_
+		if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
+			_SomaErro ("Carga '" + _sCarga + "' nao encontrada para a safra '" + _sSafra + "' na filial '" + xfilial ("SZE") + "'.")
+		else
+			U_VA_RUS2 (5, .F.)
+		endif
+	endif
+return
 
 
 // --------------------------------------------------------------------------
@@ -1671,47 +1643,38 @@ static function _ITkCarSaf ()
 	local _sSafra    := ''
 	local _sCarga    := ''
 
-	if empty (_sErroWS) ; _sSafra = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
-		if empty (_sErroWS) ; _sCarga = _ExtraiTag ("_oXML:_WSAlianca:_Carga",               .T., .F.) ; endif
-			if empty (_sErroWS)
-				sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
-				if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
-					_SomaErro ('Carga ' + sze -> ze_carga + ' nao localizada na filial ' + cFilAnt + ' / safra ' + _sSafra + '.')
-				endif
-				if empty (_sErroWS) .and. sze -> ze_status = 'C'
-					_SomaErro ('Carga ' + sze -> ze_carga + ' cancelada.')
-				endif
-				if empty (_sErroWS)
-					// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
-					if type ("_oCarSaf") != 'O'
-						private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
-					endif
-					if empty (_oCarSaf:Carga)
-						u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
-						_SomaErro ('Objeto CARGA SAFRA invalido.')
-					endif
-				endif
+	if empty (_sErroWS) ; _sSafra = _ExtraiTag ("_oXML:_WSAlianca:_Safra", .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCarga = _ExtraiTag ("_oXML:_WSAlianca:_Carga", .T., .F.) ; endif
+	if empty (_sErroWS)
+		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
+		if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
+			_SomaErro ('Carga ' + sze -> ze_carga + ' nao localizada na filial ' + cFilAnt + ' / safra ' + _sSafra + '.')
+		endif
+		if empty (_sErroWS) .and. sze -> ze_status = 'C'
+			_SomaErro ('Carga ' + sze -> ze_carga + ' cancelada.')
+		endif
+		if empty (_sErroWS)
+			// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+			if type ("_oCarSaf") != 'O'
+				private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
 			endif
-
-			if empty (_sErroWS)
-
-				// Deixa prontas variaveis usadas pelo programa de impressao do ticket
-//		private _lImpTick  := .T.
-//		private _sPortTick := ''
-//		private _nQViasTk1 := 1
-//		private _nQViasTk2 := 2
-
-				// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
-				//U_VA_RusDI (cFilAnt)
-				_oCarSaf:DefImprTk ()
-				if _oCarSaf:ImprimeTk (1)
-
-//				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
-					_sMsgRetWS += 'Ticket enviado para ' + _oCarSaf:PortImpTk
-//			endif
-				endif
+			if empty (_oCarSaf:Carga)
+				u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+				_SomaErro ('Objeto CARGA SAFRA invalido.')
 			endif
-			Return
+		endif
+	endif
+
+	if empty (_sErroWS)
+
+		// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
+		_oCarSaf:DefImprTk ()
+		if _oCarSaf:ImprimeTk (1)
+
+			_sMsgRetWS += 'Ticket enviado para ' + _oCarSaf:PortImpTk
+		endif
+	endif
+return
 
 
 // --------------------------------------------------------------------------
@@ -1736,81 +1699,83 @@ Static function _ExecKardex()
 	endif
 
 	if empty(_wFilial)		; _SomaErro ("Campo <filial> não preenchido")       ;endif
-		if empty(_wProduto)		; _SomaErro ("Campo <produto> não preenchido")      ;endif
-			if empty(_wAlmox)		; _SomaErro ("Campo <almoxarifado> não preenchido") ;endif
-				if empty(_wDataInicial)	; _SomaErro ("Campo <data inicial> não preenchido") ;endif
-					if empty(_wDataFinal)	; _SomaErro ("Campo <data final> não preenchido")	;endif
+	if empty(_wProduto)		; _SomaErro ("Campo <produto> não preenchido")      ;endif
+	if empty(_wAlmox)		; _SomaErro ("Campo <almoxarifado> não preenchido") ;endif
+	if empty(_wDataInicial)	; _SomaErro ("Campo <data inicial> não preenchido") ;endif
+	if empty(_wDataFinal)	; _SomaErro ("Campo <data final> não preenchido")	;endif
 
-						// Faz um teste inicial para verificar se pode gerar muitos registros,
-						// pois tinhamos usuarios listando 100 anos de movimentacao!
-						_oSQL := ClsSQL():New ()
-						_oSQL:_sQuery := ""
-						_oSQL:_sQuery += " SELECT count (*)"
-						_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
-						_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-						_oSQL:_sQuery += " AND D3_FILIAL = '" + _wFilial + "'"
-						_oSQL:_sQuery += " AND D3_COD    = '" + _wProduto + "'"
-						_oSQL:_sQuery += " AND D3_LOCAL  = '" + _wAlmox + "'"
-						_oSQL:_sQuery += " AND D3_EMISSAO BETWEEN '" + _wDataInicial + "' AND '" + _wDataFinal + "'"
-						_oSQL:Log ('[' + procname () + ']')
-						if _osql:RetQry (1, .f.) > 2000
-							_sErroWS := "Este item possui muita movimentacao. Selecione um periodo menor!"
-						endif
+	if empty(_sErroWS)
+		// Faz um teste inicial para verificar se pode gerar muitos registros,
+		// pois tinhamos usuarios listando 100 anos de movimentacao!
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT count (*)"
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND D3_FILIAL = '" + _wFilial + "'"
+		_oSQL:_sQuery += " AND D3_COD    = '" + _wProduto + "'"
+		_oSQL:_sQuery += " AND D3_LOCAL  = '" + _wAlmox + "'"
+		_oSQL:_sQuery += " AND D3_EMISSAO BETWEEN '" + _wDataInicial + "' AND '" + _wDataFinal + "'"
+	//	_oSQL:Log ('[' + procname () + ']')
+		if _osql:RetQry (1, .f.) > 2000
+			_sErroWS := "Este item possui muita movimentacao. Selecione um periodo menor!"
+		endif
+	endif
 
-						If empty(_sErroWS)
-							_oSQL := ClsSQL():New ()
-							_oSQL:_sQuery := ""
-							_oSQL:_sQuery += "SELECT *"
-							_oSQL:_sQuery +=  " FROM dbo.VA_FKARDEX('" + _wFilial + "', '" + _wProduto + "', '" + _wAlmox + "', '" + _wDataInicial + "', '" + _wDataFinal + "') "
-							_oSQL:Log ('[' + procname () + ']')
-							_sAliasQ = _oSQL:Qry2Trb (.F.)
-							(_sAliasQ) -> (dbgotop ())
+	if empty(_sErroWS)
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT *"
+		_oSQL:_sQuery +=  " FROM dbo.VA_FKARDEX('" + _wFilial + "', '" + _wProduto + "', '" + _wAlmox + "', '" + _wDataInicial + "', '" + _wDataFinal + "') "
+		_oSQL:Log ('[' + procname () + ']')
+		_sAliasQ = _oSQL:Qry2Trb (.F.)
+		(_sAliasQ) -> (dbgotop ())
 
-							_XmlRet += "<ConsultaKardex>"
-							_XmlRet += 		"<DataInicial>"+ _wDataInicial +"</DataInicial>"
-							_XmlRet += 		"<DataFinal>"+ _wDataFinal +"</DataFinal>"
-							_XmlRet += 		"<Registro>"
+		_XmlRet += "<ConsultaKardex>"
+		_XmlRet += 		"<DataInicial>"+ _wDataInicial +"</DataInicial>"
+		_XmlRet += 		"<DataFinal>"+ _wDataFinal +"</DataFinal>"
+		_XmlRet += 		"<Registro>"
 
-							While (_sAliasQ)->(!Eof())
-								_sNome := StrTran((_sAliasQ) -> Nome , '&', '' )
-								_XmlRet += "<RegistroItem>"
+		While (_sAliasQ)->(!Eof())
+			_sNome := StrTran((_sAliasQ) -> Nome , '&', '' )
+			_XmlRet += "<RegistroItem>"
 
-								_XmlRet += 		"<Linha>" 		  + alltrim(str((_sAliasQ) -> Linha))														+ "</Linha>"
-								_XmlRet += 		"<Data>"		  + IIf((alltrim((_sAliasQ) -> data))=='//'	,'', alltrim((_sAliasQ) -> data)) 				+ "</Data>"
-								_XmlRet += 		"<Doc>"		 	  + alltrim((_sAliasQ) -> Doc)																+ "</Doc>"
-								_XmlRet += 		"<Serie>"		  + alltrim((_sAliasQ) -> Serie)															+ "</Serie>"
-								_XmlRet += 		"<Qt_Entrada>"	  + alltrim(str((_sAliasQ) -> Qt_Entrada))													+ "</Qt_Entrada>"
-								_XmlRet += 		"<Qt_Saida>"	  + alltrim(str((_sAliasQ) -> Qt_Saida))													+ "</Qt_Saida>"
-								_XmlRet += 		"<Saldo>"		  + alltrim(str((_sAliasQ) -> Saldo))														+ "</Saldo>"
-								_XmlRet += 		"<NumSeq>"	 	  + alltrim((_sAliasQ) -> NumSeq)															+ "</NumSeq>"
-								_XmlRet += 		"<Movimento>"	  + alltrim((_sAliasQ) -> Movimento)														+ "</Movimento>"
-								_XmlRet += 		"<OP>"	 		  + alltrim((_sAliasQ) -> OP)																+ "</OP>"
-								_XmlRet += 		"<TES>" 		  + alltrim((_sAliasQ) -> TES)																+ "</TES>"
-								_XmlRet += 		"<CFOP>" 		  + alltrim((_sAliasQ) -> CFOP)																+ "</CFOP>"
-								_XmlRet += 		"<Lote>" 		  + alltrim((_sAliasQ) -> Lote)																+ "</Lote>"
-								_XmlRet += 		"<Etiqueta>" 	  + alltrim((_sAliasQ) -> Etiqueta)															+ "</Etiqueta>"
-								_XmlRet += 		"<Usuario>" 	  + alltrim((_sAliasQ) -> Usuario)															+ "</Usuario>"
-								_XmlRet += 		"<CliFor>" 		  + alltrim((_sAliasQ) -> CliFor)															+ "</CliFor>"
-								_XmlRet += 		"<Loja>" 		  + alltrim((_sAliasQ) -> Loja)																+ "</Loja>"
-								_XmlRet += 		"<Nome>" 		  + alltrim (_sNome)																		+ "</Nome>"
-								_XmlRet += 		"<Motivo>" 		  + alltrim((_sAliasQ) -> Motivo)															+ "</Motivo>"
-								_XmlRet += 		"<Nf_Orig>" 	  + alltrim((_sAliasQ) -> Nf_Orig)															+ "</Nf_Orig>"
-								_XmlRet += 		"<Data_Inclusao>" + IIf((alltrim((_sAliasQ)->Data_Inclusao))=='//' ,'', alltrim((_sAliasQ)->Data_Inclusao)) + "</Data_Inclusao>"
-								_XmlRet += 		"<Hora_Inclusao>" + alltrim((_sAliasQ) -> Hora_Inclusao)													+ "</Hora_Inclusao>"
-								_XmlRet += 		"<Sequencia>" 	  + alltrim((_sAliasQ) -> Sequencia)														+ "</Sequencia>"
-								_XmlRet += 		"</RegistroItem>"
+			_XmlRet += 		"<Linha>" 		  + alltrim(str((_sAliasQ) -> Linha))														+ "</Linha>"
+			_XmlRet += 		"<Data>"		  + IIf((alltrim((_sAliasQ) -> data))=='//'	,'', alltrim((_sAliasQ) -> data)) 				+ "</Data>"
+			_XmlRet += 		"<Doc>"		 	  + alltrim((_sAliasQ) -> Doc)																+ "</Doc>"
+			_XmlRet += 		"<Serie>"		  + alltrim((_sAliasQ) -> Serie)															+ "</Serie>"
+			_XmlRet += 		"<Qt_Entrada>"	  + alltrim(str((_sAliasQ) -> Qt_Entrada))													+ "</Qt_Entrada>"
+			_XmlRet += 		"<Qt_Saida>"	  + alltrim(str((_sAliasQ) -> Qt_Saida))													+ "</Qt_Saida>"
+			_XmlRet += 		"<Saldo>"		  + alltrim(str((_sAliasQ) -> Saldo))														+ "</Saldo>"
+			_XmlRet += 		"<NumSeq>"	 	  + alltrim((_sAliasQ) -> NumSeq)															+ "</NumSeq>"
+			_XmlRet += 		"<Movimento>"	  + alltrim((_sAliasQ) -> Movimento)														+ "</Movimento>"
+			_XmlRet += 		"<OP>"	 		  + alltrim((_sAliasQ) -> OP)																+ "</OP>"
+			_XmlRet += 		"<TES>" 		  + alltrim((_sAliasQ) -> TES)																+ "</TES>"
+			_XmlRet += 		"<CFOP>" 		  + alltrim((_sAliasQ) -> CFOP)																+ "</CFOP>"
+			_XmlRet += 		"<Lote>" 		  + alltrim((_sAliasQ) -> Lote)																+ "</Lote>"
+			_XmlRet += 		"<Etiqueta>" 	  + alltrim((_sAliasQ) -> Etiqueta)															+ "</Etiqueta>"
+			_XmlRet += 		"<Usuario>" 	  + alltrim((_sAliasQ) -> Usuario)															+ "</Usuario>"
+			_XmlRet += 		"<CliFor>" 		  + alltrim((_sAliasQ) -> CliFor)															+ "</CliFor>"
+			_XmlRet += 		"<Loja>" 		  + alltrim((_sAliasQ) -> Loja)																+ "</Loja>"
+			_XmlRet += 		"<Nome>" 		  + alltrim (_sNome)																		+ "</Nome>"
+			_XmlRet += 		"<Motivo>" 		  + alltrim((_sAliasQ) -> Motivo)															+ "</Motivo>"
+			_XmlRet += 		"<Nf_Orig>" 	  + alltrim((_sAliasQ) -> Nf_Orig)															+ "</Nf_Orig>"
+			_XmlRet += 		"<Data_Inclusao>" + IIf((alltrim((_sAliasQ)->Data_Inclusao))=='//' ,'', alltrim((_sAliasQ)->Data_Inclusao)) + "</Data_Inclusao>"
+			_XmlRet += 		"<Hora_Inclusao>" + alltrim((_sAliasQ) -> Hora_Inclusao)													+ "</Hora_Inclusao>"
+			_XmlRet += 		"<Sequencia>" 	  + alltrim((_sAliasQ) -> Sequencia)														+ "</Sequencia>"
+			_XmlRet += 		"</RegistroItem>"
 
-								(_sAliasQ) -> (dbskip ())
-							EndDo
+			(_sAliasQ) -> (dbskip ())
+		EndDo
 
-							_XmlRet += 		"</Registro>"
-							_XmlRet += "</ConsultaKardex>"
+		_XmlRet += 		"</Registro>"
+		_XmlRet += "</ConsultaKardex>"
 
-							(_sAliasQ) -> (dbclosearea ())
+		(_sAliasQ) -> (dbclosearea ())
 
-							_sMsgRetWS := _XmlRet
-						endif
-						Return
+		_sMsgRetWS := _XmlRet
+	endif
+Return
 
 
 // --------------------------------------------------------------------------

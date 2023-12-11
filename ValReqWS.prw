@@ -22,7 +22,7 @@ user function ValReqWS (_sOrigem, _sXmlOri, _sErros, _sWS_Empr, _sWS_Filia, _sAc
 	local _aPswRet     := {}
 //	private _sErroWS := ''
 
-	u_log2 ('info', '[porta ' + cvaltochar (GetServerPort ()) + ']XML recebido: ' + _sXmlOri)
+	U_Log2 ('debug', '[' + procname () + ']XML recebido: ' + _sXmlOri)
 
 	if empty (_sErroWS) .and. empty (_sOrigem)
 		_sErroWS += "Origem da conexao nao identificada"
