@@ -25,6 +25,7 @@
 //                     - Passa a mandar todas as notificacoes para o NaWeb e nao mais por e-mail.
 // 29/10/2023 - Robert - Passa a aceitar parametros d verificacao inicial e final.
 //                     - Criado envio para auditoria (grupo 015)
+// 09/12/2023 - Robert - Melhorados logs
 //
 
 // --------------------------------------------------------------------------
@@ -54,58 +55,69 @@ user function BatVerif (_nVerifIni, _nVerifFim)
 	do while _nVerif <= _nVerifFim
 		U_Log2 ('info', 'Vou ver se devo executar a verificacao ' + cvaltochar (_nVerif))
 		_oVerif := ClsVerif ():New (_nVerif)
-		if _oVerif:Ativa .and. _oVerif:ViaBatch .and. (_oVerif:Filiais == '*' .or. cFilAnt $ _oVerif:Filiais)
+		if ! _oVerif:Ativa
+			U_Log2 ('debug', '[' + procname () + ']Verificacao inativa.')
+			_nVerif ++
+			loop
+		endif
+		if ! _oVerif:ViaBatch
+			U_Log2 ('debug', '[' + procname () + ']Verificacao nao deve ser executada via batch.')
+			_nVerif ++
+			loop
+		endif
+		if _oVerif:Filiais != '*' .and. !cFilAnt $ _oVerif:Filiais
+			U_Log2 ('debug', '[' + procname () + ']Verificacao nao se destina a esta filial.')
+			_nVerif ++
+			loop
+		endif
 
-			u_log2 ('info', 'Verificacao ' + cvaltochar (_oVerif:Numero) + ' (' + _oVerif:Descricao + ') --> ' + _oVerif:Query)
+		u_log2 ('info', 'Verificacao ' + cvaltochar (_oVerif:Numero) + ' (' + _oVerif:Descricao + ') --> ' + _oVerif:Query)
 			
-			// Acompanhamento de performance de execucao de rotinas.
-			aadd (_aTempos, {_nVerif, seconds (), _oVerif:Descricao, _oVerif:Query, 0})
+		// Acompanhamento de performance de execucao de rotinas.
+		aadd (_aTempos, {_nVerif, seconds (), _oVerif:Descricao, _oVerif:Query, 0})
 
-			if _oVerif:Executa ()
+		if _oVerif:Executa ()
 
-				// Vou persistir o tempo de execucao somente se a verificacao foi mesmo executada.
-				_aTempos [len (_aTempos), 2] = round (seconds () - _aTempos [len (_aTempos), 2], 2)
-				_aTempos [len (_aTempos), 5] = _oVerif:QtErros
+			// Vou persistir o tempo de execucao somente se a verificacao foi mesmo executada.
+			_aTempos [len (_aTempos), 2] = round (seconds () - _aTempos [len (_aTempos), 2], 2)
+			_aTempos [len (_aTempos), 5] = _oVerif:QtErros
 
-				if _oVerif:QtErros > 0
+			if _oVerif:QtErros > 0
 
-					// Prepara mensagem em formato HTM para envio por e-mail.
-					_sMsg := _oVerif:ConvHTM (100)  // Converte poucas linhas para as mensagens nao ficarem pesadas demais.
+				// Prepara mensagem em formato HTM para envio por e-mail.
+				_sMsg := _oVerif:ConvHTM (100)  // Converte poucas linhas para as mensagens nao ficarem pesadas demais.
 
-					// Envia aos setores interessados.
-					if 'ENG' $ _oVerif:Setores
-						_Notif (_oVerif, {'070'}, _sMsg)
-					endif
-					if 'CUS' $ _oVerif:Setores
-					//	_Envia (_oVerif, {'069'}, _sMsg)
-						_Notif (_oVerif, {'069'}, _sMsg)
-					endif
-					if 'SAF' $ _oVerif:Setores
-						_Notif (_oVerif, {'075'}, _sMsg)
-					endif
-					if 'FIS' $ _oVerif:Setores
-						_Notif (_oVerif, {'019'}, _sMsg)
-					endif
-					if 'PCP' $ _oVerif:Setores
-					//	_Envia (_oVerif, {'047'}, _sMsg)
-						_Notif (_oVerif, {'047'}, _sMsg)
-					endif
-					if 'CML' $ _oVerif:Setores
-						_Notif (_oVerif, {'003'}, _sMsg)
-					endif
-					if 'AUD' $ _oVerif:Setores
-						_Notif (_oVerif, {'015'}, _sMsg)
-					endif
-					if 'INF' $ _oVerif:Setores
-						_Notif (_oVerif, {'122'}, _sMsg)
-					endif
+				// Envia aos setores interessados.
+				if 'ENG' $ _oVerif:Setores
+					_Notif (_oVerif, {'070'}, _sMsg)
 				endif
-			else
-				U_help ("Problemas ao executar a verificacao '" + _oVerif:Descricao + ": " + _oVerif:UltMsg,, .T.)
-				_aTempos [len (_aTempos), 2] = 'ERRO'
+				if 'CUS' $ _oVerif:Setores
+				//	_Envia (_oVerif, {'069'}, _sMsg)
+					_Notif (_oVerif, {'069'}, _sMsg)
+				endif
+				if 'SAF' $ _oVerif:Setores
+					_Notif (_oVerif, {'075'}, _sMsg)
+				endif
+				if 'FIS' $ _oVerif:Setores
+					_Notif (_oVerif, {'019'}, _sMsg)
+				endif
+				if 'PCP' $ _oVerif:Setores
+				//	_Envia (_oVerif, {'047'}, _sMsg)
+					_Notif (_oVerif, {'047'}, _sMsg)
+				endif
+				if 'CML' $ _oVerif:Setores
+					_Notif (_oVerif, {'003'}, _sMsg)
+				endif
+				if 'AUD' $ _oVerif:Setores
+					_Notif (_oVerif, {'015'}, _sMsg)
+				endif
+				if 'INF' $ _oVerif:Setores
+					_Notif (_oVerif, {'122'}, _sMsg)
+				endif
 			endif
 		else
-			U_Log2 ('debug', '[' + procname () + ']Verificacao inativa ou nao se destina a esta filial.')
+			U_help ("Problemas ao executar a verificacao '" + _oVerif:Descricao + ": " + _oVerif:UltMsg,, .T.)
+			_aTempos [len (_aTempos), 2] = 'ERRO'
 		endif
 		FreeObj (_oVerif)
 		_nVerif ++
