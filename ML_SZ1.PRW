@@ -19,6 +19,7 @@
 // 23/03/2018 - Robert - Tratamento para tabela DESC (uvas desclassificadas na serra).
 // 04/12/2018 - Robert - Permite informar decimais para arredondamento ao copiar preco de outro produto.
 // 22/03/2021 - Robert - Adequacao para usar variaveis locais em lacos FOR...NEXT
+// 04/12/2023 - Robert - Desabilitados botoes de inclusao/alteracao/exclusao (formato de tabela em desusu)
 //
 
 #include "rwmake.ch"
@@ -33,12 +34,13 @@ User Function Ml_sz1 ()
 		return
 	endif
 
+	// Vou deixar apenas opcao de visualizacao, para historico.
 	aAdd(aRotina, {"Pesquisar",  "AxPesqui" , 0, 1})
 	aAdd(aRotina, {"Visualizar", "U_ML_SZ1A", 0, 2})
-	aAdd(aRotina, {"Incluir"  ,  "U_ML_SZ1A", 0, 3})
-	aAdd(aRotina, {"Alterar"  ,  "U_ML_SZ1A", 0, 4})
-	aAdd(aRotina, {"Copiar"   ,  "U_ML_SZ1C", 0, 4})
-	aAdd(aRotina, {"Excluir"  ,  "U_ML_SZ1E", 0, 5})
+	// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aAdd(aRotina, {"Incluir"  ,  "U_ML_SZ1A", 0, 3})
+	// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aAdd(aRotina, {"Alterar"  ,  "U_ML_SZ1A", 0, 4})
+	// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aAdd(aRotina, {"Copiar"   ,  "U_ML_SZ1C", 0, 4})
+	// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aAdd(aRotina, {"Excluir"  ,  "U_ML_SZ1E", 0, 5})
 	
 	dbSelectArea ("SZ1")
 	dbSetOrder (1)

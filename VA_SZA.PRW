@@ -17,27 +17,92 @@
 
 // --------------------------------------------------------------------------
 User Function va_sza()
-	u_logId ()
+//	local _aCols    := {}
+//	local _aOpcoes  := 0
+	local _nOpcao   := 0
+	local _sFilTop  := ''
 	private aRotina := {}
+	private _nModelTab := 0
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if ! U_ZZUVL ('051', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 
-	aadd (aRotina, {"&Pesquisar"        , "AxPesqui",  0,1})
-	aadd (aRotina, {"&Incluir"          , "AxInclui",  0,3})
-	aadd (aRotina, {"&Alterar"          , "AxAltera",  0,4})
-	aadd (aRotina, {"P&recos-atu.man"   , "U_VA_SZAP", 0,4})
-	aadd (aRotina, {"P&recos-base"      , "U_VA_SZAP2", 0,4})
-	aadd (aRotina, {"&Excluir"          , "U_VA_SZAE", 0,4})
-	aadd (aRotina, {"&Copia para"       , "U_VA_SZAC", 0,4})
-	aadd (aRotina, {"I&mporta de"       , "U_VA_SZAI", 0,4})
-	private cString   := "SZA"
-	private cCadastro := "Listas de precos safra"
-	dbselectarea ("SZA")
-	dbSetOrder (1)
-	mBrowse(,,,,"SZA")
+	_nModelTab = aviso ("Modelo de tabela", ;
+		"As tabelas de precos de uva foram sendo aprimoradas ao longo do tempo e, por isso, nao ha compatibilidade entre todas.", ;
+		{"Versao 1", "Versao 2", "Versao 3"}, 3, "Selecione modelo de tabela de precos")
+	
+	do case
+	
+	// Modelo SZA X SZ1
+	case _nModelTab == 1
+		aadd (aRotina, {"&Pesquisar"        , "AxPesqui",  0,1})
+		// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aadd (aRotina, {"&Incluir"          , "AxInclui",  0,3})
+		// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aadd (aRotina, {"&Alterar"          , "AxAltera",  0,4})
+		aadd (aRotina, {"P&recos-atu.man"   , "U_VA_SZAP", 0,4})
+		// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aadd (aRotina, {"P&recos-base"      , "U_VA_SZAP2", 0,4})
+		// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aadd (aRotina, {"&Excluir"          , "U_VA_SZAE", 0,4})
+		// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aadd (aRotina, {"&Copia para"       , "U_VA_SZAC", 0,4})
+		// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aadd (aRotina, {"I&mporta de"       , "U_VA_SZAI", 0,4})
+		private cString   := "SZA"
+		private cCadastro := "Listas de precos safra"
+		dbselectarea ("SZA")
+		dbSetOrder (1)
+		_sFilTop = "ZA_MODELO = '1'"
+		mBrowse(,,,,"SZA",,,,,,,,,,,,,,_sFilTop)
+	
+	// Modelo usando somente ZX5 (tabelas 13 e 14)
+	case _nModelTab == 2
+		u_help ("ATENCAO: use este modelo apenas para safras ate 2023. A partir de 2024, use o modelo 3.")
+/*
+		_aOpcoes = {}
+		aadd (_aOpcoes, {.F., "Grupos para tabela de preco", "ZX5_13"})
+		aadd (_aOpcoes, {.F., "Grupos X variedades para tabela de preco", "ZX5_14"})
+		_aCols = {}
+		aadd (_aCols, {2, "Opcoes",  280,  ""})
+		U_MBArray (@_aOpcoes, "Selecione cadastro", _aCols, 1, 700, 450, , ".T.")
+		for _nOpcao = 1 to len (_aOpcoes)
+			if _aOpcoes [_nOpcao, 1]
+				if _aOpcoes [_nOpcao, 3] == "ZX5_13"
+					U_ZX513 ()
+				if _aOpcoes [_nOpcao, 3] == "ZX5_14"
+					U_ZX513 ()
+				else
+					u_help ("Opcao sem tratamento: '" + _aOpcoes [_nOpcao, 3] + "'.")
+				endif
+			endif
+		next
+*/
+		_nOpcao = aviso ("Selecione cadastro", ;
+			"Seleciona qual cadastro deseja alterar: Precos dos grupos ou Variedades de cada grupo", ;
+			{"Grupos", "Variedades"}, 3, "Selecione modelo")
+		if _nOpcao == 1
+			U_ZX5_13 ()
+		elseif _nOpcao == 2
+			U_ZX5_14 ()
+		endif
+
+	// Modelo usando SZA x ZX5
+	case _nModelTab == 3
+		aadd (aRotina, {"&Pesquisar"        , "AxPesqui",  0,1})
+		aadd (aRotina, {"&Incluir"          , "AxInclui",  0,3})
+		aadd (aRotina, {"&Alterar"          , "AxAltera",  0,4})
+		aadd (aRotina, {"P&recos-atu.man"   , "U_VA_SZAP", 0,4})
+		// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aadd (aRotina, {"P&recos-base"      , "U_VA_SZAP2", 0,4})
+		aadd (aRotina, {"&Excluir"          , "U_VA_SZAE", 0,4})
+		// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aadd (aRotina, {"&Copia para"       , "U_VA_SZAC", 0,4})
+		// Formato de tabela em desuso. Precisaria dar manutencao nos programas ---> aadd (aRotina, {"I&mporta de"       , "U_VA_SZAI", 0,4})
+//		private cString   := "SZA"
+//		private cCadastro := "Listas de precos safra"
+		dbselectarea ("SZA")
+		dbSetOrder (1)
+		_sFilTop = "ZA_MODELO = '3'"
+		mBrowse(,,,,"SZA",,,,,,,,,,,,,,_sFilTop)
+
+	otherwise
+		u_help ("Modelo de tabela de preco de uva sem tratamento.",, .t.)
+	endcase
 return
 
 
@@ -56,7 +121,7 @@ User Function VA_SZAP ()
 return
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Atualiza tabela de precos pela lista de precos base da mesma safra.
 User Function VA_SZAP2 ()
@@ -415,3 +480,4 @@ static function _Get (_sTexto, _sTipo, _nTamanho, _sMasc, _sF3, _xIni, _lPass, _
       @ 45, 10 bmpbutton type 1 action (iif (&(_sValid), (_xRet := _xDado, _oDlgGet:End ()), NIL))
    activate MSDialog _oDlgGet centered
 return _xRet
+*/

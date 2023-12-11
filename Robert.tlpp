@@ -137,7 +137,7 @@ user function robert ()
 		// _sFuncao += '_Rast ()'
 		// _sFuncao += '_reginv ()'
 		// _sFuncao += '_recmail ()'
-		// _sFuncao += '_RevCH ()'
+		//_sFuncao += '_RevCH ()'
 		// _sFuncao += '_RelAssoc ()'
 		// _sFuncao += '_SF1()'
 		// _sFuncao += '_SimCtb ()'
@@ -150,7 +150,7 @@ user function robert ()
 		// _sFuncao += '_telnet ()'
 		// _sFuncao += '_TrEstq ()'
 		// _sFuncao += '_VACCR2 ()'
-		_sFuncao += '_VA_ACR ()'
+		// _sFuncao += '_VA_ACR ()'
 		// _sFuncao += '_VA_VEF ()'
 		// _sFuncao += '_VA_XLS ()'
 		// _sFuncao += '_verif ()'
@@ -2261,11 +2261,6 @@ static function _GLPI14483 ()
 	U_VA_GNF3 (.T.)
 	*/
 
-	_aRetPrcS1 = aclone (U_PrcUvaS1 ('03', '9908           ', 15.8, 'B ', 'E', .F., .t.))
-	U_Log2 ('debug', _aRetPrcS1)
-	_aRetPrcS1 = aclone (U_PrcUvaS1 ('03', '9908           ', 15.8, 'D ', 'E', .F., .t.))
-	U_Log2 ('debug', _aRetPrcS1)
-	/*
 	// Passo 2: altero a tabela de precos da uva
 	// e rodo novamente alimentando outro campo com os novos precos.
 	dbselectarea ("ZZ9")
@@ -2306,12 +2301,11 @@ static function _GLPI14483 ()
 			reclock ("ZZ9", .F.)
 			// primeira rodada com agios de organica 15/55/70%    rodada zz9 -> zz9_vunit  = _aRetPrcS1 [2]
 			// primeira rodada com agios de organica 15/55/70%    rodada zz9 -> zz9_vunit3 = _aRetPrcS1 [5]
-			zz9 -> zz9_vunit4 = _aRetPrcS1 [2]  // rodada com agios organicas 15/50/50% e espaldeira=latada+20% (reuniao de 23/11/23)
+			zz9 -> zz9_vunit4 = _aRetPrcS1 [2]  // rodada com ajustes CONSAD 29/11/23
 			msunlock ()
 		endif
 		zz9 -> (dbskip ())
 	enddo
-	*/
 return
 
 // --------------------------------------------------------------------------
@@ -2754,9 +2748,40 @@ return
 // --------------------------------------------------------------------------
 // Bloqueia / desbloqueia estoque FullWMS
 static function _BlEstF ()
-	local _aBloq := {}
-	aadd (_aBloq, {'', '01', '0345           ', '13042601', 'E-1-1-1', 55, 'B', .t., '', ''})
-	U_BlEstF (@_aBloq)
+	local _aListaSolBloq := {}
+	local _oListaSolBloq := JsonObject():New()
+	local _oSolBloq      := NIL
+	
+	_oSolBloq = JsonObject():New()
+	_oSolBloq ['IdOper']     = ''
+	_oSolBloq ['Almox']      = '01'
+	_oSolBloq ['Produto']    = '0345           '
+	_oSolBloq ['Lote']       = '13042601'
+	_oSolBloq ['Endereco']   = 'E-1-1-1'
+	_oSolBloq ['Quantidade'] = 55
+	_oSolBloq ['Operacao']   = 'L'
+	_oSolBloq ['Resultado']  = .f.
+	_oSolBloq ['Obs']        = ''
+	_oSolBloq ['StatusFull'] = ''
+	aadd (_aListaSolBloq, _oSolBloq)
+	_oSolBloq = JsonObject():New()
+	_oSolBloq ['IdOper']     = ''
+	_oSolBloq ['Almox']      = '01'
+	_oSolBloq ['Produto']    = '0345           '
+	_oSolBloq ['Lote']       = '23102201'
+	_oSolBloq ['Endereco']   = 'E-1-6'
+	_oSolBloq ['Quantidade'] = 80
+	_oSolBloq ['Operacao']   = 'B'
+	_oSolBloq ['Resultado']  = .f.
+	_oSolBloq ['Obs']        = ''
+	_oSolBloq ['StatusFull'] = ''
+	aadd (_aListaSolBloq, _oSolBloq)
+
+	_oListaSolBloq:Set (_aListaSolBloq)
+
+	//aadd (_aBloq, {'', '01', '0345           ', '13042601', 'E-1-1-1', 55, 'B', .t., '', ''})
+	//U_BlEstF (@_aBloq)
+	U_BlEstF (@_oListaSolBloq)
 	//U_Log2 ('debug', '[' + procname () + ']Retorno da funcao:')
 	//U_Log2 ('debug', _aBloq)
 return
@@ -3061,21 +3086,21 @@ return
 
 // --------------------------------------------------------------------------
 static function _Etiq ()
-//	local _oEtiq := NIL
+	local _oEtiq := NIL
 //	local _nConta := 0
-/*
+
 	local _nEtiq := 0
 	local _aEtiq := {}
-	aadd (_aEtiq, '2000610026')
+	aadd (_aEtiq, '2000682368')
 	for _nEtiq = 1 to len (_aEtiq)
 		_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq])
-	//	_oEtiq:Imprime ('01')
+		_oEtiq:Imprime ('97')
 	//	_oEtiq:EnviaFull (.f.)
 	//	if ! _oEtiq:ApontaOP (date(), '1')
 	//	if ! _oEtiq:Recebe3 ()
-		if ! _oEtiq:Inutiliza ()
-			U_Log2 ('debug', '[' + procname () + ']' + _oEtiq:UltMsg)
-		endif
+	//	if ! _oEtiq:Inutiliza ()
+	//		U_Log2 ('debug', '[' + procname () + ']' + _oEtiq:UltMsg)
+	//	endif
 	next
 RETURN
 */
@@ -3155,60 +3180,60 @@ return
 
 // --------------------------------------------------------------------------
 static function _RevCH()
-	// U_BatRevCh ("AC", "CTE", 90)
-	// U_BatRevCh ("AC", "NFE", 90)
-	// U_BatRevCh ("AL", "CTE", 90)
-	// U_BatRevCh ("AL", "NFE", 90)
-	// U_BatRevCh ("AM", "CTE", 90)
-	// U_BatRevCh ("AM", "NFE", 90)
-	// U_BatRevCh ("AP", "CTE", 90)
-	// U_BatRevCh ("AP", "NFE", 90)
-	// U_BatRevCh ("BA", "CTE", 90)
-	// U_BatRevCh ("BA", "NFE", 90)
-	// U_BatRevCh ("CE", "CTE", 90)
-	// U_BatRevCh ("CE", "NFE", 90)
-	// U_BatRevCh ("DF", "CTE", 90)
-	// U_BatRevCh ("DF", "NFE", 90)
-	// U_BatRevCh ("ES", "CTE", 90, '32230893561108000304570000000132841174876808', .t.)
-	// U_BatRevCh ("ES", "NFE", 90)
-	// U_BatRevCh ("GO", "CTE", 90)
-	// U_BatRevCh ("GO", "NFE", 90)
-	// U_BatRevCh ("MA", "CTE", 90)
-	// U_BatRevCh ("MA", "NFE", 90)
-	// U_BatRevCh ("MG", "CTE", 90) //, '31230902442313000710570000000015161100015166', .t.)
-	// U_BatRevCh ("MG", "NFE", 90) //, '31231000506346000166550010014048221036580096', .t.)
-	// U_BatRevCh ("MS", "CTE", 90)
-	// U_BatRevCh ("MS", "NFE", 90)
-	// U_BatRevCh ("MT", "CTE", 90)
-	// U_BatRevCh ("MT", "NFE", 90)
-	// U_BatRevCh ("PA", "CTE", 90)
-	// U_BatRevCh ("PA", "NFE", 90)
-	// U_BatRevCh ("PB", "CTE", 90)
-	// U_BatRevCh ("PB", "NFE", 90)
-	// U_BatRevCh ("PE", "CTE", 90)
-	// U_BatRevCh ("PE", "NFE", 90)
-	// U_BatRevCh ("PI", "CTE", 90)
-	// U_BatRevCh ("PI", "NFE", 90)
-	U_BatRevCh ("PR", "CTE", 90)
-	// U_BatRevCh ("PR", "NFE", 90)
-	// U_BatRevCh ("RJ", "CTE", 90)
-	// U_BatRevCh ("RJ", "NFE", 90)
-	// U_BatRevCh ("RN", "CTE", 90)
-	// U_BatRevCh ("RN", "NFE", 90)
-	// U_BatRevCh ("RO", "CTE", 90)
-	// U_BatRevCh ("RO", "NFE", 90)
-	// U_BatRevCh ("RR", "CTE", 90)
-	// U_BatRevCh ("RR", "NFE", 90)
-	// U_BatRevCh ("RS", "CTE", 60) //0, '43230802442313000125570000001696871101696875', .t.)
- 	// U_BatRevCh ("RS", "NFE", 90, '43230888612486000160550100002285321423987847', .t.)
-	// U_BatRevCh ("SC", "CTE", 90)
-	// U_BatRevCh ("SC", "NFE", 90)
-	// U_BatRevCh ("SE", "CTE", 90)
-	// U_BatRevCh ("SE", "NFE", 90)
-	// U_BatRevCh ("SP", "CTE", 90)  //, '35230802442313000559570000000715391100715397', .t.)
-	// U_BatRevCh ("SP", "NFE", 90)
-	// U_BatRevCh ("TO", "CTE", 90)
-	// U_BatRevCh ("TO", "NFE", 90)
+	U_BatRevCh ("AC", "CTE", 2)  // 90)
+	U_BatRevCh ("AC", "NFE", 2)  // 90)
+	U_BatRevCh ("AL", "CTE", 2)  // 90)
+	U_BatRevCh ("AL", "NFE", 2)  // 90)
+	U_BatRevCh ("AM", "CTE", 2)  // 90)
+	U_BatRevCh ("AM", "NFE", 2)  // 90)
+	U_BatRevCh ("AP", "CTE", 2)  // 90)
+	U_BatRevCh ("AP", "NFE", 2)  // 90)
+	U_BatRevCh ("BA", "CTE", 2)  // 90)
+	U_BatRevCh ("BA", "NFE", 2)  // 90)
+	U_BatRevCh ("CE", "CTE", 2)  // 90)
+	U_BatRevCh ("CE", "NFE", 2)  // 90)
+	U_BatRevCh ("DF", "CTE", 2)  // 90)
+	U_BatRevCh ("DF", "NFE", 2)  // 90)
+	U_BatRevCh ("ES", "CTE", 2)  // 90, '32230893561108000304570000000132841174876808', .t.)
+	U_BatRevCh ("ES", "NFE", 2)  // 90)
+	U_BatRevCh ("GO", "CTE", 2)  // 90)
+	U_BatRevCh ("GO", "NFE", 2)  // 90)
+	U_BatRevCh ("MA", "CTE", 2)  // 90)
+	U_BatRevCh ("MA", "NFE", 2)  // 90)
+	U_BatRevCh ("MG", "CTE", 2)  // 90) //, '31230902442313000710570000000015161100015166', .t.)
+	U_BatRevCh ("MG", "NFE", 2)  // 90) //, '31231000506346000166550010014048221036580096', .t.)
+	U_BatRevCh ("MS", "CTE", 2)  // 90)
+	U_BatRevCh ("MS", "NFE", 2)  // 90)
+	U_BatRevCh ("MT", "CTE", 2)  // 90)
+	U_BatRevCh ("MT", "NFE", 2)  // 90)
+	U_BatRevCh ("PA", "CTE", 2)  // 90)
+	U_BatRevCh ("PA", "NFE", 2)  // 90)
+	U_BatRevCh ("PB", "CTE", 2)  // 90)
+	U_BatRevCh ("PB", "NFE", 2)  // 90)
+	U_BatRevCh ("PE", "CTE", 2)  // 90)
+	U_BatRevCh ("PE", "NFE", 2)  // 90)
+	U_BatRevCh ("PI", "CTE", 2)  // 90)
+	U_BatRevCh ("PI", "NFE", 2)  // 90)
+	U_BatRevCh ("PR", "CTE", 2)  // 90)
+	U_BatRevCh ("PR", "NFE", 2)  // 90)
+	U_BatRevCh ("RJ", "CTE", 2)  // 90)
+	U_BatRevCh ("RJ", "NFE", 2)  // 90)
+	U_BatRevCh ("RN", "CTE", 2)  // 90)
+	U_BatRevCh ("RN", "NFE", 2)  // 90)
+	U_BatRevCh ("RO", "CTE", 2)  // 90)
+	U_BatRevCh ("RO", "NFE", 2)  // 90)
+	U_BatRevCh ("RR", "CTE", 2)  // 90)
+	U_BatRevCh ("RR", "NFE", 2)  // 90)
+	U_BatRevCh ("RS", "CTE", 2)  // 90) //0, '43230802442313000125570000001696871101696875', .t.)
+ 	U_BatRevCh ("RS", "NFE", 2)  // 90, '43230888612486000160550100002285321423987847', .t.)
+	U_BatRevCh ("SC", "CTE", 2)  // 90)
+	U_BatRevCh ("SC", "NFE", 2)  // 90)
+	U_BatRevCh ("SE", "CTE", 2)  // 90)
+	U_BatRevCh ("SE", "NFE", 2)  // 90)
+	U_BatRevCh ("SP", "CTE", 2)  // 90)  //, '35230802442313000559570000000715391100715397', .t.)
+	U_BatRevCh ("SP", "NFE", 2)  // 90)
+	U_BatRevCh ("TO", "CTE", 2)  // 90)
+	U_BatRevCh ("TO", "NFE", 2)  // 90)
 RETURN
 
 
@@ -3527,14 +3552,70 @@ return
 
 // --------------------------------------------------------------------------
 static function _VA_ACR ()
+
 	U_GravaSX1 ("VA_ACR", "01", "2626")
 	U_GravaSX1 ("VA_ACR", "02", "2627")
 	U_GravaSX1 ("VA_ACR", "03", 'PA')  // Tipos a listar
 	U_GravaSX1 ("VA_ACR", "04", 1)  // Considerar subniveis dos VD [S/N]
 	U_GravaSX1 ("VA_ACR", "05", '')  // Linha coml.de
 	U_GravaSX1 ("VA_ACR", "06", 'z')  // Linha coml.ate
+	U_GravaSX1 ("VA_ACR", "07", 1)  // Apenas MRP / todos
+	U_GravaSX1 ("VA_ACR", "08", 2)  // Std / medio
+	U_GravaSX1 ("VA_ACR", "09", '')  // Quem usa este componente
 	U_VA_ACR (.t.)
 return
+
+// --------------------------------------------------------------------------
+// Retorna lista de produtos que usam o componente.
+static function _QuemUsa (_sCompon as character, _aLista as array)
+	local _aAreaAnt := U_ML_SRArea ()
+	U_Log2 ('debug', '[' + procname () + ']Verificando componente ' + _sCompon)
+	sb1 -> (dbsetorder (1))
+	sg1 -> (dbsetorder (2))  // G1_FILIAL, G1_COMP, G1_COD, R_E_C_N_O_, D_E_L_E_T_
+	sg1 -> (dbseek (xfilial ("SG1") + _sCompon, .T.))
+	do while ! sg1 -> (eof ()) .and. sg1 -> g1_filial == xfilial ("SG1") .and. sg1 -> g1_comp == _sCompon
+		U_Log2 ('debug', '[' + procname () + ']loop 1 com g1_cod = ' + sg1 -> g1_cod)
+		if sg1 -> g1_ini <= dDataBase .and. sg1 -> g1_fim >= dDataBase .and. sg1 -> g1_fantasm != '1'
+			U_Log2 ('debug', '[' + procname () + ']loop 2 com g1_cod = ' + sg1 -> g1_cod)
+			if sb1 -> (dbseek (xfilial ("SB1") + sg1 -> g1_cod, .f.))
+				U_Log2 ('debug', '[' + procname () + ']loop 3 com g1_cod = ' + sg1 -> g1_cod)
+				if sg1 -> g1_revini <= sb1 -> b1_revatu .and. sg1 -> g1_revfim >= sb1 -> b1_revatu
+					U_Log2 ('debug', '[' + procname () + ']loop 4 com g1_cod = ' + sg1 -> g1_cod)
+					_nTamAnt = len (_aLista)
+					_QuemUsa (sg1 -> g1_cod, @_aLista)
+					if len (_aLista) == _nTamAnt  // Nao achou mais nada
+						aadd (_aLista, sg1 -> g1_cod)
+					endif
+				endif
+			endif
+		endif
+		sg1 -> (dbskip ())
+	enddo
+	U_ML_SRArea (_aAreaAnt)
+return
+
+
+// --------------------------------------------------------------------------
+// Retorna lista de produtos que usam o componente em formato string.
+static function _QuemUsa2 (_sCompon as character)
+	local _sRet := ''
+	local _nIdxQuemUsa := 0
+	local _aQuemUsa := {}
+
+	_QuemUsa (_sCompon, @_aQuemUsa)
+
+	for _nIdxQuemUsa = 1 to len (_aQuemUsa)
+		if ! alltrim (_aQuemUsa [_nIdxQuemUsa]) $ _sRet
+			_sRet += "'" + alltrim (_aQuemUsa [_nIdxQuemUsa]) + "',"
+		endif
+	next
+
+	// Remove a provavel virgula do final
+	if right (_sRet, 1) == ','
+		_sRet = left (_sRet, len (_sRet) - 1)
+	endif
+return _sRet
+
 
 // --------------------------------------------------------------------------
 static function _VACCR2 ()
@@ -3600,14 +3681,14 @@ static function _verif ()
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'zzzzzzzzzz')
 	// _oVerif:SetParam ('05', 2)
-	_oVerif := ClsVerif():New (99)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	// 	//u_acolsxls (_oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
+	//_oVerif := ClsVerif():New (99)
+	//if _oVerif:Executa ()
+	//	u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+	//	u_log2 ('debug', _oVerif:Result)
+	//// 	//u_acolsxls (_oVerif:Result)
+	//else
+	//	u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	//endif
 
 	// _oVerif := ClsVerif():New ()
 	// _sHtmHlp = _oVerif:GeraHelp ()
@@ -3622,7 +3703,7 @@ static function _verif ()
 	// ShellExecute ("Open", _sArq, "", "", 1)
 
 //	U_MudaLog ('U_BatVerif.log')
-//	u_batverif ()
+	u_batverif ()
 
 return
 
