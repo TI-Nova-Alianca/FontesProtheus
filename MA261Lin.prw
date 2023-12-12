@@ -78,29 +78,36 @@ User Function MA261LIN ()
 	_nQuant    = acols [N, _AchaCol ("D3_QUANT", 1)]
 	_sChvEx    = acols [N, _AchaCol ("D3_VACHVEX", 1)]
 
-	// Alguns casos estao sendo bloqueados para que somente possam ser movimentados via tabela ZAG
-	if _lRet
-		if cFilAnt == '01'  // por enquanto apenas na Matriz (NAWeb ainda nao gera para outra filial destino)
 
-			// Se nao estiver gerando pela rotina de solic.transf.estoque, verifica necessidade de bloquear.
-		//	if ! 'ZAG' $ _sChvEx
-			if ! 'ZAG' $ _sChvEx .and. ! IsInCallStack ("U_BATFULLW") .and. ! IsInCallStack ("U_BATFULLM")
-		//		U_LOG2 ('DEBUG', 'Amox. que devem ser movimentados atraves da tabela ZAG: ' + _sAlmZAG)
-				if ! _lExigeZAG .and. _sAlmOrig $ _sAlmZAG // '66'
-					u_help ("Almoxarifado '" + _sAlmOrig + "' nao pode ser movimentado diretamente por esta tela, conforme parametro VA_ALMZAG. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
-					_lExigeZAG = .T.
+	// BACA BACA BACA BACA BACA - GLPI14600
+	// ESTAMOS COM MUITOS LOTES TROCADOS NO AX02 E O JEITO VAI SER TRANSFERIR DE UM LOTE PARA OUTRO.
+	IF SUBSTR (DTOS (DATE ()), 1, 6) == '202312' .and. _sAlmOrig == '02' .and. _sAlmDest == '02' .AND. ALLTRIM (UPPER (CUSERNAME)) $ 'DENIANDRA.TORTELLI/SANDRA.SUGARI/ROBERT.KOCH'
+		U_Log2 ('debug', '[' + procname () + ']GLPI 14600 - LIBERANDO ALM.02 PARA MOVIMENTAR PELO PROTHEUS')
+	ELSE
+
+		// Alguns casos estao sendo bloqueados para que somente possam ser movimentados via tabela ZAG
+		if _lRet
+	//		if cFilAnt == '01'  // por enquanto apenas na Matriz (NAWeb ainda nao gera para outra filial destino)
+
+				// Se nao estiver gerando pela rotina de solic.transf.estoque, verifica necessidade de bloquear.
+				if ! 'ZAG' $ _sChvEx .and. ! IsInCallStack ("U_BATFULLW") .and. ! IsInCallStack ("U_BATFULLM")
+					if ! _lExigeZAG .and. _sAlmOrig $ _sAlmZAG // '66'
+						u_help ("Almoxarifado '" + _sAlmOrig + "' nao pode ser movimentado diretamente por esta tela, conforme parametro VA_ALMZAG. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
+						_lExigeZAG = .T.
+					endif
+					if ! _lExigeZAG .and. _sAlmDest $ _sAlmZAG // '66'
+						u_help ("Almoxarifado '" + _sAlmDest + "' nao pode ser movimentado diretamente por esta tela, conforme parametro VA_ALMZAG. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
+						_lExigeZAG = .T.
+					endif
+	//				if ! _lExigeZAG .and. '02' $ _sAlmOrig + _sAlmDest .and. (alltrim (_sProdOrig) $ '4191/9998' .or. alltrim (_sProdDest) $ '4191/9998')
+	//					u_help ("Produto(s) envolvido(s) nesta transferencia nao podem mais ser movimentados diretamente por esta tela. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
+	//					_lExigeZAG = .T.
+	//				endif
 				endif
-				if ! _lExigeZAG .and. _sAlmDest $ _sAlmZAG // '66'
-					u_help ("Almoxarifado '" + _sAlmDest + "' nao pode ser movimentado diretamente por esta tela, conforme parametro VA_ALMZAG. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
-					_lExigeZAG = .T.
-				endif
-				if ! _lExigeZAG .and. '02' $ _sAlmOrig + _sAlmDest .and. (alltrim (_sProdOrig) $ '4191/9998' .or. alltrim (_sProdDest) $ '4191/9998')
-					u_help ("Produto(s) envolvido(s) nesta transferencia nao podem mais ser movimentados diretamente por esta tela. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
-					_lExigeZAG = .T.
-				endif
-			endif
+	//		endif
 		endif
-	endif
+	ENDIF
+
 	if _lRet .and. _lExigeZAG
 		_lRet = .F.
 	endif
@@ -153,7 +160,7 @@ User Function MA261LIN ()
 		endif
 	endif
 
-	// Verifica se consta algo no endereco destino. 		
+	// Verifica se consta algo no endereco destino.
 	if _lRet .and. ! empty (_sEndDest)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
