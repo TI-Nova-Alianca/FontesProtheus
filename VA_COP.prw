@@ -13,12 +13,14 @@
 //
 // Historico de alteracoes:
 // 15/09/2020 - Cláudia - Incluido novos campos e alterada o retorno da query para array. GLPI: 8484
+// 13/12/2023 - Robert  - Criados parametros para filtro de tipos de produtos (produzidos e consumidos)
+//                      - Criada coluna de litragem produzida por OP (na opcao detalhada).
 //
+
 // --------------------------------------------------------------------------------------------------
 User Function VA_COP ()
 	Local _oRep      := NIL
 	private cPerg    := "VA_COP"
-	private _sArqLog := U_NomeLog ()
 
 	If TRepInUse()
 		_ValidPerg ()
@@ -31,6 +33,7 @@ User Function VA_COP ()
 		u_help ("Relatorio disponivel apenas na opcao 'personalizavel'.")
 	EndIf
 Return
+
 // -------------------------------------------------------------------------
 // Declaração dos campos
 Static Function ReportDef ()
@@ -44,8 +47,8 @@ Static Function ReportDef ()
 
 	_oSec1 := TRSection():New (_oRep, "Geral", {"Geral"}, , .F., .T.)
 	TRCell():New(_oSec1, "FILIAL",      "", "Fil",              '',                   2,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
-	TRCell():New(_oSec1, "EMISSAO",     "", "Emissao",          "",                  12,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
-	if mv_par14 == 2
+	TRCell():New(_oSec1, "EMISSAO",     "", "Emissao",          "",                  10,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
+	if mv_par14 == 2  // Detalhado
 		TRCell():New(_oSec1, "OP",          "", "O.P.",             '',                  14,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
 	endif
 	TRCell():New(_oSec1, "CODIGO",      "", "Componente",       "",                  15,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
@@ -53,21 +56,24 @@ Static Function ReportDef ()
 	TRCell():New(_oSec1, "TIPO", 		"", "Tipo"	, 			"",                   6,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
 	TRCell():New(_oSec1, "QUANT",       "", "Quantidade",       "@E 999,999,999.99", 15,/*lPixel*/,{|| }, "RIGHT",,,,,,,, .T.)
 	TRCell():New(_oSec1, "UM",          "", "UM",               "",                   2,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
-	if mv_par14 == 2
+	if mv_par14 == 2  // Detalhado
 		TRCell():New(_oSec1, "ALMOX",       "", "ALM",              "",                   2,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
 	endif
 	TRCell():New(_oSec1, "CUSTO",       "", "Valor",            "@E 999,999,999.99", 16,/*lPixel*/,{|| }, "RIGHT",,,,,,,, .T.)
-	TRCell():New(_oSec1, "PROD_FINAL",  "", "Produto da OP",    "",                  15,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
+	TRCell():New(_oSec1, "PROD_FINAL",  "", "Prod.final",       "",                  15,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
 	TRCell():New(_oSec1, "DESCR_FINAL", "", "Descr.prod.final", "",                  35,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
-	TRCell():New(_oSec1, "GRUPO", 		"", "Grupo", 			"",                  10,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
-	TRCell():New(_oSec1, "DESCR_GRUPO", "", "Descr.grupo", 		"",                  30,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
-	
+	TRCell():New(_oSec1, "GRUPO",       "", "Grupo",            "",                   4,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
+	TRCell():New(_oSec1, "DESCR_GRUPO", "", "Descr.grupo",      "",                  15,/*lPixel*/,{|| }, "LEFT",,,,,,,, .T.)
+	if mv_par14 == 2  // Detalhado
+		TRCell():New(_oSec1, "LITR_PROD",   "", "Lt.produz",   "@E 9999,999",         8,/*lPixel*/,{|| }, "RIGHT",,,,,,,, .T.)
+	endif
+
 	_oSec2 := TRSection():New (_oRep, "Totais por UM consumida", {"TotUM"}, , .F., .T.)
 	TRCell():New(_oSec2, "UM",         "", "Unid.medida",     '',                       2,/*lPixel*/,{|| }, "LEFT",,,,,,,,.T.)
 	TRCell():New(_oSec2, "QTCONSUMO",  "", "Qt.consumida",    '@E 999,999,999,999.99', 20,/*lPixel*/,{|| }, "RIGHT",,,,,,,,.T.)
 	TRCell():New(_oSec2, "VLCONSUMO",  "", "Vl.consumido",    '@E 999,999,999,999.99', 20,/*lPixel*/,{|| }, "RIGHT",,,,,,,,.T.)
 Return _oRep
-//
+
 // -------------------------------------------------------------------------
 // Impressão
 Static Function PrintReport (_oRep)
@@ -108,23 +114,32 @@ Static Function PrintReport (_oRep)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " WITH C AS ("
-		_oSQL:_sQuery += " SELECT " 
-		_oSQL:_sQuery += " 		FILIAL" 			
-		_oSQL:_sQuery += " 	   ,DATA"				
-		_oSQL:_sQuery += " 	   ,OP"					
-		_oSQL:_sQuery += " 	   ,TIPO_MOVTO"			
-		_oSQL:_sQuery += " 	   ,CODIGO"				
-		_oSQL:_sQuery += " 	   ,DESCRICAO"			
-		_oSQL:_sQuery += " 	   ,QUANT_REAL"			
-		_oSQL:_sQuery += " 	   ,CUSTO"				
-		_oSQL:_sQuery += " 	   ,UN_MEDIDA"			
-		_oSQL:_sQuery += " 	   ,LOCAL AS ALMOX"			
-		_oSQL:_sQuery += " 	   ,PROD_FINAL"			
-		_oSQL:_sQuery += " 	   ,DESC_PROD_FINAL"	
-		_oSQL:_sQuery += " 	   ,SB1CONS.B1_TIPO AS TIPO"	
-		_oSQL:_sQuery += " 	   ,SB1PROD.B1_GRUPO AS GRUPO"	
-		_oSQL:_sQuery += " 	   ,SBM.BM_DESC AS DESC_GRUPO" 		
-		_oSQL:_sQuery += " FROM VA_VDADOS_OP"
+		_oSQL:_sQuery += " SELECT FILIAL"
+		_oSQL:_sQuery +=       ", DATA"
+		_oSQL:_sQuery +=       ", OP"
+		_oSQL:_sQuery +=       ", TIPO_MOVTO"
+		_oSQL:_sQuery +=       ", CODIGO"
+		_oSQL:_sQuery +=       ", DESCRICAO"
+		_oSQL:_sQuery +=       ", QUANT_REAL"
+		_oSQL:_sQuery +=       ", CUSTO"
+		_oSQL:_sQuery +=       ", UN_MEDIDA"
+		_oSQL:_sQuery +=       ", LOCAL AS ALMOX"
+		_oSQL:_sQuery +=       ", PROD_FINAL"
+		_oSQL:_sQuery +=       ", DESC_PROD_FINAL"
+		_oSQL:_sQuery +=       ", SB1CONS.B1_TIPO AS TIPO"
+		_oSQL:_sQuery +=       ", SB1PROD.B1_GRUPO AS GRUPO"
+		_oSQL:_sQuery +=       ", SBM.BM_DESC AS DESC_GRUPO"
+		if mv_par14 == 2  // Detalhado
+			_oSQL:_sQuery +=       ", SB1PROD.B1_LITROS * (SELECT SUM (D3_QUANT)"
+			_oSQL:_sQuery +=                               " FROM " + RetSQLName ("SD3") + " SD3_P"
+			_oSQL:_sQuery +=                              " WHERE SD3_P.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=                                " AND SD3_P.D3_FILIAL  = V.FILIAL"
+			_oSQL:_sQuery +=                                " AND SD3_P.D3_OP      = V.OP"
+			_oSQL:_sQuery +=                                " AND SD3_P.D3_CF      LIKE 'PR%'"
+			_oSQL:_sQuery +=                                " AND SD3_P.D3_ESTORNO = ''"
+			_oSQL:_sQuery +=                             ") AS LITR_PROD"
+		endif
+		_oSQL:_sQuery += " FROM VA_VDADOS_OP V"
 		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SB1") + " SB1CONS "
 		_oSQL:_sQuery += " 		ON (SB1CONS.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " 		AND SB1CONS.B1_COD = CODIGO)"
@@ -143,8 +158,15 @@ Static Function PrintReport (_oRep)
 		_oSQL:_sQuery +=   " 	AND GRUPO BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
 		_oSQL:_sQuery +=   " 	AND OP    BETWEEN '" + mv_par09 + "' AND '" + mv_par10 + "'"
 		_oSQL:_sQuery +=   " 	AND PROD_FINAL BETWEEN '" + mv_par11 + "' AND '" + mv_par12 + "'"
+		_oSQL:_sQuery +=   " 	AND PROD_FINAL BETWEEN '" + mv_par11 + "' AND '" + mv_par12 + "'"
 		if ! empty (mv_par13)
 			_oSQL:_sQuery += " 	AND PROD_FINAL IN " + FormatIn (mv_par13, '/')
+		endif
+		if ! empty (mv_par15)
+			_oSQL:_sQuery += " AND SB1CONS.B1_TIPO IN " + FormatIn (mv_par15, '/')
+		endif
+		if ! empty (mv_par16)
+			_oSQL:_sQuery += " AND SB1PROD.B1_TIPO IN " + FormatIn (mv_par16, '/')
 		endif
 		_oSQL:_sQuery +=   " 	AND TIPO_MOVTO != 'P'"   // QUERO APENAS OS CONSUMOS E DEVOLUCOES
 		
@@ -163,7 +185,7 @@ Static Function PrintReport (_oRep)
 		if mv_par14 == 1
 			_oSQL:_sQuery += " SELECT FILIAL, SUBSTRING (DATA, 5, 2) + '/' + SUBSTRING (DATA, 1, 4) as DATA, TIPO_MOVTO, CODIGO, DESCRICAO, TIPO, UN_MEDIDA, PROD_FINAL, DESC_PROD_FINAL, "
 			_oSQL:_sQuery += " GRUPO ,DESC_GRUPO, SUM (QUANT_REAL) AS QUANT_REAL, SUM (CUSTO) AS CUSTO"
-			_oSQL:_sQuery += " 		FROM C"
+			_oSQL:_sQuery += " FROM C"
 			_oSQL:_sQuery += " GROUP BY FILIAL, SUBSTRING (DATA, 5, 2) + '/' + SUBSTRING (DATA, 1, 4), TIPO_MOVTO, CODIGO, DESCRICAO, TIPO, UN_MEDIDA, PROD_FINAL, DESC_PROD_FINAL, GRUPO ,DESC_GRUPO "
 			_oSQL:_sQuery += " ORDER BY SUBSTRING (DATA, 5, 2) + '/' + SUBSTRING (DATA, 1, 4), FILIAL, TIPO_MOVTO"
 		else
@@ -171,7 +193,7 @@ Static Function PrintReport (_oRep)
 			_oSQL:_sQuery += " 		FROM C"
 			_oSQL:_sQuery += " ORDER BY DATA, FILIAL, TIPO_MOVTO"
 		endif
-		_oSQL:Log ()
+		_oSQL:Log ('[' + procname () + ']')
 		_sAliasQ := _oSQL:Qry2Trb ()
 		procregua ((_sAliasQ) -> (reccount ()))
 		(_sAliasQ) -> (dbgotop ())
@@ -202,19 +224,10 @@ Static Function PrintReport (_oRep)
 			_oSec1:Cell("DESCR_FINAL"):SetBlock ({|| (_sAliasQ) -> desc_prod_final})
 			_oSec1:Cell("GRUPO"):SetBlock  		({|| (_sAliasQ) -> grupo})
 			_oSec1:Cell("DESCR_GRUPO"):SetBlock ({|| (_sAliasQ) -> desc_grupo})
+			if mv_par14 == 2  // Detalhado
+				_oSec1:Cell("LITR_PROD"):SetBlock   ({|| (_sAliasQ) -> litr_prod})
+			endif
 			_oSec1:PrintLine ()
-
-
-//			NAO VAI DAR CERTO. TERIA QUE SER POR UM ORIGEM + PRODUTO DESTINO
-//			// Acumula na array de totais por produto final
-//			_nTotDest = ascan (_aTotDest, {| _aVal| _aVal [1] == (_sAliasQ) -> desc_prod_final})
-//			if _nTotDest == 0
-//				aadd (_aTotDest, {(_sAliasQ) -> desc_prod_final, 0, 0})
-//				_nTotDest = len (_aTotDest)
-//			endif
-//			_aTotDest [_nTotDest, 2] += (_sAliasQ) -> quant_real * iif ((_sAliasQ) -> TIPO_MOVTO == 'D', -1, 1)
-//			_aTotDest [_nTotDest, 3] += (_sAliasQ) -> custo * iif ((_sAliasQ) -> TIPO_MOVTO == 'D', -1, 1)
-
 
 			// Acumula na array de totais por unidade de medida
 			_nTotUM = ascan (_aTotUM, {| _aVal| _aVal [1] == (_sAliasQ) -> un_medida})
@@ -228,19 +241,6 @@ Static Function PrintReport (_oRep)
 			(_sAliasQ) -> (dbskip ())
 	 	enddo
 		_oSec1:Finish ()
-
-
-		// Impressao de totais gerais por produto destino
-//		asort (_aTotDest,,, {|_x, _y| _x [1] < _y [1]})
-//		_oSec2:Init()
-//		for _nTotDest = 1 to len (_aTotDest)
-//			_oSec2:Cell("UM"):SetBlock ({|| _aTotDest [_nTotDest, 1]})
-//			_oSec2:Cell("QTCONSUMO"):SetBlock ({|| _aTotDest [_nTotDest, 2]})
-//			_oSec2:Cell("VLCONSUMO"):SetBlock ({|| _aTotDest [_nTotDest, 3]})
-//			_oSec2:PrintLine ()
-//		next
-//		_oSec2:Finish ()
-
 
 		// Impressao de totais gerais por unidade de medida
 		asort (_aTotUM,,, {|_x, _y| _x [1] < _y [1]})
@@ -262,7 +262,7 @@ Static Function PrintReport (_oRep)
 		_oSec2:Finish ()
 	endif
 Return
-//
+
 // -------------------------------------------------------------------------
 // Perguntas
 Static Function _ValidPerg ()
@@ -283,5 +283,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {12, "Produto final da OP ate       ", "C", 15, 0,  "",   "SB1", {},                        ""})
 	aadd (_aRegsPerg, {13, "Prd(final)especif(sep.barras) ", "C", 60, 0,  "",   "   ", {},                        ""})
 	aadd (_aRegsPerg, {14, "Resumido/detalhado            ", "N",  1, 0,  "",   "   ", {"Resumido", "Detalhado"}, ""})
+	aadd (_aRegsPerg, {15, "Tipos prd.consumido(sep.barra)", "C", 60, 0,  "",   "   ", {},                        ""})
+	aadd (_aRegsPerg, {16, "Tipos prd.final(sep.barras)   ", "C", 60, 0,  "",   "   ", {},                        ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
