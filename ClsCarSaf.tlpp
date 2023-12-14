@@ -976,23 +976,37 @@ return
 
 // --------------------------------------------------------------------------
 // Gera (re)impressao do ticket da carga.
-METHOD ImprimeTk (_nQualTk) Class ClsCarSaf
+METHOD ImprimeTk (_nQualTk as numeric) Class ClsCarSaf
 	local _nQtVias := 0
-	// Se nao especificado qual ticket (1a. ou 2a. pesagem), verifica se quais dados jah tem.
-	if empty (_nQualTk)
-		_nQualTk = iif (::PesoTara != 0, 2, 1)
-	endif
-	
-	// Producao propria: nao preciso entregar segunda via de ticket a ninguem.
-	if ::Fornece == '001369' .and. ::Loja == '02'
-		_nQtVias = 1
-	else
-		_nQtVias := iif (_nQualTk == 1, 1, 2)
-	endif
+	local _lRet    := .T.
 
-	U_VA_RusTk (_nQualTk, ::PortImpTk, _nQtVias, {}, 'bematech', .t.)
+	if _lRet .and. empty (_nQualTk)
+		_Super:SomaMsg ("Para impressao de ticket deve ser informado se deseja 1a. ou 2a. pesagem.")
+		_lRet  = .F.
+	endif
+	if _lRet .and. ! (_nQualTk == 1 .or. _nQualTk == 2)
+		_Super:SomaMsg ("Opcao de impressao de ticket somente para 1a. ou 2a. pesagem.")
+		_lRet  = .F.
+	endif
+	if _lRet .and. _nQualTk == 1 .and. ::PesoBruto == 0
+		_Super:SomaMsg ("Solicitada impressao de ticket de 1a. pesagem, mas a carga ainda nao tem peso bruto.")
+		_lRet  = .F.
+	endif
+	if _lRet .and. _nQualTk == 2 .and. ::PesoTara == 0
+		_Super:SomaMsg ("Solicitada impressao de ticket de 2a. pesagem, mas a carga ainda nao tem peso tara.")
+		_lRet  = .F.
+	endif
+	if _lRet
+		// Producao propria: nao preciso entregar segunda via de ticket a ninguem.
+		if ::Fornece == '001369' .and. ::Loja == '02'
+			_nQtVias = 1
+		else
+			_nQtVias := iif (_nQualTk == 1, 1, 2)
+		endif
 
-return
+		U_VA_RusTk (_nQualTk, ::PortImpTk, _nQtVias, {}, 'bematech', .t.)
+	endif
+return _lRet
 
 
 // --------------------------------------------------------------------------
@@ -1000,7 +1014,6 @@ return
 METHOD Log () Class ClsCarSaf
 	local _sLogCar  := ''
 	local _nItCarga := 0
-//	local _nCompart := 0
 
 	_sLogCar += '  Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + ' Status: ' + ::StatusCar + chr (13) + chr (10)
 	_sLogCar += '  Peso bruto: ' + cvaltochar (::PesoBruto) + ' Peso tara: ' + cvaltochar (::PesoTara) + chr (13) + chr (10)

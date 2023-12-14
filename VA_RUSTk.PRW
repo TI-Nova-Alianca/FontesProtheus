@@ -83,7 +83,8 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		endif
 		_sTicket += padc (left (alltrim (sm0 -> m0_nomecom), _nTamLin), _nTamLin, ' ') + _Enter
 		_sTicket += padc (left ('***  ENTRADA SAFRA ' + sze -> ze_safra + '  ***', _nTamLin), _nTamLin, ' ') + _Enter
-		_sTicket += padc (left ('Local: ' + sze -> ze_local + '  (filial ' + alltrim (sm0 -> m0_filial) + ')', _nTamLin), _nTamLin, ' ') + _Enter
+	//	_sTicket += padc (left ('Local: ' + sze -> ze_local + '  (filial ' + alltrim (sm0 -> m0_filial) + ')', _nTamLin), _nTamLin, ' ') + _Enter
+		_sTicket += padc (left ('Local: filial ' + alltrim (sm0 -> m0_filial), _nTamLin), _nTamLin, ' ') + _Enter
 		_sTicket += _Enter
 		_sTicket += 'Carga: ' + sze -> ze_carga + '   ' + dtoc (sze -> ze_data) + ' ' + sze -> ze_hora + '   ' + left (sze -> ze_placa, 3) + '-' + substr (sze -> ze_placa, 4, 4) + _Enter
 	

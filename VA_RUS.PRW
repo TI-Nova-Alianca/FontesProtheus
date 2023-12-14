@@ -228,11 +228,15 @@ user function VA_RUSOO (_sQueFazer)
 
 	do case
 	case _sQueFazer == upper ('Tk1Pes')  // Sim, a chamada pelo menu parece passar tudo em maiusculas.
-		_oCarSaf:ImprimeTk (1)
+		if ! _oCarSaf:ImprimeTk (1)
+			u_help (_oCarSaf:UltMsg,, .t.)
+		endif
 
 	case _sQueFazer == upper ('Tk2Pes')
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
-		_oCarSaf:ImprimeTk (2)
+		if ! _oCarSaf:ImprimeTk (2)
+			u_help (_oCarSaf:UltMsg,, .t.)
+		endif
 
 	case _sQueFazer == upper ('GerarContranota')
 		U_VA_RUSN (.F.)

@@ -3553,8 +3553,8 @@ return
 // --------------------------------------------------------------------------
 static function _VA_ACR ()
 
-	U_GravaSX1 ("VA_ACR", "01", "2626")
-	U_GravaSX1 ("VA_ACR", "02", "2627")
+	U_GravaSX1 ("VA_ACR", "01", "2625")
+	U_GravaSX1 ("VA_ACR", "02", "2626")  //2627
 	U_GravaSX1 ("VA_ACR", "03", 'PA')  // Tipos a listar
 	U_GravaSX1 ("VA_ACR", "04", 1)  // Considerar subniveis dos VD [S/N]
 	U_GravaSX1 ("VA_ACR", "05", '')  // Linha coml.de
