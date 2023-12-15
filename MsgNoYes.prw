@@ -18,7 +18,8 @@ User function MsgNoYes (_sMsg, _lDefault)
 	local _lRet := .F.
 
 	if type ("oMainWnd") == "O"  // Se tem interface com o usuario
-		_lRet = msgNoyes (_sMsg, 'Pergunta')
+//		_lRet = msgNoyes (_sMsg, 'Pergunta')
+		_lRet = msgNoyes (_sMsg, procname (1) + ' => ' + procname (2))
 	else
 		if IsInCallStack ("SIGAACD")
 			_lRet = VtYESNO(_sMsg,'Atencao',.t.)

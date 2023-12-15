@@ -267,7 +267,7 @@ Return
 // Perguntas
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
-	
+
 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                     Help
 	aadd (_aRegsPerg, {01, "Data de                       ", "D",  8, 0,  "",   "   ", {},                        ""})
 	aadd (_aRegsPerg, {02, "Data ate                      ", "D",  8, 0,  "",   "   ", {},                        ""})

@@ -1,0 +1,52 @@
+// Programa:  A250SPRC
+// Autor:     Robert Koch
+// Data:      15/12/2023
+// Descricao: P.E. que valida se permite encerrar OP com requisicoes posteriores.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Ponto_entrada
+// #Descricao         #P.E. que valida se permite encerrar OP com requisicoes posteriores ao apontamento.
+// #PalavasChave      #OP #O.P. #encerramento #C2_DATRF
+// #TabelasPrincipais #SD3
+// #Modulos           #EST #PCP
+
+// --------------------------------------------------------------------------
+user function A250SPRC ()
+	local _lRet     := .T.
+	local _oSQL     := NIL
+	local _dUltMov  := ctod ('')
+	local _sOP      := paramixb [1]
+	local _dDtApont := paramixb [2]
+	local _aAreaAnt := U_ML_SRArea ()
+
+	// Nao sei por que este P.E. eh chamado tambem quando a OP jah encontra-se encerrada...
+	if ! empty (fBuscaCpo ("SC2", 1, xfilial ("SC2") + _sOP, "C2_DATRF"))
+		_lRet = .F.
+	else
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT MAX (D3_EMISSAO)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3"
+		_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
+		_oSQL:_sQuery +=   " AND SD3.D3_OP      = '" + _sOP + "'"
+		_oSQL:_sQuery +=   " AND SD3.D3_EMISSAO > '" + dtos (_dDtApont) + "'"
+		_oSQL:_sQuery +=   " AND SD3.D3_CF      LIKE 'RE%'"
+		_oSQL:_sQuery +=   " AND SD3.D3_ESTORNO != 'S'"
+		_oSQL:Log ('[' + procname () + ']')
+		_dUltMov = stod (_oSQL:RetQry (1, .f.))
+		U_Log2 ('debug', '[' + procname () + ']' + dtoc (_dUltMov))
+		if ! empty (_dUltMov)
+
+			// Creio que teria que ficar no mesmo mes pelo bem do custo medio,
+			// mas isso ainda pode ser revisto...
+			if ! (year (_dUltMov) == year (_dDtApont) .and. month (_dUltMov) == month (_dDtApont))
+				u_help ("Data para encerramento da OP (" + dtoc (_dDtApont) + ") e data da ultima requisicao (" + dtoc (_dUltMov) + ") devem ficar, pelo menos, dentro do mesmo mes.",, .t.)
+			else
+				_lRet = U_MsgNoYes ("Foi encontrada movimentacao nesta OP com data posterior (" + dtoc (_dUltMov) + ") ao apontamento. Deseja encerrar a OP assim mesmo?", .F.)
+			endif
+		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lRet

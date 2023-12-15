@@ -8,7 +8,7 @@
 // #Descricao         #Disponibilizacao de Web Services em geral
 // #PalavasChave      #web_service #generico #integracoes #naweb
 // #TabelasPrincipais #SD1 #SD2 #SD3
-// #Modulos           
+// #Modulos           Todos
 //
 // Historico de alteracoes:
 // ??/08/2017 - Julio   - Implementada gravacao do arquico ZAM
@@ -146,13 +146,21 @@ WSSTRUCT RetornoWS
 	WSDATA Mensagens AS String OPTIONAL
 ENDWSSTRUCT
 
+// // Estrutura de retorno de dados para filial 01
+// WSSTRUCT RetornoWS01
+// 	WSDATA Resultado AS String
+// 	WSDATA Mensagens AS String OPTIONAL
+// ENDWSSTRUCT
+
 // --------------------------------------------------------------------------
 // WebService
 WSSERVICE WS_Alianca DESCRIPTION "Nova Alianca - Executa atualizacoes diversas"
-	WSDATA XmlRcv  AS string
-	WSDATA Retorno AS RetornoWS
+	WSDATA XmlRcv    AS string
+	WSDATA Retorno   AS RetornoWS
+//	WSDATA Retorno01 AS RetornoWS01
 
 	WSMETHOD IntegraWS DESCRIPTION "Executa integracoes conforme tags do XML."
+//	WSMETHOD IntegraWS01 DESCRIPTION "Executa integracoes conforme tags do XML."
 ENDWSSERVICE
 
 // --------------------------------------------------------------------------
@@ -167,7 +175,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	private _sWS_Empr  := ""
 	private _sWS_Filia := ""
 	private _oXML      := NIL
-	private _sErroWS  := ""
+	private _sErroWS   := ""
 	private _sMsgRetWS := ""
 	private _sAcao     := ""
 	private _sArqLog   := GetClassName (::Self) + ".log"
@@ -180,15 +188,10 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	// em portas diferentes, um para cada filial (criar tratamento para outras
 	// filiais conforme surgir necessidade)
 	// Manter compatibilidade com a porta HTTP configurada no arquivo appserver.ini
-	// Pretendo usar as portas mantendo o seguinte padrao:
-	// 79+filial+[1,2,3...] se houver necessidade de balanceamento de carga
-	// Ex.: porta 7901  = filial 01
-	//      porta 79011 = filial 01 (2a. porta do balanceamento de carga)
-	//      porta 79012 = filial 01 (3a. porta do balanceamento de carga)
-	//      porta 7907  = filial 07
 	U_Log2 ('debug', '[' + procname () + ']httpHeadIn->HOST = ' + cvaltochar (httpHeadIn->HOST))
 	_sExclFIli = ''
 	if empty (_sErroWS) .and. ':7901' $ httpHeadIn->HOST
+//	if '<FILIAL>01</FILIAL>' $ upper (::XmlRcv)
 		_sExclFIli = '01'
 	endif
 
@@ -342,15 +345,14 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	// Cria a instância de retorno
 	::Retorno := WSClassNew ("RetornoWS")
 	::Retorno:Resultado = iif (empty (_sErroWS), "OK", "ERRO")
-//	::Retorno:Mensagens = _sErroWS + _sMsgRetWS
-	::Retorno:Mensagens  = ''
+	::Retorno:Mensagens := ''
 	::Retorno:Mensagens += iif (_sErroWS $ ::Retorno:Mensagens, '', _sErroWS)
 	::Retorno:Mensagens += iif (_sMsgRetWS $ ::Retorno:Mensagens, '', _sMsgRetWS)
 
 	// Encerra ambiente. Ficou um pouco mais lento, mas resolveu problema que estava dando de,
 	// a cada execucao, trazer um cFilAnt diferente. Robert, 09/01/2020.
 	// dica em: https://centraldeatendimento.totvs.com/hc/pt-br/articles/360027855031-MP-ADVPL-FINAL-GERA-EXCE%C3%87%C3%83O
-	if empty (_sExclFIli)
+	if empty (_sExclFili)
 		RPCClearEnv ()
 	else
 		U_Log2 ('debug', '[' + procname () + ']Vou manter ambiente aberto por que estou numa porta que atende uma filial exclusiva.')
@@ -366,7 +368,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	u_log2 ('info', 'Retorno   WS: ' + ::Retorno:Resultado + ' (' + cvaltochar (seconds () - _nSegIni) + 's.)')
 	u_log2 ('info', '')  // Apenas para gerar uma linha vazia
 Return .T.
-//
+
+
 // --------------------------------------------------------------------------
 // Atualiza a estrutura de uma tabela (drop + chkfile + append)
 static function _AtuEstru ()
@@ -2634,49 +2637,49 @@ static function _ImpEtiqZAG ()
 	local _oEtiq    := NIL
 
 	if empty (_sErroWS) ; _sDocZAG  = _ExtraiTag ("_oXML:_WSAlianca:_DocZAG",        .T., .F.) ; endif
-		if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora", .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora", .T., .F.) ; endif
 
-			// Validacao inicial do numero da etiqueta.
-			if empty (_sErroWS)
-				zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
-				if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-					_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
+	// Validacao inicial do numero da etiqueta.
+	if empty (_sErroWS)
+		zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
+		if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+			_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
+		else
+			_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+
+			// Se nao tem etiqueta, eh possivel que tenha dado problema na
+			// geracao da mesma. Vou tentar gerar novamente.
+			if empty (_oTrEstq:Etiqueta)
+				U_Log2 ('debug', '[' + procname () + ']nao tem etiq.ainda. Vou gerar.')
+				_oTrEstq:ImprEtq = _sCodImpr
+				if ! _oTrEstq:GeraEtiq (.T.)
+					_SomaErro (_oTrEstq:UltMsg)
 				else
-					_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-
-					// Se nao tem etiqueta, eh possivel que tenha dado problema na
-					// geracao da mesma. Vou tentar gerar novamente.
-					if empty (_oTrEstq:Etiqueta)
-						U_Log2 ('debug', '[' + procname () + ']nao tem etiq.ainda. Vou gerar.')
-						_oTrEstq:ImprEtq = _sCodImpr
-						if ! _oTrEstq:GeraEtiq (.T.)
-							_SomaErro (_oTrEstq:UltMsg)
-						else
-							_sMsgRetWS += _oTrEstq:UltMsg
-						endif
+					_sMsgRetWS += _oTrEstq:UltMsg
+				endif
+			else
+				U_Log2 ('debug', '[' + procname () + ']jah tem a etiq ' + _oTrEstq:Etiqueta + ' Vou imprimir.')
+				_oEtiq := ClsEtiq ():New (_oTrEstq:Etiqueta)
+				if _oEtiq:Codigo != _oTrEstq:Etiqueta
+					_SomaErro ("Numero de etiqueta invalido.")
+				else
+					//	U_Log2 ('debug', '[' + procname () + ']_sCodImpr = ' + _sCodImpr)
+					if ! _oEtiq:Imprime (_sCodImpr)
+						_SomaErro ('Erro na impressao.' + _oEtiq:UltMsg)
 					else
-						U_Log2 ('debug', '[' + procname () + ']jah tem a etiq ' + _oTrEstq:Etiqueta + ' Vou imprimir.')
-						_oEtiq := ClsEtiq ():New (_oTrEstq:Etiqueta)
-						if _oEtiq:Codigo != _oTrEstq:Etiqueta
-							_SomaErro ("Numero de etiqueta invalido.")
-						else
-							//	U_Log2 ('debug', '[' + procname () + ']_sCodImpr = ' + _sCodImpr)
-							if ! _oEtiq:Imprime (_sCodImpr)
-								_SomaErro ('Erro na impressao.' + _oEtiq:UltMsg)
-							else
-								// Como tive casos de falta de algum cadastro, o pessoal
-								// apenas atualizou cadastro e tentou reimprimir a
-								// etiqueta, na esperanca de que jah fosse reenviada para
-								// o FullWMS. Nao custa nada dar uma maozinha...
-								_oEtiq:EnviaFull (.f.)
+						// Como tive casos de falta de algum cadastro, o pessoal
+						// apenas atualizou cadastro e tentou reimprimir a
+						// etiqueta, na esperanca de que jah fosse reenviada para
+						// o FullWMS. Nao custa nada dar uma maozinha...
+						_oEtiq:EnviaFull (.f.)
 
-								_sMsgRetWS += _oEtiq:UltMsg
-							endif
-						endif
+						_sMsgRetWS += _oEtiq:UltMsg
 					endif
 				endif
 			endif
-			return
+		endif
+	endif
+return
 
 
 // --------------------------------------------------------------------------

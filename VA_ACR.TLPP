@@ -111,6 +111,7 @@ static function _Gera ()
 
 	// Cria lista de produtos que deveriam ter o campo B1_REVATU informado
 	_oVerif := ClsVerif():New (1)
+	_oVerif:ComTela = .F.
 	_oVerif:Executa ()
 //	U_Log2 ('debug', '[' + procname () + ']Resultado da verificacao:')
 //	U_Log2 ('debug', _oVerif:Result)
@@ -731,8 +732,9 @@ static function _SimEstru (_sProduto as character, _lExpTodas as logical)
 
 	if _lContinua
 		for _nPosEstr = _nPosIni to _nPosFim
-	//		U_Log2 ('debug', '[' + procname () + ']Lendo _nPosEstr = ' + cvaltochar (_nPosEstr))
+//			U_Log2 ('debug', '[' + procname () + ']Lendo _nPosEstr = ' + cvaltochar (_nPosEstr))
 			_sProduto = _aEstruts [_nPosEstr, 1]
+			U_Log2 ('debug', '[' + procname () + ']exportando estrutura do produto ' + _sProduto)
 			incproc (_sProduto)
 
 			// Extrai, da array de estruturas que jah tenho em memoria, a estrutura
