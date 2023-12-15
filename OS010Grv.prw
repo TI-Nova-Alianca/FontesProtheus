@@ -20,17 +20,17 @@
 user function OS010Grv ()
 	local _aAreaAnt := U_ML_SRArea ()
 
-//	u_log2 ('debug', 'Iniciando ' + procname ())
-//	u_log2 ('debug', paramixb)
 	if paramixb [1] == 1  // Usuario confirmou
-//		u_log2 ('debug', 'usuario confirmou a tela')
 		if paramixb [2] == 3 .or. paramixb [2] == 4  // Inclusao ou alteracao
 			da0 -> (dbsetorder (1))
 			if da0 -> (dbseek (xfilial ("DA0") + m->da0_codtab, .F.))  // O alias DA0 nao chega aqui posicionado.
-//				u_log2 ('debug', 'encontrou DA0')
 				U_AtuMerc ('DA0', da0 -> (recno ()))
 			else
 				u_log2 ('aviso', 'Nao encontrei codigo ' + m->da0_codtab + ' na tabela DA0 para enviar atualizacao ao Mercanet.')
+			endif
+
+			if paramixb [2] == 4 // envia e-mail de alteração
+				U_VA_DA0MAIL()
 			endif
 		endif
 	endif
