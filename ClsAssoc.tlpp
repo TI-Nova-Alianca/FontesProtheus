@@ -119,6 +119,8 @@
 //                        metodos, por questao de performance (raramente sao usados, e
 //                        exigiam leitura no NaWeb a cada vez que instanciava a classe).
 // 29/09/2023 - Robert  - Passa a gerar mais tags de detalhamento na prev.pagto.safra (GLPI 9561)
+// 15/12/2023 - Robert  - Portado de .prw para .tlpp e passa a herdar a ClsBase (GLPI 14548)
+//                      - Iniciada versao 3 do calculo de correcao monetaria.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -132,79 +134,80 @@ return
 
 
 // ==========================================================================
-CLASS ClsAssoc
+CLASS ClsAssoc from ClsBase
 
 	// Declaracao das propriedades da Classe
-	data Bloqueado   // [.T. / .F.] Registro bloqueado para uso (A2_MSBLQL)
-	data CEP
-	data CPF         // CPF do associado
-	data CPFConju    // CPF do conjuge
-	data Celular
-	data CodBase
-	data Codigo
-	data aCodigos    // Array com todos os codigos (A2_COD). Util quando o associado tiver mais de um codigo/loja. 
-	data aInscrEst   // Array com todas as inscr.est. (A2_INSCR). Util quando o associado tiver mais de um codigo/loja.
-	data aLojas      // Array com todas as lojas (A2_LOJA). Util quando o associado tiver mais de um codigo/loja.
-	data CoopOrigem
-	data DAPMotivo   // naweb.CCAssociadoDAP.CCAssociadoMotDapDesc - Motivo de nao ter DAP
-	data DAPNumero   // naweb.CCAssociadoDAP.CCAssociadoNrDap      - Numero da DAP
-	data DAPValidad  // naweb.CCAssociadoDAP.CCAssociadoDapVcto    - Data de validade
-	data DtFalecim
-	data DtNascim
-	data EMail
-	data Endereco
-	data FSDFunrur    // Fechamento de safra: Indica se deve buscar descontos de FUNRURAL
-	data FSFrete      // Fechamento de safra: Indica se deve buscar dados de frete / auxilio combustivel
-	data FSLctosCC    // Fechamento de safra: Indica se deve buscar lancamentos com saldo na conta corrente
-	data FSNFEntrada  // Fechamento de safra: Indica se deve buscar as NF de entrada (antigamente a safra dividia-se em 'recebimento' e 'compra')
-	data FSNFCompra   // Fechamento de safra: Indica se deve buscar as NF de compra
-	data FSNFComplem  // Fechamento de safra: Indica se deve buscar as NF de complemento de valor
-	data FSNFPrdProp  // Fechamento de safra: Indica se deve buscar as NF de producao propria
-	data FSPrevPagto  // Fechamento de safra: Indica se deve buscar as previsoes de pagamento
-	data FSPrPgtAbat  // Fechamento de safra: Indica se deve buscar abatimentos das previsoes de pagamento
-	data FSRegraPagto // Fechamento de safra: Indica se deve buscar regras para pagamento
-	data FSResValEfet // Fechamento de safra: Indica se deve buscar resumo com valores efetivos por variedade
-	data FSResVaried  // Fechamento de safra: Indica se deve buscar resumo por variedade
-	data FSResVarGC   // Fechamento de safra: Indica se deve buscar resumo por variedade / grau / classificacao
-	data FSSafra      // Fechamento de safra: Indica qual safra deve ser considerada
-	data InscrEst     // Inscricao estadual.
-	data Loja
-	data LojaBase
-	data MotInativ   // Motivo de ser considerado inativo
-	data Municipio
-	data Nome
-	data NomeConju   // Nome do conjuge
-	data Posse       // Posse da terra: AR=Arrendatario;CO=Comodatario;OU=Outra;PA=Parceiro;PO=Posseiro;PR=Proprietario;PP=Propriet. Parceiro;PE=Propriet. Arrendatario 
-	data RG
-	data FUNCAO
-	data Telefone
-	data UF
-	data UltMsg     // Ultima(s) mensagem(s) do objeto, geralmente mensagens de erro.
+	public data Bloqueado   // [.T. / .F.] Registro bloqueado para uso (A2_MSBLQL)
+	public data CEP
+	public data CPF         // CPF do associado
+	public data CPFConju    // CPF do conjuge
+	public data Celular
+	public data CodBase
+	public data Codigo
+	public data aCodigos    // Array com todos os codigos (A2_COD). Util quando o associado tiver mais de um codigo/loja. 
+	public data aInscrEst   // Array com todas as inscr.est. (A2_INSCR). Util quando o associado tiver mais de um codigo/loja.
+	public data aLojas      // Array com todas as lojas (A2_LOJA). Util quando o associado tiver mais de um codigo/loja.
+	public data CoopOrigem
+	public data DAPMotivo   // naweb.CCAssociadoDAP.CCAssociadoMotDapDesc - Motivo de nao ter DAP
+	public data DAPNumero   // naweb.CCAssociadoDAP.CCAssociadoNrDap      - Numero da DAP
+	public data DAPValidad  // naweb.CCAssociadoDAP.CCAssociadoDapVcto    - Data de validade
+	public data DtFalecim
+	public data DtNascim
+	public data EMail
+	public data Endereco
+	public data FSDFunrur    // Fechamento de safra: Indica se deve buscar descontos de FUNRURAL
+	public data FSFrete      // Fechamento de safra: Indica se deve buscar dados de frete / auxilio combustivel
+	public data FSLctosCC    // Fechamento de safra: Indica se deve buscar lancamentos com saldo na conta corrente
+	public data FSNFEntrada  // Fechamento de safra: Indica se deve buscar as NF de entrada (antigamente a safra dividia-se em 'recebimento' e 'compra')
+	public data FSNFCompra   // Fechamento de safra: Indica se deve buscar as NF de compra
+	public data FSNFComplem  // Fechamento de safra: Indica se deve buscar as NF de complemento de valor
+	public data FSNFPrdProp  // Fechamento de safra: Indica se deve buscar as NF de producao propria
+	public data FSPrevPagto  // Fechamento de safra: Indica se deve buscar as previsoes de pagamento
+	public data FSPrPgtAbat  // Fechamento de safra: Indica se deve buscar abatimentos das previsoes de pagamento
+	public data FSRegraPagto // Fechamento de safra: Indica se deve buscar regras para pagamento
+	public data FSResValEfet // Fechamento de safra: Indica se deve buscar resumo com valores efetivos por variedade
+	public data FSResVaried  // Fechamento de safra: Indica se deve buscar resumo por variedade
+	public data FSResVarGC   // Fechamento de safra: Indica se deve buscar resumo por variedade / grau / classificacao
+	public data FSSafra      // Fechamento de safra: Indica qual safra deve ser considerada
+	public data InscrEst     // Inscricao estadual.
+	public data Loja
+	public data LojaBase
+	public data MotInativ   // Motivo de ser considerado inativo
+	public data Municipio
+	public data Nome
+	public data NomeConju   // Nome do conjuge
+	public data Posse       // Posse da terra: AR=Arrendatario;CO=Comodatario;OU=Outra;PA=Parceiro;PO=Posseiro;PR=Proprietario;PP=Propriet. Parceiro;PE=Propriet. Arrendatario 
+	public data RG
+	public data FUNCAO
+	public data Telefone
+	public data UF
+	public data UltMsg     // Ultima(s) mensagem(s) do objeto, geralmente mensagens de erro.
 
 	// Declaracao dos Metodos da classe
-	METHOD New ()
-	METHOD AgeBanc ()
-	METHOD Ativo ()  // Verifica se o associado encontra-se ativo (com direito a voto, etc) na data de referencia.
-	METHOD AtuSaldo ()
-	METHOD BuscarDAP ()  // Buscar as informacoes sobre DAP no NaWeb
-	METHOD CadVitic ()
-	METHOD CalcCM ()
-	METHOD DtEntForUva ()
-	METHOD DtEntrada ()
-	METHOD DtSaida ()
-	METHOD DtSaiForUva ()
-	METHOD EhSocio ()
-	METHOD EhFornUva ()
-	METHOD FechSafra ()
-	METHOD GrpFam ()
-	METHOD IdadeEm ()
-	METHOD Nucleo ()
-	METHOD LctComSald ()
-	METHOD SaldoEm ()
-	METHOD SldQuotCap ()
-	METHOD Subnucleo ()
-	METHOD TmpAssoc ()
-	METHOD UltSafra ()
+	public  METHOD New ()
+	public  METHOD AgeBanc ()
+	public  METHOD Ativo ()  // Verifica se o associado encontra-se ativo (com direito a voto, etc) na data de referencia.
+	public  METHOD AtuSaldo ()
+//	public  METHOD BuscarDAP ()  // Buscar as informacoes sobre DAP no NaWeb
+	public  METHOD CadVitic ()
+//	public  METHOD CalcCM ()
+	public  METHOD CalcCM3 ()  // Calcula correcao monetaria (versao 3)
+	private METHOD DtEntForUva ()
+	public  METHOD DtEntrada ()
+	public  METHOD DtSaida ()
+	private METHOD DtSaiForUva ()
+	public  METHOD EhSocio ()
+	public  METHOD EhFornUva ()
+	public  METHOD FechSafra ()
+	public  METHOD GrpFam ()
+	public  METHOD IdadeEm ()
+	public  METHOD Nucleo ()
+//	public  METHOD LctComSald ()
+	public  METHOD SaldoEm ()
+	public  METHOD SldQuotCap ()
+	public  METHOD Subnucleo ()
+	public  METHOD TmpAssoc ()
+	public  METHOD UltSafra ()
 ENDCLASS
 
 
@@ -253,7 +256,6 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 			_lContinua = .F.
 		endif
 		if _lContinua .and. (empty (sa2 -> a2_vacbase) .or. empty (sa2 -> a2_valbase))
-			//::UltMsg += "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro."
 			u_log2 ('erro', "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro.")
 			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
 				_sErroAuto += iif (empty (_sErroAuto), '', '; ') + "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro."
@@ -280,7 +282,7 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 			// Se o codigo/loja base for de outro registro do SA2, busca dados do registro base.
 			if sa2 -> a2_cod != sa2 -> a2_vacbase .or. sa2 -> a2_loja != sa2 -> a2_valbase
 				if ! sa2 -> (dbseek (xfilial ("SA2") + ::CodBase + ::LojaBase, .F.))
-					::UltMsg += "Impossivel instanciar classe ClsAssoc. Codigo/loja base '" + ::CodBase + '/' + ::LojaBase + "' nao cadastrado como fornecedor."
+					_Super:SomaMsg ("Impossivel instanciar classe ClsAssoc. Codigo/loja base '" + ::CodBase + '/' + ::LojaBase + "' nao cadastrado como fornecedor.")
 					u_help (::UltMsg,, .t.)
 					_lContinua = .F.
 				endif
@@ -472,7 +474,7 @@ METHOD AtuSaldo (_dDataRec) Class ClsAssoc
 Return 
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Busca os dados de DAP no NaWeb
 METHOD BuscarDAP () Class ClsAssoc
@@ -487,16 +489,16 @@ METHOD BuscarDAP () Class ClsAssoc
 	_oSQL:_sQuery += " WHERE CCAssociadoCPF  = '" + ::CPF + "'"
 	_aDadosDAP = _oSQL:Qry2Array (.f., .f.)
 	if len (_aDadosDAP) == 0
-		::UltMsg += "Nao localizei dados de DAP no NaWeb para o CPF " + ::CPF + "."
+		_Super:SomaMsg ("Nao localizei dados de DAP no NaWeb para o CPF " + ::CPF + ".")
 	elseif len (_aDadosDAP) > 1
-		::UltMsg += "Localizei MAIS DE UM registro de DAP no NaWeb para o CPF " + ::CPF + "."
+		_Super:SomaMsg ("Localizei MAIS DE UM registro de DAP no NaWeb para o CPF " + ::CPF + ".")
 	else
 		::DAPNumero  := _aDadosDAP [1, 1]
 		::DAPValidad := stod (_aDadosDAP [1, 2])
 		::DAPMotivo  := _aDadosDAP [1, 3]
 	endif
 return
-
+*/
 
 
 // --------------------------------------------------------------------------
@@ -505,7 +507,7 @@ METHOD CadVitic () Class ClsAssoc
 return U_VA_RusCV (::Codigo, ::Loja)
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Calcula correcao monetaria.
 METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Class ClsAssoc
@@ -538,7 +540,7 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 
 	if _lContinua
 		if substr (_sMesRef, 3, 4) + substr (_sMesRef, 1, 2) >= left (dtos (date ()), 6)
-			::UltMsg += "O mes ainda nao acabou! Apenas Nostradamus tem permissao para calcular datas futuras. Se voce tiver a senha dele, sem problema..."
+			_Super:SomaMsg ("O mes ainda nao acabou! Apenas Nostradamus tem permissao para calcular datas futuras. Se voce tiver a senha dele, sem problema...")
 			_lRet = .F.
 			_lContinua = .F.
 		endif
@@ -546,7 +548,7 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 
 	if _lContinua
 		if ::Codigo + ::Loja != ::CodBase + ::LojaBase
-			::UltMsg += "Correcao deve ser calculada apenas para o codigo/loja base do associado (no caso, '" + ::CodBase + '/' + ::LojaBase + "')."
+			_Super:SomaMsg ("Correcao deve ser calculada apenas para o codigo/loja base do associado (no caso, '" + ::CodBase + '/' + ::LojaBase + "').")
 			_lRet = .F.
 			_lContinua = .F.
 		else
@@ -557,16 +559,9 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		endif
 	endif
 
-
-//	if _lContinua .and. ! ::EhSocio (_dDtGrvCor)
-//		::UltMsg += "Nao consta como associado na data prevista para gravacao da correcao (" + dtoc (_dDtGrvCor) + ")."
-//		_lContinua = .F.
-//	endif
-
-
 	// A partir de 30/03/2017, a correcao eh sempre gerada na matriz.
 	if _lContinua .and. cEmpAnt + cFilAnt != '0101'
-		::UltMsg += "A correcao deve ser gerada na matriz."
+		_Super:SomaMsg ("A correcao deve ser gerada na matriz.")
 		_lRet = .F.
 		_lContinua = .F.
 	endif
@@ -590,7 +585,7 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		endif
 		//u_log (_oSQL:_sQuery)
 		if _oSQL:RetQry () > 0
-			::UltMsg += "Ja' existe correcao monetaria calculada para o mes de referencia " + _sMesRef + " para algum dos codigos/lojas (" + _sInCodLoj + ") deste associado."
+			_Super:SomaMsg ("Ja' existe correcao monetaria calculada para o mes de referencia " + _sMesRef + " para algum dos codigos/lojas (" + _sInCodLoj + ") deste associado.")
 			_lRet = .F.
 			_lContinua = .F.
 		endif
@@ -686,7 +681,7 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		_sMemCalc += "Base de calculo para corr.monetaria: " + GetMv ("MV_SIMB1") + " " + transform (abs (_nBaseCorr), "@E 999,999,999.99") + iif (_nBaseCorr < 0, ' (C)', ' (D)') + chr (13) + chr (10)
 
 		if _lContinua .and. abs (_nBaseCorr) < _nLimMin
-			::UltMsg += "Base (" + cvaltochar (abs (_nBaseCorr)) + ") abaixo do limite minimo (" + cvaltochar (_nLimMin) + ")"
+			_Super:SomaMsg ("Base (" + cvaltochar (abs (_nBaseCorr)) + ") abaixo do limite minimo (" + cvaltochar (_nLimMin) + ").")
 			_lContinua = .F.
 		endif
 	endif
@@ -701,7 +696,7 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		u_log2 ('info', 'Valor de correcao calculado..............................................: ' + cvaltochar (_nCorrec) + ' (' + _sTipoCorr + ')')
 
 		if _nCorrec == 0 .or. (_sTipoCorr == 'D' .and. ! _lGerarD) .or. (_sTipoCorr == 'C' .and. ! _lGerarC)
-			::UltMsg += 'Valor zerado ou tipo (D/C) nao solicitado.'
+			_Super:SomaMsg ('Valor zerado ou tipo (D/C) nao solicitado.')
 			_lContinua = .F.
 		endif
 	endif
@@ -732,18 +727,237 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		_oCtaCorr:Origem  = procname ()
 		//u_logobj (_oCtaCorr)
 		if ! _oCtaCorr:Grava ()
-			::UltMsg += "Erro na gravacao do registro de correcao monetaria."
+			_Super:SomaMsg ("Erro na gravacao do registro de correcao monetaria.")
 			_lRet = .F.
 			_lContinua = .F.
 		else
-			::UltMsg += "Reg.gravado no SZI com seq." + _oCtaCorr:SeqSZI
+			_Super:SomaMsg ("Reg.gravado no SZI com seq." + _oCtaCorr:SeqSZI)
 		endif
 	endif
 
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
+*/
 
+// --------------------------------------------------------------------------
+// Calcula correcao monetaria versao 3 (GLPI 14548)
+METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _lContinua := .T.
+	local _oSQL      := NIL
+	local _dDtLimite := lastday (stod (_sMesRefCM + '01'))
+	local _oCtaCorr  := ClsCtaCorr():New ()
+	local _sTMCorrD  := _oCtaCorr:TMCorrMonD
+	local _nBaseCorr := 0
+	local _nCorrec   := 0
+	local _sSerie    := ""
+	local _sTrbSE2   := ''
+	local _sTrbFK2   := ''
+	local _nDtIniContagemDias := ctod ('')
+	local _nDtFimContagemDias := ctod ('')
+	local _nSaldoTit := 0
+	local _nQtDiasDeJuros := 0
+	local _nVlJurosCM := 0
+//	local _aBaseCorr := {}  // Lista de objetos que compoe a base para calculo da correcao
+//	local _oBaseCorr := NIL  // 
+//	local _oBaseCorr := JsonObject():New()
+	local _aMemCalc  := {}
+	local _nIdxMemCalc  := 0
+
+	u_log2 ('info', 'Iniciando calculo corr.mon.assoc. ' + ::Codigo + '/' + ::Loja + ' para mes ref. ' + _sMesRefCM)
+
+	if _lContinua
+		if _sMesRefCM >= left (dtos (date ()), 6)
+			_Super:SomaMsg ("O mes ainda nao acabou! Apenas Nostradamus tem permissao para calcular datas futuras. Se voce tiver a senha dele, sem problema...")
+			_lContinua = .F.
+		endif
+	endif
+
+	// A partir de 30/03/2017, a correcao eh sempre gerada na matriz.
+	if _lContinua .and. cEmpAnt + cFilAnt != '0101'
+		_Super:SomaMsg ("A correcao deve ser gerada na matriz.")
+		_lContinua = .F.
+	endif
+
+	// Nao permite mais de uma geracao no mesmo mes.
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT COUNT (*)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
+		_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
+		// Quero verificar todas as filiais  ---> _oSQL:_sQuery +=   " AND SZI.ZI_FILIAL  = '" + xfilial ("SZI") + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC   = '" + ::Codigo + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO = '" + ::Loja + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_MESREF  = '" + substr (_sMesRefCM, 5, 2) + substr (_sMesRefCM, 1, 4) + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_TM      = '" + _sTMCorrD + "'"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		if _oSQL:RetQry () > 0
+			_Super:SomaMsg ("Ja' existe correcao monetaria calculada para este associado no mes de referencia " + _sMesRefCM + ".")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		U_Log2 ('info', 'Buscando adtos para os quais poderia ser gerada correcao')
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT E2_FILIAL, E2_EMISSAO, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_TIPO, E2_VENCREA, E2_VALOR, E2_SALDO"
+		_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI, "
+		_oSQL:_sQuery +=              RetSQLName ("SE2") + " SE2 "
+		_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+		// Quero verificar todas as filiais  ---> _oSQL:_sQuery +=    " AND SZI.ZI_FILIAL   = '" + xfilial ("SZI") + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC    = '" + ::Codigo + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO  = '" + ::Loja + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_TM       = '07'"  // Gerar correcao somente sobre este TM
+		_oSQL:_sQuery +=    " AND SE2.D_E_L_E_T_  = ''"
+		_oSQL:_sQuery +=    " AND SE2.E2_FILIAL   = SZI.ZI_FILIAL"
+		_oSQL:_sQuery +=    " AND SE2.E2_FORNECE  = SZI.ZI_ASSOC"
+		_oSQL:_sQuery +=    " AND SE2.E2_LOJA     = SZI.ZI_LOJASSO"
+		_oSQL:_sQuery +=    " AND SE2.E2_NUM      = SZI.ZI_DOC"
+		_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO  = SZI.ZI_SERIE"
+		_oSQL:_sQuery +=    " AND SE2.E2_PARCELA  = SZI.ZI_PARCELA"
+		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO >= '" + dtos (_dDtLimite - 360) + "'"  // Nao adianta olhar coisa muito antiga
+		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO <= '" + dtos (_dDtLimite) + "'"
+		_oSQL:_sQuery +=  " ORDER BY E2_EMISSAO, E2_PREFIXO, E2_NUM, E2_PARCELA"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_sTrbSE2 := _oSQL:Qry2Trb (.t.)
+		do while ! (_sTrbSE2) -> (eof ())
+
+			// Define a data inicial para contagem de dias deste titulo. Se foi
+			// emitido em mes anterior, presumo que a correcao referente ao mes
+			// anterior jah tenha sido calculada, entao agora vou considerar
+			// somente os dias dentro do mes atual.
+			_nDtIniContagemDias = max ((_sTrbSE2) -> e2_emissao, firstday (_dDtLimite))
+
+			// Vou comecar a acumular este titulo com seu valor original
+			_nSaldoTit = (_sTrbSE2) -> e2_valor
+
+			U_Log2 ('debug', '[' + procname () + ']Adto ' + (_sTrbSE2) -> E2_NUM + ' saldo inicial ' + cvaltochar (_nSaldoTit) + '  _nDtIniContagemDias = ' + cvaltochar (_nDtIniContagemDias))
+
+			// Varre as baixas do titulo atual para poder compor o seu saldo em cada data.
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "SELECT FK2_BAIXAS_ORIG.FK2_DATA, FK2_BAIXAS_ORIG.FK2_VALOR"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("FK7") + " FK7_TIT_ORIG "
+			_oSQL:_sQuery +=      " ," + RetSQLName ("FK2") + " FK2_BAIXAS_ORIG "
+			_oSQL:_sQuery += " WHERE FK2_BAIXAS_ORIG.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_IDDOC  = FK7_TIT_ORIG.FK7_IDDOC"
+			_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_TPDOC != 'ES'"
+			_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_TPDOC != 'BA'"
+			_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_DATA  <= '" + dtos (_dDtLimite) + "'"
+			_oSQL:_sQuery +=   " AND dbo.VA_FESTORNADO_FK2 (FK2_BAIXAS_ORIG.FK2_FILIAL, FK2_BAIXAS_ORIG.FK2_IDFK2) != 1"
+			_oSQL:_sQuery +=   " AND FK7_TIT_ORIG.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND FK7_TIT_ORIG.FK7_FILIAL = '" + (_sTrbSE2) -> e2_filial + "'"
+			_oSQL:_sQuery +=   " AND FK7_TIT_ORIG.FK7_ALIAS  = 'SE2'
+			_oSQL:_sQuery +=   " AND FK7_TIT_ORIG.FK7_CHAVE  = '" + (_sTrbSE2) -> e2_filial
+			_oSQL:_sQuery +=                                  "|" + (_sTrbSE2) -> e2_prefixo
+			_oSQL:_sQuery +=                                  "|" + (_sTrbSE2) -> e2_num
+			_oSQL:_sQuery +=                                  "|" + (_sTrbSE2) -> e2_parcela
+			_oSQL:_sQuery +=                                  "|" + (_sTrbSE2) -> e2_tipo
+			_oSQL:_sQuery +=                                  "|" + ::Codigo
+			_oSQL:_sQuery +=                                  "|" + ::Loja + "'"
+		//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+			_sTrbFK2 := _oSQL:Qry2Trb (.t.)
+			do while ! (_sTrbFK2) -> (eof ())
+
+				// Baixas ocorridas antes do mes atual considerarei como 0 dias de juros.
+				if (_sTrbFK2) -> fk2_data < _nDtIniContagemDias
+					_nDtFimContagemDias = _nDtIniContagemDias
+				else
+					_nDtFimContagemDias = (_sTrbFK2) -> fk2_data
+				endif
+				_nQtDiasDeJuros = _nDtFimContagemDias - _nDtIniContagemDias + 1
+				_nVlJurosCM = _nSaldoTit * _nQtDiasDeJuros * _nTaxaCC / 100
+
+				if _nVlJurosCM != 0
+					aadd (_aMemCalc, {(_sTrbSE2) -> e2_num, _nSaldoTit, _nDtIniContagemDias, _nDtFimContagemDias, _nQtDiasDeJuros, _nTaxaCC, _nVlJurosCM})
+				endif
+
+				U_Log2 ('debug', '[' + procname () + ']   Baixa ' + dtoc ((_sTrbFK2) -> fk2_data) + ;
+					' R$ ' + cvaltochar ((_sTrbFK2) -> fk2_valor) + ;
+					' Saldo = ' + cvaltochar (_nSaldoTit) + ;
+					' de ' + dtoc (_nDtIniContagemDias) + ' a ' + dtoc ((_sTrbFK2) -> fk2_data) + ;
+					' = ' + cvaltochar (_nQtDiasDeJuros) + ' dias' + ;
+					' --> R$ ' + cvaltochar (_nVlJurosCM))
+
+				// Abate esta baixa do saldo do titulo, para que, se houver mais
+				// alguma baixa posterior, jah considere apenas o saldo restante.
+				_nSaldoTit -= (_sTrbFK2) -> fk2_valor
+
+				// Ajusta a data inicial para contagem de dias, para que, caso
+				// encontre mais alguma baixa depois desta, comece a contar a
+				// partir da baixa atual e nao da emissao do titulo.
+				_nDtIniContagemDias = (_sTrbFK2) -> fk2_data + 1
+
+				(_sTrbFK2) -> (dbskip ())
+			enddo
+
+			// Se nao teve baixas, mas tem saldo, tambem deve calcular juros.
+			_nDtFimContagemDias = _dDtLimite
+			_nQtDiasDeJuros = _nDtFimContagemDias - _nDtIniContagemDias + 1
+			_nVlJurosCM = _nSaldoTit * _nQtDiasDeJuros * _nTaxaCC / 100
+
+			if _nVlJurosCM != 0
+				aadd (_aMemCalc, {(_sTrbSE2) -> e2_num, _nSaldoTit, _nDtIniContagemDias, _nDtFimContagemDias, _nQtDiasDeJuros, _nTaxaCC, _nVlJurosCM})
+			endif
+
+			U_Log2 ('debug', '[' + procname () + ']   fora loop baixas ' + ;
+				' Saldo = ' + cvaltochar (_nSaldoTit) + ;
+				' por ' + cvaltochar (_nQtDiasDeJuros) + ' dias' + ;
+				' --> R$ ' + cvaltochar (_nVlJurosCM))
+
+			(_sTrbSE2) -> (dbskip ())
+		enddo
+		(_sTrbSE2) -> (dbclosearea ())
+		dbselectarea ("SZI")
+
+		U_Log2 ('debug', _aMemCalc)
+
+		if _nCorrec == 0
+			_Super:SomaMsg ('Valor de correcao zerado.')
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		
+		// Gera lancamento da correcao monetaria a debito ou a credito, conforme o valor, na conta corrente.
+		_sSerie = fBuscaCpo ("ZX5", 2, xfilial ("ZX5") + '10' + _sTMCorrD, "ZX5_10PREF")
+		_oCtaCorr = ClsCtaCorr():New ()
+		_oCtaCorr:Assoc   = ::Codigo
+		_oCtaCorr:Loja    = ::Loja
+		_oCtaCorr:TM      = _sTMCorrD
+		_oCtaCorr:DtMovto = dDataBase
+		_oCtaCorr:Valor   = _nCorrec
+		_oCtaCorr:Histor  = "CORR.MON.REF.SLD " + alltrim (transform (abs (_nBaseCorr), "@E 999,999,999.99"))
+		_oCtaCorr:MesRef  = substr (_sMesRefCM, 5, 2) + substr (_sMesRefCM, 1, 4)  // Campo ZI_MESREF guarda em formato MMAAAA
+		_oCtaCorr:Doc     = strtran (dtoc (_oCtaCorr:DtMovto), '/', '')
+		_oCtaCorr:Serie   = _sSerie
+		_oCtaCorr:Obs     = ''
+		for _nIdxMemCalc = 1 to len (_aMemCalc)
+			_oCtaCorr:Obs := 'Tit:' + (_sTrbSE2) -> e2_num
+			_oCtaCorr:Obs += ' Saldo: ' + alltrim (GetMv ("MV_SIMB1")) + transform (_nSaldoTit, '@E 999,999,999.99')
+			_oCtaCorr:Obs += ' de ' + dtoc (_nDtIniContagemDias) + ' a ' + dtoc (_nDtFimContagemDias)
+			_oCtaCorr:Obs += ' (' + transform (_nQtDiasDeJuros, '999') + ' dias)'
+			_oCtaCorr:Obs += ' * ' + cvaltochar (_nTaxaCC) + '%'
+			_oCtaCorr:Obs += ' = ' + alltrim (GetMv ("MV_SIMB1")) + transform (_nVlJurosCM, '@E 999,999.99')
+			_oCtaCorr:Obs += iif (_nIdxMemCalc < len (_aMemCalc), chr (13) + chr (10), '')
+		next
+		U_Log (_oCtaCorr:Obs)
+		_oCtaCorr:Origem  = procname ()
+		//u_logobj (_oCtaCorr)
+	//ainda nao pronto	if ! _oCtaCorr:Grava ()
+	//ainda nao pronto		_Super:SomaMsg ("Erro na gravacao do registro de correcao monetaria.")
+	//ainda nao pronto		_lContinua = .F.
+	//ainda nao pronto	else
+	//ainda nao pronto		_Super:SomaMsg ("Reg.gravado no SZI com seq." + _oCtaCorr:SeqSZI)
+	//ainda nao pronto	endif
+	endif
+
+//	u_logFim (GetClassName (::Self) + '.' + procname ())
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
 
 
 // --------------------------------------------------------------------------
@@ -919,7 +1133,7 @@ return _dRet
 METHOD EhFornUva (_dDataRef) Class ClsAssoc
 	local _lRet    := .F.
 
-	if ! empty (Self:DtEntForUva (_dDataRef))
+	if ! empty (::DtEntForUva (_dDataRef))
 		_lRet = .T.
 	endif
 	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']retornando ' + cvaltochar (_lRet))
@@ -1136,7 +1350,7 @@ METHOD FechSafra () Class ClsAssoc
 	local _nDetPag   := 0
 
 	if empty (::FSSafra)
-		::UltMsg += "Safra nao informada"
+		_Super:SomaMsg ("Safra nao informada")
 	endif
 
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
@@ -1307,7 +1521,7 @@ METHOD FechSafra () Class ClsAssoc
 			_oSQL:_sQuery +=   " AND E2_VENCTO >= '20210301'"  // Estou achando que devo criar um campo E2_VASAFRA para melhorar estes filtros.
 		endif
 
-		// Somar o premios de qualidade que foram gerados e pagos noas anos seguintes
+		// Somar o premios de qualidade que foram gerados e pagos nos anos seguintes
 		// Safra 2020: GLPI 9530 e 9415
 		// Safra 2021: GLPI 11661
 		if ::FSSafra == '2020' //.or. ::FSSafra == '2021'
@@ -1893,7 +2107,7 @@ METHOD IdadeEm (_dDataRef) Class ClsAssoc
 return _nRet
 
 
-
+/* em desuso
 // --------------------------------------------------------------------------
 // Retorna array contendo lancamentos da conta corrente (SZI) com saldo na data. Usado inicialmente para gerar relatorios.
 METHOD LctComSald (_sFilIni, _sFilFim, _dDataRef, _sTMIni, _sTMFim, _sTMNao) Class ClsAssoc
@@ -1902,8 +2116,6 @@ METHOD LctComSald (_sFilIni, _sFilFim, _dDataRef, _sTMIni, _sTMFim, _sTMNao) Cla
 	local _sArqTrb  := ""
 	
 //	u_logIni (GetClassName (::Self) + '.' + procname ())
-
-//	_dDataIni = iif (_dDataIni == NIL, ctod (''), _dDataIni)
 
 	// Busca conta corrente
 	_oSQL := ClsSQL():New ()
@@ -1962,7 +2174,7 @@ METHOD LctComSald (_sFilIni, _sFilFim, _dDataRef, _sTMIni, _sTMFim, _sTMNao) Cla
 	enddo
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _aRet
-
+*/
 
 
 // --------------------------------------------------------------------------
@@ -2044,15 +2256,9 @@ METHOD SaldoEm (_dDataSld, _sTMNaoSld) Class ClsAssoc
 				// Varre a array do extrato e extrai os valores.
 				for _nExtrSld = 1 to len (_oExtrSld:Resultado)
 					if _nTipoExtr == 1  // Normal (nao capital social)
-//						if _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorDebito] != 0
-//							u_log2 ('debug', 'Metodo 2.1 somando ' + cvaltochar (_oExtrSld:Resultado [_nExtrSld, .ExtrCCValorDebito]))
-//						endif
 						_aRet [.SaldoAssocCapNaoSocialDebito]  += _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorDebito]
 						_aRet [.SaldoAssocCapNaoSocialCredito] += _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorCredito]
 					elseif _nTipoExtr == 2  // Capital social
-//						if _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorDebito] != 0
-//							u_log2 ('debug', 'Metodo 2.3 somando ' + cvaltochar (_oExtrSld:Resultado [_nExtrSld, .ExtrCCValorDebito]))
-//						endif
 						_aRet [.SaldoAssocCapSocialDebito]  += _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorDebito]
 						_aRet [.SaldoAssocCapSocialCredito] += _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorCredito]
 					endif
@@ -2065,91 +2271,6 @@ METHOD SaldoEm (_dDataSld, _sTMNaoSld) Class ClsAssoc
 	U_ML_SRArea (_aAreaAnt)
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _aRet
-
-
-/*
-// --------------------------------------------------------------------------
-// Busca o saldo do associado (conta corrente) na data passada por parametro.
-METHOD SaldoEmOLD (_dDataSld) Class ClsAssoc
-	local _aAreaAnt  := U_ML_SRArea ()
-	local _lContinua := .T.
-	local _oSQL      := NIL
-	local _dUltZZM   := ctod ('')
-	local _aRet      := {}
-	local _aExtrato  := {}
-	local _nExtrato  := 0
-	local _aRetQry   := {}
-	local _nTipoExtr := 0
-//	local _oExtrSld  := NIL
-//	local _nExtrSld  := 0
-
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
-
-	if _lContinua
-		_lContinua = (::Codigo != NIL .and. ::Loja != NIL)
-		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Calculando saldo do associado ' + ::Codigo + '/' + ::Loja + ' em ' + cvaltochar (_dDataSld))
-	endif
-
-	if _lContinua
-		_aRet = afill (array (.SaldoAssocQtColunas), 0)
-
-		// Busca o ultimo periodo fechado e calcula a partir dele. 
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT TOP 1 ZZM_CNSOCD, ZZM_CNSOCC, ZZM_CSOCD, ZZM_CSOCC, ZZM_DATA "
-		_oSQL:_sQuery += "   FROM " + RetSQLName ("ZZM") + " ZZM "
-		_oSQL:_sQuery +=  " WHERE ZZM.ZZM_FILIAL  = '" + xfilial ("ZZM") + "' "
-		_oSQL:_sQuery +=    " AND ZZM.ZZM_ASSOC   = '" + ::Codigo + "' "
-		_oSQL:_sQuery +=    " AND ZZM.ZZM_LOJA    = '" + ::Loja + "' "
-		_oSQL:_sQuery +=    " AND ZZM.D_E_L_E_T_  = '' "
-		_oSQL:_sQuery +=    " AND ZZM.ZZM_DATA   <= '" + dtos (_dDataSld) + "'"
-		_oSQL:_sQuery +=  " ORDER BY ZZM_DATA DESC"
-		_aRetQry = aclone (_oSQL:Qry2Array (.F., .F.))
-		if len (_aRetQry) == 1
-			//u_log ('Inicializando com valores do fechamento anterior:', _aRetQry)
-			_aRet [.SaldoAssocCapNaoSocialDebito]  = _aRetQry [1, 1] 
-			_aRet [.SaldoAssocCapNaoSocialCredito] = _aRetQry [1, 2] 
-			_aRet [.SaldoAssocCapSocialDebito]     = _aRetQry [1, 3] 
-			_aRet [.SaldoAssocCapSocialCredito]    = _aRetQry [1, 4]
-			_dUltZZM = stod (_aRetQry [1, 5])
-		else
-			u_log ('Nao encontrei ZZM anterior. Inicializando os saldos com zero.')
-			_dUltZZM = stod ('19000101')
-		endif
-
-		// Soh preciso gerar extrato se a data que encontrei no ZZM for menor que a solicitada.
-		if _dUltZZM < _dDataSld
-
-			// Os movimentos do periodo sao lidos diretamente do extrato do associado, para manter consistencia com outras rotinas.
-			_aExtrato = aclone (::ExtratoCC ('', 'zz', _dUltZZM + 1, _dDataSld, '', 'zz', .F., .f.))
-			u_log (_aExtrato)
-			
-			for _nExtrato = 1 to len (_aExtrato)
-				if _aExtrato [_nExtrato, .ExtratoCCDC] $ 'DC'  // Alguns lancamentos nao movimentam valor.
-					do case
-					case _aExtrato [_nExtrato, .ExtratoCCDC] == 'D' .and. _aExtrato [_nExtrato, .ExtratoCCCapSocial] == 'N'
-//						u_log2 ('debug', 'Metodo 1.1 somando ' + cvaltochar (_aExtrato [_nExtrato, .ExtratoCCValor]))
-						_aRet [.SaldoAssocCapNaoSocialDebito] += _aExtrato [_nExtrato, .ExtratoCCValor]
-					case _aExtrato [_nExtrato, .ExtratoCCDC] == 'C' .and. _aExtrato [_nExtrato, .ExtratoCCCapSocial] == 'N'
-						_aRet [.SaldoAssocCapNaoSocialCredito] += _aExtrato [_nExtrato, .ExtratoCCValor]
-					case _aExtrato [_nExtrato, .ExtratoCCDC] == 'D' .and. _aExtrato [_nExtrato, .ExtratoCCCapSocial] == 'S'
-//						u_log2 ('debug', 'Metodo 1.3 somando ' + cvaltochar (_aExtrato [_nExtrato, .ExtratoCCValor]))
-						_aRet [.SaldoAssocCapSocialDebito] += _aExtrato [_nExtrato, .ExtratoCCValor]
-					case _aExtrato [_nExtrato, .ExtratoCCDC] == 'C' .and. _aExtrato [_nExtrato, .ExtratoCCCapSocial] == 'S'
-						_aRet [.SaldoAssocCapSocialCredito] += _aExtrato [_nExtrato, .ExtratoCCValor]
-					otherwise
-						::UltMsg += "Retorno '" + _aExtrato [_nExtrato, .ExtratoCCCapSocial] + "' do metodo ExtratoCC desconhecido (nao indica se eh capital social ou nao). Saldo do associado vai ficar comprometido."
-						u_help (::UltMsg)
-					endcase
-				endif
-			next
-		endif
-	endif
-
-	U_ML_SRArea (_aAreaAnt)
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
-return _aRet
-*/
 
 
 // --------------------------------------------------------------------------
@@ -2175,7 +2296,7 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 	
 	if _lContinua .and. (valtype (_dDataRef) != "D" .or. empty (_dDataRef))
-		::UltMsg += "Nao foi informada data de referencia para buscar saldo de cota capital."
+		_Super:SomaMsg ("Nao foi informada data de referencia para buscar saldo de cota capital.")
 		_lContinua = .F.
 	endif
 

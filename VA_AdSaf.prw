@@ -436,31 +436,7 @@ Static Function _Gera()
 			else
 				_sEhAssoc = 'S'
 
-				/*
-				// Busca pagamentos jah feitos para parcelas anteriores
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := "SELECT SUM (ZI_VALOR)"
-				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI "
-				_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=   " AND SZI.ZI_TM      = '31'"
-				_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC   = '" + _aFornec [_nFornec, 1] + "'"
-				_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO = '" + _aFornec [_nFornec, 2] + "'"
-				_oSQL:_sQuery +=   " AND SZI.ZI_DATA   >= '" + mv_par05 + "0101'"
-				_oSQL:_sQuery +=   " AND SZI.ZI_DATA   <  '" + dtos (dDataBase) + "'"  // Para o caso de estar sendo usada data retroativa.
-			//	_oSQL:Log ()
-				_nAdtPAnt = _oSQL:RetQry ()
-				if _nAdtPAnt != 0
-					_sHistCalc += 'Parcelas anteriores ja adiantadas:           ' + transform (_nAdtPAnt, '@E 999,999.99') + '(-)' + chr (13) + chr (10)
-				endif
-				*/
-
 				// Busca lancamentos com saldo em aberto na conta corrente.
-//				_nSldDeb = 0
-//				_aSaldos = aclone (_oAssoc:LctComSald ('', 'zz', date (), '', 'zz', _sTMNao))
-//				for _nIdxSaldo = 1 to len (_aSaldos)
-//					_nSldDeb += _aSaldos [_nIdxSaldo, 11]
-//					_sHistCalc += U_TamFixo (_aSaldos [_nIdxSaldo, 9], 45, ' ') + transform (_aSaldos [_nIdxSaldo, 11], '@E 999,999.99') + '(-)' + chr (13) + chr (10)
-//				next
 				_oSQL := ClsSQL ():New ()
 				_oSQL:_sQuery := "SELECT ZI_HISTOR, ZI_VALOR"
 				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI "

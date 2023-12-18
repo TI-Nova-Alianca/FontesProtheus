@@ -91,10 +91,27 @@ User Function szi_cm2 (_lAuto)
 return
 
 
-
 // --------------------------------------------------------------------------
-Static Function _TudoOk ()
-	Local _lRet     := .T.
+static function _TudoOk ()
+	local _lRet     := .T.
+	local _sPattern := ''
+
+	// Cria objeto da classe 'expressao regular' para validar formato do parametro.
+	_oRegex := tlpp.regex.Regex():new ('')
+	_oRegex:setCaseSensitive (.F.)
+
+	// Monta pattern (padrao) de pesquisa usando a sintaxe das expressoes regulares.
+	_sPattern := '(0[1-9]|1[0|1|2])'  // Mes 01 a 09 ou 10 a 12
+	_sPattern += '/'         // Precisa ter 1 barra separando mes e ano
+	_sPattern += '[0-9]{4}'  // Precisa ter 4 posicoes para o ano.
+
+	_oRegex:SetPattern (_sPattern)
+	if ! _oRegex:PartialMatch (mv_par02)
+		u_help ("Parametro '" + mv_par02 + "' invalido. Mes de referencia deve estar no formato MM/AAAA (mes e ano).",, .t.)
+		_lRet = .F.
+//	else
+//		U_Log2 ('debug', '[' + procname () + ']' + mv_par02 + ' ok')
+	endif
 Return _lRet
 
 
@@ -200,10 +217,10 @@ Static Function _Calc ()
 	local _aAssoc     := {}
 	local _nAssoc     := 0
 	local _nTaxa1     := mv_par03
-	local _nTaxa2     := mv_par04
-	local _nLimVl     := mv_par05
-	local _lGeraD     := (mv_par06 == 1 .or. mv_par06 == 3)
-	local _lGeraC     := (mv_par06 == 2 .or. mv_par06 == 3)
+//	local _nTaxa2     := mv_par04
+//	local _nLimVl     := mv_par05
+//	local _lGeraD     := (mv_par06 == 1 .or. mv_par06 == 3)
+//	local _lGeraC     := (mv_par06 == 2 .or. mv_par06 == 3)
 	local _nJahTem    := 0
 
 	// A correcao eh sempre gerada na matriz a partir de 30/03/2017.
@@ -253,7 +270,7 @@ Static Function _Calc ()
 	endif
 
 
-	// Busca os associados para as quais deve ser calculada correcao monetaria.
+	// Busca os associados para os quais PODE ser calculada correcao monetaria.
 	// A correcao eh gerada sempre no codigo/loja base do associado.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
@@ -261,7 +278,7 @@ Static Function _Calc ()
 		_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
 		_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
 		_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
+/*		_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
 		_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SA2") + " SA2 "
 		_oSQL:_sQuery +=                 " WHERE SA2.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=                   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
@@ -271,6 +288,12 @@ Static Function _Calc ()
 		_oSQL:_sQuery +=                   " AND SA2.A2_VALBASE = SA2.A2_LOJA"  // Somente codigo/loja base
 		_oSQL:_sQuery +=                   " AND SA2.A2_VALBASE = SA2.A2_LOJA"
 		_oSQL:_sQuery +=  " ) "
+*/
+		// Cfe. GLPI 14548, somente calcularemos correcao para quem tiver feito
+		// emprestimos (TM=07) entao acho interessante nem perder tempo olhando
+		// outros associados.
+		_oSQL:_sQuery +=    " AND SZI.ZI_TM = '07'"
+
 		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par07 + mv_par08 + "' AND '" + mv_par09 + mv_par10 + "'"
 		_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
 		u_log2 ('debug', _sQuery)
@@ -280,7 +303,8 @@ Static Function _Calc ()
 			_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
 			incproc (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + _oAssoc:Nome)
 			u_log2 ('info', 'Iniciando assoc: ' + _oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + _oAssoc:Nome)
-			if ! _oAssoc:CalcCM (_sMesRef, _nTaxa1, _nTaxa2, _nLimVl, _lGeraD, _lGeraC)
+	//		if ! _oAssoc:CalcCM (_sMesRef, _nTaxa1, _nTaxa2, _nLimVl, _lGeraD, _lGeraC)
+			if ! _oAssoc:CalcCM3 (substr (mv_par02, 4, 4) + substr (mv_par02, 1, 2), _nTaxa1)
 				u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + ' ' + _oAssoc:UltMsg,, .t.)
 			endif
 			u_log2 ('info', _oAssoc:UltMsg)
@@ -295,17 +319,20 @@ return
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	
-	//                     PERGUNT                                                         TIPO TAM DEC VALID F3        Opcoes                              Help
-	aadd (_aRegsPerg, {01, "Calcular / descalcular                                      ", "N", 1,  0,  "",   "      ", {"Calcular", "Descalcular"},        ""})
-	aadd (_aRegsPerg, {02, "Mes/ano de referencia (MMAAAA)                              ", "C", 6,  0,  "",   "      ", {},                                 ""})
-	aadd (_aRegsPerg, {03, "Taxa % correcao valores baixos                              ", "N", 6,  2,  "",   "      ", {},                                 ""})
-	aadd (_aRegsPerg, {04, "Taxa % correcao valores altos                               ", "N", 6,  2,  "",   "      ", {},                                 ""})
-	aadd (_aRegsPerg, {05, "Limite valores baixos                                       ", "N", 10, 2,  "",   "      ", {},                                 ""})
-	aadd (_aRegsPerg, {06, "Tipo de correcao a gerar                                    ", "N", 1,  0,  "",   "      ", {'A debito', 'A credito', 'Ambas'}, ""})
-	aadd (_aRegsPerg, {07, "Associado inicial                                           ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
-	aadd (_aRegsPerg, {08, "Loja associado inicial                                      ", "C", 2,  0,  "",   "      ", {},                                 ""})
-	aadd (_aRegsPerg, {09, "Associado final                                             ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
-	aadd (_aRegsPerg, {10, "Loja associado final                                        ", "C", 2,  0,  "",   "      ", {},                                 ""})
+	//                     PERGUNT                            TIPO TAM DEC VALID F3        Opcoes                              Help
+	aadd (_aRegsPerg, {01, "Calcular / descalcular         ", "N", 1,  0,  "",   "      ", {"Calcular", "Descalcular"},        ""})
+	aadd (_aRegsPerg, {02, "Mes/ano de referencia (MM/AAAA)", "C", 7,  0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {03, "Taxa % correcao                ", "N", 6,  4,  "",   "      ", {},                                 ""})
+//	aadd (_aRegsPerg, {04, "Taxa % correcao valores altos  ", "N", 6,  2,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {04, "PARAMETRO EM DESUSO            ", "N", 6,  2,  "",   "      ", {},                                 ""})
+//	aadd (_aRegsPerg, {05, "Limite valores baixos          ", "N", 10, 2,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {05, "PARAMETRO EM DESUSO            ", "N", 10, 2,  "",   "      ", {},                                 ""})
+//	aadd (_aRegsPerg, {06, "Tipo de correcao a gerar       ", "N", 1,  0,  "",   "      ", {'A debito', 'A credito', 'Ambas'}, ""})
+	aadd (_aRegsPerg, {06, "PARAMETRO EM DESUSO            ", "N", 1,  0,  "",   "      ", {'A debito', 'A credito', 'Ambas'}, ""})
+	aadd (_aRegsPerg, {07, "Associado inicial              ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
+	aadd (_aRegsPerg, {08, "Loja associado inicial         ", "C", 2,  0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {09, "Associado final                ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
+	aadd (_aRegsPerg, {10, "Loja associado final           ", "C", 2,  0,  "",   "      ", {},                                 ""})
 
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
