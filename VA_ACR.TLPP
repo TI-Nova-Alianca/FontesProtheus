@@ -21,6 +21,7 @@
 // 03/12/2023 - Robert - Opcao de cuatear pelo medio em vez do standard
 //                     - Opcao de selecionar os PAs com base em determinado componente.
 // 13/12/2203 - Robert - Opcao de exportar todas as estruturas numa unica planilha.
+// 18/12/2023 - Robert - Itens sem SB9 (novos) nao eram considerados. Passa a usar LEFT JOIN.
 //
 
 #include "protheus.ch"
@@ -168,7 +169,9 @@ static function _Gera ()
 	else
 		_oSQL:_sQuery += " AND SB1.B1_COD     BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
 		_oSQL:_sQuery += " AND SB1.B1_CODLIN  BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
-		_oSQL:_sQuery += " AND SB1.B1_TIPO    IN " + FormatIn (alltrim (mv_par03), '/')
+		if ! empty (mv_par03)
+			_oSQL:_sQuery += " AND SB1.B1_TIPO    IN " + FormatIn (alltrim (mv_par03), '/')
+		endif
 		if mv_par07 == 1
 			_oSQL:_sQuery +=   " AND SB1.B1_MRP     = 'S'"
 		endif
@@ -199,8 +202,9 @@ static function _Gera ()
 	_oSQL:_sQuery +=       " AND SB9.B9_VINI1   > 0"
 	_oSQL:_sQuery +=       " AND SB9.B9_DATA    = ULTIMOS_SB9.B9_DATA"
 	_oSQL:_sQuery +=      "), 0) AS CUSMED"
-	_oSQL:_sQuery +=  " FROM PRODUTOS, ULTIMOS_SB9"
-	_oSQL:_sQuery += " WHERE B9_COD = B1_COD"
+	_oSQL:_sQuery +=  " FROM PRODUTOS"
+	_oSQL:_sQuery +=     " LEFT JOIN ULTIMOS_SB9"
+	_oSQL:_sQuery +=        " ON (B9_COD = B1_COD)"
 	_oSQL:_sQuery += " ORDER BY B1_COD"
 	_oSQL:Log ('[' + procname () + ']')
 	_sAliasQ = _oSQL:Qry2Trb (.f.)

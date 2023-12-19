@@ -103,13 +103,14 @@
 // 29/05/2023 - Robert - Metodos Grava() e TransFil() passam a usar controle de transacao (GLPI 13532).
 // 21/09/2023 - Robert - Nao salvava area de trabalho no metodo PodeIncl() - GLPI 14182.
 //                     - Nao validava codigo e loja de fornecedor (nao do associado) no metodo PodeIncl() - GLPI 14182.
+// 15/12/2023 - Robert - Portado de .prw para .tlpp e passa a herdar a ClsBase (GLPI 14548)
 //
 
 // ------------------------------------------------------------------------------------
-#include "colors.ch"
+//#include "colors.ch"
 #Include "Protheus.ch"
-#Include "RwMake.ch"
-#Include "TbiConn.ch"
+//#Include "RwMake.ch"
+//#Include "TbiConn.ch"
 #include "VA_Inclu.prw"
 
 // --------------------------------------------------------------------------
@@ -119,71 +120,70 @@ return
 
 
 // ==========================================================================
-CLASS ClsCtaCorr
+CLASS ClsCtaCorr from ClsBase
 
 	// Declaracao das propriedades da Classe
-	data Assoc
-	data DebCred
-	data Doc
-	data DtMovto
-	data Filial
-	data FilDest
-	data FilOrig
-	data FormPag
-	data Fornece
-	data GrpPgSafra
-	data Histor
-	data Loja
-	data LojaFor
-	data MesRef
-	data Obs
-	data Origem
-	data Parcela
-	data RegSZI
-	data RegRelac
-	data SaldoAtu
-	data Safra
-	data SeqOrig
-	data SeqSZI
-	data Serie
-	data TM
-	data TMCapital
-	data TMCorrMonC
-	data TMCorrMonD
-	data UltMsg
-	data Usuario
-	data Valor
-	data Banco
-	data Agencia
-	data NumCon
-	data VctoSE2
-	data VctoSE2For
+	public  data Assoc
+	private data DebCred
+	public  data Doc
+	public  data DtMovto
+	public  data Filial
+	public  data FilDest
+	public  data FilOrig
+	public  data FormPag
+	public  data Fornece
+	public  data GrpPgSafra
+	public  data Histor
+	public  data Loja
+	public  data LojaFor
+	public  data MesRef
+	public  data Obs
+	public  data Origem
+	public  data Parcela
+	private data RegSZI
+	public  data RegRelac
+	public  data SaldoAtu
+	public  data Safra
+	public  data SeqOrig
+	public  data SeqSZI
+	public  data Serie
+	public  data TM
+	public  data TMCapital
+	public  data TMCorrMonC
+	public  data TMCorrMonD
+	public  data UltMsg
+	public  data Usuario
+	public  data Valor
+	public  data Banco
+	public  data Agencia
+	public  data NumCon
+	public  data VctoSE2
+	public  data VctoSE2For
 
 	// Declaracao dos Metodos da classe
-	METHOD New ()
-	METHOD AtuParcel ()
-	METHOD Associar ()
-	METHOD AtuSaldo ()
-	METHOD AtuSldAsso ()
-	METHOD ChaveExt ()
-	METHOD Desassoc ()
-	METHOD Exclui ()
-	METHOD ExcluiSE5 ()
-	METHOD GeraAtrib ()
-	METHOD GeraSE2 ()
-	METHOD GeraSE5 ()
-	METHOD GeraSeq ()
-	METHOD Grava ()
-	METHOD HistBaixas ()
-//	METHOD HistTrFil ()
-	METHOD OQueGera ()
-	METHOD PodeExcl ()
-	METHOD PodeIncl ()
-	METHOD RecnoSE2 ()
-	METHOD RegRelac ()
-	METHOD SaldoEm ()
-	METHOD TransFil ()
-	METHOD VerifUser ()
+	public  METHOD New ()
+	private METHOD AtuParcel ()
+	public  METHOD Associar ()
+	public  METHOD AtuSaldo ()
+	private METHOD AtuSldAsso ()
+	public  METHOD ChaveExt ()
+	public  METHOD Desassoc ()
+	public  METHOD Exclui ()
+	private METHOD ExcluiSE5 ()
+	public  METHOD GeraAtrib ()
+	private METHOD GeraSE2 ()
+	private METHOD GeraSE5 ()
+	public  METHOD GeraSeq ()
+	public  METHOD Grava ()
+	public  METHOD HistBaixas ()
+	private METHOD OQueGera ()
+	public  METHOD PodeExcl ()
+	public  METHOD PodeIncl ()
+	public  METHOD RecnoSE2 ()
+	public  METHOD RegRelac ()
+	public  METHOD SaldoEm ()
+	public  METHOD TransFil ()
+	private METHOD VerifUser ()
 ENDCLASS
 
 
@@ -201,9 +201,8 @@ METHOD New (_nRecno) Class ClsCtaCorr
 	else
 		::GeraAtrib ("")
 	endif
-	
-Return ::self
 
+Return ::self
 
 
 // --------------------------------------------------------------------------
@@ -294,7 +293,7 @@ METHOD AtuSaldo () Class ClsCtaCorr
 	if _lContinua
 		szi -> (dbgoto (::RegSZI))
 		if szi -> (recno ()) != ::RegSZI
-			::UltMsg += "Nao foi possivel localizar o registro correspondente no arquivo SZI. Saldo nao pode ser atualizado."
+			_Super:SomaMsg ("Nao foi possivel localizar o registro correspondente no arquivo SZI. Saldo nao pode ser atualizado.")
 			u_help (::UltMsg,, .t.)
 			_lContinua = .F.
 		endif
@@ -348,7 +347,7 @@ METHOD AtuSldAsso () Class ClsCtaCorr
 //			_oAssoc:AtuSaldo (::DtMovto)
 			processa ({ || _oAssoc:AtuSaldo (::DtMovto)})
 		else
-			::UltMsg += " Nao foi possivel instanciar associado "
+			_Super:SomaMsg (" Nao foi possivel instanciar associado.")
 			_lContinua = .F.
 		endif
 	endif
@@ -519,7 +518,7 @@ METHOD Exclui () Class ClsCtaCorr
 	if _lContinua
 		szi -> (dbgoto (::RegSZI))
 		if szi -> (recno ()) != ::RegSZI
-			::UltMsg += "Nao foi possivel localizar o registro correspondente no arquivo SZI. Exclusao nao sera' efetuada."
+			_Super:SomaMsg ("Nao foi possivel localizar o registro correspondente no arquivo SZI. Exclusao nao sera' efetuada.")
 			u_help (::UltMsg,, .t.)
 			_lContinua = .F.
 		endif
@@ -579,7 +578,7 @@ METHOD Exclui () Class ClsCtaCorr
 				U_Log2 ('debug', 'Chamando exclusao do SE2 (FINA050)')
 				Processa({|| MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 5)},"Excluindo titulo correspondente no financeiro.")
 				if lMsErroAuto
-					::UltMsg += U_LeErro (memoread (NomeAutoLog ())) + "; Este lancamento nao sera' excluido, pois o titulo relacionado a este movimento no modulo financeiro continua existindo."
+					_Super:SomaMsg (U_LeErro (memoread (NomeAutoLog ())) + "; Este lancamento nao sera' excluido, pois o titulo relacionado a este movimento no modulo financeiro continua existindo.")
 					u_help (::UltMsg,, .t.)
 					_lContinua = .F.
 					exit
@@ -591,13 +590,13 @@ METHOD Exclui () Class ClsCtaCorr
 				se5 -> (dbgoto (::RegRelac [_nRegRelac, 2]))
 				U_Log2 ('debug', 'Vou gerar cancelamento do SE5')
 				if ! ::ExcluiSE5 ()
-					::UltMsg += "Erro no estorno do movimento financeiro a receber. Este registro nao sera' excluido."
+					_Super:SomaMsg ("Erro no estorno do movimento financeiro a receber. Este registro nao sera' excluido.")
 					_lContinua = .F.
 					exit
 				endif
 
 			otherwise
-				::UltMsg += "Sem tratamento para exclusao de registros da tabela '" + ::RegRelac [_nRegRelac, 1] + "' relacionados a este lcto."
+				_Super:SomaMsg ("Sem tratamento para exclusao de registros da tabela '" + ::RegRelac [_nRegRelac, 1] + "' relacionados a este lcto.")
 				_lContinua = .F.
 				exit
 			endcase
@@ -607,7 +606,7 @@ METHOD Exclui () Class ClsCtaCorr
 
 	// Se deu algum problema na exclusao dos dados relacionados, recupera o registro no SZI e notifica o usuario.
 	if ! _lContinua .and. szi -> (deleted ())
-		::UltMsg += "Problemas no processamento. Este registro nao sera' excluido."
+		_Super:SomaMsg ("Problemas no processamento. Este registro nao sera' excluido.")
 		u_help (::UltMsg,, .t.)
 		reclock ("SZI", .F.)
 		szi -> (dbrecall ())
@@ -655,7 +654,7 @@ METHOD ExcluiSE5 () Class ClsCtaCorr
 	U_Log2 ('debug', 'Chamando cancelamento do mov.bancario (FINA100)')
 	MSExecAuto({|x,y,z| FinA100(x,y,z)},0,_aAutoSE5,6)  // exclusao nao funcionou. Usando cancelamento.
 	if lMsErroAuto
-		::UltMsg += "Erro na rotina automatica de cancelamento de movimento bancario: " + U_LeErro (memoread (NomeAutoLog ()))
+		_Super:SomaMsg ("Erro na rotina automatica de cancelamento de movimento bancario: " + U_LeErro (memoread (NomeAutoLog ())))
 		_lContinua = .F.
 	else
 		// No cancelamento alguns campos adicionais nao sao gravados.
@@ -867,27 +866,27 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 	
 	// A rotina FINA050 soh funciona dentro destes modulos.
 	If _lContinua .and. !(AmIIn(5,6,7,11,12,14,41,97,17))           // Somente Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC
-		::UltMsg += "FINA050 funciona apenas nos seguintes modulos: Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC"
+		_Super:SomaMsg ("FINA050 funciona apenas nos seguintes modulos: Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC")
 		_lContinua = .F.
 	endif
 
 	if _lContinua .and. empty (_sOQueGera)
-		::UltMsg += "Tipo de titulo nao definido para geracao do arquivo SE2."
+		_Super:SomaMsg ("Tipo de titulo nao definido para geracao do arquivo SE2.")
 		_lContinua = .F.
 	endif
 	if _lContinua .and. empty (::Serie) .or. empty (::Doc)
-		::UltMsg += "Serie ou numero de documento nao definido para geracao do arquivo SE2."
+		_Super:SomaMsg ("Serie ou numero de documento nao definido para geracao do arquivo SE2.")
 		_lContinua = .F.
 	endif
 	if _lContinua .and. empty (_dEmissao)
-		::UltMsg += "Data de emissao deve ser informada para geracao do arquivo SE2."
+		_Super:SomaMsg ("Data de emissao deve ser informada para geracao do arquivo SE2.")
 		_lContinua = .F.
 	endif
 
 	// Se vai gerar um PA, precisa dados do banco.
 	if _lContinua .and. _sOQueGera == 'PA'
 		if empty (::Banco) .or. empty (::Agencia) .or. empty (::NumCon)
-			::UltMsg += "Banco/agencia/conta devem ser informados para geracao do arquivo SE2 quando tipo PA."
+			_Super:SomaMsg ("Banco/agencia/conta devem ser informados para geracao do arquivo SE2 quando tipo PA.")
 			_lContinua = .F.
 		endif
 	endif
@@ -966,7 +965,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 			_oSQL:_sQuery +=    " AND D_E_L_E_T_ = ''"
 			_oSQL:Log ()
 			if _oSQL:RetQry () == 0
-				::UltMsg += "Erro na rotina automatica de inclusao de contas a pagar:" + U_LeErro (memoread (NomeAutoLog ()))
+				_Super:SomaMsg ("Erro na rotina automatica de inclusao de contas a pagar:" + U_LeErro (memoread (NomeAutoLog ())))
 				_lContinua = .F.
 				MostraErro()
 			endif
@@ -981,13 +980,13 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 	// Verifica se a chave externa foi gravada.
 	if _lContinua .and. ! empty (_sChvEx)
 		if ! U_TemNick ("SE2", "E2_VACHVEX")
-			::UltMsg += "Falta indice 'E2_VACHVEX' para a conta corrente de associados na rotina " + procname () + '.'
+			_Super:SomaMsg ("Falta indice 'E2_VACHVEX' para a conta corrente de associados na rotina " + procname () + '.')
 			U_AvisaTI (::UltMsg)
 			_lContinua = .F.
 		else
 			se2 -> (dbOrderNickName ("E2_VACHVEX"))  // E2_FILIAL+E2_VACHVEX
 			if ! se2 -> (dbseek (xfilial ("SE2") + _sChvEx, .F.))
-				::UltMsg += "Erro na gravacao do SE2: Foi gerado titulo no financeiro, mas a amarracao com chave externa nao foi feita."
+				_Super:SomaMsg ("Erro na gravacao do SE2: Foi gerado titulo no financeiro, mas a amarracao com chave externa nao foi feita.")
 				_lContinua = .F.
 			endif
 		endif
@@ -1017,7 +1016,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 		_oSQL:_sQuery +=    " AND D_E_L_E_T_ = ''"
 		//_oSQL:Log ()
 		if ! _oSQL:Exec ()
-			::UltMsg += "Erro na atualizacao do SE5 - rotina " + procname () + " - comando: " + _sSQL
+			_Super:SomaMsg ("Erro na atualizacao do SE5 - rotina " + procname () + " - comando: " + _sSQL)
 			_lContinua = .F.
 		endif
 	endif
@@ -1059,7 +1058,7 @@ METHOD GeraSE5 () Class ClsCtaCorr
 	U_Log2 ('debug', 'Chamando inclusao do movimento bancario (FINA100)')
 	MSExecAuto({|x,y,z| FinA100(x,y,z)},0,_aAutoSE5,4)
 	if lMsErroAuto
-		::UltMsg += "Erro na rotina automatica de inclusao de movimento bancario: " + U_LeErro (memoread (NomeAutoLog ()))
+		_Super:SomaMsg ("Erro na rotina automatica de inclusao de movimento bancario: " + U_LeErro (memoread (NomeAutoLog ())))
 		_lContinua = .F.
 	endif
 
@@ -1078,7 +1077,7 @@ METHOD GeraSeq () Class ClsCtaCorr
 	local _nTentativ := 0
 
 	if ! empty (szi -> zi_seq)
-		::UltMsg += "Chamada indevida do metodo " + procname () + ": registro do SZI jah tinha a sequencia '" + szi -> zi_seq + "'. Solicite manutencao do programa."
+		_Super:SomaMsg ("Chamada indevida do metodo " + procname () + ": registro do SZI jah tinha a sequencia '" + szi -> zi_seq + "'. Solicite manutencao do programa.")
 		u_help (::UltMsg,, .t.)
 	else
 		do while _nTentativ <= 10
@@ -1141,7 +1140,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav, _lAtuSldAs) Class ClsCtaCorr
 	if _lContinua
 		zx5 -> (dbsetorder (2))  // ZX5_FILIAL+ZX5_TABELA+ZX5_10COD
 		if ! zx5 -> (dbseek ('  ' + '10' + ::TM, .F.))  // Tabela 10 do ZX5 eh compartilhada.
-			::UltMsg += "Tipo de movimento '" + ::TM + "' nao cadastrado na tabela 10 do ZX5."
+			_Super:SomaMsg ("Tipo de movimento '" + ::TM + "' nao cadastrado na tabela 10 do ZX5.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1208,7 +1207,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav, _lAtuSldAs) Class ClsCtaCorr
 						u_log2 ('info', 'Vou gerar SE5 a receber')
 					//	if ! U_GeraSE5 ("IR", ::DtMovto, ::Valor, ::Histor, ::Banco, ::Agencia, ::NumCon, ::ChaveExt (), @::UltMsg, iif (type ('_lCtOnLine') == 'L', _lCtOnLine, .F.), '110104', ::FormPag)
 						if ! ::GeraSE5 ()
-							::UltMsg += "Erro na atualizacao do financeiro (SE5). Este registro nao sera' mantido."
+							_Super:SomaMsg ("Erro na atualizacao do financeiro (SE5). Este registro nao sera' mantido.")
 							_lContinua = .F.
 						endif
 					endif
@@ -1229,7 +1228,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav, _lAtuSldAs) Class ClsCtaCorr
 					if _lContinua
 						u_log2 ('info', 'Vou gerar DP para o fornecedor relacionado.')
 						if ! ::GeraSE2 ("DP", szi -> zi_data, szi -> zi_fornece, szi -> zi_lojafor)
-							::UltMsg += "Erro na atualizacao do financeiro (geracao titulo DP para fornecedor " + szi -> zi_fornece + "). Este registro nao sera' mantido."
+							_Super:SomaMsg ("Erro na atualizacao do financeiro (geracao titulo DP para fornecedor " + szi -> zi_fornece + "). Este registro nao sera' mantido.")
 							_lContinua = .F.
 						endif
 					else
@@ -1237,7 +1236,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav, _lAtuSldAs) Class ClsCtaCorr
 					endif
 
 				otherwise
-					::UltMsg += "Metodo " + procname () + " sem tratamento para '" + zx5 -> zx5_10GerI + "' no campo ZX5_10GERI. Avise setor de informatica."
+					_Super:SomaMsg ("Metodo " + procname () + " sem tratamento para '" + zx5 -> zx5_10GerI + "' no campo ZX5_10GERI. Avise setor de informatica.")
 					U_AvisaTI (::UltMsg)
 					_lContinua = .F.
 				endcase
@@ -1255,7 +1254,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav, _lAtuSldAs) Class ClsCtaCorr
 		// Se o registro jah foi gavado no SZI mas houve problemas nas validacoes
 		// ou na geracao de sequencial, por exemplo, o mesmo deve ser excluido.
 		if ! _lContinua .and. _lSZIGrav
-			::UltMsg += "Erro na gravacao do arquivo SZI. Gravacao cancelada."
+			_Super:SomaMsg ("Erro na gravacao do arquivo SZI. Gravacao cancelada.")
 			if _lMemoGrav .and. ! empty (szi -> zi_CodMemo)
 				u_log ("Deletando memo")
 				msmm (szi -> zi_CodMemo,,,, 2,,, "SZI", "ZI_CODMEMO")
@@ -1429,7 +1428,7 @@ METHOD OQueGera () Class ClsCtaCorr
 			case zx5 -> zx5_10GerI == '7'
 				_sRet = "NDF+DP_Forn"
 			otherwise
-				::UltMsg += "Metodo " + procname () + " sem definicao do que deve ser gerado para '" + zx5 -> zx5_10GerI + "' no campo ZX5_GERI. Avise setor de informatica."
+				_Super:SomaMsg ("Metodo " + procname () + " sem definicao do que deve ser gerado para '" + zx5 -> zx5_10GerI + "' no campo ZX5_GERI. Avise setor de informatica.")
 				U_AvisaTI (::UltMsg)
 		endcase
 	endif
@@ -1451,7 +1450,7 @@ METHOD PodeExcl () Class ClsCtaCorr
 
 	_oAssoc = ClsAssoc():New(::Assoc, ::Loja)
 	if valtype (_oAssoc) != "O"
-		::UltMsg += "Nao foi possivel instanciar classe ClsAssoc." + _sCRLF
+		_Super:SomaMsg ("Nao foi possivel instanciar classe ClsAssoc." + _sCRLF)
 		_lContinua = .F.
 	endif
 
@@ -1459,7 +1458,7 @@ METHOD PodeExcl () Class ClsCtaCorr
 	if _lContinua
 		zx5 -> (dbsetorder (2))  // ZX5_FILIAL+ZX5_TABELA+ZX5_10COD
 		if ! zx5 -> (dbseek (xfilial ("ZX5") + "10" + ::TM, .F.))
-			::UltMsg += "Tipo de movimento '" + ::TM + "' nao encontrado na tabela de movimentos de conta corrente!"
+			_Super:SomaMsg ("Tipo de movimento '" + ::TM + "' nao encontrado na tabela de movimentos de conta corrente!")
 			_lContinua = .F.
 		endif
 	endif
@@ -1469,7 +1468,7 @@ METHOD PodeExcl () Class ClsCtaCorr
 			_lContinua = ::VerifUser ("Movimentacao de capital social: uso restrito.")
 		endif
 		if empty (_oAssoc:DtNascim)
-			::UltMsg += "Para excluir movimentos que envolvem capital social a data de nascimento do associado deve estar informada no seu cadastro."
+			_Super:SomaMsg ("Para excluir movimentos que envolvem capital social a data de nascimento do associado deve estar informada no seu cadastro.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1480,7 +1479,7 @@ METHOD PodeExcl () Class ClsCtaCorr
 	endif
 
 	if _lContinua .and. ::TM $ '04'
-		::UltMsg += "Este tipo de movimentacao encontra-se vinculado a uma NF ou cupom fiscal e nao deve ser excluido manualmente."
+		_Super:SomaMsg ("Este tipo de movimentacao encontra-se vinculado a uma NF ou cupom fiscal e nao deve ser excluido manualmente.")
 		
 		// Gerei uns na filial errada durante os testes e terei que excluir manualmente... que vergonha!
 		if alltrim (upper (cUserName)) == 'ROBERT.KOCH'
@@ -1495,7 +1494,7 @@ METHOD PodeExcl () Class ClsCtaCorr
 		// Se for uma fatura gerada pelo financeiro, a mesma pode ser cancelada.
 		se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
 		if ! se2 -> (dbseek (::Filial + ::Assoc + ::Loja + ::Serie + ::Doc + ::Parcela, .F.)) .or. se2 -> e2_tipo != 'FAT'
-			::UltMsg += "Movimento de compra de safra: so' pode ser excluido excluindo-se a NF de compra que o gerou."
+			_Super:SomaMsg ("Movimento de compra de safra: so' pode ser excluido excluindo-se a NF de compra que o gerou.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1514,13 +1513,13 @@ METHOD PodeExcl () Class ClsCtaCorr
 		_sQUery +=   " AND ZI_DATA    > '" + dtos (::DtMovto) + "'"  // Eh gerada no dia 1 do mes subsequente.
 		//u_log (_squery)
 		if U_RetSQL (_sQuery) > 0
-			::UltMsg += "Ja' existe calculo de correcao monetaria para este associado em meses posteriores. Exclusao nao permitida."
+			_Super:SomaMsg ("Ja' existe calculo de correcao monetaria para este associado em meses posteriores. Exclusao nao permitida.")
 			_lContinua = .F.
 		endif
 	endif
 
 	if _lContinua .and. ::SaldoAtu != ::Valor .and. ! ::TM $ '10/17/18/19'
-		::UltMsg += "Este lancamento sofreu baixas, pois o saldo difere do valor original. Cancele as baixas antes de continuar."
+		_Super:SomaMsg ("Este lancamento sofreu baixas, pois o saldo difere do valor original. Cancele as baixas antes de continuar.")
 		_lContinua = .F.
 	endif
 	
@@ -1531,7 +1530,6 @@ METHOD PodeExcl () Class ClsCtaCorr
 		if _nRegSE2Ex > 0
 			se2 -> (dbgoto (_nRegSE2Ex))
 			if se2 -> e2_emissao != dDataBase
-	//	::UltMsg += "Para exclusao deve ser usada data base igual `a data da inclusao (" + dtoc (::DtMovto) + ")"
 				::UltMsg += "Este registro gerou titulo no financeiro, com data de emissao " + dtoc (se2 -> e2_emissao) + ". Para exclusao deve ser usada a mesma data base."
 				_lContinua = .F.
 			endif
@@ -1549,7 +1547,7 @@ METHOD PodeExcl () Class ClsCtaCorr
 		_sQUery +=   " AND ZI_TM     != '08'"
 		u_log (_squery)
 		if U_RetSQL (_sQuery) > 0
-			::UltMsg += "Existe movimentacao posterior a esta data na conta corrente deste associado."
+			_Super:SomaMsg ("Existe movimentacao posterior a esta data na conta corrente deste associado.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1566,7 +1564,7 @@ METHOD PodeExcl () Class ClsCtaCorr
 		_sQUery +=   " AND ZI_TM      = '11'"
 		u_log (_squery)
 		if U_RetSQL (_sQuery) > 0
-			::UltMsg += "Existem lancamentos de resgate de quota capital posteriores a esta data com saldo em aberto."
+			_Super:SomaMsg ("Existem lancamentos de resgate de quota capital posteriores a esta data com saldo em aberto.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1597,41 +1595,41 @@ METHOD PodeIncl () Class ClsCtaCorr
 
 	// Verifica dados.
 	if _lContinua
-		if empty (::Assoc)   ; ::UltMsg += "Codigo do associado deve ser informado." ; _lContinua = .F. ; endif
-		if empty (::Loja)    ; ::UltMsg += "Loja do associado deve ser informada."   ; _lContinua = .F. ; endif
-		if empty (::TM)      ; ::UltMsg += "Tipo de movimento deve ser informado."   ; _lContinua = .F. ; endif
-		if empty (::DtMovto) ; ::UltMsg += "Data do movimento deve ser informada."   ; _lContinua = .F. ; endif
-		if empty (::Histor)  ; ::UltMsg += "Historico deve ser informado."           ; _lContinua = .F. ; endif
-		if empty (::MesRef)  ; ::UltMsg += "Mes de referencia deve ser informado."   ; _lContinua = .F. ; endif
-		if empty (::Doc)     ; ::UltMsg += "Documento deve ser informado."           ; _lContinua = .F. ; endif
+		if empty (::Assoc)   ; _Super:SomaMsg ("Codigo do associado deve ser informado.") ; _lContinua = .F. ; endif
+		if empty (::Loja)    ; _Super:SomaMsg ("Loja do associado deve ser informada.")   ; _lContinua = .F. ; endif
+		if empty (::TM)      ; _Super:SomaMsg ("Tipo de movimento deve ser informado.")   ; _lContinua = .F. ; endif
+		if empty (::DtMovto) ; _Super:SomaMsg ("Data do movimento deve ser informada.")   ; _lContinua = .F. ; endif
+		if empty (::Histor)  ; _Super:SomaMsg ("Historico deve ser informado.")           ; _lContinua = .F. ; endif
+		if empty (::MesRef)  ; _Super:SomaMsg ("Mes de referencia deve ser informado.")   ; _lContinua = .F. ; endif
+		if empty (::Doc)     ; _Super:SomaMsg ("Documento deve ser informado.")           ; _lContinua = .F. ; endif
 	endif
 
 	_oAssoc = ClsAssoc():New(::Assoc, ::Loja)
 	if valtype (_oAssoc) != "O"
-		::UltMsg += "Nao foi possivel instanciar classe ClsAssoc." + _sCRLF
+		_Super:SomaMsg ("Nao foi possivel instanciar classe ClsAssoc.")
 		_lContinua = .F.
 	endif
 	
 	if _lContinua .and. (empty (_oAssoc:CodBase) .or. empty (_oAssoc:LojaBase))
-		::UltMsg += "Codigo/loja base nao informados no cadastro do associado." + _sCRLF
+		_Super:SomaMsg ("Codigo/loja base nao informados no cadastro do associado.")
 		_lContinua = .F.
 	endif
 
 	// Esta validacao eh soh por que sou enjoado e quero o cadastro preenchido. A principio nao preciso para nada em especial.
 	if _lContinua .and. empty (_oAssoc:CoopOrigem)
-		::UltMsg += "Cooperativa de origem nao informada no cadastro do associado / fornecedor." + _sCRLF
+		_Super:SomaMsg ("Cooperativa de origem nao informada no cadastro do associado / fornecedor.")
 		_lContinua = .F.
 	endif
 
 	if _lContinua
 		if ::TM $ '08/09/39/40'
 			if ::Valor != 0
-				::UltMsg += "Nao deve ser informado valor para este tipo de movimento." + _sCRLF
+				_Super:SomaMsg ("Nao deve ser informado valor para este tipo de movimento.")
 				_lContinua = .F.
 			endif
 		else
 			if ::Valor <= 0
-				::UltMsg += "Deve ser informado valor para este tipo de movimento." + _sCRLF
+				_Super:SomaMsg ("Deve ser informado valor para este tipo de movimento.")
 				_lContinua = .F.
 			endif
 		endif
@@ -1661,19 +1659,19 @@ METHOD PodeIncl () Class ClsCtaCorr
 	_sQuery += "    AND SZI.ZI_PARCELA = '" + ::Parcela + "'"
 	_aDados := U_Qry2Array(_sQuery)
 	if len (_aDados) > 0
-		::UltMsg += "Associado ja tem lancamento com esse numero de documento/prefixo/parcela. Verifique! " + _sCRLF
+		_Super:SomaMsg ("Associado ja tem lancamento com esse numero de documento/prefixo/parcela. Verifique! ")
 		_lContinua = .F.
 	endif
 	
 	// Posiciona ZX5 para validacoes posteriores.
 	zx5 -> (dbsetorder (2))  // ZX5_FILIAL+ZX5_TABELA+ZX5_10COD
 	if ! zx5 -> (dbseek (xfilial ("ZX5") + "10" + ::TM, .F.))
-		::UltMsg += "Tipo de movimento '" + ::TM + "' nao encontrado na tabela de movimentos de conta corrente!" + _sCRLF
+		_Super:SomaMsg ("Tipo de movimento '" + ::TM + "' nao encontrado na tabela de movimentos de conta corrente!")
 		_lContinua = .F.
 	endif
 
 	if _lContinua .and. ! zx5 -> zx5_10geri $ '01234567'
-		::UltMsg += "Falta tratamento para campo ZX5_10GERI com conteudo '" + zx5 -> zx5_10geri + "' no metodo " + procname () + _sCRLF
+		_Super:SomaMsg ("Falta tratamento para campo ZX5_10GERI com conteudo '" + zx5 -> zx5_10geri + "' no metodo " + procname ())
 		_lContinua = .F.
 	endif
 
@@ -1682,25 +1680,25 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_lContinua = ::VerifUser ("Movimentacao de capital social: uso restrito.")
 		endif
 		if empty (_oAssoc:DtNascim)
-			::UltMsg += "Para incluir movimentos que envolvem capital social a data de nascimento do associado deve estar informada no seu cadastro." + _sCRLF
+			_Super:SomaMsg ("Para incluir movimentos que envolvem capital social a data de nascimento do associado deve estar informada no seu cadastro.")
 			_lContinua = .F.
 		endif
 	endif
 
 	// Emprestimos.
 	if _lContinua .and. ::TM == '07' .and. empty (::FormPag)
-		::UltMsg += "Para emprestimos deve ser informada a forma de pagamento." + _sCRLF
+		_Super:SomaMsg ("Para emprestimos deve ser informada a forma de pagamento.")
 		_lContinua = .F.
 	endif
 
 	// Associar.
 	if _lContinua .and. ::TM == '08'
 		if _lContinua .and. ::DtMovto < _oAssoc:DtNascim
-			::UltMsg += "Trabalhar pelo cooperativismo eh bom, mas associar-se antes de nascer eh demais... Data de nascimento deste fornecedor: " + dtoc (_oAssoc:DtNascim) + _sCRLF
+			_Super:SomaMsg ("Trabalhar pelo cooperativismo eh bom, mas associar-se antes de nascer eh demais... Data de nascimento deste fornecedor: " + dtoc (_oAssoc:DtNascim))
 			_lContinua = .F.
 		endif
 		if _lContinua .and. _oAssoc:EhSocio (::DtMovto)
-			::UltMsg += "Jah consta como associado nesta data." + _sCRLF
+			_Super:SomaMsg ("Jah consta como associado nesta data.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1711,7 +1709,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_lContinua = U_MsgNoYes ("Confirma o uso de data retroativa?", .F.)
 		endif
 		if _lContinua .and. ! _oAssoc:EhSocio (::DtMovto)
-			::UltMsg += "Nao consta como associado em " + dtoc (::DtMovto) + _sCRLF
+			_Super:SomaMsg ("Nao consta como associado em " + dtoc (::DtMovto))
 			_lContinua = .F.
 		endif
 	endif
@@ -1719,7 +1717,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	// Implantacao de saldo de quota capital: somente uma vez na vida, independente de filial.
 	if _lContinua .and. ::TM == '10'
 		if ! _oAssoc:EhSocio (::DtMovto)
-			::UltMsg += "Nao consta como associado nesta data." + _sCRLF
+			_Super:SomaMsg ("Nao consta como associado nesta data.")
 			_lContinua = .F.
 		endif
 		if _lContinua
@@ -1734,7 +1732,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_sQUery +=   " AND ZI_DATA   <= '" + dtos (iif (empty (_oAssoc:DtSaida (::DtMovto)), dDataBase, _oAssoc:DtSaida (::DtMovto))) + "'"
 			//u_log (_squery)
 			if U_RetSQL (_sQuery) > 0
-				::UltMsg += "Associado ja tem lancamento de implantacao de capital. Posterior a isso, somente serao permitidas geracoes de distribuicoes anuais de sobras." + _sCRLF
+				_Super:SomaMsg ("Associado ja tem lancamento de implantacao de capital. Posterior a isso, somente serao permitidas geracoes de distribuicoes anuais de sobras.")
 				_lContinua = .F.
 			endif
 		endif
@@ -1744,14 +1742,14 @@ METHOD PodeIncl () Class ClsCtaCorr
 	if _lContinua .and. ::TM == '11'
 		if _oAssoc:EhSocio (::DtMovto) .and. ! IsInCallStack ("DESASSOC")  // Usuario estah incluindo o movto. manualmente.
 			if _lContinua .and. empty (_oAssoc:DtNascim)
-				::UltMsg += "Data de nascimento deste associado nao informada no cadastro." + _sCRLF
+				_Super:SomaMsg ("Data de nascimento deste associado nao informada no cadastro.")
 				_lContinua = .F.
 			endif
 			if _lContinua
 				_oDUtil := ClsDUtil():New()
 				_dAniver = _oDUtil:Aniver (_oAssoc:DtNascim, 65)
 				if ::DtMovto < _dAniver
-					::UltMsg += "Associado somente vai ter direito a resgatar parte da quota capital apos 65 anos de idade, o que serah em " + dtoc (_dAniver) + _sCRLF
+					_Super:SomaMsg ("Associado somente vai ter direito a resgatar parte da quota capital apos 65 anos de idade, o que vai ser em " + dtoc (_dAniver))
 					_lContinua = .F.
 				endif
 			endif
@@ -1759,12 +1757,12 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_oDUtil := ClsDUtil():New()
 				_dAniver = _oDUtil:Aniver (_oAssoc:DtEntrada (::DtMovto), 10)
 				if ::DtMovto < _dAniver
-					::UltMsg += "Associado so' tera' direito a resgatar parte da quota capital apos 10 anos de associacao, o que sera' em " + dtoc (_dAniver) + _sCRLF
+					_Super:SomaMsg ("Associado so' tera' direito a resgatar parte da quota capital apos 10 anos de associacao, o que vai ser em " + dtoc (_dAniver))
 					_lContinua = .F.
 				endif
 			endif
 			if _lContinua .and. ::Valor > _oAssoc:SldQuotCap (::DtMovto) [1] / 10
-				::UltMsg += "Associado so' tem direito a resgatar 10% do saldo de sua quota capital (saldo da quota em " + dtoc (::DtMovto) + ": " + GetMv('MV_SIMB1') + " " + alltrim (transform (_oAssoc:SldQuotCap (::DtMovto) [1], "@E 999,999,999.99")) + ")." + _sCRLF
+				_Super:SomaMsg ("Associado somente tem direito a resgatar 10% do saldo de sua quota capital (saldo da quota em " + dtoc (::DtMovto) + ": " + GetMv('MV_SIMB1') + " " + alltrim (transform (_oAssoc:SldQuotCap (::DtMovto) [1], "@E 999,999,999.99")) + ").")
 				_lContinua = .F.
 			endif
 			if _lContinua
@@ -1778,7 +1776,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_sQUery +=   " AND ZI_TM      = '11'"
 				_sRetQry = U_RetSQL (_sQuery)
 				if ! empty (_sRetQry)
-					::UltMsg += "Associado ja tem lancamento de resgate de quota capital para este ano, com mes de referencia " + _sRetQry + _sCRLF
+					_Super:SomaMsg ("Associado ja tem lancamento de resgate de quota capital para este ano, com mes de referencia " + _sRetQry)
 					_lContinua = .F.
 				endif
 			endif
@@ -1796,16 +1794,16 @@ METHOD PodeIncl () Class ClsCtaCorr
 
 		// Ex-associado pode ainda ter a safra para receber.
 		if !_oAssoc:EhSocio (::DtMovto) .and. empty (_oAssoc:DtSaida (::DtMovto))
-			::UltMsg += "Nao consta como associado nem como ex-associado nesta data." + _sCRLF
+			_Super:SomaMsg ("Nao consta como associado nem como ex-associado nesta data.")
 			_lContinua = .F.
 		endif
 		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! (IsInCallStack ("U_BATSAFR") .and. IsInCallStack ("_GERASZI"))
-			::UltMsg += "Movimento de compra de safra: so' pode ser incluido por rotinas especificas, ou manualmente quando tratar-se de titulo transferido de outra filial. Informe filial de origem." + _sCRLF
+			_Super:SomaMsg ("Movimento de compra de safra: so' pode ser incluido por rotinas especificas, ou manualmente quando tratar-se de titulo transferido de outra filial. Informe filial de origem.")
 			_lContinua = .F.
 		endif
 		if _lContinua .and. ! empty (::FilOrig)
 			if empty (::SeqOrig)
-				::UltMsg += "Inclusao de transferencia de outra filial: sequencia original nao informada (o movimento correspondente deve existir na filial origem). Verifique campos Associado, Loja, Data, Tipo movto., Documento, Serie e Mes ref." + _sCRLF
+				_Super:SomaMsg ("Inclusao de transferencia de outra filial: sequencia original nao informada (o movimento correspondente deve existir na filial origem). Verifique campos Associado, Loja, Data, Tipo movto., Documento, Serie e Mes ref.")
 				_lContinua = .F.
 			else
 				// Para ficar mais correto, a query abaixo deveria abater transferencias jah realizadas, pois
@@ -1829,7 +1827,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 				//u_log (_squery)
 				_nBxTrans = U_RetSQL (_sQuery)
 				if ::Valor > _nBxTrans
-					::UltMsg += "Inclusao de transferencia de compra de safra de outra filial: o valor esta limitado a R$ " + alltrim (transform (_nBxTrans, "@E 999,999,999.99")) + " (total baixado via conta transitoria na filial de origem nesta data)." + _sCRLF
+					_Super:SomaMsg ("Inclusao de transferencia de compra de safra de outra filial: o valor esta limitado a R$ " + alltrim (transform (_nBxTrans, "@E 999,999,999.99")) + " (total baixado via conta transitoria na filial de origem nesta data).")
 					_lContinua = .F.
 				endif
 			endif
@@ -1839,28 +1837,28 @@ METHOD PodeIncl () Class ClsCtaCorr
 	// Transferencia de quota capital.
 	if _lContinua .and. ::TM == '17'
 		if ::Valor == 0 .or. _oAssoc:SldQuotCap (::DtMovto) [1] < ::Valor
-			::UltMsg += "Valor nao informado ou saldo cota capital (" + cvaltochar (_oAssoc:SldQuotCap (::DtMovto) [1]) + ") insuficiente para a transferencia." + _sCRLF
+			_Super:SomaMsg ("Valor nao informado ou saldo cota capital (" + cvaltochar (_oAssoc:SldQuotCap (::DtMovto) [1]) + ") insuficiente para a transferencia.")
 			_lContinua = .F.
 		endif
 		if ::Valor < _oAssoc:SldQuotCap (::DtMovto) [1] * 0.15
-			::UltMsg += "Nao pode ser transferido menos que 15% do saldo de cota capital (" + cvaltochar (_oAssoc:SldQuotCap (::DtMovto) [1]) + ")." + _sCRLF
+			_Super:SomaMsg ("Nao pode ser transferido menos que 15% do saldo de cota capital (" + cvaltochar (_oAssoc:SldQuotCap (::DtMovto) [1]) + ").")
 			_lContinua = .F.
 		endif
 	endif
 
 	if _lContinua .and. ::TM == '18' .and. ! _oAssoc:EhSocio (::DtMovto)
-		::UltMsg += _oAssoc:Nome + " nao consta como associado nesta data." + _sCRLF
+		_Super:SomaMsg (_oAssoc:Nome + " nao consta como associado nesta data.")
 		_lContinua = .F.
 	endif
 
 	// Distribuicao de sobras: somente uma vez por ano.
 	if _lContinua .and. ::TM == '19'
 		if ! _oAssoc:EhSocio (::DtMovto) .and. empty (_oAssoc:DtSaida (::DtMovto))  // Ex-associado
-			::UltMsg += "Nao consta como associado (nem ex associado) nesta data." + _sCRLF
+			_Super:SomaMsg ("Nao consta como associado (nem ex associado) nesta data.")
 			_lContinua = .F.
 		endif
 		if _lContinua .and. ! IsInCallStack ("U_SZI_DS")
-			::UltMsg += "Este tipo de movimento so deveria ser gerado pela rotina de distribuicao de sobras (SZI_DS)." + _sCRLF
+			_Super:SomaMsg ("Este tipo de movimento so deveria ser gerado pela rotina de distribuicao de sobras (SZI_DS).")
 			if U_ZZUVL ('051', __cUserId, .F.)
 				_lContinua = U_MsgNoYes (::UltMsg + " Confirma assim mesmo?")
 			else
@@ -1878,7 +1876,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_sQUery +=   " AND ZI_MESREF  = '" + ::MesRef + "%'"
 			u_log (_squery)
 			if U_RetSQL (_sQuery) > 0
-				::UltMsg += "Associado ja tem lancamento de integralizacao de sobras neste ano." + _sCRLF
+				_Super:SomaMsg ("Associado ja tem lancamento de integralizacao de sobras neste ano.")
 				_lContinua = .F.
 			endif
 		endif
@@ -1886,25 +1884,25 @@ METHOD PodeIncl () Class ClsCtaCorr
 
 	if _lContinua .and. ::TM == '27'
 		if ::Valor > _oAssoc:SldQuotCap (::DtMovto) [.QtCapSaldoNaData]
-			::UltMsg += "Valor do movimento nao pode ser maior que o saldo do capital social nesta data ($ " + cvaltochar (_oAssoc:SldQuotCap (::DtMovto) [.QtCapSaldoNaData]) + ")"
+			_Super:SomaMsg ("Valor do movimento nao pode ser maior que o saldo do capital social nesta data ($ " + cvaltochar (_oAssoc:SldQuotCap (::DtMovto) [.QtCapSaldoNaData]) + ")")
 			_lContinua = .F.
 		endif
 	endif	
 
 	// Adiantamentos de safra
 	if _lContinua .and. ::TM == '31' .and. empty (::FormPag)
-		::UltMsg += "Para adiantamentos de safra deve ser informada a forma de pagamento." + _sCRLF
+		_Super:SomaMsg ("Para adiantamentos de safra deve ser informada a forma de pagamento.")
 		_lContinua = .F.
 	endif
 
 	// Projetos com ART: paga para o fornecedor (geralmente CREA) e desconta do associado.
 	if _lContinua .and. ::TM == '32'
 		if empty (::Fornece) .or. empty (::LojaFor)
-			::UltMsg += "Movimento tipo " + ::TM + ": a cooperativa paga o fornecedor e depois cobra do associado (ou desconta da safra). Por isso, deve ser informado o fornecedor para o qual a cooperativa vai fazer o pagamento."
+			_Super:SomaMsg ("Movimento tipo " + ::TM + ": a cooperativa paga o fornecedor e depois cobra do associado (ou desconta da safra). Por isso, deve ser informado o fornecedor para o qual a cooperativa vai fazer o pagamento.")
 			_lContinua = .F.
 		endif
 		if empty (::VctoSE2For)
-			::UltMsg += "Para este tipo de movimento deve ser informada uma data de vencimento para o titulo a pagar que vai ser gerado em nome do fornecedor relacionado."
+			_Super:SomaMsg ("Para este tipo de movimento deve ser informada uma data de vencimento para o titulo a pagar que vai ser gerado em nome do fornecedor relacionado.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1912,7 +1910,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	// Restituicao (cobranca) de FUNRURAL
 	if _lContinua .and. ::TM == '33'
 		if empty (::Safra)
-			::UltMsg += "Para movimento de restituicao de FUNRURAL deve ser informada a safra de referencia."
+			_Super:SomaMsg ("Para movimento de restituicao de FUNRURAL deve ser informada a safra de referencia.")
 			_lContinua = .F.
 		else
 			_oSQL := ClsSQL ():New ()
@@ -1926,7 +1924,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_oSQL:_sQuery +=   " AND ZI_SAFRA   = '" + ::Safra + "'"
 			_oSQL:Log ()
 			if _oSQL:RetQry (1, .f.) > 0
-				::UltMsg += "Ja' existe movimento de restituicao de FUNRURAL para o associado '" + ::Assoc + '/' + ::Loja + "' referente safra '" + ::Safra + "'."
+				_Super:SomaMsg ("Ja' existe movimento de restituicao de FUNRURAL para o associado '" + ::Assoc + '/' + ::Loja + "' referente safra '" + ::Safra + "'.")
 				_lContinua = .F.
 			endif
 		endif
@@ -1935,7 +1933,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	if _lContinua .and. ! _oAssoc:EhSocio (::DtMovto)
 		if ::TM $ '07/31' .and. !empty (_oAssoc:DtSaida (::DtMovto))  // Ex-associado
 			if ! msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' consta como EX-ASSOCIADO em " + dtoc (::DtMovto) + ". Confirma a inclusao deste registro?")
-				::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' consta como ex-associado em " + dtoc (::DtMovto)
+				_Super:SomaMsg ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' consta como ex-associado em " + dtoc (::DtMovto))
 				_lContinua = .F.
 			endif
 		else
@@ -1943,7 +1941,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			if ! ::TM $ '11/08/13/19/39/40'
 				if ::TM == '16'
 					if ! u_msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada. Confirma a inclusao deste registro?")
-						::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada."
+						_Super:SomaMsg ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada.")
 						_lContinua = .F.
 					endif
 				else
@@ -1951,7 +1949,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 						if alltrim (::OQueGera ()) $ "NDF/" .and. msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto) + ". Confirma a inclusao deste registro?")
 							// Pode passar
 						else
-							::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto)
+							_Super:SomaMsg ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto))
 							_lContinua = .F.
 						endif
 					endif
@@ -1963,7 +1961,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	// Outros creditos sem entrada de valor.
 	if _lContinua .and. ! zx5 -> zx5_10geri $ '2/4'
 		if !empty (::Banco) .or. !empty (::Agencia) .or. !empty (::NumCon)
-			::UltMsg += "Banco/agencia/conta somente devem ser informados quando houver recebimento ou pagamento de valores." + _sCRLF
+			_Super:SomaMsg ("Banco/agencia/conta somente devem ser informados quando houver recebimento ou pagamento de valores.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1971,7 +1969,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	// Geracao de PA.
 	if _lContinua .and. zx5 -> zx5_10geri == '2'
 		if empty (::Banco) .or. empty (::Agencia) .or. empty (::NumCon)
-			::UltMsg += "Para geracao de PA devem ser informados banco/agencia/conta." + _sCRLF
+			_Super:SomaMsg ("Para geracao de PA devem ser informados banco/agencia/conta.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1979,7 +1977,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	// Outros creditos com entrada de valor.
 	if _lContinua .and. zx5 -> zx5_10geri == '4'
 		if empty (::Banco) .or. empty (::Agencia) .or. empty (::NumCon)
-			::UltMsg += "Para recebimento de valores devem ser informados banco/agencia/conta." + _sCRLF
+			_Super:SomaMsg ("Para recebimento de valores devem ser informados banco/agencia/conta.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1989,11 +1987,11 @@ METHOD PodeIncl () Class ClsCtaCorr
 		if ! empty (::Banco) .or. ! empty (::Agencia) .or. ! empty (::NumCon)
 			sa6 -> (dbsetorder (1))  // A6_FILIAL+A6_COD+A6_AGENCIA+A6_NUMCON
 			if ! sa6 -> (dbseek (xfilial ("SA6") + ::Banco + ::Agencia + ::NumCon, .f.))
-				::UltMsg += "Banco / agencia / conta nao cadastrada."
+				_Super:SomaMsg ("Banco / agencia / conta nao cadastrada.")
 				_lContinua = .F.
 			else
 				if sa6 -> a6_blocked == '1'
-					::UltMsg += "Conta bancaria bloqueada."
+					_Super:SomaMsg ("Conta bancaria bloqueada.")
 					_lContinua = .F.
 				endif
 			endif
@@ -2002,14 +2000,14 @@ METHOD PodeIncl () Class ClsCtaCorr
 
 	if _lContinua .and. ::TM $ '03/05/06'
 		if _lContinua .and. empty (::Fornece)
-			::UltMsg += "Fornecedor deve ser informado, quando tipo de movimento for 03, 05 ou 06 (Analise de Solo ou Compras de Insumos/Sementes/Mudas). Verifique!"
+			_Super:SomaMsg ("Fornecedor deve ser informado, quando tipo de movimento for 03, 05 ou 06 (Analise de Solo ou Compras de Insumos/Sementes/Mudas). Verifique!")
 			_lContinua = .F.
 		endif
 	endif	
 
 	if _lContinua .and. ! empty (::OQueGera())
 		if ::DtMovto < GetMv ("MV_DATAFIN")
-			::UltMsg += "Data (minima) limite para movimentacoes financeiras: " + dtoc (GetMv ("MV_DATAFIN"))
+			_Super:SomaMsg ("Data (minima) limite para movimentacoes financeiras: " + dtoc (GetMv ("MV_DATAFIN")))
 			_lContinua = .F.
 		endif
 	endif
@@ -2028,7 +2026,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 		_sQuery +=   " AND ZI_DATA    > '" + dtos (::DtMovto) + "'"  // Eh gerada no dia 1 do mes subsequente.
 		//u_log (_squery)
 		if U_RetSQL (_sQuery) > 0
-			::UltMsg += "Ja' existe calculo de correcao monetaria para este mes (ou posterior)."
+			_Super:SomaMsg ("Ja' existe calculo de correcao monetaria para este mes (ou posterior).")
 			_lContinua = .F.
 		endif
 //	endif
@@ -2036,11 +2034,11 @@ METHOD PodeIncl () Class ClsCtaCorr
 	// Para comecar a ser considerado como 'fornecedor de uva'
 	if _lContinua .and. ::TM == '39'
 		if _oAssoc:EhSocio (::DtMovto)
-			::UltMsg += "Associado ativo nao pode ser transformado em 'fornecedor de uva'." + _sCRLF
+			_Super:SomaMsg ("Associado ativo nao pode ser transformado em 'fornecedor de uva'.")
 			_lContinua = .F.
 		endif
 		if _lContinua .and. _oAssoc:EhFornUva (::DtMovto)
-			::UltMsg += "Ja' consta como fornecedor de uva nesta data."
+			_Super:SomaMsg ("Ja' consta como fornecedor de uva nesta data.")
 			_lContinua = .F.
 		endif
 	endif
@@ -2048,7 +2046,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	// Para deixar de ser considerado como 'fornecedor de uva'
 	if _lContinua .and. ::TM == '40'
 		if ! _oAssoc:EhFornUva (::DtMovto)
-			::UltMsg += "Nao consta como fornecedor de uva nesta data."
+			_Super:SomaMsg ("Nao consta como fornecedor de uva nesta data.")
 			_lContinua = .F.
 		endif
 	endif
@@ -2056,7 +2054,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	if _lContinua .and. (! empty (::Fornece) .or. ! empty (::LojaFor))
 		sa2 -> (dbsetorder (1))
 		if ! sa2 -> (dbseek (xfilial ("SA2") + ::Fornece + ::LojaFor, .F.))
-			::UltMsg += "Fornecedor/loja informado nao localizado no cadastro."
+			_Super:SomaMsg ("Fornecedor/loja informado nao localizado no cadastro.")
 			_lContinua = .F.
 		endif
 	endif
@@ -2214,26 +2212,26 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	u_log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())
 	
 	if alltrim (::OQueGera ()) $ "PA/DP+SE5_R"
-		::UltMsg += "Transferencia de saldo que gerou movimento bancario nao permitida, pois nao tenho o mesmo bco/ag/cta na filial destino. Baixe o movimento manualmente na filial origem e digite lcto correspondente na filiai destino."
+		_Super:SomaMsg ("Transferencia de saldo que gerou movimento bancario nao permitida, pois nao tenho o mesmo bco/ag/cta na filial destino. Baixe o movimento manualmente na filial origem e digite lcto correspondente na filiai destino.")
 		_lContinua = .F.
 	endif
 	if alltrim (::OQueGera ()) == "NDF+DP_Forn"
-		::UltMsg += "Transferencia de saldo que gerou titulo para fornecedor externo ainda nao implementada."
+		_Super:SomaMsg ("Transferencia de saldo que gerou titulo para fornecedor externo ainda nao implementada.")
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ::SaldoAtu <= 0
-		::UltMsg += 'Lancamento sem saldo na conta corrente'
+		_Super:SomaMsg ('Lancamento sem saldo na conta corrente')
 		_lContinua = .F.
 	else
 		_nSaldo = ::SaldoAtu
 	endif
 	if _lContinua .and. ::FilDest == ::Filial
-		::UltMsg += 'Filial destino deve ser diferente da filial de origem.'
+		_Super:SomaMsg ('Filial destino deve ser diferente da filial de origem.')
 		_lContinua = .F.
 	endif
 	if _lContinua
 		if ! sm0 -> (dbseek (cEmpAnt + ::FilDest, .F.))
-			::UltMsg += 'Filial destino inexistente nesta empresa.'
+			_Super:SomaMsg ('Filial destino inexistente nesta empresa.')
 			_lContinua = .F.
 		endif
 		sm0 -> (dbseek (cEmpAnt + cFilAnt, .F.))
@@ -2267,12 +2265,12 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		_aTit [1] = {::RecnoSE2 ()}  // Formato de array por que pode baixar mais de um titulo por vez.
 	//	U_Log2 ('info', 'Registro do SE2 a ser baixado via conta transitoria: ' + cvaltochar (_aTit [1, 1]))
 		if _aTit [1, 1] == 0
-			::UltMsg += "Nao ha titulo correspondente no financeiro.
+			_Super:SomaMsg ("Nao ha titulo correspondente no financeiro.")
 			_lContinua = .F.
 		else
 			se2 -> (dbgoto (_aTit [1, 1]))
 			if se2 -> e2_saldo <= 0 .or. se2 -> e2_saldo != _nSaldo
-				::UltMsg += 'Lancamento sem saldo no financeiro ou saldo diferente do apresentado na conta corrente.'
+				_Super:SomaMsg ('Lancamento sem saldo no financeiro ou saldo diferente do apresentado na conta corrente.')
 				_lContinua = .F.
 			endif
 		endif
@@ -2289,7 +2287,7 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		_oSQL:_sQuery +=   " AND SA6.A6_CONTA   = '101010201099'"
 		_aBanco := aclone (_oSQL:Qry2Array (.f., .f.))
 		if len (_aBanco) == 0
-			::UltMsg += 'Registro ref.bco/conta transitoria entre filiais nao encontrado na tabela SA6 para esta filial.'
+			_Super:SomaMsg ('Registro ref.bco/conta transitoria entre filiais nao encontrado na tabela SA6 para esta filial.')
 			_lContinua = .F.
 		else
 			_aTit [2] = _aBanco [1, 1]
@@ -2335,7 +2333,7 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 			MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
 			If lMsErroAuto
 				_lContinua = .F.
-				::UltMsg += u_LeErro (memoread (NomeAutoLog ()))
+				_Super:SomaMsg (u_LeErro (memoread (NomeAutoLog ())))
 				U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']' + ::UltMsg)
 				MostraErro()
 			endif
@@ -2411,10 +2409,10 @@ return _lContinua
 
 // --------------------------------------------------------------------------
 // Verifica se o usuario tem os devidos acessos.
-METHOD VerifUser (_sMsg) Class ClsCtaCorr
+METHOD VerifUser (_sMsg as character) Class ClsCtaCorr
 	_lRet = U_ZZUVL ('051', __cUserID, .T., cEmpAnt, cFilAnt)
 	if ! _lRet
-		::UltMsg += _sMsg
+		_Super:SomaMsg (_sMsg)
 		u_help (::UltMsg,, .t.)
 	endif
 return _lRet
