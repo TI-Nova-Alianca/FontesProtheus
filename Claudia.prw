@@ -53,65 +53,72 @@ User Function claudia ()
 	//u_help("Produtos enologicos no SB5")
 	//_ProdSB5()
 
+	// u_help("Gera ZC1")
+	// _GeraZC1()
+
 Return
 
-Static Function _ProdSB5()
-	Local _aDados 	:= {}
- 	Local _i 		:= 0
-	Local _x        := 0
+// Static Function _GeraZC1()
+// 	mBrowse(,,,,"ZC1",,,,,,,,,,,,,,)
+// Return
 
-	_aDados = U_LeCSV ('C:\Temp\produtos_protheusxsisdevin.csv', ';')
+// Static Function _ProdSB5()
+// 	Local _aDados 	:= {}
+//  	Local _i 		:= 0
+// 	Local _x        := 0
 
-	for _i := 1 to len(_aDados)
-		_sCodSis := PADL(alltrim(_aDados[_i,1]),3,'0')
-		_aProd   := U_SeparaCpo(alltrim(_aDados[_i,2]), ",") 
+// 	_aDados = U_LeCSV ('C:\Temp\produtos_protheusxsisdevin.csv', ';')
+
+// 	for _i := 1 to len(_aDados)
+// 		_sCodSis := PADL(alltrim(_aDados[_i,1]),3,'0')
+// 		_aProd   := U_SeparaCpo(alltrim(_aDados[_i,2]), ",") 
 		
-		DbSelectArea("SB5")
-		DbSetOrder(1)
+// 		DbSelectArea("SB5")
+// 		DbSetOrder(1)
 
-		for _x:=1 to Len(_aProd)
-			if DbSeek(xFilial("SB5") + alltrim(_aProd[_x]))	
-				reclock("SB5", .F.)
-					SB5->B5_VAPENO := _sCodSis
-				MsUnLock()
-			endif
-		next
-	Next
-	u_help("finalizou")
-Return
+// 		for _x:=1 to Len(_aProd)
+// 			if DbSeek(xFilial("SB5") + alltrim(_aProd[_x]))	
+// 				reclock("SB5", .F.)
+// 					SB5->B5_VAPENO := _sCodSis
+// 				MsUnLock()
+// 			endif
+// 		next
+// 	Next
+// 	u_help("finalizou")
+// Return
 
-Static Function _ProdEnologicos()
- 	Local _aDados 	:= {}
- 	Local _i 		:= 0
-	Local _sUM      := ''
+// Static Function _ProdEnologicos()
+//  	Local _aDados 	:= {}
+//  	Local _i 		:= 0
+// 	Local _sUM      := ''
 
-	_aDados = U_LeCSV ('C:\Temp\produtos_enologicos.csv', ';')
-	for _i := 1 to len(_aDados)
-		_sCod   := PADL(alltrim(_aDados[_i,1]),3,'0')
-		_sDesc  := upper(alltrim(_aDados[_i,2]))
-		_sUM    := alltrim(_aDados[_i,3])
-		_sValor := alltrim(_aDados[_i,4])
-		_sEnv   := alltrim(_aDados[_i,5])
+// 	_aDados = U_LeCSV ('C:\Temp\produtos_enologicos.csv', ';')
+// 	for _i := 1 to len(_aDados)
+// 		_sCod   := PADL(alltrim(_aDados[_i,1]),3,'0')
+// 		_sDesc  := upper(alltrim(_aDados[_i,2]))
+// 		_sUM    := alltrim(_aDados[_i,3])
+// 		_sValor := alltrim(_aDados[_i,4])
+// 		_sEnv   := alltrim(_aDados[_i,5])
 
-		_sValor := strtran(_sValor, '"', '')
-    	_sValor := strtran(_sValor, ",", ".")
-    	_nFatC  := val(_sValor) 
+// 		_sValor := strtran(_sValor, '"', '')
+//     	_sValor := strtran(_sValor, ",", ".")
+//     	_nFatC  := val(_sValor) 
 
-		_sChave := PADL(alltrim(str(_i)),2,'0')
+// 		_sChave := PADL(alltrim(str(_i)),2,'0')
 
-		reclock("ZX5", .t.)
-			zx5->zx5_tabela := '58'
-			zx5->zx5_chave  := _sChave
-			zx5->zx5_58cod  := _sCod
-			zx5->zx5_58desc := _sDesc
-			zx5->zx5_58um   := _sUM
-			zx5->zx5_58con  := _nFatC
-			zx5->zx5_58env  := _sEnv
-		msunlock()
+// 		reclock("ZX5", .t.)
+// 			zx5->zx5_tabela := '58'
+// 			zx5->zx5_chave  := _sChave
+// 			zx5->zx5_58cod  := _sCod
+// 			zx5->zx5_58desc := _sDesc
+// 			zx5->zx5_58um   := _sUM
+// 			zx5->zx5_58con  := _nFatC
+// 			zx5->zx5_58env  := _sEnv
+// 		msunlock()
 
-	Next
-	u_help("finalizou")
-Return 
+// 	Next
+// 	u_help("finalizou")
+// Return 
 
 // Static Function _CODMATZAX()
 // 	Local _x := 0
