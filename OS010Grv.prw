@@ -14,8 +14,8 @@
 // 24/08/2017 - Robert - Posiciona a tabela DA0 antes de chamar a atualizacao do Mercanet.
 // 09/10/2020 - Robert - Melhorados logs
 //                     - Inseridas tags para catalogo de fontes.
+// 20/12/2023 - Claudia - Programa passa enviar e-mail por batch. GLPI: 14643
 //
-
 // --------------------------------------------------------------------------
 user function OS010Grv ()
 	local _aAreaAnt := U_ML_SRArea ()
@@ -29,9 +29,9 @@ user function OS010Grv ()
 				u_log2 ('aviso', 'Nao encontrei codigo ' + m->da0_codtab + ' na tabela DA0 para enviar atualizacao ao Mercanet.')
 			endif
 
-			if paramixb [2] == 4 // envia e-mail de alteração
-				U_VA_DA0MAIL()
-			endif
+			// if paramixb [2] == 4 // envia e-mail de alteração
+			// 	U_VA_DA0MAIL()
+			// endif
 		endif
 	endif
 

@@ -9,6 +9,7 @@
 // #Modulos 		  #FAT
 //
 // Historico de alteracoes:
+// 20/12/2023 - Claudia - Programa passa enviar e-mail por batch. GLPI: 14643
 //
 // --------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -44,7 +45,6 @@ User Function VA_DA0MAIL()
 	   AADD (_aCols, {'PRODUTO',    'left',  ''})
        AADD (_aCols, {'OBS'    ,    'left',  ''})
 												
-		
 		_sMsg = _oSQL:Qry2HTM ("Alteração de tabela de preço  - Data " + DTOC(_dData), _aCols, "", .F.,.T.)
 		U_ZZUNU ({'156'}, "Alteração de tabela de preço  - Data " + DTOC(_dData) , _sMsg, .F.)
 	EndIf
