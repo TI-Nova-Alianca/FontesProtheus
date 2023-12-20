@@ -749,8 +749,8 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 	local _dDtLimite := lastday (stod (_sMesRefCM + '01'))
 	local _oCtaCorr  := ClsCtaCorr():New ()
 	local _sTMCorrD  := _oCtaCorr:TMCorrMonD
-	local _nBaseCorr := 0
-	local _nCorrec   := 0
+//	local _nBaseCorr := 0
+	local _nTotCorr  := 0
 	local _sSerie    := ""
 	local _sTrbSE2   := ''
 	local _sTrbFK2   := ''
@@ -761,15 +761,16 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 	local _nVlJurosCM := 0
 //	local _aBaseCorr := {}  // Lista de objetos que compoe a base para calculo da correcao
 //	local _oBaseCorr := NIL  // 
-//	local _oBaseCorr := JsonObject():New()
-	local _aMemCalc  := {}
-	local _nIdxMemCalc  := 0
+	local _oMemCalcTit := NIL
+	local _sMemCalc    := ''
+	local _aMemCalc    := {}
+	local _nIdxMemCalc := 0
 
 	u_log2 ('info', 'Iniciando calculo corr.mon.assoc. ' + ::Codigo + '/' + ::Loja + ' para mes ref. ' + _sMesRefCM)
 
 	if _lContinua
 		if _sMesRefCM >= left (dtos (date ()), 6)
-			_Super:SomaMsg ("O mes ainda nao acabou! Apenas Nostradamus tem permissao para calcular datas futuras. Se voce tiver a senha dele, sem problema...")
+			_Super:SomaMsg ("O mes ainda nao acabou! Apenas Nostradamus tem permissao para calcular datas futuras. Claro que, voce tiver a senha dele, sem problema...")
 			_lContinua = .F.
 		endif
 	endif
@@ -870,8 +871,19 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 				_nQtDiasDeJuros = _nDtFimContagemDias - _nDtIniContagemDias + 1
 				_nVlJurosCM = _nSaldoTit * _nQtDiasDeJuros * _nTaxaCC / 100
 
+				// Cria um objeto JSON para guardar os dados deste movimento
+				// e adiciona-o na lista de movimentos para posterior geracao
+				// de uma string com a memoria de calculo.
 				if _nVlJurosCM != 0
-					aadd (_aMemCalc, {(_sTrbSE2) -> e2_num, _nSaldoTit, _nDtIniContagemDias, _nDtFimContagemDias, _nQtDiasDeJuros, _nTaxaCC, _nVlJurosCM})
+					_oMemCalcTit = JsonObject():New()
+					_oMemCalcTit ['Titulo']        = (_sTrbSE2) -> e2_num
+					_oMemCalcTit ['SaldoTitulo']   = _nSaldoTit
+					_oMemCalcTit ['DataInicial']   = _nDtIniContagemDias
+					_oMemCalcTit ['DataFinal']     = _nDtFimContagemDias
+					_oMemCalcTit ['QtDiasDeJuros'] = _nQtDiasDeJuros
+					_oMemCalcTit ['TaxaJuros']     = _nTaxaCC
+					_oMemCalcTit ['ValorJuros']    = _nVlJurosCM
+					aadd (_aMemCalc, _oMemCalcTit)
 				endif
 
 				U_Log2 ('debug', '[' + procname () + ']   Baixa ' + dtoc ((_sTrbFK2) -> fk2_data) + ;
@@ -898,8 +910,19 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 			_nQtDiasDeJuros = _nDtFimContagemDias - _nDtIniContagemDias + 1
 			_nVlJurosCM = _nSaldoTit * _nQtDiasDeJuros * _nTaxaCC / 100
 
+			// Cria um objeto JSON para guardar os dados deste movimento
+			// e adiciona-o na lista de movimentos para posterior geracao
+			// de uma string com a memoria de calculo.
 			if _nVlJurosCM != 0
-				aadd (_aMemCalc, {(_sTrbSE2) -> e2_num, _nSaldoTit, _nDtIniContagemDias, _nDtFimContagemDias, _nQtDiasDeJuros, _nTaxaCC, _nVlJurosCM})
+				_oMemCalcTit = JsonObject():New()
+				_oMemCalcTit ['Titulo']        = (_sTrbSE2) -> e2_num
+				_oMemCalcTit ['SaldoTitulo']   = _nSaldoTit
+				_oMemCalcTit ['DataInicial']   = _nDtIniContagemDias
+				_oMemCalcTit ['DataFinal']     = _nDtFimContagemDias
+				_oMemCalcTit ['QtDiasDeJuros'] = _nQtDiasDeJuros
+				_oMemCalcTit ['TaxaJuros']     = _nTaxaCC
+				_oMemCalcTit ['ValorJuros']    = _nVlJurosCM
+				aadd (_aMemCalc, _oMemCalcTit)
 			endif
 
 			U_Log2 ('debug', '[' + procname () + ']   fora loop baixas ' + ;
@@ -911,10 +934,25 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 		enddo
 		(_sTrbSE2) -> (dbclosearea ())
 		dbselectarea ("SZI")
+	endif
 
-		U_Log2 ('debug', _aMemCalc)
-
-		if _nCorrec == 0
+	// Acumula total de correcao calculada e prepara memoria de calculo.
+	if _lContinua
+		_nTotCorr = 0
+		_sMemCalc = 'Correcao monetaria calculada em ' + dtoc (date ()) + ' com base nos seguintes valores:' + chr (13) + chr (10)
+		for _nIdxMemCalc = 1 to len (_aMemCalc)
+			_oMemCalcTit = _aMemCalc [_nIdxMemCalc]
+			_nTotCorr += _oMemCalcTit ['ValorJuros']
+			_sMemCalc += 'Tit:' + _oMemCalcTit['Titulo']
+			_sMemCalc += ' Saldo: ' + alltrim (GetMv ("MV_SIMB1")) + transform (_oMemCalcTit['SaldoTitulo'], '@E 999,999,999.99')
+			_sMemCalc += ' de ' + dtoc (_oMemCalcTit['DataInicial']) + ' a ' + dtoc (_oMemCalcTit['DataFinal'])
+			_sMemCalc += ' (' + transform (_oMemCalcTit['QtDiasDeJuros'], '999') + ' dias)'
+			_sMemCalc += ' * ' + cvaltochar (_oMemCalcTit['TaxaJuros']) + '%'
+			_sMemCalc += ' = ' + alltrim (GetMv ("MV_SIMB1")) + transform (_oMemCalcTit['ValorJuros'], '@E 999,999.99')
+			_sMemCalc += iif (_nIdxMemCalc < len (_aMemCalc), chr (13) + chr (10), '')
+		next
+		U_Log2 ('debug', '[' + procname () + ']' + _sMemCalc)
+		if _nTotCorr == 0
 			_Super:SomaMsg ('Valor de correcao zerado.')
 			_lContinua = .F.
 		endif
@@ -929,30 +967,19 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 		_oCtaCorr:Loja    = ::Loja
 		_oCtaCorr:TM      = _sTMCorrD
 		_oCtaCorr:DtMovto = dDataBase
-		_oCtaCorr:Valor   = _nCorrec
-		_oCtaCorr:Histor  = "CORR.MON.REF.SLD " + alltrim (transform (abs (_nBaseCorr), "@E 999,999,999.99"))
+		_oCtaCorr:Valor   = _nTotCorr
+		_oCtaCorr:Histor  = "CORR.MON.REF.MES " + substr (_sMesRefCM, 5, 2) + '/' + substr (_sMesRefCM, 1, 4)
 		_oCtaCorr:MesRef  = substr (_sMesRefCM, 5, 2) + substr (_sMesRefCM, 1, 4)  // Campo ZI_MESREF guarda em formato MMAAAA
 		_oCtaCorr:Doc     = strtran (dtoc (_oCtaCorr:DtMovto), '/', '')
 		_oCtaCorr:Serie   = _sSerie
-		_oCtaCorr:Obs     = ''
-		for _nIdxMemCalc = 1 to len (_aMemCalc)
-			_oCtaCorr:Obs := 'Tit:' + (_sTrbSE2) -> e2_num
-			_oCtaCorr:Obs += ' Saldo: ' + alltrim (GetMv ("MV_SIMB1")) + transform (_nSaldoTit, '@E 999,999,999.99')
-			_oCtaCorr:Obs += ' de ' + dtoc (_nDtIniContagemDias) + ' a ' + dtoc (_nDtFimContagemDias)
-			_oCtaCorr:Obs += ' (' + transform (_nQtDiasDeJuros, '999') + ' dias)'
-			_oCtaCorr:Obs += ' * ' + cvaltochar (_nTaxaCC) + '%'
-			_oCtaCorr:Obs += ' = ' + alltrim (GetMv ("MV_SIMB1")) + transform (_nVlJurosCM, '@E 999,999.99')
-			_oCtaCorr:Obs += iif (_nIdxMemCalc < len (_aMemCalc), chr (13) + chr (10), '')
-		next
-		U_Log (_oCtaCorr:Obs)
+		_oCtaCorr:Obs     = _sMemCalc
 		_oCtaCorr:Origem  = procname ()
-		//u_logobj (_oCtaCorr)
-	//ainda nao pronto	if ! _oCtaCorr:Grava ()
-	//ainda nao pronto		_Super:SomaMsg ("Erro na gravacao do registro de correcao monetaria.")
-	//ainda nao pronto		_lContinua = .F.
-	//ainda nao pronto	else
-	//ainda nao pronto		_Super:SomaMsg ("Reg.gravado no SZI com seq." + _oCtaCorr:SeqSZI)
-	//ainda nao pronto	endif
+		if ! _oCtaCorr:Grava ()
+			_Super:SomaMsg ("Erro na gravacao do registro de correcao monetaria.")
+			_lContinua = .F.
+		else
+			_Super:SomaMsg ("Reg.gravado no SZI com seq." + _oCtaCorr:SeqSZI)
+		endif
 	endif
 
 //	u_logFim (GetClassName (::Self) + '.' + procname ())

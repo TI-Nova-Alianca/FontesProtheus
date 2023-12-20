@@ -109,8 +109,6 @@ static function _TudoOk ()
 	if ! _oRegex:PartialMatch (mv_par02)
 		u_help ("Parametro '" + mv_par02 + "' invalido. Mes de referencia deve estar no formato MM/AAAA (mes e ano).",, .t.)
 		_lRet = .F.
-//	else
-//		U_Log2 ('debug', '[' + procname () + ']' + mv_par02 + ' ok')
 	endif
 Return _lRet
 
@@ -124,33 +122,14 @@ Static Function _Descalc ()
 	local _sAliasQ    := ""
 	local _nRecCount  := 0
 	local _nExcluid   := 0
-	local _oDUtil     := NIL
-	local _sProxMes   := ""
+//	local _oDUtil     := NIL
+//	local _sProxMes   := ""
 	local _sMesRef    := mv_par02
 	local _oCtaCorr   := ClsCtaCorr():New ()
-	local _sTMCorrC   := _oCtaCorr:TMCorrMonC
+//	local _sTMCorrC   := _oCtaCorr:TMCorrMonC
 	local _sTMCorrD   := _oCtaCorr:TMCorrMonD
-	local _lGeraD     := (mv_par06 == 1 .or. mv_par06 == 3)
-	local _lGeraC     := (mv_par06 == 2 .or. mv_par06 == 3)
-
-	// Nao permite descalcular se existir correcao do mes posterior.
-	if _lContinua
-		_oDUtil := ClsDUtil():New()
-		_sProxMes = _oDUtil:SomaMes (substr (_sMesRef, 3, 4) + substr (_sMesRef, 1, 2), 1)
-		_sQuery := ""
-		_sQuery += "SELECT COUNT (*)"
-		_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
-		_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
-		_sQuery +=   " AND SZI.ZI_FILIAL  = '" + xfilial ("SZI") + "'"
-		_sQuery +=   " AND SZI.ZI_TM      IN " + FormatIn (_sTMCorrC + "/" + _sTMCorrD, '/')
-		_sQuery +=   " AND SZI.ZI_MESREF  = '" + substr (_sProxMes, 5, 2) + substr (_sProxMes, 1, 4) + "'"
-		_sQuery +=   " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par07 + mv_par08 + "' AND '" + mv_par09 + mv_par10 + "'"
-		u_log2 ('debug', _sQuery)
-		if U_RetSQL (_sQuery) > 0
-			u_help ("Ja existe correcao monetaria calculada para o mes posterior. Descalcule-a antes.")
-			_lContinua = .F.
-		endif
-	endif
+//	local _lGeraD     := .T.
+//	local _lGeraC     := .F.
 
 	// Busca movimentos a serem descalculados.
 	if _lContinua
@@ -159,16 +138,10 @@ Static Function _Descalc ()
 		_sQuery +=  " FROM " + RetSQLName ("SZI")
 		_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_sQuery +=   " AND ZI_FILIAL  = '" + xfilial ("SZI") + "'"
-		_sQuery +=   " AND ZI_TM      IN " + FormatIn (_sTMCorrC + "/" + _sTMCorrD, '/')
-		_sQuery +=   " AND ZI_MESREF  = '" + _sMesRef + "'"
-		if ! _lGeraD
-			_sQuery += " AND ZI_TM   != '" + _sTMCorrD + "'"
-		endif
-		if ! _lGeraC
-			_sQuery += " AND ZI_TM   != '" + _sTMCorrC + "'"
-		endif
-		_sQuery +=   " AND ZI_ORIGEM  = 'CALCCM'"
-		_sQuery +=   " AND ZI_ASSOC + ZI_LOJASSO BETWEEN '" + mv_par07 + mv_par08 + "' AND '" + mv_par09 + mv_par10 + "'"
+		_sQuery +=   " AND ZI_TM      IN " + FormatIn (_sTMCorrD, '/')
+		_sQuery +=   " AND ZI_MESREF  = '" + substr (_sMesRef, 1, 2) + substr (_sMesRef, 4, 4) + "'"
+		_sQuery +=   " AND ZI_ORIGEM  = 'CALCCM3'"
+		_sQuery +=   " AND ZI_ASSOC + ZI_LOJASSO BETWEEN '" + mv_par04 + mv_par05 + "' AND '" + mv_par06 + mv_par07 + "'"
 		u_log2 ('debug', _sQuery)
 		_sAliasQ = GetNextAlias ()
 		DbUseArea(.t.,'TOPCONN',TcGenQry(,,_sQuery), _sAliasQ,.F.,.F.)
@@ -212,15 +185,13 @@ Static Function _Calc ()
 	local _oSQL       := NIL
 	local _sMesRef    := mv_par02  // Guarda em variaveis locais por que as 'mv_par' serao usadas por rotinas automaticas.
 	local _oCtaCorr   := ClsCtaCorr():New ()
-	local _sTMCorrC   := _oCtaCorr:TMCorrMonC
+//	local _sTMCorrC   := _oCtaCorr:TMCorrMonC
 	local _sTMCorrD   := _oCtaCorr:TMCorrMonD
 	local _aAssoc     := {}
 	local _nAssoc     := 0
 	local _nTaxa1     := mv_par03
-//	local _nTaxa2     := mv_par04
-//	local _nLimVl     := mv_par05
-//	local _lGeraD     := (mv_par06 == 1 .or. mv_par06 == 3)
-//	local _lGeraC     := (mv_par06 == 2 .or. mv_par06 == 3)
+//	local _lGeraD     := .T.
+//	local _lGeraC     := .F.
 	local _nJahTem    := 0
 
 	// A correcao eh sempre gerada na matriz a partir de 30/03/2017.
@@ -229,44 +200,22 @@ Static Function _Calc ()
 		_lContinua = .F.
 	endif
 
-	// Nao permite gerar se faltar a correcao do mes anterior.
-	if _lContinua
-		_oDUtil := ClsDUtil():New()
-		_sMesAnt = _oDUtil:SubtrMes (substr (_sMesRef, 3, 4) + substr (_sMesRef, 1, 2), 1)
-		_sQuery := ""
-		_sQuery += "SELECT COUNT (*)"
-		_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
-		_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
-		_sQuery +=   " AND SZI.ZI_FILIAL  = '" + xfilial ("SZI") + "'"
-		_sQuery +=   " AND SZI.ZI_TM      IN " + FormatIn (_sTMCorrC + "/" + _sTMCorrD, '/')
-		_sQuery +=   " AND SZI.ZI_MESREF  = '" + substr (_sMesAnt, 5, 2) + substr (_sMesAnt, 1, 4) + "'"
-		_sQuery +=   " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par07 + mv_par08 + "' AND '" + mv_par09 + mv_par10 + "'"
-		u_log2 ('debug', _sQuery)
-		if U_RetSQL (_sQuery) == 0
-			if ! IsInCallStack ("U_ROBERT")  // Me atrapalha muito durante testes
-				if ! u_msgnoyes ("Nao existe correcao monetaria calculada para o mes anterior. Confirma a geracao do calculo para este mes assim mesmo?")
-					_lContinua = .F.
-				endif
-			endif
-		endif
-	endif
-
 	if _lContinua
 		_sQuery := ""
 		_sQuery += "SELECT COUNT (*)"
 		_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
 		_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
 		_sQuery +=   " AND SZI.ZI_FILIAL  = '" + xfilial ("SZI") + "'"
-		_sQuery +=   " AND SZI.ZI_TM      IN " + FormatIn (_sTMCorrC + "/" + _sTMCorrD, '/')
-		_sQuery +=   " AND SZI.ZI_MESREF  = '" + _sMesRef + "'"
-		_sQuery +=   " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par07 + mv_par08 + "' AND '" + mv_par09 + mv_par10 + "'"
+		_sQuery +=   " AND SZI.ZI_TM      IN " + FormatIn (_sTMCorrD, '/')
+		_sQuery +=   " AND SZI.ZI_MESREF  = '" + substr (_sMesRef, 1, 2) + substr (_sMesRef, 4, 4) + "'"
+		_sQuery +=   " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par04 + mv_par05 + "' AND '" + mv_par06 + mv_par07 + "'"
 		u_log2 ('debug', _sQuery)
 		_nJahTem = U_RetSQL (_sQuery)
-		if ! IsInCallStack ("U_ROBERT")  // Me atrapalha muito durante testes
+//		if ! IsInCallStack ("U_ROBERT")  // Me atrapalha muito durante testes
 			if _nJahTem > 0
-				_lContinua = U_MsgYesNo ("Ja' existe correcao monetaria neste mes para " + cvaltochar (_nJahTem) + " associados. Nao sera´ recalculada correcao para esses associados. Deseja continuar?")
+				_lContinua = U_MsgYesNo ("Ja' existe correcao monetaria neste mes para " + cvaltochar (_nJahTem) + " associados. Nao vai ser recalculada correcao para esses associados. Deseja continuar?")
 			endif
-		endif
+//		endif
 	endif
 
 
@@ -293,8 +242,10 @@ Static Function _Calc ()
 		// emprestimos (TM=07) entao acho interessante nem perder tempo olhando
 		// outros associados.
 		_oSQL:_sQuery +=    " AND SZI.ZI_TM = '07'"
+		// Nao vou olhar coisa muito antiga para nao perder tempo de processamento.
+		_oSQL:_sQuery +=    " AND SZI.ZI_DATA >= '" + dtos (stod (substr (mv_par02, 4, 4) + substr (mv_par02, 1, 2) + '01') - 360) + "'"
 
-		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par07 + mv_par08 + "' AND '" + mv_par09 + mv_par10 + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par04 + mv_par05 + "' AND '" + mv_par06 + mv_par07 + "'"
 		_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
 		u_log2 ('debug', _sQuery)
 		_aAssoc = _oSQL:Qry2Array ()
@@ -303,7 +254,6 @@ Static Function _Calc ()
 			_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
 			incproc (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + _oAssoc:Nome)
 			u_log2 ('info', 'Iniciando assoc: ' + _oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + _oAssoc:Nome)
-	//		if ! _oAssoc:CalcCM (_sMesRef, _nTaxa1, _nTaxa2, _nLimVl, _lGeraD, _lGeraC)
 			if ! _oAssoc:CalcCM3 (substr (mv_par02, 4, 4) + substr (mv_par02, 1, 2), _nTaxa1)
 				u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + ' ' + _oAssoc:UltMsg,, .t.)
 			endif
@@ -323,16 +273,10 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {01, "Calcular / descalcular         ", "N", 1,  0,  "",   "      ", {"Calcular", "Descalcular"},        ""})
 	aadd (_aRegsPerg, {02, "Mes/ano de referencia (MM/AAAA)", "C", 7,  0,  "",   "      ", {},                                 ""})
 	aadd (_aRegsPerg, {03, "Taxa % correcao                ", "N", 6,  4,  "",   "      ", {},                                 ""})
-//	aadd (_aRegsPerg, {04, "Taxa % correcao valores altos  ", "N", 6,  2,  "",   "      ", {},                                 ""})
-	aadd (_aRegsPerg, {04, "PARAMETRO EM DESUSO            ", "N", 6,  2,  "",   "      ", {},                                 ""})
-//	aadd (_aRegsPerg, {05, "Limite valores baixos          ", "N", 10, 2,  "",   "      ", {},                                 ""})
-	aadd (_aRegsPerg, {05, "PARAMETRO EM DESUSO            ", "N", 10, 2,  "",   "      ", {},                                 ""})
-//	aadd (_aRegsPerg, {06, "Tipo de correcao a gerar       ", "N", 1,  0,  "",   "      ", {'A debito', 'A credito', 'Ambas'}, ""})
-	aadd (_aRegsPerg, {06, "PARAMETRO EM DESUSO            ", "N", 1,  0,  "",   "      ", {'A debito', 'A credito', 'Ambas'}, ""})
-	aadd (_aRegsPerg, {07, "Associado inicial              ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
-	aadd (_aRegsPerg, {08, "Loja associado inicial         ", "C", 2,  0,  "",   "      ", {},                                 ""})
-	aadd (_aRegsPerg, {09, "Associado final                ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
-	aadd (_aRegsPerg, {10, "Loja associado final           ", "C", 2,  0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {04, "Associado inicial              ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
+	aadd (_aRegsPerg, {05, "Loja associado inicial         ", "C", 2,  0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {06, "Associado final                ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
+	aadd (_aRegsPerg, {07, "Loja associado final           ", "C", 2,  0,  "",   "      ", {},                                 ""})
 
 	U_ValPerg (cPerg, _aRegsPerg)
 Return

@@ -282,7 +282,6 @@ static function _Gera ()
 	
 		// durante testes, rodo via script e nao tenho interface com o usuario.
 		if type ("oMainWnd") != "O"
-		//	_SimEstru (mv_par01, .f.)
 			_SimEstru ('', .t.)
 		endif
 
@@ -319,7 +318,7 @@ static function _Gera ()
 		_bBotaoCan = {|| _oDlg1:End ()}
 		_aBotAdic  = {}
 
-		aadd (_aBotAdic, {"", {|| aHeader := aclone (_oGetD1:aHeader), aCols := aclone (_oGetD1:aCols), U_aColsXLS ()}, "Exp.planilha"})
+		aadd (_aBotAdic, {"", {|| aHeader := aclone (_oGetD1:aHeader), aCols := aclone (_oGetD1:aCols), U_aColsXLS ()}, "Exportar browse"})
 		aadd (_aBotAdic, {"", {|| processa ({||_SimEstru ('', .t.)})}, "Exportar todas as estruturas"})
 		
 		// durante testes, rodo via script e nao tenho interface com o usuario.

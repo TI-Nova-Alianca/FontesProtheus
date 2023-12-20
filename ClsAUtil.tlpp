@@ -28,6 +28,7 @@
 // 26/06/2019 - Robert - Metodo 'Distinct' renomeado para 'Distinto' (passou a ser palavra reservada da linguagem).
 // 04/03/2020 - Robert - Criado metodo ReduzLin.
 // 01/03/2023 - Robert - Fonte renomeado de .prw para .tlpp
+// 20/12/2023 - Robert - Passa a identificar objetos do tipo JSON naa funcao _Arr2Char.
 //
 
 #include "protheus.ch"
@@ -1037,6 +1038,8 @@ static function _Arr2Char (_xDado)
 			_sDado = "*INDEF*"
 		case valtype (_xDado) == "O"
 			_sDado = "*OBJETO*"
+		case valtype (_xDado) == "J"
+			_sDado = "*JSON*"
 		case valtype (_xDado) == "C"
 			_sDado = _xDado
 			if empty (_sDado)

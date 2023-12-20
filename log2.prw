@@ -66,7 +66,8 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 
 	// Transforma o dado de origem em array, sendo cada elemento da array uma linha a ser gravada no log.
 	if valtype (_xDadoOri) == 'A'
-		_aTxtLog = ACLONE (_DumpArray (_xDadoOri))
+//		_aTxtLog = ACLONE (_DumpArray (_xDadoOri))
+		_aTxtLog = aclone (ClsAUtil ():ConvTXT (_xDadoOri, 'A'))
 	elseif valtype (_xDadoOri) == 'O'
 		_aTxtLog = aclone (_DumpObj (_xDadoOri))
 	elseif valtype (_xDadoOri) == 'J'  // JSON
@@ -182,7 +183,7 @@ return _aRet
 
 
 // --------------------------------------------------------------------------
-static function _DumpArray (_aMatriz)
+//static function _DumpArray (_aMatriz)
 /*
 	local _nLin      := 0
 	local _nCol      := 0
@@ -341,10 +342,10 @@ static function _DumpArray (_aMatriz)
 return _aRet
 */
 	// Ainda em teste...
-return ClsAUtil ():ConvTXT (_aMatriz, 'A')
+//return ClsAUtil ():ConvTXT (_aMatriz, 'A')
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Converte campos de array para caracter, para exportacao para log.
 static function _Arr2Char (_xDadoA)
@@ -372,10 +373,10 @@ static function _Arr2Char (_xDadoA)
 				_sDadoA = "*STR.VAZIA*"
 			endif
 		otherwise
-			_sDadoA = "*ERRO*"
+			_sDadoA = "*" + valtype (_xDadoA) + "*"
 	endcase
 return _sDadoA
-
+*/
 
 
 // --------------------------------------------------------------------------
@@ -418,6 +419,9 @@ static function _DumpJSON (_oObjJS)
 	local _aRet     := {}
 	local _sLinha   := ''
 
+	aadd (_aRet, _oObjJS:ToJSON ())
+
+	// Aqui o bom seria pegar o retorno do metodo :ToJSON e usar ele no log. Quando der um tempinho eu farei... :(
 	aadd (_aRet, '{')
 	if len(_oObjJS) > 0
 		for _nItemJS := 1 to len(_oObjJS)

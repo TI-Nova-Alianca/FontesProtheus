@@ -87,7 +87,7 @@ user function GravaSX1 (_sGrupo, _sPerg, _xValor, _sDelProf)
 
 				Case _sX1_GSC == "G"
 					if valtype (_xValor) != _nX1_TIPO
-						u_help ("Programa " + procname () + ": incompatibilidade de tipos: o parametro '" + _sPerg + "' do grupo de perguntas '" + _sGrupo + "' eh do tipo '" + _nX1_TIPO + "', mas o valor recebido eh do tipo '" + valtype (_xValor) + "' (conteudo: " + cvaltochar (_xValor) + ")." + _PCham ())
+						u_help ("Programa " + procname () + ": incompatibilidade de tipos: o parametro '" + _sPerg + "' do grupo de perguntas '" + _sGrupo + "' eh do tipo '" + _nX1_TIPO + "', mas o valor recebido eh do tipo '" + valtype (_xValor) + "' (conteudo: " + cvaltochar (_xValor) + ")." + _PCham (),, .t.)
 						_lContinua := .F.
 					else
 
