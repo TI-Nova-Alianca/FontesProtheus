@@ -31,8 +31,8 @@ User function VA_PEDMRG(_sPrgName)
         _CalcMargem(_sPrgName)
     endif
 
-	U_ML_SRArea (_aAreaAnt)
-	U_SalvaAmb (_aAmbAnt)
+	U_ML_SRArea(_aAreaAnt)
+	U_SalvaAmb(_aAmbAnt)
 Return
 //
 // --------------------------------------------------------------------------
@@ -206,8 +206,8 @@ static function _CalcMargem(_sPrgName)
                         m->c5_lojacli               ,;  // ZC1_LOJA
                         m->c5_num                   ,;  // ZC1_PED
                         '00'                        ,;  // ZC1_OPER 
-                        ""                          ,;  // ZC1_ITEM
-                        ""                          ,;  // ZC1_PROD 
+                        '99'                        ,;  // ZC1_ITEM
+                        ''                          ,;  // ZC1_PROD 
                         _sSeq                       ,;  // ZC1_SEQ
                         _nTotQtd                    ,;  // ZC1_QTD 
                         _nTotPreco                  ,;  // ZC1_PRC
