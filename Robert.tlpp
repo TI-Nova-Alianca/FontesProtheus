@@ -113,7 +113,7 @@ user function robert ()
 		// _sFuncao += '_CplSaf23A ()'
 		// _sFuncao += '_CplSaf23B ()'
 		// _sFuncao += '_CplSaf23C ()'
-		_sFuncao += '_CorrMonSZI ()'
+		// _sFuncao += '_CorrMonSZI ()'
 		// _sFuncao += '_ctbANC ()'
 		// _sFuncao += '_DesabRast ()'
 		// _sFuncao += '_elastic ()'
@@ -149,7 +149,7 @@ user function robert ()
 		// _sFuncao += '_Sisdevin ()'
 		// _sFuncao += '_ST_MG ()'
 		// _sFuncao += '_SZI ()'
-		// _sFuncao += '_TbUva ()'
+		_sFuncao += '_TbUva ()'
 		// _sFuncao += '_telnet ()'
 		// _sFuncao += '_TrEstq ()'
 		// _sFuncao += '_VACCR2 ()'
@@ -3526,28 +3526,7 @@ static function _TbUva ()
 	local _sVarUva := 'C'
 	local _sConduc := 'L'
 	local _sTipoTab := 'C'  // Por enquanto, apenas [C]ompra
-/*
-	local _oGrpGraus := NIL
-	local _oGrau     := NIL
-	local _aGraus    := {}
-
-	_oGrpGraus := JsonObject():New()
-	_oGrau := JsonObject():New()
-	_oGrau ['grau'] = 16
-	_oGrau ['agio'] = 0.15
-	U_Log2 ('debug', _oGrau ['grau'])
-	U_Log2 ('debug', _oGrau ['agio'])
-	aadd (_aGraus, _oGrau)
-	_oGrau ['Grau'] = 17
-	_oGrau ['agio'] = 0.25
-	U_Log2 ('debug', _oGrau:toJSON ())
-	aadd (_aGraus, _oGrau)
-	_oGrpGraus:Set (_aGraus)
-	U_Log2 ('debug', _oGrpGraus:toJSON ())
-*/
-
 	local _oTbUva := ClsTbUva ():New ()
-//	_oTbUva:GeraAtrib ('2023', 'C', 'C', 'L', 'I')  //_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec
 	_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, 'I')
 
 	if empty (_oTbUva:CodTabela)
