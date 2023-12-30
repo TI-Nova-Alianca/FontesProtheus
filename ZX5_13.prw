@@ -9,23 +9,28 @@
 // 16/05/2023 - Robert - Criado botao para listar as variedades ligadas ao grupo.
 // 17/05/2023 - Robert - Criado botao para simular precos.
 // 10/11/2023 - Robert - Criado botao para exportar a tabela em HTML.
+// 30/12/2023 - Robert - Permite receber a safra como parametro.
 //
 
 #include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
-User Function ZX5_13 ()
+User Function ZX5_13 (_sCodTab)
 	local _sSafra   := space (4)
 	local _aOrd     := {'ZX5_13SAFR', 'ZX5_13GRUP'}
 	local _aBotAdic := {}
 
+	if ! empty (_sCodTab)
+		_sSafra = _sCodTab
+	endif
+
 	aadd (_aBotAdic, {"Variedades",    {|| U_ZX5_13LV (.t.)}, "Variedades",    "Variedades",    {|| .T.}})
-	aadd (_aBotAdic, {"Simular",       {|| U_ZX5_13SP ()},    "Simular",       "Simular",       {|| .T.}})
+//	aadd (_aBotAdic, {"Simular",       {|| U_ZX5_13SP ()},    "Simular",       "Simular",       {|| .T.}})
 	aadd (_aBotAdic, {"Exportar HTML", {|| U_ZX5_13H  ()},    "Exportar HTML", "Exportar HTML", {|| .T.}})
 
 	if U_ZZUVL ('051')
 		do while .t.
-			_sSafra = U_Get ('Cod.tabela (vazio=todas)', 'C', 4, '', '', space (4), .F., '.t.')
+			_sSafra = U_Get ('Cod.tabela (vazio=todas)', 'C', 4, '', '', _sSafra, .F., '.t.')
 			if _sSafra == NIL .or. empty (_sSafra)
 				U_ZX5A (4, "13", "U_ZX5_13LO ()", "allwaystrue ()", .T., NIL, _aOrd, _aBotAdic)
 			else
@@ -147,6 +152,7 @@ User Function ZX5_13SP ()
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 return
+
 
 // --------------------------------------------------------------------------
 // Exporta tabela em formato HTML

@@ -90,6 +90,8 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 	local _oGrupoTbUva  := NIL
 	local _aGrupos  := {}
 	local _aListaDeGraus := {}
+	local _oVariedade := NIL
+	local _sObsSubgrupo := ''
 
 	if empty (_sCodTab)
 		_Super:SomaMsg ("Codigo da tabela deve ser informado.")
@@ -132,8 +134,9 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 		else
 			_oSQL:_sQuery += ", 0 as preco"  // Ainda tenho que ver de onde pegar
 		endif
-		_oSQL:_sQuery += ", ZX5_13AEPR, ZX5_13AEAA, ZX5_13AEA, ZX5_13AEB, ZX5_13AEC, ZX5_13AED, ZX5_13AEDS"  // Acrescimos cfe classificacao espaldeira
-		_oSQL:_sQuery += ", ZX5_13ALA, ZX5_13ALB, ZX5_13ALD, ZX5_13ALDS"  // Acrescimos cfe classificacao latada
+
+		_oSQL:_sQuery += ", ZX5_13AEPR, ZX5_13AEAA, ZX5_13AEA, ZX5_13AEC, ZX5_13AED, ZX5_13AEDS"  // Acrescimos cfe classificacao espaldeira
+		_oSQL:_sQuery += ", ZX5_13ALA, ZX5_13ALD"  // Acrescimos cfe classificacao latada
 		_oSQL:_sQuery += ", ZX5_13PAOB, ZX5_13PAOE, ZX5_13PAOO"  // Acrescimos cfe bordadura/em conversao/organica
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_13 "
 		_oSQL:_sQuery += " WHERE ZX5_13.D_E_L_E_T_ = ''"
@@ -191,24 +194,30 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			_oGrupoTbUva ['AcrescimoEspaldeiraClasPR'] = _aDados [_nDado, 8]
 			_oGrupoTbUva ['AcrescimoEspaldeiraClasAA'] = _aDados [_nDado, 9]
 			_oGrupoTbUva ['AcrescimoEspaldeiraClasA']  = _aDados [_nDado, 10]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasB']  = _aDados [_nDado, 11]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasC']  = _aDados [_nDado, 12]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasD']  = _aDados [_nDado, 13]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] = _aDados [_nDado, 14]
-			_oGrupoTbUva ['AcrescimoLatadaClasA']      = _aDados [_nDado, 15]
-			_oGrupoTbUva ['AcrescimoLatadaClasB']      = _aDados [_nDado, 16]
-			_oGrupoTbUva ['AcrescimoLatadaClasD']      = _aDados [_nDado, 17]
-			_oGrupoTbUva ['AcrescimoLatadaClasDS']     = _aDados [_nDado, 18]
-			_oGrupoTbUva ['AgioOrganicaBordadura']     = _aDados [_nDado, 19]
-			_oGrupoTbUva ['AgioOrganicaEmConversao']   = _aDados [_nDado, 20]
-			_oGrupoTbUva ['AgioOrganicaOrganica']      = _aDados [_nDado, 21]
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasC']  = _aDados [_nDado, 11]
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasD']  = _aDados [_nDado, 12]
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] = _aDados [_nDado, 13]
+			_oGrupoTbUva ['AcrescimoLatadaClasA']      = _aDados [_nDado, 14]
+			_oGrupoTbUva ['AcrescimoLatadaClasD']      = _aDados [_nDado, 15]
+			_oGrupoTbUva ['AgioOrganicaBordadura']     = _aDados [_nDado, 16]
+			_oGrupoTbUva ['AgioOrganicaEmConversao']   = _aDados [_nDado, 17]
+			_oGrupoTbUva ['AgioOrganicaOrganica']      = _aDados [_nDado, 18]
 			_oGrupoTbUva ['ListaDeSubgrupos']          = {}
 			_oGrupoTbUva ['ListaDeVariedades']         = {}
 			_oGrupoTbUva ['ListaDeGraus']              = {}
 
 			// Cria uma lista com as variedades de uvas deste grupo.
+			// Para uvas organicas, achei mais interessante cadastrar somente
+			// o codigo base na tabela e depois, usando a view de familias de
+			// uvas, buscar as variedades em conversao, bordadura e organica.
+			// Uso a mesma view para as demais variedades para me obrigar a
+			// mante-la sempre atualizada.
 			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := "SELECT V.*"
+			_oSQL:_sQuery := "SELECT V.FINA_COMUM, V.COR, V.TINTOREA"
+			_oSQL:_sQuery +=      ", V.COD_BASE, V.DESC_RESUM"
+			_oSQL:_sQuery +=      ", V.COD_BORDADURA, V.DESC_RESUM_BORDADURA"
+			_oSQL:_sQuery +=      ", V.COD_EM_CONVERSAO, V.DESC_RESUM_EM_CONVERSAO"
+			_oSQL:_sQuery +=      ", V.COD_ORGANICA, V.DESC_RESUM_ORGANICA"
 			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_14 "
 			_oSQL:_sQuery +=      ", VA_VFAMILIAS_UVAS V "
 			_oSQL:_sQuery += " WHERE ZX5_14.D_E_L_E_T_ = ''"
@@ -217,7 +226,54 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_BASE"
-			_oSQL:_sQuery += " ORDER BY V.DESCR_BASE, V.COD_BASE"
+			_oSQL:_sQuery +=   " AND V.FINA_COMUM = 'C'"
+			_oSQL:_sQuery += " union all"
+			_oSQL:_sQuery += " SELECT V.FINA_COMUM, V.COR, V.TINTOREA"
+			_oSQL:_sQuery +=      ", COD_FINA_CLAS_COMUM, DESCR_FINA_CLAS_COMUM"
+			_oSQL:_sQuery +=      ", '', ''"
+			_oSQL:_sQuery +=      ", '', ''"
+			_oSQL:_sQuery +=      ", '', ''"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_14 "
+			_oSQL:_sQuery +=      ", VA_VFAMILIAS_UVAS V "
+			_oSQL:_sQuery += " WHERE ZX5_14.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_FINA_CLAS_COMUM"
+			_oSQL:_sQuery +=   " AND V.FINA_COMUM = 'F'"
+			_oSQL:_sQuery += " union all"
+			_oSQL:_sQuery += " SELECT V.FINA_COMUM, V.COR, V.TINTOREA"
+			_oSQL:_sQuery +=      ", V.COD_BASE, V.DESC_RESUM"
+			_oSQL:_sQuery +=      ", '', ''"
+			_oSQL:_sQuery +=      ", '', ''"
+			_oSQL:_sQuery +=      ", '', ''"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_14 "
+			_oSQL:_sQuery +=      ", VA_VFAMILIAS_UVAS V "
+			_oSQL:_sQuery += " WHERE ZX5_14.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_BASE"
+			_oSQL:_sQuery +=   " AND V.FINA_COMUM = 'F'"
+			_oSQL:_sQuery += " union all"
+			_oSQL:_sQuery += " SELECT V.FINA_COMUM, V.COR, V.TINTOREA"
+			_oSQL:_sQuery +=      ", V.COD_PARA_ESPUMANTE, V.DESC_RESUM_PARA_ESPUMANTE"
+			_oSQL:_sQuery +=      ", '', ''"
+			_oSQL:_sQuery +=      ", '', ''"
+			_oSQL:_sQuery +=      ", '', ''"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_14 "
+			_oSQL:_sQuery +=      ", VA_VFAMILIAS_UVAS V "
+			_oSQL:_sQuery += " WHERE ZX5_14.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_PARA_ESPUMANTE"
+			_oSQL:_sQuery +=   " AND V.FINA_COMUM = 'F'"
+			_oSQL:_sQuery += " ORDER BY DESC_RESUM, COD_BASE"
+			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 			_sAliasQ := _oSQL:Qry2Trb (.F.)
 			(_sAliasQ) -> (dbgotop ())
 			do while ! (_sAliasQ) -> (eof ())
@@ -230,10 +286,6 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 				_oVariedade ['DescrBordadura']     = alltrim ((_sAliasQ) -> desc_resum_bordadura)
 				_oVariedade ['CodOrganica']        = (_sAliasQ) -> cod_organica
 				_oVariedade ['DescrOrganica']      = alltrim ((_sAliasQ) -> desc_resum_organica)
-				_oVariedade ['CodFinaClas_comum']  = (_sAliasQ) -> cod_fina_clas_comum
-				_oVariedade ['DescrFinaClasComum'] = alltrim ((_sAliasQ) -> desc_resum_fina_clas_comum)
-				_oVariedade ['CodParaEspumante']   = (_sAliasQ) -> cod_para_espumante
-				_oVariedade ['DescrParaEspumante'] = alltrim ((_sAliasQ) -> desc_resum_para_espumante)
 				_oVariedade ['FinaOuComum']        = (_sAliasQ) -> fina_comum
 				_oVariedade ['Cor']                = (_sAliasQ) -> cor
 				_oVariedade ['Tintorea']           = (_sAliasQ) -> tintorea
@@ -257,23 +309,26 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			if _lContinua
 				_aListaDeGraus = {}
 				for _nGrau = 1 to len (_aGrausComAgio)
+					_oGrauDeGrupo := JsonObject():New()
+					_oGrauDeGrupo ['Grau']                = _aGrausComAgio [_nGrau, 1]
+					_oGrauDeGrupo ['AgioSobreGrauBase']   = _aGrausComAgio [_nGrau, 2]
 
 					// Abaixo de determinado grau, usa preco minimo.
 					if _aGrausComAgio [_nGrau, 1] < _oGrupoTbUva ['GrauMinimoParaAgio']
-						_nPreco = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoCodBase']                = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoCodOrganicaBordadura']   = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'] = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _oGrupoTbUva ['PrecoMinimo']
 					else
 						// Se for um grau 'normal', aplica regra de agio sobre o preco do grau base.
 						_nPreco = _oGrupoTbUva ['PrecoGrauBase']
 						_nPreco += _nPreco * _aGrausComAgio [_nGrau, 2] / 100
+						_oGrauDeGrupo ['PrecoCodBase']                = _nPreco
+						_oGrauDeGrupo ['PrecoCodOrganicaBordadura']   = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaBordadura']   / 100)
+						_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'] = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaEmConversao'] / 100)
+						_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaOrganica']    / 100)
 					endif
 
-					_oGrauDeGrupo := JsonObject():New()
-					_oGrauDeGrupo ['Grau']                = _aGrausComAgio [_nGrau, 1]
-					_oGrauDeGrupo ['AgioSobreGrauBase']   = _aGrausComAgio [_nGrau, 2]
-					_oGrauDeGrupo ['PrecoCodBase']        = _nPreco
-					_oGrauDeGrupo ['PrecoCodOrganicaBordadura']   = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaBordadura']   / 100)
-					_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'] = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaEmConversao'] / 100)
-					_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaOrganica']    / 100)
 
 					// Alimenta array com um objeto representando dados de cada grau deste grupo
 					aadd (_oGrupoTbUva ['ListaDeGraus'], _oGrauDeGrupo)
@@ -283,24 +338,32 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 
 			// Conforme o tipo de uva, pode haver diferentes subgrupos.
 			// Uvas comuns: 4 subcolunas (convenc/bordadura/em conv/organ)
+			_sObsSubgrupo = ''
 			if ::TipoUva == 'C'
 				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Convencional', 'ObsSubgrupo' : '' })
 				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Bordadura'   , 'ObsSubgrupo' : '+' + cvaltochar (_oGrupoTbUva ['AgioOrganicaBordadura']   ) + '%' })
 				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Em conversão', 'ObsSubgrupo' : '+' + cvaltochar (_oGrupoTbUva ['AgioOrganicaEmConversao'] ) + '%' })
 				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Orgânica'    , 'ObsSubgrupo' : '+' + cvaltochar (_oGrupoTbUva ['AgioOrganicaOrganica']    ) + '%' })
+
 			elseif ::TipoUva == 'F' .and. ::Conducao == 'E'
-				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : '' , 'ObsSubgrupo' : 'falta fazer' })
+				_sObsSubgrupo :=     'Clas.PR: ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasPR']) + '%'
+				_sObsSubgrupo += '<br>Clas.AA: ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasAA']) + '%'
+				_sObsSubgrupo += '<br>Clas.A:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasA']) + '%'
+				_sObsSubgrupo += '<br>Clas.B: base'
+				_sObsSubgrupo += '<br>Clas.C:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasC']) + '%'
+				_sObsSubgrupo += '<br>Clas.D:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasD']) + '%'
+				_sObsSubgrupo += '<br>Clas.DS: ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasDS']) + '%'
+				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : '' , 'ObsSubgrupo' : _sObsSubgrupo})
+
 			elseif ::TipoUva == 'F' .and. ::Conducao == 'L'
-				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : '' , 'ObsSubgrupo' : 'falta fazer' })
+				_sObsSubgrupo := 'Clas.A: +' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasA']) + '%'
+				_sObsSubgrupo += '<br>Clas.B: base'
+				_sObsSubgrupo += '<br>Clas.D: ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasD']) + '%'
+				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : '' , 'ObsSubgrupo' : _sObsSubgrupo})
 			endif
 
-			// Pretendo migrar o formato array para formato JSON, mas tenho que
-			// fazer isso com cuidado para nao me perder. Entao trabalharei com
-			// os 2 formatos em paralelo por enquanto. Depois de ter tudo em JSON
-			// pretendo eliminar a parte em array.
 			aadd (_aGrupos, _oGrupoTbUva)
 		next
-
 		::Grupos:Set (_aGrupos)
 
 		// Durante o desenvolvimento, achei interessante esportar o JSON
@@ -318,7 +381,7 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 	// Se deu algum problema, limpa os dados principais para inutilizar o objeto.
 	if ! _lContinua
 		::CodTabela = ''
-		::Grupos   = NIL
+		::Grupos    = NIL
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
@@ -474,7 +537,6 @@ return _lContinua
 METHOD GeraHTM () Class ClsTbUva
 	local _sHTM       := ''
 	local _nGrupo     := 0
-//	local _aSubgrup   := {}
 	local _nSubgrup   := 0
 	local _aTitGrup   := {}
 	local _aVarGrau   := {}
@@ -487,6 +549,8 @@ METHOD GeraHTM () Class ClsTbUva
 	local _nGrau      := 0
 	local _sToolTip   := ''
 	local _oGrauDeGrupo := NIL
+	local _oVariedade := NIL
+	local _lTemDescSubgrupo := .F.
 
 	// Como a quantidade de celulas mescladas eh muito grande, achei melhor
 	// preparar arrays com os dados (jah eh bastante complicado) e, num
@@ -497,46 +561,47 @@ METHOD GeraHTM () Class ClsTbUva
 		_Super:SomaMsg ("Codigo de tabela nao definido. Impossivel gerar HTML.")
 	else
 
-//		// Uvas comuns: 4 subcolunas (convenc/bordadura/em conv/organ)
-//		// Uvas viniferas em espaldeira: 2 subcolunas (para vinho/para espumante)
-//		// Uvas viniferas latadas: nenhuma subcoluna
-//		if ::TipoUva == 'C'
-//			_aSubgrup = {'Convencional', 'Bordadura', 'Em conversão', 'Orgânica'}
-//		elseif ::TipoUva == 'F' .and. ::Conducao == 'E'
-//			_aSubGrup = {'Para vinho', 'Para espumante'}
-//		else
-//			_aSubGrup = {''}
-//		endif
-
 		// Prepara titulos dos grupos
 		_aTitGrup = {}
 		aadd (_aTitGrup, '<th> </th>')  // Esta coluna vai ser, posteriormente, usada para o grau.
 		for _nGrupo = 1 to len (::Grupos)
 			aadd (_aTitGrup, '<th class=' + iif (_nGrupo / 2 == int (_nGrupo / 2), '"TituloGrupoClaro"', '"TituloGrupoEscuro"') + ;
 			                 ' colspan=' + cvaltochar (len (::Grupos [_nGrupo]['ListaDeSubgrupos'])) + ' align=center>' + ;
-			                 'Grp.' + alltrim (::Grupos [_nGrupo]['Codigo']) + ;
+			                 'Gr.' + alltrim (::Grupos [_nGrupo]['Codigo']) + ;
 			                 ' ' + alltrim (::Grupos [_nGrupo]['Descricao']) + ;
 			                 '</th>')
 		next
 
-		// Prepara uma linha com titulos dos subgrupos
 		_aVarGrau = {}
-		_aLinha = {'<th class="TituloGrupoClaro">Grau</th>'}
+
+		// Prepara uma linha com titulos dos subgrupos. Mas, antes, verifica se
+		// algum deles tem dados a mostrar, de movo a evitar gerar uma linha
+		// vazia no HTML.
+		_lTemDescSubgrupo = .F.
 		for _nGrupo = 1 to len (::Grupos)
-
-			// Para facilitar a visualizacao, a cada troca de grupo, gero
-			// as colunas com fundo escuro ou com fundo claro.
-			if _nGrupo / 2 == int (_nGrupo / 2)
-				_sTag = '<th class="TituloGrupoClaro">'
-			else
-				_sTag = '<th class="TituloGrupoEscuro">'
-			endif
-
 			for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
-				aadd (_aLinha, _sTag + ::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['DescSubgrupo'] + '</th>')
+				if ! empty (::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['DescSubgrupo'])
+					_lTemDescSubgrupo = .T.
+					exit
+				endif
 			next
 		next
-		aadd (_aVarGrau, aclone (_aLinha))
+		if _lTemDescSubgrupo
+			//_aLinha = {'<th class="TituloGrupoClaro">Grau</th>'}
+			_aLinha = {'<th </th>'}
+			for _nGrupo = 1 to len (::Grupos)
+
+				// Para facilitar a visualizacao, a cada troca de grupo, gero
+				// as colunas com fundo escuro ou com fundo claro.
+				_sTag = '<td class="TituloGrupo' + iif (_IsInt (_nGrupo/2), 'Claro', 'Escuro') + '">'
+
+				for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
+					aadd (_aLinha, _sTag + ::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['DescSubgrupo'] + '</th>')
+				next
+			next
+			aadd (_aVarGrau, aclone (_aLinha))
+		endif
+
 
 		// Para adicionar as linhas com as variedades, optei por fazer um loop
 		// com WHILE para rodar ateh o momento em que nao adicionar mais nenhuma
@@ -551,7 +616,7 @@ METHOD GeraHTM () Class ClsTbUva
 
 				// Para facilitar a visualizacao, a cada troca de grupo, gero
 				// as colunas com fundo escuro ou com fundo claro.
-				if _nGrupo / 2 == int (_nGrupo / 2)
+				if _IsInt (_nGrupo / 2)
 					_sTag = '<td class="ColunaClaraDescri">'
 
 					// Quero mostrar o codigo do item com uma fonte um pouco menor.
@@ -568,66 +633,18 @@ METHOD GeraHTM () Class ClsTbUva
 				// Se ainda tiver variedades neste grupo para serem adicionadas
 				// ao HTM, entao devo gerar mais uma linha.
 				if _nVarGrau <= len (::Grupos [_nGrupo]['ListaDeVariedades'])
+					_oVariedade = ::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]
 
-					// Variedade base sempre deve existir, independente de tipo/conducao
-					if ! empty (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodBase'])
-						aadd (_aLinha, _sTag + ;
-										alltrim (strtran (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['DescrBase'], '.', ' ')) + ;
-										_sTagICod + ;
-										alltrim (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodBase']) + ;
-										_sTagFCod + ;
-										'</td>')
-					else
-						aadd (_aLinha, ' </td>')
-					endif
+					// Variedade base sempre vai existir, independente de tipo/conducao
+					aadd (_aLinha, _TagVariedade (_oVariedade, 'Base', _sTag, _sTagICod, _sTagFCod))
 
 					// Estas colunas existem somente para uvas comuns
 					if ::TipoUva == 'C'
-						if ! empty (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodBordadura'])
-							aadd (_aLinha, _sTag + ;
-											alltrim (strtran (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['DescrBordadura'], '.', ' ')) + ;
-											_sTagICod + ;
-											alltrim (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodBordadura']) + ;
-											_sTagFCod + ;
-											'</td>')
-						else
-							aadd (_aLinha, _sTag + ' </td>')
-						endif
-						if ! empty (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodEmConversao'])
-							aadd (_aLinha, _sTag + ;
-											alltrim (strtran (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['DescrEmConversao'], '.', ' ')) + ;
-											_sTagICod + ;
-											alltrim (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodEmConversao']) + ;
-											_sTagFCod + ;
-											'</td>')
-						else
-							aadd (_aLinha, _sTag + ' </td>')
-						endif
-						if ! empty (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodOrganica'])
-							aadd (_aLinha, _sTag + ;
-											alltrim (strtran (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['DescrOrganica'], '.', ' ')) + ;
-											_sTagICod + ;
-											alltrim (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodOrganica']) + ;
-											_sTagFCod + ;
-											'</td>')
-						else
-							aadd (_aLinha, _sTag + ' </td>')
-						endif
+						aadd (_aLinha, _TagVariedade (_oVariedade, 'Bordadura', _sTag, _sTagICod, _sTagFCod))
+						aadd (_aLinha, _TagVariedade (_oVariedade, 'Conversao', _sTag, _sTagICod, _sTagFCod))
+						aadd (_aLinha, _TagVariedade (_oVariedade, 'Organica', _sTag, _sTagICod, _sTagFCod))
 					endif
 
-					// Esta coluna existe somente para viniferas em espaldeira
-					if ::TipoUva == 'F' .and. ::Conducao == 'E'
-						if ! empty (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodParaEspumante'])
-							aadd (_aLinha, _sTag + ;
-											alltrim (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['DescrParaEspumante']) + ;
-											_sTagICod + ;
-											alltrim (::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]['CodParaEspumante']) + ;
-											_sTagFCod + ;
-											'</td>')
-						else
-							aadd (_aLinha, _sTag + ' </td>')
-						endif
-					endif
 					_lAdicionou = .T.
 				else
 
@@ -651,14 +668,13 @@ METHOD GeraHTM () Class ClsTbUva
 		// Prepara uma linha com dados adicionais dos subgrupos.
 		// Geralmente sao os % de organicas (uvas comuns) ou de
 		// acrescimos cfe.classificacao (uvas finas).
-		_aLinha = {'<td> </td>'}  // Primeira coluna vai ser usada pelo grau
+//		_aLinha = {'<td> </td>'}  // Primeira coluna vai ser usada pelo grau
+		_aLinha = {'<th class="TituloGrupoClaro">Grau</th>'}
 		for _nGrupo = 1 to len (::Grupos)
 
 			// Para facilitar a visualizacao, a cada troca de grupo, gero
 			// as colunas com fundo escuro ou com fundo claro.
 			_sTag = '<td class="Coluna' + iif (_IsInt (_nGrupo/2), 'Clara', 'Escura') + 'Descri">'
-		//	U_Log2 ('debug', '[' + procname () + ']_nGrupo = ' + cvaltochar (_nGrupo) + ' ---> ' + _sTag)
-		//	U_Log2 ('debug', _IsInt (_nGrupo))
 
 			for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
 				aadd (_aLinha, _sTag + ::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['ObsSubgrupo'] + '</td>')
@@ -704,10 +720,6 @@ METHOD GeraHTM () Class ClsTbUva
 					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaOrganica'], "@E 999.9999") + '</th>')
 				endif
 
-				// Esta coluna existe somente para viniferas em espaldeira
-				if ::TipoUva == 'F' .and. ::Conducao == 'E'
-					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodParaEspumante'], "@E 999.9999") + '</th>')
-				endif
 			next
 			aadd (_aVarGrau, aclone (_aLinha))
 		next
@@ -870,3 +882,53 @@ return _sHTM
 // --------------------------------------------------------------------------
 static function _IsInt (_nValor as numeric)
 return (_nValor == int (_nValor))
+
+
+// --------------------------------------------------------------------------
+static function _TagVariedade (_oVariedade as JSON, _sQualCodigo as character, _sTag as character, _sTagICod as character, _sTagFCod as character)
+	local _sRet := ''
+	local _sCodigoVariedade := ''
+	local _sDescrVariedade := ''
+	local _sToolTip := ''
+	do case
+		case _sQualCodigo == 'Base'
+			_sCodigoVariedade = _oVariedade ['CodBase']
+			_sDescrVariedade  = _oVariedade ['DescrBase']
+		case _sQualCodigo == 'Bordadura'
+			_sCodigoVariedade = _oVariedade ['CodBordadura']
+			_sDescrVariedade  = _oVariedade ['DescrBordadura']
+		case _sQualCodigo == 'Bordadura'
+			_sCodigoVariedade = _oVariedade ['CodBordadura']
+			_sDescrVariedade  = _oVariedade ['DescrBordadura']
+		case _sQualCodigo == 'Conversao'
+			_sCodigoVariedade = _oVariedade ['CodEmConversao']
+			_sDescrVariedade  = _oVariedade ['DescrEmConversao']
+		case _sQualCodigo == 'Organica'
+			_sCodigoVariedade = _oVariedade ['CodOrganica']
+			_sDescrVariedade  = _oVariedade ['DescrOrganica']
+	endcase
+
+	// Define tag para 'tooltip'
+	_sToolTip += '<abbr title="
+	_sToolTip += _sDescrVariedade
+	_sToolTip += '&#10;Cor: ' + iif (_oVariedade ['Cor'] == 'T', 'Tinta', iif (_oVariedade ['Cor'] == 'B', 'Branca', 'Rosada'))
+	if _oVariedade ['Cor'] == 'T'
+		_sToolTip += iif (_oVariedade ['Tintorea'] == 'S', ' (tintórea)', ' (não tintórea)')
+	endif
+	//_sToolTip += '&#10;Grau médio safra 2023:'
+	//_sToolTip += '&#10;Kg recebidos safra 2023:'
+	_sToolTip += '">'
+
+	_sRet += _sTag
+	if ! empty (_sCodigoVariedade)
+		_sRet += alltrim (strtran (_sDescrVariedade, '.', ' '))
+		_sRet += _sTagICod
+		_sRet += _sToolTip
+		_sRet += alltrim (_sCodigoVariedade)
+		_sRet += _sTagFCod
+		_sRet += '</td>'
+	else
+		_sRet += ' </td>'
+	endif
+return _sRet
+

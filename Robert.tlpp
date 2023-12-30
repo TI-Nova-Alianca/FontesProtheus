@@ -2718,12 +2718,12 @@ return
 
 // --------------------------------------------------------------------------
 static function _batfull ()
-	U_MudaLog ('U_BatFullW.log')
+//	U_MudaLog ('U_BatFullW.log')
 //	U_BatFullW ('E') //, 'ZA1012000617078', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
-	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+//	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
 
-	//U_MudaLog ('U_BatFullM.log')
-	//U_BatFullM ()
+	U_MudaLog ('U_BatFullM.log')
+	U_BatFullM ()
 return
 
 // --------------------------------------------------------------------------

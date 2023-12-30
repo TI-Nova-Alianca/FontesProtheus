@@ -98,7 +98,7 @@ Static Function _Opcoes ()
 
 	// Monta array de opcoes.
 	_aOpcoes = {}
-	aadd (_aOpcoes, {.F., "Grupos e variedades tabelas precos", "ZX5_13"})
+//	aadd (_aOpcoes, {.F., "Grupos e variedades tabelas precos", "ZX5_13"})
 	aadd (_aOpcoes, {.F., "Faixas grau uvas espaldeira",        "ZX5_17"})
 	aadd (_aOpcoes, {.F., "Faixas grau uvas latadas",           "ZX5_52"})
 
@@ -125,10 +125,8 @@ Static Function _AndaLogo ()
 	for _nOpcao = 1 to len (_aOpcoes)
 		if _aOpcoes [_nOpcao, 1]
 			do case
-//				case _aOpcoes [_nOpcao, 3] == "ZX5_11"
-//					u_help ("Rotina ainda nao desenvolvida. Use rotina de 'tabelas especificas' (tabela 11)")
-				case _aOpcoes [_nOpcao, 3] == "ZX5_13"
-					processa ({|| _ReplZX513 ()})
+//				case _aOpcoes [_nOpcao, 3] == "ZX5_13"
+//					processa ({|| _ReplZX513 ()})
 				case _aOpcoes [_nOpcao, 3] == "ZX5_17"
 					processa ({|| _ReplZX517 ()})
 				case _aOpcoes [_nOpcao, 3] == "ZX5_52"
@@ -141,7 +139,7 @@ Static Function _AndaLogo ()
 return _lContinua
 
 
-
+/*
 // --------------------------------------------------------------------------
 static function _ReplZX513 ()
 	local _oSQL      := NIL
@@ -304,7 +302,7 @@ static function _ReplZX513 ()
 		dbselectarea ("SB1")
 	endif
 return
-
+*/
 
 
 
