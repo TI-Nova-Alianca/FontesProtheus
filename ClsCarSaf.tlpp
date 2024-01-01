@@ -82,6 +82,7 @@ CLASS ClsCarSaf from ClsBase
 	public METHOD GeraAtrib ()
 	public METHOD EnderEstq ()  // Enderecar (ou estornar) estoque
 	public METHOD ExclDef ()    // Exclusao definitiva (inclusive tabelas relacionadas)
+	static METHOD FormataGrau ()  //Recebe o grau como numerico e retorna formatado em caracter.
 	public METHOD GrupoPagto () // Define em qual grupo de pagamento a carga deve ser enquadrada.
 	public METHOD GrvEvt ()
 	public METHOD ImprimeTk ()  // Gera impressao do ticket
@@ -679,6 +680,29 @@ METHOD ExclDef (_sOrigem) Class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return _lRetED
+
+
+// --------------------------------------------------------------------------
+// Recebe o grau como numerico e retorna formatado em caracter.
+METHOD FormataGrau (_nGrau as numeric) Class ClsCarSaf
+	local _nInt  := 0
+	local _nDec  := 0
+	local _sInt  := ""
+	local _sDec  := ""
+	local _sGrau := ""
+	local _aFmtGrau    := {2, 1}  // Formatacao para grau: {qt.digitos inteiros, qt.decimais}
+	
+	_nGrau = round (_nGrau, _aFmtGrau [2])  // Arredonda decimais
+	_nInt = int (_nGrau)
+	_sInt = strzero (_nInt, _aFmtGrau [1])
+	if _aFmtGrau [2] > 0
+		_nDec = (_nGrau - _nInt) * 10 * _aFmtGrau [2]
+		_sDec = strzero (_nDec, _aFmtGrau [2])
+	else
+		_sDec = '0'
+	endif
+	_sGrau = _sInt + '.' + _sDec
+return _sGrau
 
 
 // --------------------------------------------------------------------------

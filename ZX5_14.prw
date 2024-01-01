@@ -15,7 +15,7 @@ User Function ZX5_14 (_sCodTab)
 	local _aOrd   := {'ZX5_14SAFR', 'ZX5_14GRUP', 'ZX5_14DESC'}
 
 	if ! empty (_sCodTab)
-		_sSafra = _sCodTab
+		_sSafra = left (_sCodTab, 4)
 	endif
 
 	if U_ZZUVL ('051')

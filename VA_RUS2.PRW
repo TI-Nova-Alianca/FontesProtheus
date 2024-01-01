@@ -373,7 +373,8 @@ static function _FmtGrau (_nGrau)
 	local _sDec  := ""
 	local _sGrau := ""
 	local _aFmtGrau    := {2, 1}  // Formatacao para grau: {qt.digitos inteiros, qt.decimais}
-	
+
+	U_Log2 ('aviso', '[' + procname () + ']tENTAR USAR AQUI O NOVO METODO FormataGrau da classe ClsCarSaf')	
 	_nGrau = round (_nGrau, _aFmtGrau [2])  // Arredonda decimais
 	_nInt = int (_nGrau)
 	_sInt = strzero (_nInt, _aFmtGrau [1])

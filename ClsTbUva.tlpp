@@ -35,7 +35,7 @@ CLASS ClsTbUva from ClsBase
 	public  data GrauDecimal // [D]ecimais, [I]nteiros
 	private data GrauIniTab  // Grau inicial a ser gerado
 	private data GrauFimTab  // Grau final a ser gerado
-	private data Grupos     // Grupos de uvas cfe. tabela 13 do ZX5
+	public  data Grupos     // Grupos de uvas cfe. tabela 13 do ZX5
 	public  data SubGrupos   // Subgrupos de uvas cfe. tabela 13 do ZX5
 	public  data TipoPreco   // [E]ntrada, [C]ompra, [M]oc(CONAB)
 	public  data TipoUva     // [C]omum, [F]ina
@@ -47,7 +47,6 @@ CLASS ClsTbUva from ClsBase
 	private METHOD DistrAgios ()
 	public  METHOD GeraAtrib ()
 	public  METHOD GeraHTM ()
-	public  METHOD GeraPrecos ()
 ENDCLASS
 
 
@@ -127,6 +126,7 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 
 	// Gera uma lista de grupos relacionados ao tipo de uvas solicitado.
 	if _lContinua
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou gerar array de grupos')
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT ZX5_13SAFR, ZX5_13GRUP, ZX5_13DESC, ZX5_13GBAS, ZX5_13GMAG, ZX5_13PMIN"
 		if ::TipoPreco == 'C'
@@ -167,7 +167,7 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 		_oSQL:_sQuery +=             ")"
 
 		_oSQL:_sQuery += " ORDER BY ZX5_13GRUP"
-		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+	//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 		if len (_aDados) == 0
 			_Super:SomaMsg ("Tabela de precos '" + ::CodTabela + "' nao existe, ou nao tem nenhum grupo de variedades informado.")
@@ -177,6 +177,7 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 	
 	// Gera grupos de variedades
 	if _lContinua
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou gerar grupos')
 		_aGrupos = {}
 		for _nDado = 1 to len (_aDados)
 
@@ -273,7 +274,7 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_PARA_ESPUMANTE"
 			_oSQL:_sQuery +=   " AND V.FINA_COMUM = 'F'"
 			_oSQL:_sQuery += " ORDER BY DESC_RESUM, COD_BASE"
-			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 			_sAliasQ := _oSQL:Qry2Trb (.F.)
 			(_sAliasQ) -> (dbgotop ())
 			do while ! (_sAliasQ) -> (eof ())
@@ -319,14 +320,37 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 						_oGrauDeGrupo ['PrecoCodOrganicaBordadura']   = _oGrupoTbUva ['PrecoMinimo']
 						_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'] = _oGrupoTbUva ['PrecoMinimo']
 						_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaLatadaClasA']        = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaLatadaClasB']        = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaLatadaClasD']        = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasPR']   = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasAA']   = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasA']    = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasC']    = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasD']    = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasDS']   = _oGrupoTbUva ['PrecoMinimo']
 					else
 						// Se for um grau 'normal', aplica regra de agio sobre o preco do grau base.
 						_nPreco = _oGrupoTbUva ['PrecoGrauBase']
 						_nPreco += _nPreco * _aGrausComAgio [_nGrau, 2] / 100
 						_oGrauDeGrupo ['PrecoCodBase']                = _nPreco
-						_oGrauDeGrupo ['PrecoCodOrganicaBordadura']   = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaBordadura']   / 100)
+						
+						// Deixa prontas tags de precos das possiveis variacoes,
+						// como organicas e classificacoes de viniferas. Vou
+						// deixar isto chumbado no programa por que, em 15 anos
+						// de Cooperativa, soh vi serem criadas novas classes
+						// quando unimos as 5 cooperativas...
+						_oGrauDeGrupo ['PrecoCodOrganicaBordadura']   = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaBordadura'] / 100)
 						_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'] = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaEmConversao'] / 100)
-						_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaOrganica']    / 100)
+						_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaOrganica'] / 100)
+						_oGrauDeGrupo ['PrecoFinaLatadaClasA']        = _nPreco * (1 + _oGrupoTbUva ['AcrescimoLatadaClasA'] / 100)
+						_oGrauDeGrupo ['PrecoFinaLatadaClasD']        = _nPreco * (1 + _oGrupoTbUva ['AcrescimoLatadaClasD'] / 100)
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasPR']   = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasPR'] / 100)
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasAA']   = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasAA'] / 100)
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasA']    = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasA'] / 100)
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasC']    = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasC'] / 100)
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasD']    = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasD'] / 100)
+						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasDS']   = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] / 100)
 					endif
 
 
@@ -385,7 +409,7 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-return
+return _lContinua
 
 
 // --------------------------------------------------------------------------
@@ -894,9 +918,6 @@ static function _TagVariedade (_oVariedade as JSON, _sQualCodigo as character, _
 		case _sQualCodigo == 'Base'
 			_sCodigoVariedade = _oVariedade ['CodBase']
 			_sDescrVariedade  = _oVariedade ['DescrBase']
-		case _sQualCodigo == 'Bordadura'
-			_sCodigoVariedade = _oVariedade ['CodBordadura']
-			_sDescrVariedade  = _oVariedade ['DescrBordadura']
 		case _sQualCodigo == 'Bordadura'
 			_sCodigoVariedade = _oVariedade ['CodBordadura']
 			_sDescrVariedade  = _oVariedade ['DescrBordadura']

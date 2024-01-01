@@ -1323,6 +1323,13 @@ user function VA_VCpo (_sCampo)
 			endif
 
 
+		case _sCampo $ "M->ZA_COD"
+			if len (alltrim (M->ZA_COD)) > TamSX3 ("ZX5_13SAFR")[1]
+				u_help ("Nao deve ser informado um codigo com tamanho maior que o campo ZX5_13SAFR.",, .t.)
+				_lRet = .F.
+			endif
+
+
 		case _sCampo $ "M->ZA4_CLI"
 			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_MSBLQL") = '1'
 				U_Help ("Cliente Bloqueado.")

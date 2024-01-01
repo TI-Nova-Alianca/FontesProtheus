@@ -10,6 +10,7 @@
 // 17/05/2023 - Robert - Criado botao para simular precos.
 // 10/11/2023 - Robert - Criado botao para exportar a tabela em HTML.
 // 30/12/2023 - Robert - Permite receber a safra como parametro.
+//                     - Rotinas de simulacao de precos e exportacao HTML passadas para VA_SZA.PRW
 //
 
 #include "VA_INCLU.prw"
@@ -21,12 +22,12 @@ User Function ZX5_13 (_sCodTab)
 	local _aBotAdic := {}
 
 	if ! empty (_sCodTab)
-		_sSafra = _sCodTab
+		_sSafra = left (_sCodTab, 4)
 	endif
 
 	aadd (_aBotAdic, {"Variedades",    {|| U_ZX5_13LV (.t.)}, "Variedades",    "Variedades",    {|| .T.}})
 //	aadd (_aBotAdic, {"Simular",       {|| U_ZX5_13SP ()},    "Simular",       "Simular",       {|| .T.}})
-	aadd (_aBotAdic, {"Exportar HTML", {|| U_ZX5_13H  ()},    "Exportar HTML", "Exportar HTML", {|| .T.}})
+//	aadd (_aBotAdic, {"Exportar HTML", {|| U_ZX5_13H  ()},    "Exportar HTML", "Exportar HTML", {|| .T.}})
 
 	if U_ZZUVL ('051')
 		do while .t.
@@ -153,7 +154,7 @@ User Function ZX5_13SP ()
 	U_SalvaAmb (_aAmbAnt)
 return
 
-
+/*
 // --------------------------------------------------------------------------
 // Exporta tabela em formato HTML
 user function ZX5_13H ()
@@ -202,3 +203,4 @@ user function ZX5_13H ()
 		endif
 	endif
 return
+*/

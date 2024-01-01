@@ -25,6 +25,7 @@
 // 10/02/2021 - Robert - Replicacao da tabela 52 nao fazia da 53 (itens) - GLPI 9383.
 // 14/09/2023 - Robert - Tratamento campo ZX5_13PMIN
 // 13/11/2023 - Robert - Tratamento para campos de % acrescimo cfe. classificacoes (PR/AA/A/B/C/D/DS e A/B/D/DS)
+// 31/12/2023 - Robert - Replicacao de tabelas 13 e 14 (precos uvas) migrada para VA_SZA.PRW
 //
 
 // --------------------------------------------------------------------------
