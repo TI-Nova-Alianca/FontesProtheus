@@ -140,6 +140,7 @@
 // 29/05/2023 - Robert  - Gatilho do C2_PRODUTO para C2_LOCAL passa a usar
 //                        SuperGetMv("VA_ALMFULL") para atender filiais onde
 //                        o parametro nao existe (GLPI 13640)
+// 03/01/2024 - Robert  - Atualizados gatilhos para safra 2024.
 //
 
 // --------------------------------------------------------------------------
@@ -774,6 +775,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			_xRet = U_ClUva22 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), 0, 0, 0, 0, 0) [1]
 		elseif m->ze_safra == '2023'
 			_xRet = U_ClUva23 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), '0', '0', '0', '0', '0') [1]
+		elseif m->ze_safra == '2024'
+			_xRet = U_ClUva24 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), '0', '0', '0', '0', '0') [1]
 		else
 			u_help ("Sem tratamento para gerar o campo '" + _sCDomin + "' para esta safra.",, .T.)
 		endif

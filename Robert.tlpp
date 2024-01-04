@@ -109,7 +109,7 @@ user function robert ()
 		// _sFuncao += '_BatXML ()'
 		// _sFuncao += '_batZBE ()'
 		// _sFuncao += '_BlEstF ()'
-		// _sFuncao += '_CargSaf ()'
+		_sFuncao += '_CargSaf ()'
 		// _sFuncao += '_CplSaf23A ()'
 		// _sFuncao += '_CplSaf23B ()'
 		// _sFuncao += '_CplSaf23C ()'
@@ -149,7 +149,7 @@ user function robert ()
 		// _sFuncao += '_Sisdevin ()'
 		// _sFuncao += '_ST_MG ()'
 		// _sFuncao += '_SZI ()'
-		_sFuncao += '_TbUva ()'
+		// _sFuncao += '_TbUva ()'
 		// _sFuncao += '_telnet ()'
 		// _sFuncao += '_TrEstq ()'
 		// _sFuncao += '_VACCR2 ()'
@@ -2331,27 +2331,38 @@ return
 // --------------------------------------------------------------------------
 // Simulacoes com cargas de safra
 static function _CargSaf ()
+	local _nContador := 0
 	local _oCarSaf := NIL
 
 	sze -> (dbsetorder (1))
 	dbselectarea ("SZE")
-	set filter to ze_filial = cFilAnt .and. ze_safra = '2022' .and. !ze_status $ 'C/D' // .AND. ZE_CARGA $ '0655/0656/0952/0953'
+	set filter to ze_filial = cFilAnt .and. ze_safra = '2023' .and. !ze_status $ 'C/D' // .AND. ZE_CARGA $ '0655/0656/0952/0953'
 	sze -> (dbgotop ())
-	do while ! sze -> (eof ())
-		u_log (sze -> ze_filial + ' ' + sze -> ze_safra + ' ' + sze -> ze_carga)
+	do while ! sze -> (eof ()) .and. _nContador++ <= 100
+		U_Log2 ('debug', '[' + procname () + ']' + sze -> ze_filial + ' ' + sze -> ze_safra + ' ' + sze -> ze_carga)
 		_oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
 		if empty (_oCarSaf:Carga)
 			u_help ("Impossivel instanciar carga (ou carga invalida).", _oCarSaf:UltMsg, .t.)
 			exit
 		endif
-		_xNovo := _oCarSaf:VarMenorVl (_oCarSaf:PrcParaNF) [1, 1]
-		// U_Log2 ('debug', '[' + procname () + ']Novo:' + _xNovo)
-		_xOld := U_VA_RusMV ()
-		if _xNovo != _xOld
-			U_Log2 ('erro', '[' + procname () + ']Diferenca!!! OLD:' + cvaltochar (_xOld) + ' NOVO: ' + cvaltochar (_xNovo))
-			_oCarSaf:Log ()
+
+		// ALTERA atributoa PROPOSITALMENTE PARA PODER USAR DADOS DO ANO PASSADO DURANTE TESTES
+		_oCarSaf:Safra = '2024'
+		_oCarSaf:TipoPrecoParaNF = '6'  // Buscar no arquivo ZBI
+		_oCarSaf:TabelaPreco = '24A '  // Codigo tabela precos (jah deve existir previamente no arquivo ZBI)
+		if ! _oCarSaf:Precifica ()
+			U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
 		endif
-		//EXIT // DURANTE TESTES
+		_oCarSaf:Log ()
+
+	//	_xNovo := _oCarSaf:VarMenorVl (_oCarSaf:TipoPrecoParaNF) [1, 1]
+	//	// U_Log2 ('debug', '[' + procname () + ']Novo:' + _xNovo)
+	//	_xOld := U_VA_RusMV ()
+	//	if _xNovo != _xOld
+	//		U_Log2 ('erro', '[' + procname () + ']Diferenca!!! OLD:' + cvaltochar (_xOld) + ' NOVO: ' + cvaltochar (_xNovo))
+	//		_oCarSaf:Log ()
+	//	endif
+	// EXIT // DURANTE TESTES
 
 		sze -> (dbskip ())
 	enddo
@@ -3519,7 +3530,6 @@ return
 // --------------------------------------------------------------------------
 // Testes classe tabela preco uva safra
 static function _TbUva ()
-/*
 	local _sHTML  := ''
 	local _nHdl    := 0
 	local _sArq    := ''
@@ -3548,166 +3558,7 @@ static function _TbUva ()
 			ShellExecute ("Open", _sArq, "", "", 1)
 		endif
 	endif
-*/
-	processa ({|| _GeraZBI ('24A')})
 return
-
-// --------------------------------------------------------------------------
-// Alimenta tabela ZBI (precos prontos por variedade, para uso durante a safra e outras simulacoes.
-static function _GeraZBI (_sCodTab)
-	local _lContinua := .T.
-	local _oSQL      := NIL
-	local _oTbUva    := NIL
-	local _oTbUvaCL  := NIL
-	local _oTbUvaFL  := NIL
-	local _oTbUvaFE  := NIL
-	local _nGrupo    := 0
-	local _nVaried   := 0
-	local _nGrau     := 0
-	local _nTabela   := 0
-	local _aListaVar := {}
-	local _nIdxListaVar := 0
-	local _aListaClass := {}
-	local _nIdxListaClass := 0
-
-	procregua (10)
-	_sCodTab = U_TamFixo (_sCodTab, TamSX3 ("ZX5_13SAFR")[1], ' ')
-
-	if _lContinua
-		zbi -> (dbsetorder (1))  // ZBI_FILIAL, ZBI_CODTAB, ZBI_PRODUT, ZBI_CONDUC, ZBI_GRAU, ZBI_CLASSE, R_E_C_N_O_, D_E_L_E_T_
-		if zbi -> (dbseek (xfilial ("ZBI") + _sCodTab, .T.))
-			_lContinua = U_MsgNoYes ("Ja existem dados no arquivo ZBI para esta tabela de precos. Deseja sobregravar?")
-		endif
-	endif
-
-	// Apaga possiveis registros anteriores.
-	if _lContinua
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "DELETE " + RetSQLName ("ZBI")
-		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ZBI_FILIAL = '" + xfilial ("ZBI") + "'"
-		_oSQL:_sQuery +=   " AND ZBI_CODTAB = '" + _sCodTab + "'"
-		_lContinua = _oSQL:Exec ()
-	endif
-	if _lContinua
-		incproc ('Gerando tabela para uvas comuns')
-		_oTbUvaCL := ClsTbUva ():New ()
-		if ! _oTbUvaCL:GeraAtrib (_sCodTab, 'C', 'C', 'L', 'D')
-			u_help ('Problemas na tabela de uvas comuns: ' + _oTbUvaCL:UltMsg,, .t.)
-			_lContinua = .F.
-		endif
-	endif
-	if _lContinua
-		incproc ('Gerando tabela para uvas finas latadas')
-		_oTbUvaFL := ClsTbUva ():New ()
-		if ! _oTbUvaFL:GeraAtrib (_sCodTab, 'C', 'F', 'L', 'D')
-			u_help ('Problemas na tabela de uvas finas latadas: ' + _oTbUvaFL:UltMsg,, .t.)
-			_lContinua = .F.
-		endif
-	endif
-	if _lContinua
-		incproc ('Gerando tabela para uvas finas espaldeira')
-		_oTbUvaFE := ClsTbUva ():New ()
-		if ! _oTbUvaFE:GeraAtrib (_sCodTab, 'C', 'F', 'E', 'D')
-			u_help ('Problemas na tabela de uvas finas espaldeira: ' + _oTbUvaFE:UltMsg,, .t.)
-			_lContinua = .F.
-		endif
-	endif
-
-	// Roda dentro de uma transacao para ter certeza de que gravou a tabela inteira.
-	if _lContinua
-		begin transaction
-
-		// Para nao fazer 3 trechos repetidos, prefiro usar um loop.
-		for _nTabela = 1 to 3
-			incproc ('Gravando dados da tabela ' + cvaltochar (_nTabela) + ' de 3')
-			if _nTabela == 1
-				_oTbUva := _oTbUvaCL
-			elseif _nTabela == 2
-				_oTbUva := _oTbUvaFL
-			elseif _nTabela == 3
-				_oTbUva := _oTbUvaFE
-			endif
-
-			U_Log2 ('debug', '[' + procname () + ']Iniciando gravacao da tabela ' + cvaltochar (_nTabela))
-
-			// Varre todos os grupos de variedades desta tabela
-			for _nGrupo = 1 to len (_oTbUva:Grupos)
-				
-				// Varre todas as variedades deste grupo
-				for _nVaried = 1 to len (_oTbUvaCL:Grupos [_nGrupo]['ListaDeVariedades'])
-
-					// Varre todos os graus deste grupo
-					for _nGrau = 1 to len (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'])
-
-						// Monta uma array de codigos de variedade para atender o
-						// caso das uvas comuns, que podem ter subdivisoes como
-						// organicas, bordadura, etc.
-						if _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried]['FinaOuComum'] == 'C'
-							_aListaVar = {}
-							if ! empty (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase'])
-								aadd (_aListaVar, {_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase'], _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau] ['PrecoCodBase']})
-							endif
-							if ! empty (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBordadura'])
-								aadd (_aListaVar, {_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBordadura'], _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau] ['PrecoCodOrganicaBordadura']})
-							endif
-							if ! empty (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodEmConversao'])
-								aadd (_aListaVar, {_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodEmConversao'], _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau] ['PrecoCodOrganicaEmConversao']})
-							endif
-							if ! empty (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodOrganica'])
-								aadd (_aListaVar, {_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodOrganica'], _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau] ['PrecoCodOrganicaOrganica']})
-							endif
-							U_Log2 ('debug', _aListaVar)
-
-							for _nIdxListaVar = 1 to len (_aListaVar)
-								reclock ("ZBI", .t.)
-								zbi -> zbi_filial = xfilial ("ZBI")
-								zbi -> zbi_codtab = _oTbUva:CodTabela
-								zbi -> zbi_produt = _aListaVar [_nIdxListaVar, 1]
-								zbi -> zbi_grau   = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau'])
-								zbi -> zbi_conduc = _oTbUva:Conducao
-								zbi -> zbi_vunit1 = _aListaVar [_nIdxListaVar, 2]
-								msunlock ()
-							next
-
-						elseif _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried]['FinaOuComum'] == 'F'
-
-							// Monta uma lista de possiveis classificacoes de uvas finas.
-							_aListaClass = {}
-							if _oTbUva:Conducao == 'L'
-								aadd (_aListaClass, {'A', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasA']})
-								aadd (_aListaClass, {'D', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasD']})
-							elseif _oTbUva:Conducao == 'E'
-								aadd (_aListaClass, {'PR', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasPR']})
-								aadd (_aListaClass, {'AA', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasAA']})
-								aadd (_aListaClass, {'A', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasA']})
-								aadd (_aListaClass, {'C', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasC']})
-								aadd (_aListaClass, {'D', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasD']})
-								aadd (_aListaClass, {'DS', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasDS']})
-							endif
-							U_Log2 ('debug', _aListaClass)
-
-							for _nIdxListaClass = 1 to len (_aListaClass)
-								reclock ("ZBI", .t.)
-								zbi -> zbi_filial = xfilial ("ZBI")
-								zbi -> zbi_codtab = _oTbUva:CodTabela
-								zbi -> zbi_produt = _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase']
-								zbi -> zbi_grau   = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau'])
-								zbi -> zbi_conduc = _oTbUva:Conducao
-								zbi -> zbi_classe = _aListaClass [_nIdxListaClass, 1]
-								zbi -> zbi_vunit1 = _aListaClass [_nIdxListaClass, 2]
-								msunlock ()
-							next
-						endif
-					next
-				next
-			next
-		next
-		end transaction
-	endif
-return
-
 
 // --------------------------------------------------------------------------
 static function _VA_ACR ()

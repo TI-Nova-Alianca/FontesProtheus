@@ -1788,7 +1788,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif
 
-	if _lContinua .and. ::TM == '07' .and. cEmpAnt != '0101'
+	if _lContinua .and. ::TM == '07' .and. ::Filial != '01'  //cEmpAnt != '0101'
 		_Super:SomaMsg ("Para um melhor controle, emprestimos devem ser digitados pela matriz.")
 		_lContinua = .F.
 	endif

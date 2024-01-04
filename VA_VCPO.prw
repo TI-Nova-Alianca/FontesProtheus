@@ -186,6 +186,8 @@
 // 04/08/2023 - Robert  - Removidas (estavam em desuso) validacos dos campos M->ZZK_ASSOC/M->ZZK_LOJA
 // 09/08/2023 - Robert  - Removida validacao B1_CODBAR (Migrada para PE_MATA010)
 // 01/12/2023 - Robert  - Criada validacao para B1_RASTRO 
+// 31/12/2023 - Robert  - Criada validacao para ZA_COD.
+//
 
 // -------------------------------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)

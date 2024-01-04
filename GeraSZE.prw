@@ -89,8 +89,8 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _aCadVitic    := {}  // Variavel usada pelos outros programas.
 		private lMSErroAuto   := .F.  // Para mostrar erros das rotinas padrao.
 		private lMSHelpAuto   := .F.  // Para mostrar erros das rotinas padrao.
-		private _zx509fina    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09FINA')
-		private _zx509orga    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
+		private _zx509fina    := _oCarSaf:RecebeVini  // U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09FINA')
+		private _zx509orga    := _oCarSaf:RecebeOrg   // U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
 	endif
 
 	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGA   = ' + m->ze_carga)

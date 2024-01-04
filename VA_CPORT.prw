@@ -406,6 +406,10 @@ static function _SegPesSZE ()
 			_aAreaPort := U_ML_SRArea ()
 			_aAmbPort  := U_SalvaAmb ()
 
+			// Deixa uma carga instanciada, mesmo que vazia, pois algumas funcoes
+			// (como a validacao de parametros por exemplo) jah vao tentar ler o objeto.
+			private _oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
+
 			// Variaveis que os programas de safra esperam encontrar.
 			private _ZFEMBALAG := ""  // Deixar private para ser vista por outras rotinas.
 			private _sBalanca  := iif (cFilAnt == '01', 'LB', iif (cFilAnt == '07', 'JC', iif (cFilAnt == '09', 'SP', '')))
@@ -424,8 +428,8 @@ static function _SegPesSZE ()
 			private _xSAFRAJ   := U_IniSafra ()  // Retorna o Ano da Safra (ML_SZ9.PRW)
 			private aRotina    := {}
 			private cPerg      := 'VA_RUS'
-			private _zx509fina := U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09FINA')
-			private _zx509orga := U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09ORGA')
+			private _zx509fina := _oCarSaf:RecebeVini  // U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09FINA')
+			private _zx509orga := _oCarSaf:RecebeOrg   // U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09ORGA')
 			private _lIntPort  := ""  // Deixar private para ser vista por outras rotinas.
 
 			aadd (aRotina, {"&Pesquisar"        , "AxPesqui"			, 0,1})
@@ -433,10 +437,6 @@ static function _SegPesSZE ()
 			aadd (aRotina, {"Incluir"           , "U_VA_RUS1"			, 0,3})
 			aadd (aRotina, {"&1a pesagem"       , "U_VA_RUS1P ()"		, 0,4})
 			aadd (aRotina, {"&2a pesagem"       , "U_VA_RUS2 (4, .F.)"	, 0,4})
-
-			// Deixa uma carga instanciada, mesmo que vazia, pois algumas funcoes
-			// (como a validacao de parametros por exemplo) jah vao tentar ler o objeto.
-			private _oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
 
 			U_VA_RUSLP (.F.)  // Releitura de parametros do programa de safra
 			U_VA_Rus2 (4, .T.)  // Segunda pesagem: opcao4=alteracao; .t.=a partir do fechamento de uma entrada no contr.portaria

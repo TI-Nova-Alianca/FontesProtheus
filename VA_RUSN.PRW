@@ -298,29 +298,7 @@ User Function va_rusN (_lSimulNF)
 	// Como a funcao jah retorna uma lista das variedades, fica mais facil
 	// identificar mistura de variedades.
 	if _lContinua
-	//	_aMenorVlr = aclone (_oCarSaf:VarMenorVl ())
-		
-		// Como uso o metodo VarMenorVl() noutros locais (por exemplo, na
-		// geracao de notas de complemento de valor posteriormente), achei
-		// melhor passar um parametro indicando qual preco verificar.
-		// Para isso, eh bom manter compatibilidade entre as funcoes de
-		// geracao de preco das diferentes safras.
-		do case
-		case _oCarSaf:Safra == '2019'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (1))
-		case _oCarSaf:Safra == '2020'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (5))  // pos.5=preco MOC
-		case _oCarSaf:Safra == '2021'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
-		case _oCarSaf:Safra == '2022'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
-		case _oCarSaf:Safra == '2023'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (5))  // pos.5=preco MOC
-		otherwise
-			u_help ("Sem tratamento para esta safra no momento de verificar variedade de menor valor.",, .t.)
-			_lContinua = .F.
-		endcase
-
+		_aMenorVlr = aclone (_oCarSaf:VarMenorVl ())
 		if len (_aMenorVlr) == 0
 			u_help ('Erro na funcao de verificacao de variedade com menor valor.',, .t.)
 			_lContinua = .F.
