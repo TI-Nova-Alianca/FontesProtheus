@@ -56,6 +56,7 @@ User Function VA_RUSLP (_lMostra)
 	//		u_help ("Balanca invalida para esta filial ou filial nao autorizada a receber safra.")
 	//		_lRet = .f.
 	//	endif
+	_oCarSaf:Log ()
 		if ! _oCarSaf:Filial $ '01/03/07'
 			u_help ("Filial nao autorizada a receber safra.")
 			_lRet = .f.

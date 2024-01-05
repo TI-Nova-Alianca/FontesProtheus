@@ -79,6 +79,8 @@ User Function va_rus ()
 	// Deixa uma carga instanciada, mesmo que vazia, pois algumas funcoes
 	// (como a validacao de parametros por exemplo) jah vao tentar ler o objeto.
 	private _oCarSaf := ClsCarSaf ():New ()
+	_oCarSaf:Filial = cFilAnt
+	_oCarSaf:Safra  = U_IniSafra () 
 
 	// Cria parametros e obriga usuario a responde-los na entrada da rotina.
 	_ValidPerg ()
@@ -242,11 +244,9 @@ user function VA_RUSOO (_sQueFazer)
 		U_VA_RUSN (.F.)
 
 	case _sQueFazer == upper ('EnderecarEstoque')
-	//	_oCarSaf:EnderEstq ('I')
 		MsgRun ("Aguarde, gerando enderecamento", "Enderecamento", {|| _oCarSaf:EnderEstq ('I')})
 
 	case _sQueFazer == upper ('EstornarEnderecamento')
-		//_oCarSaf:EnderEstq ('E')
 		MsgRun ("Aguarde, estornando enderecamento", "Estorno enderecamento", {|| _oCarSaf:EnderEstq ('E')})
 
 	case _sQueFazer == upper ('SimularContranota')

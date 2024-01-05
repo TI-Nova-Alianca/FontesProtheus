@@ -103,6 +103,7 @@ User Function va_rusN (_lSimulNF)
 	local _sGrauComp := ''
 	local _nRegSZE   := 0
 	local _nRegSZF   := 0
+	local _nItem     := 0
 	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
 	private _sErroAuto := ''  // Deixar private para ser alimentada em subrotinas.
 
@@ -116,6 +117,8 @@ User Function va_rusN (_lSimulNF)
 		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
 		_lContinua = .F.
 	endif
+	U_Log2 ('debug', '[' + procname () + ']Carga instanciada:')
+	_oCarSaf:Log ()
 	
 	// Nao permite duas sessoes alterando a mesma carga. Usa a funcao SoftLock para que mostre a mensagem 'registro em uso por fulano'
 	if _lContinua
@@ -394,7 +397,7 @@ User Function va_rusN (_lSimulNF)
 			elseif szf -> zf_conduc == 'E'
 				_sClasFina = szf -> zf_prm99
 			endif
-
+/*
 			// Busca preco unitario. IMPORTANTE manter consistencia com a busca
 			// de variedade de menor valor.
 			if szf -> zf_safra == '2019'
@@ -417,6 +420,22 @@ User Function va_rusN (_lSimulNF)
 				u_help ("Sem tratamento para leitura de precos para esta safra.")
 				_lContinua = .F.
 				exit
+			endif
+*/
+			// Se tiver mais de uma variedade na array das variedades de menor
+			// valor, eh por que trata-se de mistura de variedades e devo usar
+			// a de menor valor. Senao, posso pegar o preco unitario do item.
+			if len (_aMenorVlr) > 1
+				U_Log2 ('debug', '[' + procname () + ']Vou usar o item de menor valor')
+				_nVlUni = 0  // falta fazer
+			else
+				_nItem = ascan (::ItItem, val (szf -> zf_item))
+				if _nItem == 0
+					u_help ("Nao encontrei o item '" + szf -> zf_item + "' na array de itens do objeto.",, .t.)
+					_lContinua = .F.
+				else
+					_nVlUni = ::ItPrcUnit [_nItem]
+				endif
 			endif
 
 			u_log2 ('info', 'Retornou preco = ' + cvaltochar (_nVlUni))
