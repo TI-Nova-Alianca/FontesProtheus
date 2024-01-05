@@ -101,6 +101,9 @@ User Function va_rusCF (_lRegrav, _aHisFrSaf)
 				elseif sze -> ze_safra == '2023'
 					_aFrtSaf = aclone (U_FrtSaf23 (_oAssoc:Nucleo (), szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor, _oAssoc:GrpFam ()))
 					_nFrtItem = _aFrtSaf [1]
+				elseif sze -> ze_safra == '2024'
+					_aFrtSaf = aclone (U_FrtSaf24 (_oAssoc:Nucleo (), szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor, _oAssoc:GrpFam ()))
+					_nFrtItem = _aFrtSaf [1]
 				else
 					_nFrtItem = 0
 					u_help ("[" + procname () + "] Sem tratamento de calculo de frete para esta safra.",, .t.)

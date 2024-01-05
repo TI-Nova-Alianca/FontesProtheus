@@ -1775,7 +1775,7 @@ METHOD FechSafra () Class ClsAssoc
 			_sRetFechS += '<perc01>10</perc01><perc02>5.5</perc02><perc03>5.5</perc03><perc04>5.5</perc04><perc05>5.5</perc05><perc06>6.5</perc06><perc07>11.5</perc07><perc08>11.5</perc08><perc09>11.5</perc09><perc10>13.5</perc10><perc11>13.5</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades: 10+5.5+5.5+5.5+5.5+6.5+11.5+11.5+11.5+13.5+13.5</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
-		elseif ::FSSafra == '2023'
+		elseif ::FSSafra == '2023' .or. ::FSSafra == '2024'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 11 vezes</descricao>'

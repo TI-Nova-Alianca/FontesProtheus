@@ -562,8 +562,9 @@ static function _MailAcomp ()
 	if len (_oSQL:_xRetQry) > 1
 		u_log2 ('debug', _sMsg)
 
-		// Envia para o contato principal dos associados (atualmente a Cris) e os demais como copia oculta.
-		U_SendMail ("cristina.stringhi@novaalianca.coop.br", "Acompanhamento cargas safra", _sMsg, {}, NIL, NIL, 'acomp.safra@novaalianca.coop.br;informatica@novaalianca.coop.br')
+		// Envia para o contato principal dos associados e os demais como copia oculta.
+	//	U_SendMail ("cristina.stringhi@novaalianca.coop.br", "Acompanhamento cargas safra", _sMsg, {}, NIL, NIL, 'acomp.safra@novaalianca.coop.br;informatica@novaalianca.coop.br')
+		U_SendMail ("karina.moraes@novaalianca.coop.br", "Acompanhamento cargas safra", _sMsg, {}, NIL, NIL, 'acomp.safra@novaalianca.coop.br;informatica@novaalianca.coop.br')
 
 	endif
 

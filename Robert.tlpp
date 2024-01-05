@@ -2336,7 +2336,7 @@ static function _CargSaf ()
 
 	sze -> (dbsetorder (1))
 	dbselectarea ("SZE")
-	set filter to ze_filial = cFilAnt .and. ze_safra = '2023' .and. !ze_status $ 'C/D' // .AND. ZE_CARGA $ '0655/0656/0952/0953'
+	set filter to ze_filial = cFilAnt .and. ze_safra = '2024' .and. !ze_status $ 'C/D' // .AND. ZE_CARGA $ '0655/0656/0952/0953'
 	sze -> (dbgotop ())
 	do while ! sze -> (eof ()) .and. _nContador++ <= 100
 		U_Log2 ('debug', '[' + procname () + ']' + sze -> ze_filial + ' ' + sze -> ze_safra + ' ' + sze -> ze_carga)
@@ -2346,14 +2346,18 @@ static function _CargSaf ()
 			exit
 		endif
 
-		// ALTERA atributoa PROPOSITALMENTE PARA PODER USAR DADOS DO ANO PASSADO DURANTE TESTES
-		_oCarSaf:Safra = '2024'
-		_oCarSaf:TipoPrecoParaNF = '6'  // Buscar no arquivo ZBI
-		_oCarSaf:TabelaPreco = '24A '  // Codigo tabela precos (jah deve existir previamente no arquivo ZBI)
-		if ! _oCarSaf:Precifica ()
+		U_Log2 ('debug', '[' + procname () + ']Vou buscar menor valor')
+		if ! _oCarSaf:BuscaVarMenorVl ()
 			U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
 		endif
 		_oCarSaf:Log ()
+
+		if ! _oCarSaf:BuscaGrupoPagto ()
+			U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
+		endif
+		_oCarSaf:Log ()
+
+		U_VA_RUSN (.t.)
 
 	//	_xNovo := _oCarSaf:VarMenorVl (_oCarSaf:TipoPrecoParaNF) [1, 1]
 	//	// U_Log2 ('debug', '[' + procname () + ']Novo:' + _xNovo)

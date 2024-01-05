@@ -51,6 +51,7 @@ CLASS ClsCarSaf from ClsBase
 	public  data Contranota  // ZE_NFGER
 	public  data Filial      // ZE_FILIAL
 	public  data Fornece     // ze_assoc
+	public  data GrupoPagamento   // Grupo A/B/C para parcelamento de pagamento da safra
 	public  data ItClasEspaldeira // Array de Itens da carga - Classificao quando conducao em espaldeira
 	public  data ItClasLatada     // Array de Itens da carga - Classificao quando conducao em latada
 	public  data ItConducao       // Array de Itens da carga - Forma de conducao: [L]atada;[E]spaldeira
@@ -86,13 +87,14 @@ CLASS ClsCarSaf from ClsBase
 	public METHOD AddItem ()    // Adiciona uma posicao nas arrays de itens
 	public METHOD AtuAgenda ()  // Envia atualizacao para o sistema de agendamento
 	public METHOD AtuZZA ()     // Envia atualizacao para o programa de medicao de grau
+	public METHOD BuscaGrupoPagto () // Define em qual grupo de pagamento a carga deve ser enquadrada.
+	public METHOD BuscaVarMenorVl () // Identifica a variedade de menor valor
 	public METHOD ConsCompar () // Gera string bonitinha para consulta de compartilhamentos com outras cargas.
 	public METHOD DefImprTk ()  // Define porta para impressao do ticket
 	public METHOD GeraAtrib ()
 	public METHOD EnderEstq ()  // Enderecar (ou estornar) estoque
 	public METHOD ExclDef ()    // Exclusao definitiva (inclusive tabelas relacionadas)
 	static METHOD FormataGrau ()  //Recebe o grau como numerico e retorna formatado em caracter.
-	public METHOD GrupoPagto () // Define em qual grupo de pagamento a carga deve ser enquadrada.
 	public METHOD GrvEvt ()
 	public METHOD ImprimeTk ()  // Gera impressao do ticket
 	public METHOD Log ()
@@ -103,7 +105,6 @@ CLASS ClsCarSaf from ClsBase
 	public METHOD SomaObsItem ()  // Acrescenta mensagem na obs do item.
 	public METHOD StatusZZA ()
 	public METHOD TodasComp ()  // Gera lista de todas as cargas compartilhadas com a atual.
-	public METHOD VarMenorVl () // Identifica a variedade de menor valor
 ENDCLASS
 
 
@@ -753,6 +754,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::CXouGranel  = ''
 	::Filial      = ''
 	::Fornece     = ''
+	::GrupoPagamento   = ''
 	::ItClasEspaldeira = {}
 	::ItClasLatada     = {}
 	::ItConducao       = {}
@@ -771,6 +773,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::NomeFornec  = ''
 	::PesoBruto   = 0
 	::PesoTara    = 0
+	::PortImpTk   = ''
 	::TipoPrecoParaNF   = ''
 	::RecebeOrg   = ''
 	::RecebeVini  = ''
@@ -781,6 +784,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::StatusCar   = ''
 	::TabelaPreco = ''
 	::UltMsg      = ''
+	::VariedadeMenorValor = ''
 
 	do case
 	case _sOrigem == 'M'  // Variaveis M->  (preciso pegar os dados 'da tela')
@@ -955,29 +959,41 @@ return
 
 
 // --------------------------------------------------------------------------
-// Define em qul grupo de pagamentos a carga deve ser enquadrada.
-METHOD GrupoPagto () Class ClsCarSaf
+// Define em qual grupo de pagamentos a carga deve ser enquadrada.
+METHOD BuscaGrupoPagto () Class ClsCarSaf
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
 	local _sRetGrpPg := ''
 	local _aVarMVal  := {}
-//	local _sVarMVal  := ''
-	
+	local _sQualProdutoUsar := ''
+
 	// Grupo pagto.eh definido pela variedade de menor valor presente na carga.
-ajustar aqui	_aVarMVal = aclone (::VarMenorVl (::TipoPrecoParaNF))
-	if len (_aVarMVal) == 0
-		_Super:SomaMsg ("Nao ha variedade de menor valor definida. Impossivel determinar o grupo para pagamento.")
-	else
+	if _lContinua .and. ! ::BuscaVarMenorVl ()
+		_Super:SomaMsg ("Problemas na verificacao da variedade de menor valor. Impossivel definir grupo para pagamento.")
+		_lContinua = .F.
+	endif
+
+	if _lContinua
+		// Se houver uma variedade de menor valor, usa-a. Senao, usa o primeiro item da carga,
+		if ! empty (::VariedadeMenorValor)
+			_sQualProdutoUsar = ::VariedadeMenorValor
+			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou definir grupo para pagamento com base na variedade de menor valor: ' + _sQualProdutoUsar)
+		else
+			_sQualProdutoUsar = ::ItProduto [1]
+			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou definir grupo para pagamento com base no primeiro item da carga: ' + _sQualProdutoUsar)
+		endif
+
 		sb1 -> (dbsetorder (1))
-		if ! sb1 -> (dbseek (xfilial ("SB1") + _aVarMVal [1], .F.))
-			_Super:SomaMsg ("Produto '" + _aVarMVal + "' nao cadastrado. Impossivel determinar o grupo para pagamento.")
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _sQualProdutoUsar, .F.))
+			_Super:SomaMsg ("Produto '" + _sQualProdutoUsar + "' nao cadastrado. Impossivel determinar o grupo para pagamento.")
+			_lContinua = .F.
 		else
 		
 			// Segue politicas definidas para cada safra.
 			// DEVEM SER CONSISTENTES com o que retorna na tag <regraPagamento>
 			// do metodo ClsAssoc:FechSafra()
 			do case
-			case _sSafra == '2020'
+			case ::Safra == '2020'
 				// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
 				if alltrim (sb1 -> b1_cod) $ '9925'  // bordo
 					_sRetGrpPg = 'A'
@@ -993,14 +1009,14 @@ ajustar aqui	_aVarMVal = aclone (::VarMenorVl (::TipoPrecoParaNF))
 					elseif _aVarMVal [3] == 'L'
 						_sRetGrpPg = 'C'
 					else
-						u_help (procname () + ": Sistema de conducao '" + _aVarMVal [3] + "' invalido.",, .t.)
+						_Super:SomaMsg ("Sistema de conducao '" + _aVarMVal [3] + "' invalido.")
 						_lContinua = .F.
 					endif
 				else
 					_sRetGrpPg = 'C'
 				endif
 
-			case _sSafra $ '2021/2022/2023/2024'  // Ainda nao tenho OK da direcao para 2024 !!!
+			case ::Safra $ '2021/2022/2023/2024'
 				// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
 				if alltrim (sb1 -> b1_cod) $ '9925/9904/9922/9855'  // bordo, niagara, concord
 					_sRetGrpPg = 'A'
@@ -1016,7 +1032,7 @@ ajustar aqui	_aVarMVal = aclone (::VarMenorVl (::TipoPrecoParaNF))
 					elseif _aVarMVal [3] == 'L'
 						_sRetGrpPg = 'C'
 					else
-						u_help (procname () + ": Sistema de conducao '" + _aVarMVal [3] + "' invalido.",, .t.)
+						_Super:SomaMsg ("Sistema de conducao '" + _aVarMVal [3] + "' invalido.")
 						_lContinua = .F.
 					endif
 				else
@@ -1025,11 +1041,17 @@ ajustar aqui	_aVarMVal = aclone (::VarMenorVl (::TipoPrecoParaNF))
 
 			otherwise
 				_Super:SomaMsg ("Sem definicao de regras para grupos de pagamento para esta safra.")
+				_lContinua = .F.
 			endcase
 		endif
 	endif
+	if _lContinua
+		::GrupoPagamento = _sRetGrpPg
+	else
+		::GrupoPagamento = ''
+	endif
 	U_ML_SRArea (_aAreaAnt)
-return _sRetGrpPg
+return _lContinua
 
 
 
@@ -1067,10 +1089,10 @@ METHOD ImprimeTk (_nQualTk as numeric) Class ClsCarSaf
 		_Super:SomaMsg ("Opcao de impressao de ticket somente para 1a. ou 2a. pesagem.")
 		_lRet  = .F.
 	endif
-	if _lRet .and. _nQualTk == 1 .and. ::PesoBruto == 0
-		_Super:SomaMsg ("Solicitada impressao de ticket de 1a. pesagem, mas a carga ainda nao tem peso bruto.")
-		_lRet  = .F.
-	endif
+//	if _lRet .and. _nQualTk == 1 .and. ::PesoBruto == 0
+//		_Super:SomaMsg ("Solicitada impressao de ticket de 1a. pesagem, mas a carga ainda nao tem peso bruto.")
+//		_lRet  = .F.
+//	endif
 	if _lRet .and. _nQualTk == 2 .and. ::PesoTara == 0
 		_Super:SomaMsg ("Solicitada impressao de ticket de 2a. pesagem, mas a carga ainda nao tem peso tara.")
 		_lRet  = .F.
@@ -1117,15 +1139,17 @@ METHOD Log () Class ClsCarSaf
 		_sLogCar += ' Obs: ' + ::ItObs [_nItCarga]
 		_sLogCar += chr (13) + chr (10)
 	next
+	_sLogCar += '  Varied.menor valor: ' + ::VariedadeMenorValor + chr (13) + chr (10)
+	_sLogCar += '  Grupo pagto: ' + ::GrupoPagamento + chr (13) + chr (10)
 	if ! empty (::UltMsg)
 		_sLogCar += '  Ult.msg: ' + ::UltMsg + chr (13) + chr (10)
 	endif
 	if len (::CCompart) > 0
 		_sLogCar += '  ' + ::ConsCompar ()
 	endif
-	U_Log2 ('info', '-----------------------------------------------')
+	U_Log2 ('info', '------Inicio carga safra-----------------------------------------')
 	U_Log2 ('info', _sLogCar)
-	U_Log2 ('info', '-----------------------------------------------')
+	U_Log2 ('info', '------Fim carga safra--------------------------------------------')
 return _sLogCar
 
 
@@ -1183,9 +1207,9 @@ METHOD Precifica (_sQualPreco as character) class ClsCarSaf
 	endif
 
 	if _lContinua
-		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Carga para precificar:')
+		//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Carga para precificar:')
 		//::Log ()
-		u_logObj (::Self, .t., .f.)
+		//u_logObj (::Self, .t., .f.)
 
 		for _nIdxItem = 1 to len (::ItItem)
 			U_Log2 ('debug', '[' + procname () + ']_nIdxItem = ' + cvaltochar (_nIdxItem))
