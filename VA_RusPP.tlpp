@@ -80,7 +80,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 	// Verifica se tem este tipo de tag no XML
 	if _lContinua
 		if type ('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem') != 'A'
-			u_help ('Nao encontrei regras de pagamento para esta safra.',, .T.)
+			u_help ('Nao encontrei no XML as regras de pagamento para a safra ' + _sSafPag,, .T.)
 			_lContinua = .F.
 		else
 			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)

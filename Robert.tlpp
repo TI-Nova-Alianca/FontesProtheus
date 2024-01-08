@@ -43,7 +43,6 @@
 //#INCLUDE "XMLXFUN.CH"
 //#INCLUDE "apvt100.ch"
 
-// --------------------------------------------------------------------------
 user function robert ()
 	local _lContinua := .T.
 	local _sFuncao   := ''
@@ -103,13 +102,14 @@ user function robert ()
 		// _sFuncao += '_batBlUsr ()'
 		// _sFuncao += '_batFull ()'
 		// _sFuncao += '_BatLimp ()'
+		// _sFuncao += '_BatMerc ()'
 		// _sFuncao += '_BatOcor ()'
 		// _sFuncao += '_BatSafr ()'
-		// _sFuncao += '_BatTrSZI ()'
+		_sFuncao += '_BatTrSZI ()'
 		// _sFuncao += '_BatXML ()'
 		// _sFuncao += '_batZBE ()'
 		// _sFuncao += '_BlEstF ()'
-		_sFuncao += '_CargSaf ()'
+		// _sFuncao += '_CargSaf ()'
 		// _sFuncao += '_CplSaf23A ()'
 		// _sFuncao += '_CplSaf23B ()'
 		// _sFuncao += '_CplSaf23C ()'
@@ -2748,6 +2748,16 @@ static function _batLimp ()
 return
 
 // --------------------------------------------------------------------------
+static function _batMerc ()
+//	U_MudaLog ('U_BatMercP.log')
+//	u_batmercp ()
+//	U_MudaLog ('U_BatMercN.log')
+//	u_batMercN (5)
+	U_MudaLog ('U_BatEMerc.log')
+	u_batEMerc ()
+return
+
+// --------------------------------------------------------------------------
 static function _BatSafr ()
 //	u_batsafr ('CargasSemContranota')  // cargas sem contranota
 //	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
@@ -2755,15 +2765,15 @@ static function _BatSafr ()
 //	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
 //	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
 //	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
-//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
 //	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
 	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
+//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
 return
 
 // --------------------------------------------------------------------------
 static function _BatTrSZI ()
 //	U_MudaLog ("U_BatTrSZI.log")
-	U_BatTrSZI('002486','01','001517','01','07','01','13','20230125',872.12)
+	U_BatTrSZI('016300','01','000287','01','07','01','13','20240105',757.51)
 return
 
 // --------------------------------------------------------------------------
@@ -4414,12 +4424,8 @@ return
 //	endif
 //	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batfunatlz ()
-//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmercp ()
 //	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batedim ("I")
-//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batMercN (5)
 //	u_log2 ('info', _oBatch:Mensagens)
 return
 */

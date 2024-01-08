@@ -120,9 +120,6 @@ User Function va_rusN (_lSimulNF)
 //	U_Log2 ('debug', '[' + procname () + ']Carga instanciada:')
 //	_oCarSaf:Log ()
 	
-	u_help ("Programa em manutencao",, .t.)
-	_lContinua = .F.
-
 	// Nao permite duas sessoes alterando a mesma carga. Usa a funcao SoftLock para que mostre a mensagem 'registro em uso por fulano'
 	if _lContinua
 		softlock ("SZE")
@@ -564,7 +561,7 @@ User Function va_rusN (_lSimulNF)
 			_sErroAuto = ''  // A funcao OrdAuto tambem faz algumas validacoes
 			AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
 			if ! empty (_sErroAuto)
-				_lContinua = .F.
+					_lContinua = .F.
 			endif
 
 			// Atualiza array de previsao de nota
@@ -663,12 +660,12 @@ User Function va_rusN (_lSimulNF)
 	endif
 
 	U_Log2 ('info', '[' + procname () + ']Mensagem do contribuinte: ' + _sMsgContr)
-	if _lSimulNF
+	if _lContinua .and. _lSimulNF
 		u_help ('A seguir serao mostrados alguns dados da simulacao de geracao de NF')
 		u_showarray (_aAutoSD1, 'Itens para a contranota')
 		u_showarray (_aParPgSaf, 'Parcelas e percentuais previstos para pagamento')
 		u_help ('Mensagem do contribuinte: ' + _sMsgContr)
-		_lContinua = .F.
+		_lContinua = .F.  // Nao quero seguir com a geracao da nota.
 	endif
 
 	if _lContinua
@@ -795,13 +792,14 @@ User Function va_rusN (_lSimulNF)
 		//	U_VA_RusAI ('INS/AGE/LIB', 'CON')
 //			U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)
 			_oCarSaf:AtuAgenda ()
-			_oCarSaf:EnderEstq ('I')
+			if ! _oCarSaf:EnderEstq ('I')
+				u_help ("Problemas para enderecar estoque: " + _oCarSaf:UltMsg,, .t.)
+			endif
 		endif
 
 		// Atualiza conta corrente associados
-		// Acho que vou fazer em batch, pois nao tem pressa e eh muito lento.
 		if ! empty (sze -> ze_nfger) .and. _sTpForUva == 'A'
-			// ainda nao 100%			processa ({|| _GravaSZI ()})
+			// Resolvi fazer em batch, pois nao tem pressa e eh muito lento.
 		endif
 
 	endif

@@ -104,6 +104,7 @@
 // 21/09/2023 - Robert - Nao salvava area de trabalho no metodo PodeIncl() - GLPI 14182.
 //                     - Nao validava codigo e loja de fornecedor (nao do associado) no metodo PodeIncl() - GLPI 14182.
 // 15/12/2023 - Robert - Portado de .prw para .tlpp e passa a herdar a ClsBase (GLPI 14548)
+// 08/01/2024 - Robert - Melhorada query que valida a baixa original em caso de transf. entre filiais TM=13.
 //
 
 // ------------------------------------------------------------------------------------
@@ -731,7 +732,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 		::Histor     = m->zi_histor
 		::MesRef     = m->zi_mesref
 		::Doc        = m->zi_doc
-		::SeqOrig    = ''  // Campo nao existe na tabela.
+		::SeqOrig    = m->zi_filorig
 		::Serie      = m->zi_serie
 		::Obs        = m->zi_obs
 		::FilOrig    = m->zi_filorig
@@ -760,7 +761,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 		::Histor   = szi -> zi_histor
 		::MesRef   = szi -> zi_mesref
 		::Doc      = szi -> zi_doc
-		::SeqOrig  = ''  // Campo nao existe na tabela.
+		::SeqOrig  = szi -> zi_filorig
 		::Serie    = szi -> zi_serie
 		::FilOrig  = szi -> zi_FilOrig
 		::FormPag  = szi -> zi_FormPag
@@ -1166,6 +1167,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav, _lAtuSldAs) Class ClsCtaCorr
 			szi -> zi_user    = cUserName
 			szi -> zi_tm      = ::TM
 			szi -> zi_FilOrig = ::FilOrig
+			szi -> zi_SeqOrig = ::SeqOrig
 			szi -> zi_Origem  = ::Origem
 			szi -> zi_Parcela = ::Parcela
 			szi -> zi_safra   = ::Safra
@@ -1590,6 +1592,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	local _sCRLF     := chr (13) + chr (10)
 	local _oSQL      := NIL
 	local _aAreaAnt  := U_ML_SRArea ()
+	local _aRetQryTr := {}
 
 	::UltMsg = ""
 
@@ -1810,7 +1813,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_Super:SomaMsg ("Inclusao de transferencia de outra filial: sequencia original nao informada (o movimento correspondente deve existir na filial origem). Verifique campos Associado, Loja, Data, Tipo movto., Documento, Serie e Mes ref.")
 				_lContinua = .F.
 			else
-				// Para ficar mais correto, a query abaixo deveria abater transferencias jah realizadas, pois
+/*				// Para ficar mais correto, a query abaixo deveria abater transferencias jah realizadas, pois
 				// como estah permite fazer a transferencia mais de uma vez.
 				_sQuery := ""
 				_sQuery += " SELECT ISNULL (SUM (E5_VALOR), 0)"
@@ -1828,11 +1831,67 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_sQuery +=    " AND SA6.D_E_L_E_T_  = ''"
 				_sQuery +=    " AND SA6.A6_FILIAL   = '" + ::FilOrig + "'"
 				_sQuery +=    " AND SA6.A6_CONTA    = '101010201099'"  // Conta transitoria entre filiais na contabilidade.
-				//u_log (_squery)
-				_nBxTrans = U_RetSQL (_sQuery)
-				if ::Valor > _nBxTrans
-					_Super:SomaMsg ("Inclusao de transferencia de compra de safra de outra filial: o valor esta limitado a R$ " + alltrim (transform (_nBxTrans, "@E 999,999,999.99")) + " (total baixado via conta transitoria na filial de origem nesta data).")
+*/
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT ISNULL (SUM (E5_VALOR), 0) AS VLR_BAIXA"
+				_oSQL:_sQuery +=       ", ISNULL ((SELECT STRING_AGG (SZI_DEST.ZI_FILIAL, ',')"
+				_oSQL:_sQuery +=                   " FROM " + RetSQLName ("SZI") + " SZI_DEST "
+				_oSQL:_sQuery +=                  " WHERE SZI_DEST.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=                    " AND SZI_DEST.ZI_FILIAL != '" + ::FilOrig + "'"
+				_oSQL:_sQuery +=                    " AND SZI_DEST.ZI_ASSOC   = '" + ::Assoc + "'"
+				_oSQL:_sQuery +=                    " AND SZI_DEST.ZI_LOJASSO = '" + ::Loja + "'"
+				_oSQL:_sQuery +=                    " AND SZI_DEST.ZI_SEQORIG = '" + ::SeqOrig + "')"
+//				_oSQL:_sQuery +=                    " AND SZI_DEST.ZI_SEQ = '" + 'CampoAindaNaoCriado' + "')"
+				_oSQL:_sQuery +=                 ", '') AS REG_DEST"
+				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE5") + " SE5, "
+				_oSQL:_sQuery +=              RetSQLName ("SA6") + " SA6, "
+				_oSQL:_sQuery +=              RetSQLName ("SZI") + " SZI_ORIG "
+
+				// Encontra o lcto na cta.corrente na filial de origem.
+				_oSQL:_sQuery +=  " WHERE SZI_ORIG.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=    " AND SZI_ORIG.ZI_FILIAL  = '" + ::FilOrig + "'"
+				_oSQL:_sQuery +=    " AND SZI_ORIG.ZI_ASSOC   = '" + ::Assoc + "'"
+				_oSQL:_sQuery +=    " AND SZI_ORIG.ZI_LOJASSO = '" + ::Loja + "'"
+				_oSQL:_sQuery +=    " AND SZI_ORIG.ZI_SEQ     = '" + ::SeqOrig + "'"
+
+				// Encontra a baixa
+				_oSQL:_sQuery +=    " AND SE5.D_E_L_E_T_  = ''"
+				_oSQL:_sQuery +=    " AND SE5.E5_FILIAL   = SZI_ORIG.ZI_FILIAL"
+				_oSQL:_sQuery +=    " AND SE5.E5_CLIFOR   = SZI_ORIG.ZI_ASSOC"
+				_oSQL:_sQuery +=    " AND SE5.E5_LOJA     = SZI_ORIG.ZI_LOJASSO"
+				_oSQL:_sQuery +=    " AND SE5.E5_NUMERO   = SZI_ORIG.ZI_DOC"
+				_oSQL:_sQuery +=    " AND SE5.E5_PREFIXO  = SZI_ORIG.ZI_SERIE"
+				_oSQL:_sQuery +=    " AND SE5.E5_PARCELA  = SZI_ORIG.ZI_PARCELA"
+				_oSQL:_sQuery +=    " AND SE5.E5_SITUACA != 'C'"
+				_oSQL:_sQuery +=    " AND SE5.E5_FILORIG  = SZI_ORIG.ZI_FILIAL"
+				_oSQL:_sQuery +=    " AND SE5.E5_DATA    <= '" + dtos (::DtMovto) + "'"
+
+				// A baixa deve ser feita usando conta transitoria entre filiais.
+				_oSQL:_sQuery +=    " AND SA6.D_E_L_E_T_  = ''"
+				_oSQL:_sQuery +=    " AND SA6.A6_FILIAL   = SE5.E5_FILORIG"
+				_oSQL:_sQuery +=    " AND SA6.A6_COD      = SE5.E5_BANCO"
+				_oSQL:_sQuery +=    " AND SA6.A6_AGENCIA  = SE5.E5_AGENCIA"
+				_oSQL:_sQuery +=    " AND SA6.A6_NUMCON   = SE5.E5_CONTA"
+				_oSQL:_sQuery +=    " AND SA6.A6_CONTA    = '101010201099'"  // Conta transitoria entre filiais na contabilidade.
+				_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+
+				_aRetQryTr := aclone (_oSQL:Qry2Array (.f., .f.))
+				if len (_aRetQryTr) != 1
+					_Super:SomaMsg ("Problemas para verificar baixa original. Transferencia nao vai ser efetivada.")
 					_lContinua = .F.
+				endif
+				if _lContinua .and. ! empty (_aRetQryTr [1, 2])
+					_Super:SomaMsg ("Transferencia nao vai ser efetivada, pois encontrei-a ja recebida na(s) filial(is). " + _aRetQryTr [1, 2])
+					_lContinua = .F.
+				endif
+				if _lContinua
+					_nBxTrans = _aRetQryTr [1, 1]
+					if ::Valor > _nBxTrans
+						U_Log2 ('aviso', '[' + procname () + ']' + _sQuery)
+						_Super:SomaMsg ("Inclusao de transferencia de compra de safra de outra filial: o valor esta limitado a R$ " + alltrim (transform (_nBxTrans, "@E 999,999,999.99")) + " (total baixado via conta transitoria na filial de origem nesta data).")
+						_lContinua = .F.
+					endif
 				endif
 			endif
 		endif

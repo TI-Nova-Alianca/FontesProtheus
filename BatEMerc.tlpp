@@ -14,68 +14,101 @@
 
 // Historico de alteracoes:
 // 05/06/2022 - Robert - Adicionados logs para monitoramento.
+// 08/01/2024 - Robert - Melhorados logs (a cada 100 registros).
 //
 
 // --------------------------------------------------------------------------
 user function BatEMerc (_sAlias)
+	local _nQtAExp  := 0
+	local _nQtFeito := 0
 
 	if empty (_sAlias) .or. _sAlias == 'DA0'
 		U_Log2 ('info', '[' + procname () + ']Exportando DA0 completo (DA1 vai no pacote)')
+		dbselectarea ("DA0")
+		count to _nQtAExp
 		da0 -> (dbsetorder (1))
 		da0 -> (dbgotop ())
 		do while ! da0 -> (eof ())
 			U_AtuMerc ("DA0", da0 -> (recno ()))
 			da0 -> (dbskip ())
+			if ++_nQtFeito % 100 == 0
+				u_log2 ('info', '[' + cvaltochar (_nQtFeito) + ' de ' + cvaltochar (_nQtAExp) + ']registros exportados.')
+			endif
 		enddo
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SB1'
 		U_Log2 ('info', '[' + procname () + ']Exportando SB1 completo')
+		dbselectarea ("SB1")
+		count to _nQtAExp
 		sb1 -> (dbsetorder (1))
 		sb1 -> (dbgotop ())
 		do while ! sb1 -> (eof ())
 			U_AtuMerc ("SB1", sb1 -> (recno ()))
 			sb1 -> (dbskip ())
+			if ++_nQtFeito % 100 == 0
+				u_log2 ('info', '[' + cvaltochar (_nQtFeito) + ' de ' + cvaltochar (_nQtAExp) + ']registros exportados.')
+			endif
 		enddo
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SA1'
 		U_Log2 ('info', '[' + procname () + ']Exportando SA1 completo')
+		dbselectarea ("SA1")
+		count to _nQtAExp
 		sa1 -> (dbsetorder (1))
 		sa1 -> (dbgotop ())
 		do while ! sa1 -> (eof ())
 			U_AtuMerc ("SA1", sa1 -> (recno ()))
 			sa1 -> (dbskip ())
+			if ++_nQtFeito % 100 == 0
+				u_log2 ('info', '[' + cvaltochar (_nQtFeito) + ' de ' + cvaltochar (_nQtAExp) + ']registros exportados.')
+			endif
 		enddo
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SA3'
 		U_Log2 ('info', '[' + procname () + ']Exportando SA3 completo')
+		dbselectarea ("SA3")
+		count to _nQtAExp
 		sa3 -> (dbsetorder (1))
 		sa3 -> (dbgotop ())
 		do while ! sa3 -> (eof ())
 			U_AtuMerc ("SA3", sa3 -> (recno ()))
 			sa3 -> (dbskip ())
+			if ++_nQtFeito % 100 == 0
+				u_log2 ('info', '[' + cvaltochar (_nQtFeito) + ' de ' + cvaltochar (_nQtAExp) + ']registros exportados.')
+			endif
 		enddo
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SE4'
 		U_Log2 ('info', '[' + procname () + ']Exportando SE4 completo')
+		dbselectarea ("SE4")
+		count to _nQtAExp
 		se4 -> (dbsetorder (1))
 		se4 -> (dbgotop ())
 		do while ! se4 -> (eof ())
 			U_AtuMerc ("SE4", se4 -> (recno ()))
 			se4 -> (dbskip ())
+			if ++_nQtFeito % 100 == 0
+				u_log2 ('info', '[' + cvaltochar (_nQtFeito) + ' de ' + cvaltochar (_nQtAExp) + ']registros exportados.')
+			endif
 		enddo
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SF4'
 		U_Log2 ('info', '[' + procname () + ']Exportando SF4 completo')
+		dbselectarea ("SF4")
+		count to _nQtAExp
 		sf4 -> (dbsetorder (1))
 		sf4 -> (dbgotop ())
 		do while ! sf4 -> (eof ())
 			U_AtuMerc ("SF4", sf4 -> (recno ()))
 			sf4 -> (dbskip ())
+			if ++_nQtFeito % 100 == 0
+				u_log2 ('info', '[' + cvaltochar (_nQtFeito) + ' de ' + cvaltochar (_nQtAExp) + ']registros exportados.')
+			endif
 		enddo
 	endif
 

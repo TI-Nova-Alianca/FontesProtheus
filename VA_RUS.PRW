@@ -244,10 +244,20 @@ user function VA_RUSOO (_sQueFazer)
 		U_VA_RUSN (.F.)
 
 	case _sQueFazer == upper ('EnderecarEstoque')
-		MsgRun ("Aguarde, gerando enderecamento", "Enderecamento", {|| _oCarSaf:EnderEstq ('I')})
+		//MsgRun ("Aguarde, gerando enderecamento", "Enderecamento", {|| _oCarSaf:EnderEstq ('I')})
+		if ! _oCarSaf:EnderEstq ('I')
+			u_help (_oCarSaf:UltMsg,, .t.)
+		else
+			u_help ("Processo concluido.")
+		endif
 
 	case _sQueFazer == upper ('EstornarEnderecamento')
-		MsgRun ("Aguarde, estornando enderecamento", "Estorno enderecamento", {|| _oCarSaf:EnderEstq ('E')})
+//		MsgRun ("Aguarde, estornando enderecamento", "Estorno enderecamento", {|| _oCarSaf:EnderEstq ('E')})
+		if ! _oCarSaf:EnderEstq ('E')
+			u_help (_oCarSaf:UltMsg,, .t.)
+		else
+			u_help ("Processo concluido.")
+		endif
 
 	case _sQueFazer == upper ('SimularContranota')
 		U_VA_RUSN (.T.)

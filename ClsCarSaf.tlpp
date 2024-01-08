@@ -469,7 +469,8 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 		_oSQL:Log ()
 		_aRegSDA = _oSQL:Qry2Array (.F., .F.)
 		if len (_aRegSDA) == 0
-			u_help ("Nao encontrei enderecamento para estornar.")
+			_Super:SomaMsg ("Nao encontrei enderecamento para estornar.")
+			_lContinua = .F.
 		else
 
 			U_Log2 ('debug', _aRegSDA)
@@ -498,19 +499,20 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 			lMsErroAuto := .F.
 			MSExecAuto({|x,y,z| mata265(x,y,z)}, _aAutoSDA, _aAutoSDB, 4)
 			If lMsErroAuto
-				_lContinua = .F.
 				u_log2 ('erro', 'lMsErroAuto')
 				if ! empty (NomeAutoLog ())
 					u_log2 ('erro', memoread (NomeAutoLog ()))
-					MostraErro()
+//					MostraErro()
+					_Super:SomaMsg (U_LeErro (memoread (NomeAutoLog ())))
 				else
-					u_help ("Nao foi possivel ler o arquivo de log de erros da rotina de enderecamento de uva no estoque.",, .t.)
+					_Super:SomaMsg ("Nao foi possivel ler o arquivo de log de erros da rotina de enderecamento de uva no estoque.",, .t.)
 				endif
+				_lContinua = .F.
 			else
 				U_Log2 ('debug', '[' + procname () + ']MATA265 retornou OK')
 			endif
-
 		endif
+
 	elseif _sQueFazer == 'I'  // Incluir
 
 		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Iniciando enderecamento docto ' + ::Contranota)
@@ -553,7 +555,8 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 		_oSQL:Log ()
 		_aRegSDA = _oSQL:Qry2Array (.F., .F.)
 		if len (_aRegSDA) == 0
-			u_help ("Nenhum produto com saldo a enderecar para esta carga/contranota.")
+			_Super:SomaMsg ("Nenhum produto com saldo a enderecar para esta carga/contranota.")
+			_lContinua = .F.
 		endif
 		_sItemSDB = Soma1 (_aRegSDA [1, 2])
 		for _nRegSDA = 1 to len (_aRegSDA)
@@ -567,7 +570,6 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 
 			_aAutoSDB = {}
 			_aLinhaSDB = {}
-		//	aadd (_aLinhaSDB, {"DB_ITEM", '0001', nil})
 			aadd (_aLinhaSDB, {"DB_ITEM", _sItemSDB, nil})
 			if ::Filial == '01'
 				aadd (_aLinhaSDB, {"DB_LOCALIZ", 'T01PCP03       ', nil})
@@ -586,19 +588,21 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 			lMsErroAuto := .F.
 			MSExecAuto({|x,y,z| mata265(x,y,z)}, _aAutoSDA, _aAutoSDB, 3)
 			If lMsErroAuto
-				_lContinua = .F.
 				u_log2 ('erro', 'lMsErroAuto')
 				if ! empty (NomeAutoLog ())
 					u_log2 ('erro', memoread (NomeAutoLog ()))
-					MostraErro()
+				//	MostraErro()
+					_Super:SomaMsg (U_LeErro (memoread (NomeAutoLog ())))
 				else
-					u_help ("Nao foi possivel ler o arquivo de log de erros da rotina de enderecamento de uva no estoque.",, .t.)
+					_Super:SomaMsg ("Nao foi possivel ler o arquivo de log de erros da rotina de enderecamento de uva no estoque.")
 				endif
+				_lContinua = .F.
 			endif
 			_sItemSDB = soma1 (_sItemSDB)
 		next
 	else
-		u_help ('Sem tratamento para acao ' + _sQueFazer,, .t.)
+		_Super:SomaMsg ('Sem tratamento para acao ' + _sQueFazer)
+		_lContinua = .F.
 	endif
 
 	U_SalvaAmb (_aAmbAnt)
