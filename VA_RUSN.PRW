@@ -557,7 +557,7 @@ User Function va_rusN (_lSimulNF)
 			AADD(_aLinha , {"D1_VACONDU" , szf -> zf_conduc   , Nil } )
 			AADD(_aLinha , {"D1_DESPESA" , szf -> zf_valfret  , Nil } )
 			
-			u_log2 ('info', _aLinha)
+//			u_log2 ('info', _aLinha)
 			_sErroAuto = ''  // A funcao OrdAuto tambem faz algumas validacoes
 			AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
 			if ! empty (_sErroAuto)

@@ -1842,7 +1842,6 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_oSQL:_sQuery +=                    " AND SZI_DEST.ZI_ASSOC   = '" + ::Assoc + "'"
 				_oSQL:_sQuery +=                    " AND SZI_DEST.ZI_LOJASSO = '" + ::Loja + "'"
 				_oSQL:_sQuery +=                    " AND SZI_DEST.ZI_SEQORIG = '" + ::SeqOrig + "')"
-//				_oSQL:_sQuery +=                    " AND SZI_DEST.ZI_SEQ = '" + 'CampoAindaNaoCriado' + "')"
 				_oSQL:_sQuery +=                 ", '') AS REG_DEST"
 				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE5") + " SE5, "
 				_oSQL:_sQuery +=              RetSQLName ("SA6") + " SA6, "

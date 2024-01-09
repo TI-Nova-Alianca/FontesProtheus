@@ -113,6 +113,9 @@ ENDCLASS
 METHOD New (_xChvCar) Class ClsCarSaf
 	local _aAreaAnt := U_ML_SRArea ()
 
+	// Defaults (estou pensando em puxar todos do metodo GeraAtrib para ca.
+	::PortImpTk   = ''
+
 	// Alimenta atributos com valores default de uma carga nova.
 	::GeraAtrib ("")
 
@@ -777,7 +780,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::NomeFornec  = ''
 	::PesoBruto   = 0
 	::PesoTara    = 0
-	::PortImpTk   = ''
+	// migrado para o metoto NEW ---> ::PortImpTk   = ''
 	::TipoPrecoParaNF   = ''
 	::RecebeOrg   = ''
 	::RecebeVini  = ''
@@ -1085,6 +1088,7 @@ METHOD ImprimeTk (_nQualTk as numeric) Class ClsCarSaf
 	local _nQtVias := 0
 	local _lRet    := .T.
 
+	U_Log2 ('debug', '[' + procname () + ']iniciando...' + cvaltochar (_nQualTk))
 	if _lRet .and. empty (_nQualTk)
 		_Super:SomaMsg ("Para impressao de ticket deve ser informado se deseja 1a. ou 2a. pesagem.")
 		_lRet  = .F.
@@ -1108,7 +1112,7 @@ METHOD ImprimeTk (_nQualTk as numeric) Class ClsCarSaf
 		else
 			_nQtVias := iif (_nQualTk == 1, 1, 2)
 		endif
-
+		U_Log2 ('debug', '[' + procname () + ']vou chamar U_VA_RusTk')
 		U_VA_RusTk (_nQualTk, ::PortImpTk, _nQtVias, {}, 'bematech', .t.)
 	endif
 return _lRet
@@ -1123,6 +1127,7 @@ METHOD Log () Class ClsCarSaf
 	_sLogCar += '  Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + ' Status: ' + ::StatusCar + chr (13) + chr (10)
 	_sLogCar += '  Peso bruto: ' + cvaltochar (::PesoBruto) + ' Peso tara: ' + cvaltochar (::PesoTara) + chr (13) + chr (10)
 	_sLogCar += '  Fornecedor: ' + ::Fornece + '/' + ::Loja + ' - ' + ::NomeFornec + chr (13) + chr (10)
+	_sLogCar += '  Porta ticket: ' + cvaltochar (::PortImpTk) + chr (13) + chr (10)
 	for _nItCarga = 1 to len (::ItItem)
 		_sLogCar += '    It.' + ::ItItem [_nItCarga] + ': '
 		_sLogCar += U_TamFixo (::ItProduto [_nItCarga], 7, ' ')  // Se criarem itens maiores, ajustar aqui

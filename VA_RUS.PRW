@@ -227,6 +227,8 @@ user function VA_RUSOO (_sQueFazer)
 
 	// Deixa atributos alimentados no objeto, por que a maioria das rotinas vai precisar.
 	_oCarSaf:GeraAtrib ("SZE")
+	U_Log2 ('debug', '[' + procname () + ']carga instanciada:')
+	_oCarSaf:Log ()
 
 	do case
 	case _sQueFazer == upper ('Tk1Pes')  // Sim, a chamada pelo menu parece passar tudo em maiusculas.
@@ -235,7 +237,6 @@ user function VA_RUSOO (_sQueFazer)
 		endif
 
 	case _sQueFazer == upper ('Tk2Pes')
-		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
 		if ! _oCarSaf:ImprimeTk (2)
 			u_help (_oCarSaf:UltMsg,, .t.)
 		endif

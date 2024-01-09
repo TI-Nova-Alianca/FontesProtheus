@@ -63,7 +63,7 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	U_MudaLog (procname () + "_" + _sQueFazer + ".log")
 
 	// Procura cargas sem contranota.
-	if _sQueFazer == 'CargasSemContranota'  //'1'
+	if _sQueFazer == 'CargasSemContranota'
 		_aSemNota = {}
 		dbselectarea ("SZE")
 		set filter to &('ZE_FILIAL=="' + xFilial("SZE") + '".And.ze_safra=="'+cvaltochar (year (date ()))+'".and.ze_coop$"000021".and.empty(ze_nfger).and.dtos(ze_data)<"' + dtos (ddatabase) + '".and.ze_aglutin!="O".and.!ze_status$"C/D"')
@@ -107,7 +107,7 @@ user function BatSafr (_sQueFazer, _lAjustar)
 		_ConfParc (_lAjustar)
 
 	// Verifica contranotas "sem carga". Isso indica possivel problema nas amarracoes entre tabelas.
-	elseif _sQueFazer == 'ContranotasSemCarga'  //'4'
+	elseif _sQueFazer == 'ContranotasSemCarga'
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT DISTINCT 'Filial:' + FILIAL + ' Assoc:' + ASSOCIADO + '-' + RTRIM (NOME_ASSOC) + ' Contranota:' + DOC"
@@ -160,6 +160,10 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	elseif _sQueFazer == 'TransfSZIParaMatriz' //'8'
 		_TrSZIMat ()
 
+	// Confere alguns cadastros basicos
+	elseif _sQueFazer == 'ConfCadastros'
+		_ConfCadas ()
+
 	else
 		u_help ("Sem definicao para o que fazer quando parametro = '" + _sQueFazer + "'.",, .T.)
 		//_oBatch:Retorno += "Sem definicao para verificacao '" + _sQueFazer + "'."
@@ -175,6 +179,90 @@ return .T.
 
 
 
+// Conferencia de alguns cadastros basicos
+// --------------------------------------------------------------------------
+static function _ConfCadas ()
+	local _oSQL     := NIL
+	local _aFornece := {}
+	local _nFornece := 0
+//	local _sForNCad := ''
+//	local _sPrdNCad := ''
+	local _oAviso   := NIL
+	local _aProdut  := {}
+	local _nProdut  := 0
+	local _sMsg     := ''
+
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT distinct GX0001_ASSOCIADO_CODIGO, GX0001_ASSOCIADO_LOJA"
+	_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA"
+	_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_RESTRICAO = ''"
+	_oSQL:_sQuery += " ORDER BY GX0001_ASSOCIADO_CODIGO, GX0001_ASSOCIADO_LOJA"
+	_oSQL:Log ('[' + procname () + ']')
+	_aFornece = aclone (_oSQL:Qry2Array (.f., .f.))
+	sa2 -> (dbsetorder (1))
+	for _nFornece = 1 to len (_aFornece)
+		if ! sa2 -> (dbseek (xfilial ("SA2") + _aFornece [_nFornece, 1] + _aFornece [_nFornece, 2], .f.))
+			_sMsg += 'Fornecedor ' + _aFornece [_nFornece, 1] + '/' + _aFornece [_nFornece, 2] + ' nao localizado <br>'
+		else
+			if sa2 -> a2_tipo == 'F'
+				if len (alltrim (sa2 -> a2_cgc)) != 11
+					_sMsg += 'Fornecedor ' + _aFornece [_nFornece, 1] + '/' + _aFornece [_nFornece, 2] + ": CPF com tamanho invalido <br>"
+				endif
+			elseif sa2 -> a2_tipo == 'J'
+				if len (alltrim (sa2 -> a2_cgc)) != 14
+					_sMsg += 'Fornecedor ' + _aFornece [_nFornece, 1] + '/' + _aFornece [_nFornece, 2] + ": CNPJ com tamanho invalido <br>"
+				endif
+			endif
+			if sa2 -> a2_tiporur != 'F'
+				_sMsg += 'Fornecedor ' + _aFornece [_nFornece, 1] + '/' + _aFornece [_nFornece, 2] + ': Campo A2_TIPORUR deveria conter F <br>'
+			endif
+			if sa2 -> a2_tpessoa != 'PF'
+				_sMsg += 'Fornecedor ' + _aFornece [_nFornece, 1] + '/' + _aFornece [_nFornece, 2] + ': Campo A2_TPESSOA deveria conter PF <br>'
+			endif
+			if sa2 -> a2_recinss != 'S'
+				_sMsg += 'Fornecedor ' + _aFornece [_nFornece, 1] + '/' + _aFornece [_nFornece, 2] + ': Campo A2_RECINSS deveria conter S <br>'
+			endif
+		endif
+	next
+
+	// Conferencia produtos
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT B1_COD"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND B1_FILIAL  = '" + xfilial ("SB1") + "'"
+	_oSQL:_sQuery +=   " AND B1_GRUPO   = '0400'"
+	_oSQL:_sQuery += " ORDER BY B1_COD"
+	_oSQL:Log ('[' + procname () + ']')
+	_aProdut = aclone (_oSQL:Qry2Array (.f., .f.))
+	sa2 -> (dbsetorder (1))
+	for _nProdut = 1 to len (_aProdut)
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _aProdut [_nProdut, 1], .f.))
+			_sPrdNCad += 'Produto ' + _aProdut [_nProdut, 1] + ' nao cadastrado <br>'
+		else
+			if sb1 -> b1_inss != 'S'
+				_sMsg += 'Produto ' + _aProdut [_nProdut, 1] + ': Campo B1_INSS deveria conter S <br>'
+			endif
+		endif
+	next
+
+	if ! empty (_sMsg)
+		_oAviso := ClsAviso():new ()
+		_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
+		_oAviso:Titulo     = "Inconsist.cadastro p/safra"
+		_oAviso:Texto      = _sMsg
+		_oAviso:DestinZZU  = {'122', '019'}  // 122 = grupo da TI
+		_oAviso:Origem     = procname ()
+		_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
+		_oAviso:Grava ()
+	endif
+
+return
+
+
+// Conferencia frete
 // --------------------------------------------------------------------------
 static function _ConfFrt ()
 	local _oSQL      := NIL
