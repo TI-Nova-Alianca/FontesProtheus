@@ -104,7 +104,7 @@ user function robert ()
 		// _sFuncao += '_BatLimp ()'
 		// _sFuncao += '_BatMerc ()'
 		// _sFuncao += '_BatOcor ()'
-		_sFuncao += '_BatSafr ()'
+		// _sFuncao += '_BatSafr ()'
 		// _sFuncao += '_BatTrSZI ()'
 		// _sFuncao += '_BatXML ()'
 		// _sFuncao += '_batZBE ()'
@@ -1191,15 +1191,15 @@ return
 // Testes correcao monetaria associados
 static function _CorrMonSZI ()
 	U_GravaSX1 ("SZI_CM2", '01', 2)  // Calcular / Descalcular {"Calcular", "Descalcular"}
-	U_GravaSX1 ("SZI_CM2", '02', '10/2023')  // Mes/ano de referencia (MMAAAA)
-	U_GravaSX1 ("SZI_CM2", '03', 0.066)  // Taxa % correcao
-	U_GravaSX1 ("SZI_CM2", '04', '000161')  // Associado inicial
+	U_GravaSX1 ("SZI_CM2", '02', '07/2023')  // Mes/ano de referencia (MMAAAA)
+	U_GravaSX1 ("SZI_CM2", '03', 0.0667)  // Taxa % correcao
+	U_GravaSX1 ("SZI_CM2", '04', '000634')  // Associado inicial
 	U_GravaSX1 ("SZI_CM2", '05', '')  // Loja associado inicial
-	U_GravaSX1 ("SZI_CM2", '06', '000161')  // Associado final
+	U_GravaSX1 ("SZI_CM2", '06', '000634')  // Associado final
 	U_GravaSX1 ("SZI_CM2", '07', '01')  // Loja associado final
-	u_szi_cm2 (.t.)
-	U_GravaSX1 ("SZI_CM2", '01', 1)  // Calcular / Descalcular {"Calcular", "Descalcular"}
-	u_szi_cm2 (.t.)
+//	u_szi_cm2 (.t.)
+//	U_GravaSX1 ("SZI_CM2", '01', 1)  // Calcular / Descalcular {"Calcular", "Descalcular"}
+//	u_szi_cm2 (.t.)
 return
 
 
@@ -2336,7 +2336,7 @@ static function _CargSaf ()
 
 	sze -> (dbsetorder (1))
 	dbselectarea ("SZE")
-	set filter to ze_filial = cFilAnt .and. ze_safra = '2024' .and. !ze_status $ 'C/D' // .AND. ZE_CARGA $ '0655/0656/0952/0953'
+	set filter to ze_filial = cFilAnt .and. ze_safra = '2023' .and. !ze_status $ 'C/D' .AND. ZE_CARGA $ '0460/0461/0463'
 	sze -> (dbgotop ())
 	do while ! sze -> (eof ()) .and. _nContador++ <= 100
 		U_Log2 ('debug', '[' + procname () + ']' + sze -> ze_filial + ' ' + sze -> ze_safra + ' ' + sze -> ze_carga)
@@ -2366,7 +2366,7 @@ static function _CargSaf ()
 	//		U_Log2 ('erro', '[' + procname () + ']Diferenca!!! OLD:' + cvaltochar (_xOld) + ' NOVO: ' + cvaltochar (_xNovo))
 	//		_oCarSaf:Log ()
 	//	endif
-	// EXIT // DURANTE TESTES
+	EXIT // DURANTE TESTES
 
 		sze -> (dbskip ())
 	enddo

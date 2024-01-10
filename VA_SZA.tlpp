@@ -389,7 +389,7 @@ static function _GeraHTM (_sCodTab)
 				if empty (_sHTML)
 					u_help (_oTbUva:UltMsg,, .t.)
 				else
-					_sArq := 'c:\temp\TabUva_' + _sCodTab + '_' + _sTipoTab + _sVarUva + _sConduc + _sIntOuDec + '.htm'
+					_sArq := 'c:\temp\TabUva_' + alltrim (_sCodTab) + '_' + _sTipoTab + _sVarUva + _sConduc + _sIntOuDec + '.htm'
 					if file (_sArq)
 						delete file (_sArq)
 					endif

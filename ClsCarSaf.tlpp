@@ -80,7 +80,8 @@ CLASS ClsCarSaf from ClsBase
 	public  data SerieCtrn   // ze_serie
 	public  data StatusCar   // ze_status
 	public  data TabelaPreco // Codigo da tabela de precos a ser buscada no arquivo ZBI
-	public  data VariedadeMenorValor // Codigo da variedade de menor valor (em caso de mistura ou carga compartilhada)
+	public  data VariedadeMenorValorCodigo // Codigo da variedade de menor valor (em caso de mistura ou carga compartilhada)
+	public  data VariedadeMenorValorConducao // Forma de conducao da variedade de menor valor (em caso de mistura ou carga compartilhada)
 
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
@@ -791,7 +792,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::StatusCar   = ''
 	::TabelaPreco = ''
 	::UltMsg      = ''
-	::VariedadeMenorValor = ''
+	::VariedadeMenorValorCodigo = ''
+	::VariedadeMenorValorConducao = ''
 
 	do case
 	case _sOrigem == 'M'  // Variaveis M->  (preciso pegar os dados 'da tela')
@@ -971,8 +973,8 @@ METHOD BuscaGrupoPagto () Class ClsCarSaf
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
 	local _sRetGrpPg := ''
-	local _aVarMVal  := {}
 	local _sQualProdutoUsar := ''
+	local _sQualConducaoUsar := ''
 
 	// Grupo pagto.eh definido pela variedade de menor valor presente na carga.
 	if _lContinua .and. ! ::BuscaVarMenorVl ()
@@ -982,11 +984,13 @@ METHOD BuscaGrupoPagto () Class ClsCarSaf
 
 	if _lContinua
 		// Se houver uma variedade de menor valor, usa-a. Senao, usa o primeiro item da carga,
-		if ! empty (::VariedadeMenorValor)
-			_sQualProdutoUsar = ::VariedadeMenorValor
+		if ! empty (::VariedadeMenorValorCodigo)
+			_sQualProdutoUsar = ::VariedadeMenorValorCodigo
+			_sQualConducaoUsar = ::VariedadeMenorValorConducao
 			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou definir grupo para pagamento com base na variedade de menor valor: ' + _sQualProdutoUsar)
 		else
 			_sQualProdutoUsar = ::ItProduto [1]
+			_sQualConducaoUsar = ::ItConducao [1]
 			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou definir grupo para pagamento com base no primeiro item da carga: ' + _sQualProdutoUsar)
 		endif
 
@@ -1011,12 +1015,12 @@ METHOD BuscaGrupoPagto () Class ClsCarSaf
 				elseif sb1 -> b1_vattr == 'S'  // Tintorias
 					_sRetGrpPg = 'B'
 				elseif sb1 -> b1_varuva == 'F'
-					if _aVarMVal [3] == 'E'  // Viniferas em espaldeira
+					if _sQualConducaoUsar == 'E'  // Viniferas em espaldeira
 						_sRetGrpPg = 'B'
-					elseif _aVarMVal [3] == 'L'
+					elseif _sQualConducaoUsar == 'L'
 						_sRetGrpPg = 'C'
 					else
-						_Super:SomaMsg ("Sistema de conducao '" + _aVarMVal [3] + "' invalido.")
+						_Super:SomaMsg ("Sistema de conducao '" + _sQualConducaoUsar + "' invalido.")
 						_lContinua = .F.
 					endif
 				else
@@ -1034,12 +1038,12 @@ METHOD BuscaGrupoPagto () Class ClsCarSaf
 				elseif sb1 -> b1_vattr == 'S'  // Tintorias
 					_sRetGrpPg = 'B'
 				elseif sb1 -> b1_varuva == 'F'
-					if _aVarMVal [3] == 'E'  // Viniferas em espaldeira
+					if _sQualConducaoUsar == 'E'
 						_sRetGrpPg = 'B'
-					elseif _aVarMVal [3] == 'L'
+					elseif _sQualConducaoUsar == 'L'
 						_sRetGrpPg = 'C'
 					else
-						_Super:SomaMsg ("Sistema de conducao '" + _aVarMVal [3] + "' invalido.")
+						_Super:SomaMsg ("Sistema de conducao '" + _sQualConducaoUsar + "' invalido.")
 						_lContinua = .F.
 					endif
 				else
@@ -1148,7 +1152,7 @@ METHOD Log () Class ClsCarSaf
 		_sLogCar += ' Obs: ' + ::ItObs [_nItCarga]
 		_sLogCar += chr (13) + chr (10)
 	next
-	_sLogCar += '  Varied.menor valor: ' + ::VariedadeMenorValor + chr (13) + chr (10)
+	_sLogCar += '  Varied.menor valor: ' + ::VariedadeMenorValorCodigo + ' cond: ' + ::VariedadeMenorValorConducao + chr (13) + chr (10)
 	_sLogCar += '  Grupo pagto: ' + ::GrupoPagamento + chr (13) + chr (10)
 	if ! empty (::UltMsg)
 		_sLogCar += '  Ult.msg: ' + ::UltMsg + chr (13) + chr (10)
@@ -1156,9 +1160,9 @@ METHOD Log () Class ClsCarSaf
 	if len (::CCompart) > 0
 		_sLogCar += '  ' + ::ConsCompar ()
 	endif
-	U_Log2 ('info', '------Inicio carga safra-----------------------------------------')
+	U_Log2 ('info', 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv')
 	U_Log2 ('info', _sLogCar)
-	U_Log2 ('info', '------Fim carga safra--------------------------------------------')
+	U_Log2 ('info', '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
 return _sLogCar
 
 
@@ -1208,7 +1212,8 @@ METHOD Precifica (_sQualPreco as character) class ClsCarSaf
 	local _lUsarPrecoDS  := .F.
 	local _oSQL          := NIL
 	local _sProdutoAUsar := ''
-	local _sClasFina := ''
+	local _sClasFina     := ''
+	local _sMenorVlr     := ''
 
 	if ! _sQualPreco $ 'Base/ParaNF'
 		_Super:SomaMsg ("Sem tratamento para precificar '" + _sQualPreco + "'")
@@ -1259,7 +1264,11 @@ METHOD Precifica (_sQualPreco as character) class ClsCarSaf
 				if _sQualPreco == 'Base'
 					::ItPrcBase [_nIdxItem]   = U_PrcUva23 (::Filial, ::ItProduto [_nIdxItem], 15.0, 'B', ::ItConducao [_nIdxItem], .F., .T.)[::TipoPrecoParaNF]  // pos.5 = preco MOC
 				elseif _sQualPreco == 'ParaNF'
-					::ItPrcParaNF [_nIdxItem] = U_PrcUva23 (::Filial, iif (! empty (_sMenorVlr), _sMenorVlr, ::ItProduto [_nIdxItem]), val (::ItGrau [_nIdxItem]), _sClasFina, ::ItConducao [_nIdxItem], .F., .T.)[::TipoPrecoParaNF]  // pos.5 = preco MOC
+					if ! ::BuscaVarMenorVl ()
+						_Super:SomaMsg ("Problemas ao buscar variedade de menor valor.")
+					else
+						::ItPrcParaNF [_nIdxItem] = U_PrcUva23 (::Filial, iif (! empty (::VariedadeMenorValorCodigo), ::VariedadeMenorValorCodigo, ::ItProduto [_nIdxItem]), val (::ItGrau [_nIdxItem]), _sClasFina, ::ItConducao [_nIdxItem], .F., .T.)[::TipoPrecoParaNF]  // pos.5 = preco MOC
+					endif
 				endif
 			
 			// A partir deste ano pretendo ter os valores prontos na tabela ZBI.
@@ -1717,10 +1726,6 @@ return _sLista
 // A lista de 'variedades envolvidas' considera, tambem, cargas compartilhadas.
 // O parametro 'qual preco' deve manter compatibilidade com a funcao de calculo
 // de precos da safra em questao.
-// Retorno: array de 3 posicoes, ordenada pelo preco (1a.posicao=variedade de menor valor)
-// 1 - Codigo variedade
-// 2 - Preco unitario
-// 3 - Forma de conducao [E]spaldeira,[L]atada
 METHOD BuscaVarMenorVl () class ClsCarSaf
 	local _lContinua := .T.
 	local _aProdut   := {}
@@ -1746,8 +1751,8 @@ METHOD BuscaVarMenorVl () class ClsCarSaf
 		// Se for a carga atual, leio seus atributos (pode ainda nao estar gravada)
 		if _aTodasCar [_nTodasCar] == ::Carga
 			if ::Precifica ('Base')
-				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Depois de precificar a carga original:')
-				::Log ()
+//				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Depois de precificar a carga original:')
+//				::Log ()
 				for _nProdut = 1 to len (::ItItem)
 					if ascan (_aProdut, {|_aVal| _aVal [1] == ::ItProduto [_nProdut] .and. _aVal [3] == ::ItConducao [_nProdut]}) == 0
 						aadd (_aProdut, {::ItProduto [_nProdut], ::ItPrcBase [_nProdut], ::ItConducao [_nProdut]})
@@ -1764,8 +1769,8 @@ METHOD BuscaVarMenorVl () class ClsCarSaf
 				_lContinua = .F.
 			else
 				if _oCarAux:Precifica ('Base')
-					U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Depois de precificar a carga auxiliar:')
-					_oCarAux:Log ()
+//					U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Depois de precificar a carga auxiliar:')
+//					_oCarAux:Log ()
 					for _nProdut = 1 to len (_oCarAux:ItItem)
 						if ascan (_aProdut, {|_aVal| _aVal [1] == _oCarAux:ItProduto [_nProdut] .and. _aVal [3] == _oCarAux:ItConducao [_nProdut]}) == 0
 							aadd (_aProdut, {_oCarAux:ItProduto [_nProdut], _oCarAux:ItPrcBase [_nProdut], _oCarAux:ItConducao [_nProdut]})
@@ -1815,7 +1820,8 @@ METHOD BuscaVarMenorVl () class ClsCarSaf
 	// Se cheguei aqui com mais de um produto, significa que ha, de fato,
 	// uma variedade 'de menor valor'.
 	if _lContinua .and. len (_aProdut) > 1
-		::VariedadeMenorValor = _aProdut [1, 1]
+		::VariedadeMenorValorCodigo   = _aProdut [1, 1]
+		::VariedadeMenorValorConducao = _aProdut [1, 3]
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
