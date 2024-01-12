@@ -439,7 +439,7 @@ static function _DumpJSON (_oObjJS)
 					aadd (_aRet, "Vetor[")
 					for _j := 1 to len(_oItemJS)
 						aadd (_aRet, "Indice " + cValtochar(_j))
-						_DumpJSON (_oItemJS[j])
+						_DumpJSON (_oItemJS[_j])
 					next _j
 					aadd (_aRet, "]Vetor")
 				endif

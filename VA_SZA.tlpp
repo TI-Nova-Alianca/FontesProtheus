@@ -1,0 +1,569 @@
+// Programa...: VA_SZA
+// Autor......: Robert Koch
+// Data.......: 17/01/2009
+// Descricao..: Tela de manutencao de listas de precos de uva para a safra.
+//
+// Historico de alteracoes:
+// 27/03/2009 - Robert - Verifica se estah rodando em TOP ou nao.
+// 05/11/2009 - Robert - Nao executa se nao estiver rodando em TOP.
+// 16/07/2010 - Robert - Importa precos de uma tabela para outra.
+// 06/01/2011 - Robert - Verifica existencia da tabela no SZ7 antes de excluir.
+// 08/07/2017 - Robert - Implementada replicacao da tabela BASE<ano> para a tabela atual.
+// 23/11/2018 - Robert - A partir de 2019 nao pretendo mais usar a tabela SZ7.
+// 21/03/2020 - Robert - Nao verifica mais tabela SZ7 para nenhum caso.
+// 31/12/2023 - Robert - Rotina desenterrada dos escombros. Criada diferenciacao de modelos 1, 2 e 3
+//                     - Implementada copia de dados entre tabelas (modelo 3)
+//                     - Migrada da extensao .PRW para .TLPP
+//                     - Implementada geracao da tabela ZBI
+//
+
+//#include "rwmake.ch"
+#include "protheus.ch"
+#include "VA_INCLU.prw"
+
+// --------------------------------------------------------------------------
+User Function va_sza()
+//	local   _nOpcao    := 0
+	local   _sFilTop   := ''
+	private aRotina    := {}
+	private _nModelTab := 0
+	private cCadastro  := "Tabelas de precos uvas safras"
+
+	// Verifica se o usuario tem liberacao para uso desta rotina.
+	if ! U_ZZUVL ('051', __cUserID, .T.)
+		return
+	endif
+
+	_nModelTab = aviso ("Modelo de tabela", ;
+		"As tabelas de precos de uva foram sendo aprimoradas ao longo do tempo e, por isso, nao ha compatibilidade entre todas.", ;
+		{"Versao 1", "Versao 2", "Versao 3"}, 3, "Selecione modelo de tabela de precos")
+	
+	do case
+	
+	// Modelo SZA X SZ1
+	case _nModelTab == 1
+		aadd (aRotina, {"&Pesquisar"        , "AxPesqui",  0,1})
+		aadd (aRotina, {"P&recos-atu.man"   , "U_VA_SZAP", 0,4})
+		dbselectarea ("SZA")
+		dbSetOrder (1)
+		_sFilTop = "ZA_MODELO = '1'"
+		mBrowse(,,,,"SZA",,,,,,,,,,,,,,_sFilTop)
+
+	// Modelo usando somente ZX5 (tabelas 13 e 14)
+	case _nModelTab == 2
+//		u_help ("ATENCAO: use este modelo apenas para safras ate 2023. A partir de 2024, use o modelo 3.")
+
+		// Monta arquivo temporario a ser apresentado no mBrowse.
+//		_AtuTrb ()
+		
+		// Definicoes de cabecalhos de campos para mBrowse
+//		_aHead = {}
+//		AAdd( _aHead, { "Tabela"                  ,{|| _trbZX5->codtab}    ,"C",  4, 0, "" } )
+
+
+//		_nOpcao = aviso ("Selecione cadastro", ;
+//			"Seleciona qual cadastro deseja alterar: Precos dos grupos ou Variedades de cada grupo", ;
+//			{"Grupos", "Variedades"}, 3, "Selecione modelo")
+//		if _nOpcao == 1
+//			U_ZX5_13 ()
+//		elseif _nOpcao == 2
+//			U_ZX5_14 ()
+//		endif
+
+//		aadd (aRotina, {"&Alterar grupos",     "U_ZX513 (_trbZX5 -> codtab)", 0, 4})
+//		aadd (aRotina, {"&Alterar variedades", "U_ZX514 (_trbZX5 -> codtab)", 0, 4})
+
+		// Botoes para mBrowse
+		aadd (aRotina, {"&Alterar grupos",     "U_ZX5_13 (sza -> za_cod)", 0, 4})
+		aadd (aRotina, {"&Alterar variedades", "U_ZX5_14 (sza -> za_cod)", 0, 4})
+		dbselectarea ("SZA")
+		dbSetOrder (1)
+		_sFilTop = "ZA_MODELO = '2'"
+		mBrowse(,,,,"SZA",,,,,,,,,,,,,,_sFilTop)
+
+//		dbSelectArea("_trbZX5")
+//		dbSetOrder(1)
+//		mBrowse(,,,,"_trbZX5",_aHead)
+//		_trbZX5->(dbCloseArea())
+//		dbselectarea ("SB1")
+
+	// Modelo usando SZA x ZX5
+	case _nModelTab == 3
+		aadd (aRotina, {"&Pesquisar"         ,     "AxPesqui",  0,1})
+		aadd (aRotina, {"&Incluir"           ,     "AxInclui",  0,3})
+		aadd (aRotina, {"&Alterar"           ,     "AxAltera",  0,4})
+		aadd (aRotina, {"&Excluir"           ,     "U_SZA_E",   0,5})
+		aadd (aRotina, {"&Alterar grupos"    ,     "U_ZX5_13 (sza -> za_cod)", 0, 4})
+		aadd (aRotina, {"&Alterar variedades",     "U_ZX5_14 (sza -> za_cod)", 0, 4})
+		aadd (aRotina, {"&Copiar de outra tabela", "U_SZA_RT (sza -> za_cod)", 0, 4})
+		aadd (aRotina, {"&Gerar tabela em HTML",   "U_SZA_HTM (sza -> za_cod)", 0, 4})
+		aadd (aRotina, {"&Exportar para ZBI",      "U_SZA_ZBI (sza -> za_cod)", 0, 4})
+		dbselectarea ("SZA")
+		dbSetOrder (1)
+		_sFilTop = "ZA_MODELO = '3'"
+		mBrowse(,,,,"SZA",,,,,,,,,,,,,,_sFilTop)
+
+	otherwise
+		u_help ("Modelo de tabela de preco de uva sem tratamento.",, .t.)
+	endcase
+return
+
+
+// --------------------------------------------------------------------------
+// Manutencao dos precos dos produtos.
+User Function VA_SZAP ()
+
+	// Os precos ficam na tabela SZ1. Para que nao aparecam todas as tabelas, filtra
+	// o SZ1 e chama programa original de manutencao do SZ1.
+	dbselectarea ("SZ1")
+	set filter to &("Z1_TABELA == '" + sza -> za_cod + "'")
+	U_ML_SZ1 ()
+	dbselectarea ("SZ1")
+	set filter to
+return
+
+
+// --------------------------------------------------------------------------
+user function SZA_E ()
+	u_help ("Rotina ainda nao implementada. Lembrar de apagar junto os respectivos registros das tabelas 13 e 14 do ZX5 !!!",, .t.)
+return
+
+
+// --------------------------------------------------------------------------
+// Apenas para poder usar regua de processamento.
+user function SZA_RT (_sTabDest)
+	processa ({|| _Replica (_sTabDest)})
+return
+
+// --------------------------------------------------------------------------
+// Replica grupos e variedades de outra tabela.
+static function _Replica (_sTabDest)
+	local _oSQL      := NIL
+	local _sAliasQ   := ""
+	local _aDados    := {}
+	local _lContinua := .T.
+	local _sTabOrig  := ''
+	local _aCampos13 := {}
+	local _aCampos14 := {}
+	local _nCampo    := 0
+	local _nQtTab13 := 0
+	local _nQtTab14 := 0
+	local _nRecCount := 0
+
+	if _lContinua .and. len (alltrim (_sTabDest)) > TamSX3 ("ZX5_13SAFR")[1]
+		u_help ("Rotina liberada somente para tabelas com tamanho menor ou igual ao campo ZX5_13SAFR.",, .t.)
+		_lContinua = .F.
+	endif
+
+	if _lContinua
+		_sTabDest = U_TamFixo (_sTabDest, 4, ' ')
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT COUNT (*)"
+		_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZX5") + " ZX5 "
+		_oSQL:_sQuery +=  " WHERE ZX5.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_TABELA  = '13'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_13SAFR  = '" + _sTabDest + "'"
+		_oSQL:Log ('[' + procname () + ']')
+		if _oSQL:RetQry (1, .f.) > 0
+			if U_MsgNoYes ("Esta tabela ja contem dados. Deseja sobrepor?")
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " UPDATE " + RetSqlName ("ZX5")
+				_oSQL:_sQuery +=    " SET D_E_L_E_T_ = '*'"
+				_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ != '*'"
+				_oSQL:_sQuery +=    " AND ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+				_oSQL:_sQuery +=    " AND ((ZX5_TABELA  = '13' AND ZX5_13SAFR  = '" + _sTabDest + "')"
+				_oSQL:_sQuery +=     " OR  (ZX5_TABELA  = '14' AND ZX5_14SAFR  = '" + _sTabDest + "'))"
+				if ! _oSQL:Exec ()
+					u_help ("Erro na exclusao dos dados anteriores.")
+					_lContinua = .F.
+				endif
+			else
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	if _lContinua
+		do while .t.
+			_sTabOrig = U_Get ('Tabela de origem', 'C', 4, '', '', space (4), .f., '.t.')
+			if _sTabOrig == NIL
+				u_help ("Processo cancelado.",, .t.)
+				_lContinua = .F.
+				exit
+			endif
+		//	if empty (U_RetZX5 ('13', _sTabOrig, 'ZX5_13SAFR'))
+		//		u_help ("Tabela invalida.",, .t.)
+		//		loop
+		//	endif
+			exit
+		enddo
+	endif
+
+	if _lContinua
+
+		// Gera lista dos campos das tabelas (toda safra tem algum campo novo)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " SELECT X3_CAMPO"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SX3")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND X3_CAMPO   like 'ZX5_13%'"
+		_oSQL:_sQuery +=   " AND X3_CAMPO  != 'ZX5_13SAFR'"  // Campo chave. Nao posso copiar ele.
+		_oSQL:_sQuery +=   " AND X3_CONTEXT = 'R'"
+		_aCampos13 := aclone (_oSQL:Qry2Array (.f., .f.))
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " SELECT X3_CAMPO"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SX3")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND X3_CAMPO   like 'ZX5_14%'"
+		_oSQL:_sQuery +=   " AND X3_CAMPO  != 'ZX5_14SAFR'"  // Campo chave. Nao posso copiar ele.
+		_oSQL:_sQuery +=   " AND X3_CONTEXT = 'R'"
+		_aCampos14 := aclone (_oSQL:Qry2Array (.f., .f.))
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		for _nCampo = 1 to len (_aCampos13)
+			_oSQL:_sQuery += "ZX5_13." + _aCampos13 [_nCampo, 1] + ", "
+		next
+		for _nCampo = 1 to len (_aCampos14)
+			_oSQL:_sQuery += "ISNULL (ZX5_14." + _aCampos14 [_nCampo, 1] + ", '') as " + _aCampos14 [_nCampo, 1] + ", "
+		next
+		_oSQL:_sQuery += " B1_DESC"
+		_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZX5") + " ZX5_13 "
+		_oSQL:_sQuery +=   " LEFT JOIN " + RetSqlName ("ZX5") + " ZX5_14 "
+		_oSQL:_sQuery +=        " JOIN " + RetSqlName ("SB1") + " SB1 "
+		_oSQL:_sQuery +=               " ON (SB1.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=               " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		_oSQL:_sQuery +=               " AND SB1.B1_COD     = ZX5_14.ZX5_14PROD"
+		_oSQL:_sQuery +=               " AND SB1.B1_GRUPO   = '0400')"
+		_oSQL:_sQuery +=          " ON (ZX5_14.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=          " AND ZX5_14.ZX5_FILIAL = ZX5_13.ZX5_FILIAL"
+		_oSQL:_sQuery +=          " AND ZX5_14.ZX5_TABELA = '14'"
+		_oSQL:_sQuery +=          " AND ZX5_14.ZX5_14SAFR = ZX5_13.ZX5_13SAFR"
+		_oSQL:_sQuery +=          " AND ZX5_14.ZX5_14GRUP = ZX5_13.ZX5_13GRUP)"
+		_oSQL:_sQuery +=  " WHERE ZX5_13.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=    " AND ZX5_13.ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+		_oSQL:_sQuery +=    " AND ZX5_13.ZX5_TABELA  = '13'"
+		_oSQL:_sQuery +=    " AND ZX5_13.ZX5_13SAFR  = '" + _sTabOrig + "'"
+		_oSQL:_sQuery +=  " ORDER BY ZX5_13.ZX5_13GRUP, SB1.B1_DESC"
+		_oSQL:Log ('[' + procname () + ']')
+		_sAliasQ := _oSQL:Qry2Trb ()
+		dbselectarea (_sAliasQ)
+		count to _nRecCount
+		procregua (_nRecCount)
+		(_sAliasQ) -> (dbgotop ())
+		do while ! (_sAliasQ) -> (eof ())
+			_sGrupo = (_sAliasQ) -> zx5_13grup
+			U_Log2 ('debug', '[' + procname () + ']Grupo ' + (_sAliasQ) -> zx5_13grup + (_sAliasQ) -> zx5_13desc + (_sAliasQ) -> zx5_14GRUP + (_sAliasQ) -> zx5_14prod + (_sAliasQ) -> b1_desc)
+
+			// Insere o grupo, se ainda nao existir.
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT COUNT (*)"
+			_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZX5") + " ZX5_13 "
+			_oSQL:_sQuery +=  " WHERE ZX5_13.D_E_L_E_T_ != '*'"
+			_oSQL:_sQuery +=    " AND ZX5_13.ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+			_oSQL:_sQuery +=    " AND ZX5_13.ZX5_TABELA  = '13'"
+			_oSQL:_sQuery +=    " AND ZX5_13.ZX5_13SAFR  = '" + _sTabDest + "'"
+			_oSQL:_sQuery +=    " AND ZX5_13.ZX5_13GRUP  = '" + (_sAliasQ) -> zx5_13grup + "'"
+			if _oSQL:RetQry () == 0
+				U_Log2 ('debug', '[' + procname () + ']inserindo grupo na tabela 13')
+				_aDados = {}
+				aadd (_aDados, {'ZX5_13SAFR', _sTabDest})
+				for _nCampo = 1 to len (_aCampos13)
+					aadd (_aDados, {_aCampos13 [_nCampo, 1], (_sAliasQ) -> &(_aCampos13 [_nCampo, 1])})
+				next
+				U_Log2 ('debug', '[' + procname () + ']Dados para tabela 13:')
+				U_Log2 ('debug', _aDados)
+				_oTab := ClsTabGen ():New ('13')
+				if ! _oTab:Insere (_aDados)
+					u_help (_oTab:UltMsg)
+					return
+				endif
+				_nQtTab13 ++
+			else
+				U_Log2 ('debug', '[' + procname () + ']Grupo ja existe')
+			endif
+	
+			// Insere os itens do grupo
+			do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> zx5_13grup == _sGrupo
+				U_Log2 ('debug', '[' + procname () + ']' + (_sAliasQ) -> zx5_13grup + (_sAliasQ) -> zx5_13desc + (_sAliasQ) -> zx5_14GRUP + (_sAliasQ) -> zx5_14prod + (_sAliasQ) -> b1_desc)
+				incproc ('Grp.' + (_sAliasQ) -> zx5_13grup + ' varied.' + (_sAliasQ) -> b1_desc)
+				
+				// Pode haver grupo (sinteticas, por exemplo) sem item relacionado.
+				if ! empty ((_sAliasQ) -> zx5_14prod) .and. ! empty ((_sAliasQ) -> zx5_14grup)
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += " SELECT COUNT (*)"
+					_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZX5") + " ZX5_14 "
+					_oSQL:_sQuery +=  " WHERE ZX5_14.D_E_L_E_T_ != '*'"
+					_oSQL:_sQuery +=    " AND ZX5_14.ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+					_oSQL:_sQuery +=    " AND ZX5_14.ZX5_TABELA  = '14'"
+					_oSQL:_sQuery +=    " AND ZX5_14.ZX5_14SAFR  = '" + _sTabDest + "'"
+					_oSQL:_sQuery +=    " AND ZX5_14.ZX5_14GRUP  = '" + (_sAliasQ) -> zx5_14grup + "'"
+					_oSQL:_sQuery +=    " AND ZX5_14.ZX5_14PROD  = '" + (_sAliasQ) -> zx5_14prod + "'"
+					if _oSQL:RetQry () == 0
+						U_Log2 ('debug', '[' + procname () + ']inserindo produto na tabela 14')
+						_aDados = {}
+						aadd (_aDados, {'ZX5_14SAFR', _sTabDest})
+						for _nCampo = 1 to len (_aCampos14)
+							aadd (_aDados, {_aCampos14 [_nCampo, 1], (_sAliasQ) -> &(_aCampos14 [_nCampo, 1])})
+						next
+						U_Log2 ('debug', '[' + procname () + ']Dados para tabela 14:')
+						U_Log2 ('debug', _aDados)
+						_oTab := ClsTabGen ():New ('14')
+						if ! _oTab:Insere (_aDados)
+							u_help (_oTab:UltMsg,, .t.)
+							return
+						endif
+						_nQtTab14 ++
+					else
+						U_Log2 ('debug', '[' + procname () + ']Item ja existe')
+					endif
+				endif
+				(_sAliasQ) -> (dbskip ())
+			enddo
+		enddo
+
+		CursorArrow ()
+		u_help ("Processo concluido. " + cvaltochar (_nQtTab13) + " grupos e " + cvaltochar (_nQtTab14) + " variadedes copiados.")
+		dbselectarea ("SB1")
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Apenas para ter regua de processamento
+user function SZA_HTM (_sCodTab)
+	processa ({|| _GeraHTM (_sCodTab)})
+return
+
+
+// --------------------------------------------------------------------------
+// Exporta tabela em formato HTML
+static function _GeraHTM (_sCodTab)
+	local _sHTML    := ''
+	local _nHdl     := 0
+	local _sArq     := ''
+	local _oTbUva   := NIL
+	local _aCols     := {}
+	local _nOpcao    := 0
+	local _aOpcoes   := {}
+	local _sVarUva  := ''
+	local _sConduc  := ''
+	local _sTipoTab := 'C'  // Por enquanto, apenas [C]ompra
+	local _sIntOuDec := ''
+
+	// Monta array de opcoes.
+	_aOpcoes = {}
+	aadd (_aOpcoes, {.F., "Uvas comuns/americanas - apenas graus inteiros",          "CLI"})
+	aadd (_aOpcoes, {.F., "Uvas finas/viniferas latadas - apenas graus inteiros",    "FLI"})
+	aadd (_aOpcoes, {.F., "Uvas finas/viniferas espaldeira - apenas graus inteiros", "FEI"})
+	aadd (_aOpcoes, {.F., "Uvas comuns/americanas - com graus decimais",             "CLD"})
+	aadd (_aOpcoes, {.F., "Uvas finas/viniferas latadas - com graus decimais",       "FLD"})
+	aadd (_aOpcoes, {.F., "Uvas finas/viniferas espaldeira - com graus decimais",    "FED"})
+
+	// Browse para usuario selecionar as opcoes
+	_aCols = {}
+	aadd (_aCols, {2, "Selecione modelo de tabela",  280,  ""})
+	U_MBArray (@_aOpcoes, "Selecione o modelo de tabela a gerar", _aCols, 1, 700, 450, , ".T.")
+
+	procregua (len (_aOpcoes))
+	for _nOpcao = 1 to len (_aOpcoes)
+		incproc ()
+		if _aOpcoes [_nOpcao, 1]
+			_oTbUva := ClsTbUva ():New ()
+			_sVarUva = substring (_aOpcoes [_nOpcao, 3], 1, 1)
+			_sConduc = substring (_aOpcoes [_nOpcao, 3], 2, 1)
+			_sIntOuDec = substring (_aOpcoes [_nOpcao, 3], 3, 1)
+			_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, _sIntOuDec)
+			if empty (_oTbUva:CodTabela)
+				u_help (_oTbUva:UltMsg,, .t.)
+			else
+				// Exporta para arquivo e manda abrir no navegador.
+				_sHTML = _oTbUva:GeraHTM ()
+				if empty (_sHTML)
+					u_help (_oTbUva:UltMsg,, .t.)
+				else
+					_sArq := 'c:\temp\TabUva_' + alltrim (_sCodTab) + '_' + _sTipoTab + _sVarUva + _sConduc + _sIntOuDec + '.htm'
+					if file (_sArq)
+						delete file (_sArq)
+					endif
+					_nHdl = fcreate (_sArq, 0)
+					fwrite (_nHdl, _sHtml)
+					fclose (_nHdl)
+					ShellExecute ("Open", _sArq, "", "", 1)
+				endif
+			endif
+		endif
+	next
+return
+
+
+// --------------------------------------------------------------------------
+// Apenas para ter regua de processamento
+user function SZA_ZBI (_sCodTab)
+	processa ({|| _GeraZBI (_sCodTab)})
+return
+
+
+// --------------------------------------------------------------------------
+// Alimenta tabela ZBI (precos prontos por variedade, para uso durante a safra e outras simulacoes.
+static function _GeraZBI (_sCodTab)
+	local _lContinua := .T.
+	local _oSQL      := NIL
+	local _oTbUva    := NIL
+	local _oTbUvaCL  := NIL
+	local _oTbUvaFL  := NIL
+	local _oTbUvaFE  := NIL
+	local _nGrupo    := 0
+	local _nVaried   := 0
+	local _nGrau     := 0
+	local _nTabela   := 0
+	local _aListaVar := {}
+	local _nIdxListaVar   := 0
+	local _aListaClass    := {}
+	local _nIdxListaClass := 0
+
+	procregua (100)
+	_sCodTab = U_TamFixo (_sCodTab, TamSX3 ("ZX5_13SAFR")[1], ' ')
+
+	if _lContinua
+		zbi -> (dbsetorder (1))  // ZBI_FILIAL, ZBI_CODTAB, ZBI_PRODUT, ZBI_CONDUC, ZBI_GRAU, ZBI_CLASSE, R_E_C_N_O_, D_E_L_E_T_
+		if zbi -> (dbseek (xfilial ("ZBI") + _sCodTab, .T.))
+			_lContinua = U_MsgNoYes ("Ja existem dados no arquivo ZBI para esta tabela de precos. Deseja sobregravar?", IsInCallStack ("U_ROBERT"))
+		endif
+	endif
+
+	// Apaga possiveis registros anteriores.
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "DELETE " + RetSQLName ("ZBI")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZBI_FILIAL = '" + xfilial ("ZBI") + "'"
+		_oSQL:_sQuery +=   " AND ZBI_CODTAB = '" + _sCodTab + "'"
+		_lContinua = _oSQL:Exec ()
+	endif
+	if _lContinua
+		incproc ('Gerando tabela para uvas comuns')
+		_oTbUvaCL := ClsTbUva ():New ()
+		if ! _oTbUvaCL:GeraAtrib (_sCodTab, 'C', 'C', 'L', 'D')
+			u_help ('Problemas na tabela de uvas comuns: ' + _oTbUvaCL:UltMsg,, .t.)
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua
+		incproc ('Gerando tabela para uvas finas latadas')
+		_oTbUvaFL := ClsTbUva ():New ()
+		if ! _oTbUvaFL:GeraAtrib (_sCodTab, 'C', 'F', 'L', 'D')
+			u_help ('Problemas na tabela de uvas finas latadas: ' + _oTbUvaFL:UltMsg,, .t.)
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua
+		incproc ('Gerando tabela para uvas finas espaldeira')
+		_oTbUvaFE := ClsTbUva ():New ()
+		if ! _oTbUvaFE:GeraAtrib (_sCodTab, 'C', 'F', 'E', 'D')
+			u_help ('Problemas na tabela de uvas finas espaldeira: ' + _oTbUvaFE:UltMsg,, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	// Para nao fazer 3 trechos repetidos, prefiro usar um loop.
+	_nTabela = 1
+	do while _lContinua .and. _nTabela <= 3
+
+		if _nTabela == 1
+			_oTbUva := _oTbUvaCL
+		elseif _nTabela == 2
+			_oTbUva := _oTbUvaFL
+		elseif _nTabela == 3
+			_oTbUva := _oTbUvaFE
+		endif
+
+		// Varre todos os grupos de variedades desta tabela
+		for _nGrupo = 1 to len (_oTbUva:Grupos)
+			U_Log2 ('debug', '[' + procname () + ']Tabela ' + cvaltochar (_nTabela) + ' grupo ' + _oTbUva:Grupos [_nGrupo]['Codigo'])
+			incproc ('Gravando dados do grupo ' + _oTbUva:Grupos [_nGrupo]['Codigo'])
+			
+			// Varre todas as variedades deste grupo
+			for _nVaried = 1 to len (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'])
+
+				// Varre todos os graus deste grupo
+				for _nGrau = 1 to len (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'])
+
+					// Monta uma array de codigos de variedade para atender o
+					// caso das uvas comuns, que podem ter subdivisoes como
+					// organicas, bordadura, etc.
+					if _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried]['FinaOuComum'] == 'C'
+						_aListaVar = {}
+						if ! empty (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase'])
+							aadd (_aListaVar, {_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase'], _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau] ['PrecoCodBase']})
+						endif
+						if ! empty (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBordadura'])
+							aadd (_aListaVar, {_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBordadura'], _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau] ['PrecoCodOrganicaBordadura']})
+						endif
+						if ! empty (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodEmConversao'])
+							aadd (_aListaVar, {_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodEmConversao'], _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau] ['PrecoCodOrganicaEmConversao']})
+						endif
+						if ! empty (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodOrganica'])
+							aadd (_aListaVar, {_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodOrganica'], _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau] ['PrecoCodOrganicaOrganica']})
+						endif
+	//					U_Log2 ('debug', _aListaVar)
+
+						for _nIdxListaVar = 1 to len (_aListaVar)
+							reclock ("ZBI", .t.)
+							zbi -> zbi_filial = xfilial ("ZBI")
+							zbi -> zbi_codtab = _oTbUva:CodTabela
+							zbi -> zbi_produt = _aListaVar [_nIdxListaVar, 1]
+							zbi -> zbi_grau   = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau'])
+							zbi -> zbi_conduc = _oTbUva:Conducao
+							zbi -> zbi_vunit1 = _aListaVar [_nIdxListaVar, 2]
+							msunlock ()
+						next
+
+					elseif _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried]['FinaOuComum'] == 'F'
+
+						// Monta uma lista de possiveis classificacoes de uvas finas.
+						_aListaClass = {}
+						if _oTbUva:Conducao == 'L'
+							aadd (_aListaClass, {'A',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasA']})
+							aadd (_aListaClass, {'B',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoCodBase']})
+							aadd (_aListaClass, {'D',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasD']})
+						elseif _oTbUva:Conducao == 'E'
+							aadd (_aListaClass, {'PR', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasPR']})
+							aadd (_aListaClass, {'AA', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasAA']})
+							aadd (_aListaClass, {'A',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasA']})
+							aadd (_aListaClass, {'B',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoCodBase']})
+							aadd (_aListaClass, {'C',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasC']})
+							aadd (_aListaClass, {'D',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasD']})
+							aadd (_aListaClass, {'DS', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasDS']})
+						endif
+	//					U_Log2 ('debug', _aListaClass)
+
+						for _nIdxListaClass = 1 to len (_aListaClass)
+							reclock ("ZBI", .t.)
+							zbi -> zbi_filial = xfilial ("ZBI")
+							zbi -> zbi_codtab = _oTbUva:CodTabela
+							zbi -> zbi_produt = _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase']
+							zbi -> zbi_grau   = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau'])
+							zbi -> zbi_conduc = _oTbUva:Conducao
+							zbi -> zbi_classe = _aListaClass [_nIdxListaClass, 1]
+							zbi -> zbi_vunit1 = _aListaClass [_nIdxListaClass, 2]
+							msunlock ()
+						next
+					endif
+				next
+			next
+		next
+		_nTabela ++
+	enddo
+	if _lContinua
+		u_help ("Processo finalizado.")
+	endif
+return

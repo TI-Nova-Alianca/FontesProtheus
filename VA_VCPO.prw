@@ -186,6 +186,8 @@
 // 04/08/2023 - Robert  - Removidas (estavam em desuso) validacos dos campos M->ZZK_ASSOC/M->ZZK_LOJA
 // 09/08/2023 - Robert  - Removida validacao B1_CODBAR (Migrada para PE_MATA010)
 // 01/12/2023 - Robert  - Criada validacao para B1_RASTRO 
+// 31/12/2023 - Robert  - Criada validacao para ZA_COD.
+//
 
 // -------------------------------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
@@ -1319,6 +1321,13 @@ user function VA_VCpo (_sCampo)
 			_sRetSQL = U_RetSQL (_sQuery)
 			if ! empty (_sRetSQL)
 				U_Help ("Numero do INCRA ja consta no cadastro viticola '" + _sRetSQL + "'.")
+				_lRet = .F.
+			endif
+
+
+		case _sCampo $ "M->ZA_COD"
+			if len (alltrim (M->ZA_COD)) > TamSX3 ("ZX5_13SAFR")[1]
+				u_help ("Nao deve ser informado um codigo com tamanho maior que o campo ZX5_13SAFR.",, .t.)
 				_lRet = .F.
 			endif
 

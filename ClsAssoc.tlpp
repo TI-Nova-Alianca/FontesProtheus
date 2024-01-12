@@ -121,6 +121,7 @@
 // 29/09/2023 - Robert  - Passa a gerar mais tags de detalhamento na prev.pagto.safra (GLPI 9561)
 // 15/12/2023 - Robert  - Portado de .prw para .tlpp e passa a herdar a ClsBase (GLPI 14548)
 //                      - Iniciada versao 3 do calculo de correcao monetaria.
+// 09/01/2024 - Robert  - Ajustes versao 3 do calculo de correcao monetaria.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -845,7 +846,7 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 			_oSQL:_sQuery += " WHERE FK2_BAIXAS_ORIG.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_IDDOC  = FK7_TIT_ORIG.FK7_IDDOC"
 			_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_TPDOC != 'ES'"
-			_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_TPDOC != 'BA'"
+		//	_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_TPDOC != 'BA'"
 			_oSQL:_sQuery +=   " AND FK2_BAIXAS_ORIG.FK2_DATA  <= '" + dtos (_dDtLimite) + "'"
 			_oSQL:_sQuery +=   " AND dbo.VA_FESTORNADO_FK2 (FK2_BAIXAS_ORIG.FK2_FILIAL, FK2_BAIXAS_ORIG.FK2_IDFK2) != 1"
 			_oSQL:_sQuery +=   " AND FK7_TIT_ORIG.D_E_L_E_T_ = ''"
@@ -858,7 +859,7 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 			_oSQL:_sQuery +=                                  "|" + (_sTrbSE2) -> e2_tipo
 			_oSQL:_sQuery +=                                  "|" + ::Codigo
 			_oSQL:_sQuery +=                                  "|" + ::Loja + "'"
-		//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']Procurando baixas ')
 			_sTrbFK2 := _oSQL:Qry2Trb (.t.)
 			do while ! (_sTrbFK2) -> (eof ())
 
@@ -868,8 +869,8 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 				else
 					_nDtFimContagemDias = (_sTrbFK2) -> fk2_data
 				endif
-				_nQtDiasDeJuros = _nDtFimContagemDias - _nDtIniContagemDias + 1
-				_nVlJurosCM = _nSaldoTit * _nQtDiasDeJuros * _nTaxaCC / 100
+				_nQtDiasDeJuros = _nDtFimContagemDias - _nDtIniContagemDias // + 1
+				_nVlJurosCM = round (_nSaldoTit * _nQtDiasDeJuros * _nTaxaCC / 100, 2)
 
 				// Cria um objeto JSON para guardar os dados deste movimento
 				// e adiciona-o na lista de movimentos para posterior geracao
@@ -886,10 +887,10 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 					aadd (_aMemCalc, _oMemCalcTit)
 				endif
 
-				U_Log2 ('debug', '[' + procname () + ']   Baixa ' + dtoc ((_sTrbFK2) -> fk2_data) + ;
-					' R$ ' + cvaltochar ((_sTrbFK2) -> fk2_valor) + ;
-					' Saldo = ' + cvaltochar (_nSaldoTit) + ;
-					' de ' + dtoc (_nDtIniContagemDias) + ' a ' + dtoc ((_sTrbFK2) -> fk2_data) + ;
+				U_Log2 ('debug', '[' + procname () + ']   Baixa de R$ ' + cvaltochar ((_sTrbFK2) -> fk2_valor) + ;
+					' em ' + dtoc ((_sTrbFK2) -> fk2_data) + ;
+					' Saldo ateh entao = ' + cvaltochar (_nSaldoTit) + ;
+					' (de ' + dtoc (_nDtIniContagemDias) + ' a ' + dtoc ((_sTrbFK2) -> fk2_data) + ')' +;
 					' = ' + cvaltochar (_nQtDiasDeJuros) + ' dias' + ;
 					' --> R$ ' + cvaltochar (_nVlJurosCM))
 
@@ -900,7 +901,9 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 				// Ajusta a data inicial para contagem de dias, para que, caso
 				// encontre mais alguma baixa depois desta, comece a contar a
 				// partir da baixa atual e nao da emissao do titulo.
-				_nDtIniContagemDias = (_sTrbFK2) -> fk2_data + 1
+			//	_nDtIniContagemDias = (_sTrbFK2) -> fk2_data + 1
+				_nDtIniContagemDias = max ((_sTrbFK2) -> fk2_data + 1, firstday (_dDtLimite))
+				U_Log2 ('debug', '[' + procname () + ']   Ajustei _nDtIniContagemDias = ' + dtoc (_nDtIniContagemDias) + ' para o caso de encontrar outra baixa deste titulo no mesmo periodo.')
 
 				(_sTrbFK2) -> (dbskip ())
 			enddo
@@ -908,7 +911,7 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 			// Se nao teve baixas, mas tem saldo, tambem deve calcular juros.
 			_nDtFimContagemDias = _dDtLimite
 			_nQtDiasDeJuros = _nDtFimContagemDias - _nDtIniContagemDias + 1
-			_nVlJurosCM = _nSaldoTit * _nQtDiasDeJuros * _nTaxaCC / 100
+			_nVlJurosCM = round (_nSaldoTit * _nQtDiasDeJuros * _nTaxaCC / 100, 2)
 
 			// Cria um objeto JSON para guardar os dados deste movimento
 			// e adiciona-o na lista de movimentos para posterior geracao
@@ -925,11 +928,13 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 				aadd (_aMemCalc, _oMemCalcTit)
 			endif
 
-			U_Log2 ('debug', '[' + procname () + ']   fora loop baixas ' + ;
+			U_Log2 ('debug', '[' + procname () + ']   Ja estou fora do loop das baixas. ' + ;
 				' Saldo = ' + cvaltochar (_nSaldoTit) + ;
 				' por ' + cvaltochar (_nQtDiasDeJuros) + ' dias' + ;
 				' --> R$ ' + cvaltochar (_nVlJurosCM))
 
+			U_Log2 ('debug', '[' + procname () + ']')
+			U_Log2 ('debug', '[' + procname () + ']')
 			(_sTrbSE2) -> (dbskip ())
 		enddo
 		(_sTrbSE2) -> (dbclosearea ())
@@ -944,10 +949,10 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 			_oMemCalcTit = _aMemCalc [_nIdxMemCalc]
 			_nTotCorr += _oMemCalcTit ['ValorJuros']
 			_sMemCalc += 'Tit:' + _oMemCalcTit['Titulo']
-			_sMemCalc += ' Saldo: ' + alltrim (GetMv ("MV_SIMB1")) + transform (_oMemCalcTit['SaldoTitulo'], '@E 999,999,999.99')
-			_sMemCalc += ' de ' + dtoc (_oMemCalcTit['DataInicial']) + ' a ' + dtoc (_oMemCalcTit['DataFinal'])
+			_sMemCalc += ' Saldo de ' + alltrim (GetMv ("MV_SIMB1")) + transform (_oMemCalcTit['SaldoTitulo'], '@E 999,999,999.99')
+			_sMemCalc += ' entre ' + dtoc (_oMemCalcTit['DataInicial']) + ' e ' + dtoc (_oMemCalcTit['DataFinal'])
 			_sMemCalc += ' (' + transform (_oMemCalcTit['QtDiasDeJuros'], '999') + ' dias)'
-			_sMemCalc += ' * ' + cvaltochar (_oMemCalcTit['TaxaJuros']) + '%'
+			_sMemCalc += '*' + cvaltochar (_oMemCalcTit['TaxaJuros']) + '%'
 			_sMemCalc += ' = ' + alltrim (GetMv ("MV_SIMB1")) + transform (_oMemCalcTit['ValorJuros'], '@E 999,999.99')
 			_sMemCalc += iif (_nIdxMemCalc < len (_aMemCalc), chr (13) + chr (10), '')
 		next
@@ -1775,7 +1780,7 @@ METHOD FechSafra () Class ClsAssoc
 			_sRetFechS += '<perc01>10</perc01><perc02>5.5</perc02><perc03>5.5</perc03><perc04>5.5</perc04><perc05>5.5</perc05><perc06>6.5</perc06><perc07>11.5</perc07><perc08>11.5</perc08><perc09>11.5</perc09><perc10>13.5</perc10><perc11>13.5</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades: 10+5.5+5.5+5.5+5.5+6.5+11.5+11.5+11.5+13.5+13.5</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
-		elseif ::FSSafra == '2023'
+		elseif ::FSSafra == '2023' .or. ::FSSafra == '2024'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 11 vezes</descricao>'

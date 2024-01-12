@@ -37,22 +37,17 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	_nQtVias := iif (_nQtVias == NIL, 1, _nQtVias)
 	_sModelImp = upper (_sModelImp)
 	
-//	U_Log2 ('debug', '[' + procname () + ']Qual ticket: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta) + ' Modelo impressora: ' + cvaltochar (_sModelImp))
+	U_Log2 ('debug', '[' + procname () + ']Qual ticket: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta) + ' Modelo impressora: ' + cvaltochar (_sModelImp))
 
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
-	if type ("_oCarSaf") != 'O'
-		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
-	endif
-	if empty (_oCarSaf:Carga)
-		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
-		_lContinua = .F.
-	endif
-
-//	if type ("_lImpTick") == "L" .and. ! _lImpTick
-//		u_help ("Impressao disponivel somente em estacoes com impressora de ticket/cupom",, .t.)
+//	if type ("_oCarSaf") != 'O'
+//		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+//	endif
+//	if empty (_oCarSaf:Carga)
+//		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
 //		_lContinua = .F.
 //	endif
-	
+
 	// Busca os produtos da carga
 	if _lContinua .and. (_nQual == 1 .or. _nQual == 2)
 		_oSQL := ClsSQL():New ()

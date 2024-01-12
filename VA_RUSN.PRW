@@ -78,7 +78,7 @@ User Function va_rusN (_lSimulNF)
 	local _aLinha    := {}
 	local _sVitic    := ""
 	local _sSivibe   := ""
-	local _sAlmox    := ""
+//	local _sAlmox    := ""
 	local _oSQL      := NIL
 	local _sAglutin  := ""
 	local _sClasFina := ''
@@ -92,7 +92,7 @@ User Function va_rusN (_lSimulNF)
 	local _aTpForUva := {}
 	local _sTpForUva := ""
 	local _nVitic    := 0
-	local _sGrpPgSaf := ''
+//	local _sGrpPgSaf := ''
 	local _sCondPg   := ''
 	local _oAssocN   := NIL
 	local _nRetMem   := 0
@@ -103,6 +103,7 @@ User Function va_rusN (_lSimulNF)
 	local _sGrauComp := ''
 	local _nRegSZE   := 0
 	local _nRegSZF   := 0
+	local _nItem     := 0
 	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
 	private _sErroAuto := ''  // Deixar private para ser alimentada em subrotinas.
 
@@ -116,6 +117,8 @@ User Function va_rusN (_lSimulNF)
 		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
 		_lContinua = .F.
 	endif
+//	U_Log2 ('debug', '[' + procname () + ']Carga instanciada:')
+//	_oCarSaf:Log ()
 	
 	// Nao permite duas sessoes alterando a mesma carga. Usa a funcao SoftLock para que mostre a mensagem 'registro em uso por fulano'
 	if _lContinua
@@ -227,6 +230,7 @@ User Function va_rusN (_lSimulNF)
 
 	// Verifica almoxarifado onde deve ser dada entrada da uva.
 	if _lContinua
+		/*
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT ZX5_09ALM"
@@ -245,6 +249,7 @@ User Function va_rusN (_lSimulNF)
 			endif
 		endif
 		FreeObj (_oSQL)
+		*/
 	endif
 
 	// Verificacoes cargas compartilhadas por mais de um produtor.
@@ -299,33 +304,15 @@ User Function va_rusN (_lSimulNF)
 	// identificar mistura de variedades.
 	if _lContinua
 	//	_aMenorVlr = aclone (_oCarSaf:VarMenorVl ())
-		
-		// Como uso o metodo VarMenorVl() noutros locais (por exemplo, na
-		// geracao de notas de complemento de valor posteriormente), achei
-		// melhor passar um parametro indicando qual preco verificar.
-		// Para isso, eh bom manter compatibilidade entre as funcoes de
-		// geracao de preco das diferentes safras.
-		do case
-		case _oCarSaf:Safra == '2019'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (1))
-		case _oCarSaf:Safra == '2020'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (5))  // pos.5=preco MOC
-		case _oCarSaf:Safra == '2021'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
-		case _oCarSaf:Safra == '2022'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
-		case _oCarSaf:Safra == '2023'
-			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (5))  // pos.5=preco MOC
-		otherwise
-			u_help ("Sem tratamento para esta safra no momento de verificar variedade de menor valor.",, .t.)
+	//	if len (_aMenorVlr) == 0
+	//		u_help ('Erro na funcao de verificacao de variedade com menor valor.',, .t.)
+	//		_lContinua = .F.
+	//	else
+	//		U_Log2 ('info', '[' + procname () + ']Variedade de menor valor: ' + _aMenorVlr [1, 1] + ' sist.cond: ' + _aMenorVlr [1, 3] + ' R$ ' + cvaltochar (_aMenorVlr [1, 2]))
+	//	endif
+		if ! _oCarSaf:Precifica ('ParaNF')
+			u_help ("Erro na funcao de precificacao: " + _oCarSaf:UltMsg)
 			_lContinua = .F.
-		endcase
-
-		if len (_aMenorVlr) == 0
-			u_help ('Erro na funcao de verificacao de variedade com menor valor.',, .t.)
-			_lContinua = .F.
-		else
-			U_Log2 ('info', '[' + procname () + ']Variedade de menor valor: ' + _aMenorVlr [1, 1] + ' sist.cond: ' + _aMenorVlr [1, 3] + ' R$ ' + cvaltochar (_aMenorVlr [1, 2]))
 		endif
 	endif
 
@@ -340,12 +327,18 @@ User Function va_rusN (_lSimulNF)
 	// Usa a variedade de menor valor por que sempre vai estar populada,
 	// mesmo que tenha apenas uma variedade na carga.
 	if _lContinua
-		_sGrpPgSaf = U_VA_RusGP (_oCarSaf:Safra, _aMenorVlr [1, 1], _aMenorVlr [1, 3])
-		U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
-	endif
-	if _lContinua .and. empty (_sGrpPgSaf)
-		u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
-		_lContinua = .F.
+//		_sGrpPgSaf = U_VA_RusGP (_oCarSaf:Safra, _aMenorVlr [1, 1], _aMenorVlr [1, 3])
+//		U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
+//	endif
+//	if _lContinua .and. empty (_sGrpPgSaf)
+//		u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
+//		_lContinua = .F.
+		if ! _oCarSaf:BuscaGrupoPagto ()
+			u_help ("Erro na funcao que define grupo para pagamento: " + _oCarSaf:UltMsg)
+			_lContinua = .F.
+		endif
+		U_Log2 ('debug', '[' + procname () + ']Carga precificada e com grupo para pagamento:')
+		_oCarSaf:Log ()
 	endif
 
 	// Na vdd pouco importa, pois redistribuirei as parcelas cfe. grupo para pagamento.
@@ -416,7 +409,7 @@ User Function va_rusN (_lSimulNF)
 			elseif szf -> zf_conduc == 'E'
 				_sClasFina = szf -> zf_prm99
 			endif
-
+/*
 			// Busca preco unitario. IMPORTANTE manter consistencia com a busca
 			// de variedade de menor valor.
 			if szf -> zf_safra == '2019'
@@ -440,6 +433,22 @@ User Function va_rusN (_lSimulNF)
 				_lContinua = .F.
 				exit
 			endif
+*/
+	//		// Se tiver mais de uma variedade na array das variedades de menor
+	//		// valor, eh por que trata-se de mistura de variedades e devo usar
+	//		// a de menor valor. Senao, posso pegar o preco unitario do item.
+	//		if len (_aMenorVlr) > 1
+	//			U_Log2 ('debug', '[' + procname () + ']Vou usar o item de menor valor')
+	//			_nVlUni = 0  // falta fazer
+	//		else
+				_nItem = ascan (_oCarSaf:ItItem, szf -> zf_item)
+				if _nItem == 0
+					u_help ("Nao encontrei o item '" + szf -> zf_item + "' na array de itens do objeto.",, .t.)
+					_lContinua = .F.
+				else
+					_nVlUni = _oCarSaf:ItPrcParaNF [_nItem]
+				endif
+	//		endif
 
 			u_log2 ('info', 'Retornou preco = ' + cvaltochar (_nVlUni))
 			
@@ -521,7 +530,8 @@ User Function va_rusN (_lSimulNF)
 			AADD(_aLinha , {"D1_COD"     , szf -> zf_produto    , Nil } )
 			AADD(_aLinha , {"D1_UM"      , sb1 -> B1_UM         , Nil } )
 			AADD(_aLinha , {"D1_TP"      , sb1 -> B1_TIPO       , Nil } )
-			AADD(_aLinha , {"D1_LOCAL"   , iif (empty (_sAlmox), sb1 -> B1_LOCPAD, _sAlmox), Nil } )
+		//	AADD(_aLinha , {"D1_LOCAL"   , iif (empty (_sAlmox), sb1 -> B1_LOCPAD, _sAlmox), Nil } )
+			AADD(_aLinha , {"D1_LOCAL"   , _oCarSaf:AxEntrada   , Nil } )
 			AADD(_aLinha , {"D1_GRAU"    , szf -> zf_grau       , Nil } )
 			AADD(_aLinha , {"D1_PRM02"   , szf -> zf_prm02      , Nil } )
 			AADD(_aLinha , {"D1_PRM03"   , szf -> zf_prm03      , Nil } )
@@ -542,15 +552,16 @@ User Function va_rusN (_lSimulNF)
 			if sb1 -> b1_localiz == 'S'
 				AADD(_aLinha , {"D1_LOTECTL", _sLoteCtl, Nil } )
 				AADD(_aLinha , {"D1_LOTEFOR", szf -> zf_idZA8, Nil } )
+				AADD(_aLinha , {"D1_DTVALID", dDataBase + 1, Nil } )
 			endif
 			AADD(_aLinha , {"D1_VACONDU" , szf -> zf_conduc   , Nil } )
 			AADD(_aLinha , {"D1_DESPESA" , szf -> zf_valfret  , Nil } )
 			
-			u_log2 ('info', _aLinha)
+//			u_log2 ('info', _aLinha)
 			_sErroAuto = ''  // A funcao OrdAuto tambem faz algumas validacoes
 			AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
 			if ! empty (_sErroAuto)
-				_lContinua = .F.
+					_lContinua = .F.
 			endif
 
 			// Atualiza array de previsao de nota
@@ -567,7 +578,8 @@ User Function va_rusN (_lSimulNF)
 	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
 	if _lContinua
 		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + _sTES, "F4_DUPLIC") == 'S'
-			_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete, dDataBase))
+//			_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete, dDataBase))
+			_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _oCarSaf:GrupoPagamento, _nVlrUvas, _nVlFrete, dDataBase))
 			if len (_aParPgSaf) == 0
 				_lContinua = .F.
 			endif
@@ -648,12 +660,12 @@ User Function va_rusN (_lSimulNF)
 	endif
 
 	U_Log2 ('info', '[' + procname () + ']Mensagem do contribuinte: ' + _sMsgContr)
-	if _lSimulNF
+	if _lContinua .and. _lSimulNF
 		u_help ('A seguir serao mostrados alguns dados da simulacao de geracao de NF')
 		u_showarray (_aAutoSD1, 'Itens para a contranota')
 		u_showarray (_aParPgSaf, 'Parcelas e percentuais previstos para pagamento')
 		u_help ('Mensagem do contribuinte: ' + _sMsgContr)
-		_lContinua = .F.
+		_lContinua = .F.  // Nao quero seguir com a geracao da nota.
 	endif
 
 	if _lContinua
@@ -689,7 +701,7 @@ User Function va_rusN (_lSimulNF)
 		AADD( _aAutoSF1, { "F1_VAPLVEI"  , sze->ze_Placa,   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VASAFRA"  , sze->ze_safra,   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',             Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
-		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPgSaf,      Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
+		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _oCarSaf:GrupoPagamento, Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_COND"     , _sCondPg,        Nil})
 
 		// Ordena campos cfe. SX3.
@@ -718,11 +730,11 @@ User Function va_rusN (_lSimulNF)
 
 		begin transaction
 
-		U_PerfMon ('I', 'GravarContranotaSafra')  // Para metricas de performance
+		//U_PerfMon ('I', 'GravarContranotaSafra')  // Para metricas de performance
 
 		MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
 
-		U_PerfMon ('L', 'GravarContranotaSafra')  // Para metricas de performance
+		//U_PerfMon ('L', 'GravarContranotaSafra')  // Para metricas de performance
 
 		If lMsErroAuto
 			_lContinua = .F.
@@ -736,35 +748,31 @@ User Function va_rusN (_lSimulNF)
 			endif
 		else
 
-			u_help ("Apos atualizacao de versao para 22.10 em maio/23 o SF1 deixou de vir posicionado.",, .t.)
-			return
-			/* Ver se o trecho abaixo ajuda (peguei do VA_GNF2)...
-			u_help // Apos atualizacao de versao para 22.10 em maio/23 o SF1 deixou de vir posicionado.
+			// Apos atualizacao de versao para 22.10 em maio/23 o SF1 deixou de vir posicionado.
 			sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
-			if ! sf1 -> (dbseek (xfilial ("SF1") + _sNF + _sSerie + _sFornece + _sLoja + _sTipoNota, .f.))
-				u_help ("Parece que a nota '" + _sNF + "' nao foi gerada para o fornecedor '" + _sFornece + "'",, .t.)
-				_lContinua = .F.
-			endif
-			*/
+			if ! sf1 -> (dbseek (xfilial ("SF1") + _sNF + _sSerie + sa2 -> a2_cod + sa2 -> a2_loja + 'N', .f.))
+				u_help ("Parece que a nota '" + _sNF + "' nao foi gerada!",, .t.)
+			else
 
-			u_log2 ('info', '[' + procname () + ']Carga ' + sze -> ze_carga + ' gerou NF ' + sf1 -> f1_doc)
+				u_log2 ('info', '[' + procname () + ']Carga ' + sze -> ze_carga + ' gerou NF ' + sf1 -> f1_doc)
 
-			// Grava dados adicionais na nota.
-			if ! empty (_sMsgContr)
-				if empty (sf1 -> f1_vacmemc)
-					msmm(,,,_sMsgContr,1,,,"SF1","F1_VACMEMC")
-				else
-					_sMemoAnt = alltrim (MSMM (sf1->f1_vacmemc,,,,3))
-					msmm (sf1 -> f1_vacmemc,,, _sMemoAnt + '; ' + _sMsgContr, 1,,,"SF1","F1_VACMEMC")
+				// Grava dados adicionais na nota.
+				if ! empty (_sMsgContr)
+					if empty (sf1 -> f1_vacmemc)
+						msmm(,,,_sMsgContr,1,,,"SF1","F1_VACMEMC")
+					else
+						_sMemoAnt = alltrim (MSMM (sf1->f1_vacmemc,,,,3))
+						msmm (sf1 -> f1_vacmemc,,, _sMemoAnt + '; ' + _sMsgContr, 1,,,"SF1","F1_VACMEMC")
+					endif
 				endif
+		
+				// Grava no SZE o numero da nota gerada, para evitar geracao em duplicidade.
+				reclock ("SZE", .F.)
+				sze -> ze_nfger  = sf1 -> f1_doc
+				sze -> ze_serie  = sf1 -> f1_serie
+				sze -> ze_status = "N"
+				msunlock ()
 			endif
-	
-			// Grava no SZE o numero da nota gerada, para evitar geracao em duplicidade.
-			reclock ("SZE", .F.)
-			sze -> ze_nfger  = sf1 -> f1_doc
-			sze -> ze_serie  = sf1 -> f1_serie
-			sze -> ze_status = "N"
-			msunlock ()
 		endif
 		end transaction
 		U_Log2 ('info', '[' + procname () + ']Fim da transacao de geracao da contranota.')
@@ -784,13 +792,14 @@ User Function va_rusN (_lSimulNF)
 		//	U_VA_RusAI ('INS/AGE/LIB', 'CON')
 //			U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)
 			_oCarSaf:AtuAgenda ()
-			_oCarSaf:EnderEstq ('I')
+			if ! _oCarSaf:EnderEstq ('I')
+				u_help ("Problemas para enderecar estoque: " + _oCarSaf:UltMsg,, .t.)
+			endif
 		endif
 
 		// Atualiza conta corrente associados
-		// Acho que vou fazer em batch, pois nao tem pressa e eh muito lento.
 		if ! empty (sze -> ze_nfger) .and. _sTpForUva == 'A'
-			// ainda nao 100%			processa ({|| _GravaSZI ()})
+			// Resolvi fazer em batch, pois nao tem pressa e eh muito lento.
 		endif
 
 	endif

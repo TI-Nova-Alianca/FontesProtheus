@@ -25,6 +25,7 @@
 // 10/02/2021 - Robert - Replicacao da tabela 52 nao fazia da 53 (itens) - GLPI 9383.
 // 14/09/2023 - Robert - Tratamento campo ZX5_13PMIN
 // 13/11/2023 - Robert - Tratamento para campos de % acrescimo cfe. classificacoes (PR/AA/A/B/C/D/DS e A/B/D/DS)
+// 31/12/2023 - Robert - Replicacao de tabelas 13 e 14 (precos uvas) migrada para VA_SZA.PRW
 //
 
 // --------------------------------------------------------------------------
@@ -98,7 +99,7 @@ Static Function _Opcoes ()
 
 	// Monta array de opcoes.
 	_aOpcoes = {}
-	aadd (_aOpcoes, {.F., "Grupos e variedades tabelas precos", "ZX5_13"})
+//	aadd (_aOpcoes, {.F., "Grupos e variedades tabelas precos", "ZX5_13"})
 	aadd (_aOpcoes, {.F., "Faixas grau uvas espaldeira",        "ZX5_17"})
 	aadd (_aOpcoes, {.F., "Faixas grau uvas latadas",           "ZX5_52"})
 
@@ -125,10 +126,8 @@ Static Function _AndaLogo ()
 	for _nOpcao = 1 to len (_aOpcoes)
 		if _aOpcoes [_nOpcao, 1]
 			do case
-//				case _aOpcoes [_nOpcao, 3] == "ZX5_11"
-//					u_help ("Rotina ainda nao desenvolvida. Use rotina de 'tabelas especificas' (tabela 11)")
-				case _aOpcoes [_nOpcao, 3] == "ZX5_13"
-					processa ({|| _ReplZX513 ()})
+//				case _aOpcoes [_nOpcao, 3] == "ZX5_13"
+//					processa ({|| _ReplZX513 ()})
 				case _aOpcoes [_nOpcao, 3] == "ZX5_17"
 					processa ({|| _ReplZX517 ()})
 				case _aOpcoes [_nOpcao, 3] == "ZX5_52"
@@ -141,7 +140,7 @@ Static Function _AndaLogo ()
 return _lContinua
 
 
-
+/*
 // --------------------------------------------------------------------------
 static function _ReplZX513 ()
 	local _oSQL      := NIL
@@ -304,7 +303,7 @@ static function _ReplZX513 ()
 		dbselectarea ("SB1")
 	endif
 return
-
+*/
 
 
 

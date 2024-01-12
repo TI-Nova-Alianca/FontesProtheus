@@ -15,6 +15,7 @@
 // 19/01/2023 - Robert - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
 // 15/09/2023 - Robert - Campo tb_wms_movimentacoes.status_protheus passa a gravar descricao junto
 //                     - Passa a gerar solicitacao de transferencia com :CodMotivo=08
+// 27/12/2023 - Robert - Passa a usar atributo ClsTrEstq:CodRetorno.
 //
 
 #Include "Protheus.ch"
@@ -30,8 +31,8 @@ User Function BatFullM ()
 	local _lRet      := .T.
 	private _aStatProt := {}  // Deixar PRIVATE para ser vista pelas demais functions.
 
-	// Define os possiveis valores para os campos 'status_protheus'
-	// que constam nas tabelas de integracao.
+	// Define os possiveis valores para os campos 'status_protheus'.
+	// Manter compatibilidade entre as tabelas tb_wms_entrada e tb_wms_pedidos !!!
 	aadd (_aStatProt, {'1', 'Falta estq ERP'})
 	aadd (_aStatProt, {'2', 'Outros erros'})
 	aadd (_aStatProt, {'3', 'Executado no ERP'})
@@ -75,7 +76,16 @@ User Function BatFullM ()
 		// No ax.94 alguem vai fazer a baixa (via NF, requisicao, supressao, rede de flu, aparatar, entregar aos dementadores, sei la...)
 		case alltrim ((_sAliasQ) -> tipo) == '3'
 			U_Log2 ('debug', '[' + procname () + ']Processando mov.tipo 3 cod ' + alltrim ((_sAliasQ) -> coditem) + ' dthr ' + alltrim ((_sAliasQ) -> PK) + ' qt: ' + cvaltochar ((_sAliasQ) -> qtde) + ' lote: ' + (_sAliasQ) -> lote)
-		//	U_Log2 ('debug', '[' + procname () + ']' + substr ((_sAliasQ) -> PK, 1, 4) + substr ((_sAliasQ) -> PK, 6, 2) + substr ((_sAliasQ) -> PK, 9, 2))
+/*
+			// Verifica se vai ter estoque suficiente para transferir.
+			sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
+			if ! sb2 -> (dbseek (xfilial ("SB2") + left (alltrim ((_sAliasQ) -> coditem) + space (15), 15) + '01', .F.)) .or. sb2 -> b2_qatu < (_sAliasQ) -> qtde
+				u_help ("Sem saldo estoque produto '" + alltrim ((_sAliasQ) -> coditem) + "' no ax.01 para transferir.",, .t.)
+				_AtuFull ((_sAliasQ) -> PK, '1', '')  // Atualiza a tabela do Fullsoft como 'falta estoque no ERP'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+*/
 			_oTrEstq := ClsTrEstq ():New ()
 			_oTrEstq:FilOrig  = cFilAnt
 			_oTrEstq:FilDest  = cFilAnt
@@ -93,8 +103,14 @@ User Function BatFullM ()
 			_oTrEstq:UsrIncl   = 'FullWMS'  //cUserName
 			_oTrEstq:DtEmis    = stod ((_sAliasQ) -> dtemis)
 			if ! _oTrEstq:Grava ()
-				U_Log2 ('erro', '[' + procname () + ']' + _oTrEstq:UltMsg)
-				_AtuFull ((_sAliasQ) -> PK, '2', '')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
+				U_Log2 ('erro', '[' + procname () + ']Nao gerou ZAG. ' + _oTrEstq:UltMsg)
+				
+				// Se recebi um codigo de retorno conhecido, propago-o para a tabela do Fullsoft.
+				if left (_oTrEstq:CodRetorno, 1) == '1'
+					_AtuFull ((_sAliasQ) -> PK, '1', '')  // Atualiza a tabela do Fullsoft como 'Falta estoque'
+				else
+					_AtuFull ((_sAliasQ) -> PK, '2', '')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
+				endif
 			else
 				_AtuFull ((_sAliasQ) -> PK, '3', _oTrEstq:Docto + _oTrEstq:Seq)  // Atualiza a tabela do Fullsoft como 'executado no ERP'
 		
@@ -109,7 +125,8 @@ User Function BatFullM ()
 
 		(_sAliasQ) -> (dbskip ())
 
-		EXIT  // DURANTE TESTES, PARA RODAR 1 REGISTRO POR VEZ
+	//	EXIT  // DURANTE TESTES, PARA RODAR 1 REGISTRO POR VEZ
+
 
 	enddo
 	(_sAliasQ) -> (dbclosearea ())

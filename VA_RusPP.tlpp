@@ -13,7 +13,7 @@
 // 17/05/2021 - Robert - Se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa (GLPI 9891)
 // 12/02/2022 - Robert - Ajuste no 'se ano+mes previsto jah passou' pois na vdd considerava apenas o mes! (GLPI 11619).
 // 14/03/2022 - Robert - Incluida coluna com a letra para parcela na array de retorno.
-// 10/01/2023 - RObert - Ajustes para safra 2023.
+// 10/01/2023 - Robert - Ajustes para safra 2023.
 // 25/01/2023 - Robert - Removidos alguns logs
 // 03/02/2023 - Robert - Removidos alguns logs
 // 21/07/2023 - Robert - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra().
@@ -62,12 +62,11 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 		_oAssocCP = ClsAssoc():New ('000161', '01')
 	//	//                                _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
 	//	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .f.,     .f.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
-		u_help ("Robert: Implementei em 21/07/2023 nova chamada para ler regras de pagamento e nunca testei.", , .t.)
 		_oAssocCP:FSSafra      = _sSafPag
 		_oAssocCP:FSRegraPagto = .t.
 		_sXmlFech = _oAssocCP:FechSafra ()
 
-	//	U_Log2 ('debug', _sXMLFech)
+		//U_Log2 ('debug', _sXMLFech)
 
 		// Converte de texto para XML
 		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
@@ -81,11 +80,11 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 	// Verifica se tem este tipo de tag no XML
 	if _lContinua
 		if type ('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem') != 'A'
-			u_help ('Nao encontrei regras de pagamento para esta safra.',, .T.)
+			u_help ('Nao encontrei no XML as regras de pagamento para a safra ' + _sSafPag,, .T.)
 			_lContinua = .F.
 		else
 			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
-				//U_Log2 ('debug', _nRegraPag)
+				//U_Log2 ('debug', '_nRegraPag = ' + cvaltochar (_nRegraPag))
 				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == _sGrpPgSaf
 					_aParcel [1, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
 					_aParcel [2, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
@@ -102,8 +101,8 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			next
 		endif
 	endif
-//	u_log2 ('debug', '_aParcel depois de ler o XML:')
-//	u_log2 ('debug', _aParcel)
+	//u_log2 ('debug', '_aParcel depois de ler o XML:')
+	//u_log2 ('debug', _aParcel)
 
 	// A parcela do frete cai sempre na proxima posicao livre
 	if _lContinua
@@ -116,7 +115,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			_lContinua = .F.
 		else
 			_nParcFrt = _nParcel
-			//U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
+			U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
 		endif
 	endif
 
@@ -239,7 +238,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 				_aParcel [_nParcel, 2] = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
 			next
 
-		case _sSafPag == '2023'
+		case _sSafPag $ '2023/2024'
 
 			// A maioria dos vencimentos vai ser no mesmo ano da safra.
 			_sAnoVcSaf = _sSafPag

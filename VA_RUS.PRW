@@ -79,6 +79,8 @@ User Function va_rus ()
 	// Deixa uma carga instanciada, mesmo que vazia, pois algumas funcoes
 	// (como a validacao de parametros por exemplo) jah vao tentar ler o objeto.
 	private _oCarSaf := ClsCarSaf ():New ()
+	_oCarSaf:Filial = cFilAnt
+	_oCarSaf:Safra  = U_IniSafra () 
 
 	// Cria parametros e obriga usuario a responde-los na entrada da rotina.
 	_ValidPerg ()
@@ -225,6 +227,8 @@ user function VA_RUSOO (_sQueFazer)
 
 	// Deixa atributos alimentados no objeto, por que a maioria das rotinas vai precisar.
 	_oCarSaf:GeraAtrib ("SZE")
+	U_Log2 ('debug', '[' + procname () + ']carga instanciada:')
+	_oCarSaf:Log ()
 
 	do case
 	case _sQueFazer == upper ('Tk1Pes')  // Sim, a chamada pelo menu parece passar tudo em maiusculas.
@@ -233,7 +237,6 @@ user function VA_RUSOO (_sQueFazer)
 		endif
 
 	case _sQueFazer == upper ('Tk2Pes')
-		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
 		if ! _oCarSaf:ImprimeTk (2)
 			u_help (_oCarSaf:UltMsg,, .t.)
 		endif
@@ -242,12 +245,20 @@ user function VA_RUSOO (_sQueFazer)
 		U_VA_RUSN (.F.)
 
 	case _sQueFazer == upper ('EnderecarEstoque')
-	//	_oCarSaf:EnderEstq ('I')
-		MsgRun ("Aguarde, gerando enderecamento", "Enderecamento", {|| _oCarSaf:EnderEstq ('I')})
+		//MsgRun ("Aguarde, gerando enderecamento", "Enderecamento", {|| _oCarSaf:EnderEstq ('I')})
+		if ! _oCarSaf:EnderEstq ('I')
+			u_help (_oCarSaf:UltMsg,, .t.)
+		else
+			u_help ("Processo concluido.")
+		endif
 
 	case _sQueFazer == upper ('EstornarEnderecamento')
-		//_oCarSaf:EnderEstq ('E')
-		MsgRun ("Aguarde, estornando enderecamento", "Estorno enderecamento", {|| _oCarSaf:EnderEstq ('E')})
+//		MsgRun ("Aguarde, estornando enderecamento", "Estorno enderecamento", {|| _oCarSaf:EnderEstq ('E')})
+		if ! _oCarSaf:EnderEstq ('E')
+			u_help (_oCarSaf:UltMsg,, .t.)
+		else
+			u_help ("Processo concluido.")
+		endif
 
 	case _sQueFazer == upper ('SimularContranota')
 		U_VA_RUSN (.T.)

@@ -51,12 +51,9 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _sModelBal := 0
 		private _nMultBal  := 10
 		private _nPesoEmb  := 20
-//		private _lImpTick  := .F.
-//		private _sPortTick := ''
 		private _lLeBrix   := .T.
 		private _nQViasTk1 := 1
 		private _nQViasTk2 := 2
-		//private _lTickPeso := .F.
 		private _lIntPort  := .F.
 		private agets      := {}  // Alimentada pelas rotinas do sistema e necessaria para validacoes de campos obrigatorios.
 		private aTela      := {}  // Alimentada pelas rotinas do sistema e necessaria para validacoes de campos obrigatorios.
@@ -82,15 +79,13 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private m->ZE_locdesc := _sTombador
 		private m->ZE_amostra := IIF (_lAmostra, 'S', 'N')
 		private m->ze_senhade := _sSenhaOrd
-//		private m->ze_cargac1 := _sCargaC1
-//		private m->ze_cargac2 := _sCargaC2
 		private m->ze_ccompar := _sCompart
 		private N             := 1
 		private _aCadVitic    := {}  // Variavel usada pelos outros programas.
 		private lMSErroAuto   := .F.  // Para mostrar erros das rotinas padrao.
 		private lMSHelpAuto   := .F.  // Para mostrar erros das rotinas padrao.
-		private _zx509fina    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09FINA')
-		private _zx509orga    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
+		private _zx509fina    := _oCarSaf:RecebeVini
+		private _zx509orga    := _oCarSaf:RecebeOrg
 	endif
 
 	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGA   = ' + m->ze_carga)

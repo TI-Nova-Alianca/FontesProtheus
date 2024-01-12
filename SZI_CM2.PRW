@@ -272,7 +272,7 @@ Static Function _ValidPerg ()
 	//                     PERGUNT                            TIPO TAM DEC VALID F3        Opcoes                              Help
 	aadd (_aRegsPerg, {01, "Calcular / descalcular         ", "N", 1,  0,  "",   "      ", {"Calcular", "Descalcular"},        ""})
 	aadd (_aRegsPerg, {02, "Mes/ano de referencia (MM/AAAA)", "C", 7,  0,  "",   "      ", {},                                 ""})
-	aadd (_aRegsPerg, {03, "Taxa % correcao                ", "N", 6,  4,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {03, "Taxa % correcao diaria         ", "N", 6,  4,  "",   "      ", {},                                 ""})
 	aadd (_aRegsPerg, {04, "Associado inicial              ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
 	aadd (_aRegsPerg, {05, "Loja associado inicial         ", "C", 2,  0,  "",   "      ", {},                                 ""})
 	aadd (_aRegsPerg, {06, "Associado final                ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})

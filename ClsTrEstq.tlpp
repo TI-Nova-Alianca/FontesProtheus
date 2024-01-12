@@ -51,6 +51,7 @@
 // 25/09/2023 - Robert  - Verifica se o produto pode ser transformado, antes de permitir a inclusao da solicitacao.
 // 14/12/2023 - Robert  - Passa a herdar da classe ClsBase
 //                      - Permite gerar etiquetas para o ax.02 quando produto controla lote (GLPI 14600)
+// 27/12/2023 - Robert  - Criado atributo CodRetorno.
 //
 
 // ------------------------------------------------------------------------------------
@@ -88,6 +89,7 @@ CLASS ClsTrEstq FROM ClsBase
 	public data CtrLotOrig // Indica se o produto de origem controla lote (campo B1_RASTRO)
 	public data CtrLotDest // Indica se o produto destino controla lote (campo B1_RASTRO)
 	public data CodMotivo  // Codigo do motivo da transferencia.
+	public data CodRetorno // Codigo de retorno (de erro ou de sucesso)
 	public data EndOrig    // Endereco origem (quando produto tiver controle de localizacao)
 	public data EndDest    // Endereco destino  (quando produto tiver controle de localizacao)
 	public data Etiqueta   // Numero da etiqueta (tabela ZA1), quando existir
@@ -124,7 +126,7 @@ CLASS ClsTrEstq FROM ClsBase
 	public  METHOD Negar ()
 	public  METHOD NovoEndDst ()
 	public  METHOD PodeIncl ()
-//	private METHOD SomaMsg ()
+	private METHOD SetCodRetorno ()
 ENDCLASS
 
 
@@ -1265,6 +1267,7 @@ METHOD PodeIncl () Class ClsTrEstq
 			_sMsgEstq = U_VerEstq ("5", ::ProdOrig, '', ::AlmOrig, ::QtdSolic, '', ::EndOrig, ::LoteOrig, '')
 		endif
 		if ! empty (_sMsgEstq)
+			::SetCodRetorno ('1')
 			_Super:SomaMsg (_sMsgEstq)
 			_lContinua = .F.
 		else
@@ -1305,13 +1308,27 @@ METHOD PodeIncl () Class ClsTrEstq
 
 return _lContinua
 
-/* Migrado para a classe superior
+
 // --------------------------------------------------------------------------
-// Concatena (sem repeticao) mensagens do objeto.
-METHOD SomaMsg (_sMsg) Class ClsTrEstq
-	local _sMsgAux := alltrim (cvaltochar (_sMsg))
-	if ! alltrim (_sMsgAux) $ ::UltMsg
-		::UltMsg = alltrim (_sMsgAux) + '; ' + ::UltMsg
+// Altera codigo (de erro ou de sucesso) para retorno
+METHOD SetCodRetorno (_sCod as character) Class ClsTrEstq
+	local _aCodRet := {}
+	local _nStat   := 0
+
+	// Define os possiveis valores para o codigo de retorno.
+	// Se possivel, seria interessante manter compatibilidade com as tabelas
+	// de integracao com FullWMS (tb_wms_entrada e tb_wms_pedidos)
+	aadd (_aCodRet, {'1', 'Estoque insuficiente'})
+	aadd (_aCodRet, {'2', 'Outros erros'})
+	aadd (_aCodRet, {'3', 'Transferencia executada'})
+	aadd (_aCodRet, {'6', 'solicitacao nao aceita'})
+	aadd (_aCodRet, {'C', 'Solicitacao cancelada'})
+
+	_nStat = ascan (_aCodRet, {|_aVal| _aVal [1] == _sCod})
+
+	if _nStat == 0
+		_Super:SomaMsg ('Tentativa de gravar codigo de retorno ' + cvaltochar (_sCod) + ' (invalido) na classe ' + GetClassName (::Self))
+	else
+		::CodRetorno = _sCod += '-' + _aCodRet [_nStat, 2]
 	endif
 return
-*/

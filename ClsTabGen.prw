@@ -171,7 +171,7 @@ METHOD Insere (_aDados) Class ClsTabGen
 	local _oSQL      := NIL
 	local _sChave    := ""
 
-	u_logIni (GetClassName (::Self) + '.' + procname ())
+//	u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	if _lContinua .and. empty (::CodTabela)
 		::UltMsg += "Codigo da tabela nao definido;"
@@ -221,7 +221,7 @@ METHOD Insere (_aDados) Class ClsTabGen
 			endcase
 		next
 		if _lContinua
-			_oSQL:Log ()
+		//	_oSQL:Log ()
 			if _oSQL:RetQry (1, .F.) > 0
 				::UltMsg = "Chave duplicada;"
 				_lContinua = .F.
@@ -236,7 +236,7 @@ METHOD Insere (_aDados) Class ClsTabGen
 		_oSQL:_sQuery += "  where D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += "    and ZX5_FILIAL = '" + iif (::ModoAcesso == 'E', cFilAnt, '  ') + "'"
 		_oSQL:_sQuery += "    and ZX5_TABELA = '" + ::CodTabela + "'"
-		_oSQL:Log ()
+	//	_oSQL:Log ()
 		_sChave = _oSQL:RetQry (1, .F.)
 		_sChave = iif (empty (_sChave), '01', soma1 (_sChave))
 
@@ -250,7 +250,7 @@ METHOD Insere (_aDados) Class ClsTabGen
 		msunlock ()
 	endif
 
-	u_logFim (GetClassName (::Self) + '.' + procname ())
+//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 //
 // --------------------------------------------------------------------------

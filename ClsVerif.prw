@@ -1012,7 +1012,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += " ZE_SAFRA AS SAFRA,"
 		::Query += " ZE_CARGA AS CARGA,"
 		::Query += " ZE_DATA AS DATA,"
-		::Query += " ZE_LOCAL AS LOCAL,"
 		::Query += " ZE_ASSOC AS ASSOCIADO,"
 		::Query += " ZE_NOMASSO AS NOME_ASSOC, SZE.ZE_NFGER, ZE_VAUSER"
 		::Query +=   " FROM " + RetSQLName ("SZE") + " SZE"
@@ -1020,7 +1019,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=    " AND ZE_FILIAL BETWEEN '" + ::Param02 + "' AND '" + ::Param03 + "'"
 		::Query +=    " AND ZE_SAFRA = '" + ::Param01 + "'"
 		::Query +=    " AND ZE_NFGER = ''"
-//			::Query +=    " AND ZE_COOP IN ('000021', '001369')"
 		::Query +=    " AND ZE_AGLUTIN != 'O'"  // Origem de aglutinacao
 		::Query +=    " AND ZE_STATUS  != 'C'"  // Cancelada
 		::Query +=    " AND ZE_STATUS  != 'D'"  // Direcionada para outra filial

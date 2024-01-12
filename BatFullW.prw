@@ -64,8 +64,8 @@ User Function BatFullW (_sQueFazer, _sEntrID, _sSaidID)
 	local _nLock     := 0
 	private _aStatProt := {}  // Deixar PRIVATE para ser vista pelas funcoes de entradas e saidas.
 
-	// Define os possiveis valores para os campos 'status_protheus'
-	// que constam nas tabelas tb_wms_entrada e tb_wms_pedidos.
+	// Define os possiveis valores para os campos 'status_protheus'.
+	// Manter compatibilidade entre as tabelas tb_wms_entrada e tb_wms_pedidos !!!
 	aadd (_aStatProt, {'1', 'Falta estq ERP'})
 	aadd (_aStatProt, {'2', 'Outros erros'})
 	aadd (_aStatProt, {'3', 'Executado no ERP'})
@@ -121,7 +121,6 @@ static function _Entradas (_sEntrID)
 	local _sChaveEx  := ""
 	local _lRet      := .T.
 	local _oEtiq     := NIL
-//	local _sAlmOrig  := ''
 
 	// Variavel para erros de rotinas automaticas. Deixar tipo 'private'.
  	if type ("_sErroAuto") != 'C'
@@ -136,9 +135,6 @@ static function _Entradas (_sEntrID)
 	_oSQL:_sQuery += " select tpdoc, codfor, entrada_id, coditem, qtde_exec, qtde_mov, dbo.VA_DatetimeToVarchar (dthr) as dthr, status"
 	_oSQL:_sQuery +=   " from tb_wms_entrada"
 	_oSQL:_sQuery +=  " where status = '3'"
-//	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
-//	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
-//	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = qtd.movimentada diferente qt.executada
 	_oSQL:_sQuery +=    " and status_protheus not like '3%'"  // 3 = executado
 	_oSQL:_sQuery +=    " and status_protheus not like 'C%'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
 	_oSQL:_sQuery +=    " and status_protheus not like '5%'"  // 5 = qtd.movimentada diferente qt.executada
@@ -230,9 +226,9 @@ static function _Entradas (_sEntrID)
 		
 			// Verifica se vai ter estoque suficiente para transferir.
 			sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
-			U_Log2 ('debug', '[' + procname () + ']produto = ' + _oEtiq:Produto)
-			U_Log2 ('debug', '[' + procname () + '] alm.apont.op = ' + _oEtiq:AlmApontOP)
-			U_Log2 ('debug', '[' + procname () + '] _nQtAUsar = ' + cvaltochar (_nQtAUsar))
+	//		U_Log2 ('debug', '[' + procname () + ']produto = ' + _oEtiq:Produto)
+	//		U_Log2 ('debug', '[' + procname () + '] alm.apont.op = ' + _oEtiq:AlmApontOP)
+	//		U_Log2 ('debug', '[' + procname () + '] _nQtAUsar = ' + cvaltochar (_nQtAUsar))
 			if ! sb2 -> (dbseek (xfilial ("SB2") + _oEtiq:Produto + _oEtiq:AlmApontOP, .F.)) .or. sb2 -> b2_qatu < _nQtAUsar
 				u_help ("Apont.prod.etiq. '" + _oEtiq:Codigo + "': sem saldo estoque produto '" + alltrim (_oEtiq:Produto) + "' no ax. '" + _oEtiq:AlmApontOP + "' para transferir.",, .t.)
 				_AtuEntr ((_sAliasQ) -> entrada_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'

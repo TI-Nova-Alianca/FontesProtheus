@@ -43,7 +43,6 @@
 //#INCLUDE "XMLXFUN.CH"
 //#INCLUDE "apvt100.ch"
 
-// --------------------------------------------------------------------------
 user function robert ()
 	local _lContinua := .T.
 	local _sFuncao   := ''
@@ -103,6 +102,7 @@ user function robert ()
 		// _sFuncao += '_batBlUsr ()'
 		// _sFuncao += '_batFull ()'
 		// _sFuncao += '_BatLimp ()'
+		// _sFuncao += '_BatMerc ()'
 		// _sFuncao += '_BatOcor ()'
 		// _sFuncao += '_BatSafr ()'
 		// _sFuncao += '_BatTrSZI ()'
@@ -113,7 +113,7 @@ user function robert ()
 		// _sFuncao += '_CplSaf23A ()'
 		// _sFuncao += '_CplSaf23B ()'
 		// _sFuncao += '_CplSaf23C ()'
-		_sFuncao += '_CorrMonSZI ()'
+		// _sFuncao += '_CorrMonSZI ()'
 		// _sFuncao += '_ctbANC ()'
 		// _sFuncao += '_DesabRast ()'
 		// _sFuncao += '_elastic ()'
@@ -1191,15 +1191,15 @@ return
 // Testes correcao monetaria associados
 static function _CorrMonSZI ()
 	U_GravaSX1 ("SZI_CM2", '01', 2)  // Calcular / Descalcular {"Calcular", "Descalcular"}
-	U_GravaSX1 ("SZI_CM2", '02', '10/2023')  // Mes/ano de referencia (MMAAAA)
-	U_GravaSX1 ("SZI_CM2", '03', 0.066)  // Taxa % correcao
-	U_GravaSX1 ("SZI_CM2", '04', '000161')  // Associado inicial
+	U_GravaSX1 ("SZI_CM2", '02', '07/2023')  // Mes/ano de referencia (MMAAAA)
+	U_GravaSX1 ("SZI_CM2", '03', 0.0667)  // Taxa % correcao
+	U_GravaSX1 ("SZI_CM2", '04', '000634')  // Associado inicial
 	U_GravaSX1 ("SZI_CM2", '05', '')  // Loja associado inicial
-	U_GravaSX1 ("SZI_CM2", '06', '000161')  // Associado final
+	U_GravaSX1 ("SZI_CM2", '06', '000634')  // Associado final
 	U_GravaSX1 ("SZI_CM2", '07', '01')  // Loja associado final
-	u_szi_cm2 (.t.)
-	U_GravaSX1 ("SZI_CM2", '01', 1)  // Calcular / Descalcular {"Calcular", "Descalcular"}
-	u_szi_cm2 (.t.)
+//	u_szi_cm2 (.t.)
+//	U_GravaSX1 ("SZI_CM2", '01', 1)  // Calcular / Descalcular {"Calcular", "Descalcular"}
+//	u_szi_cm2 (.t.)
 return
 
 
@@ -2331,27 +2331,42 @@ return
 // --------------------------------------------------------------------------
 // Simulacoes com cargas de safra
 static function _CargSaf ()
+	local _nContador := 0
 	local _oCarSaf := NIL
 
 	sze -> (dbsetorder (1))
 	dbselectarea ("SZE")
-	set filter to ze_filial = cFilAnt .and. ze_safra = '2022' .and. !ze_status $ 'C/D' // .AND. ZE_CARGA $ '0655/0656/0952/0953'
+	set filter to ze_filial = cFilAnt .and. ze_safra = '2023' .and. !ze_status $ 'C/D' .AND. ZE_CARGA $ '0460/0461/0463'
 	sze -> (dbgotop ())
-	do while ! sze -> (eof ())
-		u_log (sze -> ze_filial + ' ' + sze -> ze_safra + ' ' + sze -> ze_carga)
+	do while ! sze -> (eof ()) .and. _nContador++ <= 100
+		U_Log2 ('debug', '[' + procname () + ']' + sze -> ze_filial + ' ' + sze -> ze_safra + ' ' + sze -> ze_carga)
 		_oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
 		if empty (_oCarSaf:Carga)
 			u_help ("Impossivel instanciar carga (ou carga invalida).", _oCarSaf:UltMsg, .t.)
 			exit
 		endif
-		_xNovo := _oCarSaf:VarMenorVl (_oCarSaf:PrcParaNF) [1, 1]
-		// U_Log2 ('debug', '[' + procname () + ']Novo:' + _xNovo)
-		_xOld := U_VA_RusMV ()
-		if _xNovo != _xOld
-			U_Log2 ('erro', '[' + procname () + ']Diferenca!!! OLD:' + cvaltochar (_xOld) + ' NOVO: ' + cvaltochar (_xNovo))
-			_oCarSaf:Log ()
+
+		U_Log2 ('debug', '[' + procname () + ']Vou buscar menor valor')
+		if ! _oCarSaf:BuscaVarMenorVl ()
+			U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
 		endif
-		//EXIT // DURANTE TESTES
+		_oCarSaf:Log ()
+
+		if ! _oCarSaf:BuscaGrupoPagto ()
+			U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
+		endif
+		_oCarSaf:Log ()
+
+		U_VA_RUSN (.t.)
+
+	//	_xNovo := _oCarSaf:VarMenorVl (_oCarSaf:TipoPrecoParaNF) [1, 1]
+	//	// U_Log2 ('debug', '[' + procname () + ']Novo:' + _xNovo)
+	//	_xOld := U_VA_RusMV ()
+	//	if _xNovo != _xOld
+	//		U_Log2 ('erro', '[' + procname () + ']Diferenca!!! OLD:' + cvaltochar (_xOld) + ' NOVO: ' + cvaltochar (_xNovo))
+	//		_oCarSaf:Log ()
+	//	endif
+	EXIT // DURANTE TESTES
 
 		sze -> (dbskip ())
 	enddo
@@ -2718,12 +2733,12 @@ return
 
 // --------------------------------------------------------------------------
 static function _batfull ()
-	U_MudaLog ('U_BatFullW.log')
+//	U_MudaLog ('U_BatFullW.log')
 //	U_BatFullW ('E') //, 'ZA1012000617078', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
-	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+//	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
 
-	//U_MudaLog ('U_BatFullM.log')
-	//U_BatFullM ()
+	U_MudaLog ('U_BatFullM.log')
+	U_BatFullM ()
 return
 
 // --------------------------------------------------------------------------
@@ -2733,22 +2748,33 @@ static function _batLimp ()
 return
 
 // --------------------------------------------------------------------------
+static function _batMerc ()
+//	U_MudaLog ('U_BatMercP.log')
+//	u_batmercp ()
+//	U_MudaLog ('U_BatMercN.log')
+//	u_batMercN (5)
+	U_MudaLog ('U_BatEMerc.log')
+	u_batEMerc ()
+return
+
+// --------------------------------------------------------------------------
 static function _BatSafr ()
+	u_batsafr ('ConfCadastros')  // Conferencia cadastros basicos
 //	u_batsafr ('CargasSemContranota')  // cargas sem contranota
 //	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
 //	u_batsafr ('ConferirFrete')  // conferencia fretes
 //	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
 //	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
 //	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
-//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
 //	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
+//	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
+//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
 return
 
 // --------------------------------------------------------------------------
 static function _BatTrSZI ()
 //	U_MudaLog ("U_BatTrSZI.log")
-	U_BatTrSZI('002486','01','001517','01','07','01','13','20230125',872.12)
+	U_BatTrSZI('016300','01','000287','01','07','01','13','20240105',757.51)
 return
 
 // --------------------------------------------------------------------------
@@ -3526,28 +3552,7 @@ static function _TbUva ()
 	local _sVarUva := 'C'
 	local _sConduc := 'L'
 	local _sTipoTab := 'C'  // Por enquanto, apenas [C]ompra
-/*
-	local _oGrpGraus := NIL
-	local _oGrau     := NIL
-	local _aGraus    := {}
-
-	_oGrpGraus := JsonObject():New()
-	_oGrau := JsonObject():New()
-	_oGrau ['grau'] = 16
-	_oGrau ['agio'] = 0.15
-	U_Log2 ('debug', _oGrau ['grau'])
-	U_Log2 ('debug', _oGrau ['agio'])
-	aadd (_aGraus, _oGrau)
-	_oGrau ['Grau'] = 17
-	_oGrau ['agio'] = 0.25
-	U_Log2 ('debug', _oGrau:toJSON ())
-	aadd (_aGraus, _oGrau)
-	_oGrpGraus:Set (_aGraus)
-	U_Log2 ('debug', _oGrpGraus:toJSON ())
-*/
-
 	local _oTbUva := ClsTbUva ():New ()
-//	_oTbUva:GeraAtrib ('2023', 'C', 'C', 'L', 'I')  //_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec
 	_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, 'I')
 
 	if empty (_oTbUva:CodTabela)
@@ -4420,12 +4425,8 @@ return
 //	endif
 //	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batfunatlz ()
-//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmercp ()
 //	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batedim ("I")
-//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batMercN (5)
 //	u_log2 ('info', _oBatch:Mensagens)
 return
 */

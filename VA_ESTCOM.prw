@@ -7,6 +7,10 @@
 // 27/03/2020 - Claudia - Alterado o modelo TREPORT para exportação direto para planilha
 // 05/01/2020 - Cláudia - Retirada as CFOP's '1151', '1557', '2151'. GLPI: 9076
 // 12/02/2021 - Cláudia - Ajuste relatório. GLPI: 9033
+// 08/01/2024 - Robert  - Desconsiderar D1_TP='VA' - GLPI 14668
+//                      - Criada conta 101030101012 para itens tipo PI - GLPI 14668
+//
+
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -51,6 +55,7 @@ Static Function EstComExp()
 	cQuery += " AND A.D_E_L_E_T_ = ''"
 	cQuery += " AND SUBSTRING(A.D1_DTDIGIT, 1, 6) = '" + sPeriodo + "'"
 	cQuery += " AND A.D1_TIPO != 'D'"
+	cQuery += " AND A.D1_TP NOT IN ('VA')"  // Embalagens de 3os. nao contabiliza por NF
 	//cQuery += " AND A.D1_CF NOT IN ('1151', '1557', '2151')"
 	cQuery += " AND ((A.D1_CF NOT LIKE '19%'"
 	cQuery += " AND A.D1_CF NOT LIKE '29%'))"
@@ -62,6 +67,7 @@ Static Function EstComExp()
 	cQuery += " ORDER BY A.D1_FILIAL"
 	cQuery += " 		,A.D1_TP"
 	cQuery += " 		,A.D1_DOC"
+	U_Log2 ('debug', '[' + procname () + ']' + cQuery)
 	aCtb:= U_Qry2Array(cQuery)
 	
 	cQuery1 += " SELECT"
@@ -86,6 +92,7 @@ Static Function EstComExp()
 	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301007' THEN 'MT'"
 	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030101023' THEN 'BN'"
 	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301009' THEN 'IA'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030101012' THEN 'PI'"
 	cQuery1 += " 		ELSE ''"
 	cQuery1 += " 	END AS TIPO_ENT"
 	cQuery1 += "    ,ROUND(SUM(CASE"
@@ -107,6 +114,7 @@ Static Function EstComExp()
 	cQuery1 += " 		,CT.CT2_DEBITO"
 	cQuery1 += " 		,CT.CT2_HIST"
 	cQuery1 += " 		,SUBSTRING(CT.CT2_KEY, 3, 9)"
+	U_Log2 ('debug', '[' + procname () + ']' + cQuery1)
 	aEnt:= U_Qry2Array(cQuery1)	
 	
 		
