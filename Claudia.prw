@@ -53,14 +53,14 @@ User Function claudia ()
 	//u_help("Produtos enologicos no SB5")
 	//_ProdSB5()
 
-	// u_help("Gera ZC1")
-	// _GeraZC1()
+	//u_help("Gera ZC1")
+	//_GeraZC1()
 
 Return
 
-// Static Function _GeraZC1()
-// 	mBrowse(,,,,"ZC1",,,,,,,,,,,,,,)
-// Return
+Static Function _GeraZC1()
+	mBrowse(,,,,"ZC1",,,,,,,,,,,,,,)
+Return
 
 // Static Function _ProdSB5()
 // 	Local _aDados 	:= {}
