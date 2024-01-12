@@ -77,9 +77,10 @@
 // 22/06/2022 - Claudia - Passada validações de NSU/Id pagarme e indenização e bonificações no p.e Mta410. GLPI: 11600
 // 02/02/2023 - Claudia - Liberação e-mail nfe@novaalianca.coop.br campo A2_E-MAIL - GLPI 13137
 // 11/07/2023 - Claudia - Chamada a função de limpeza de caracteres especiais. GLPI: 13865
+// 12/01/2024 - Claudia - Validação para desconsiderar tipo de pedido "utiliza fornecedor" para rapel. GLPI: 14706
 //
 // --------------------------------------------------------------------------------------------------------------------
-user function GrvLibPV (_lLiberar)
+user function GrvLibPV(_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _n         := N
 	local _sErro     := ""
@@ -95,12 +96,12 @@ user function GrvLibPV (_lLiberar)
 	local _lFaturado := .F.
 	local _lBonific  := .F.
 	local _lSoGranel := .F.
-	local _wdtreajuste   := dtos(GetMv ("VA_DTREAJ"))
-	local _wpercreajuste := GetMv ("VA_PERCREA")
+	local _wdtreajuste   := dtos(GetMv("VA_DTREAJ"))
+	local _wpercreajuste := GetMv("VA_PERCREA")
 	local _nLinha    := 0
 
 	// verifica se o pedido esta salvo antes de fazer a liberação
-	_oSQL := ClsSQL ():New ()
+	_oSQL := ClsSQL():New()
 	_oSQL:_sQuery := " SELECT "
 	_oSQL:_sQuery += " 		C5_NUM "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SC5")
@@ -402,7 +403,9 @@ user function GrvLibPV (_lLiberar)
 		if _lLiberar 
 			N = _n
 			if _lFaturado .and. ! _lSoGranel  // Ignora bloqueio de margem para pedidos de granel
-				processa ({|| U_VA_McPed (.F., .T.), "Calculando margem de contribuicao"})
+				//processa ({|| U_VA_McPed (.F., .T.), "Calculando margem de contribuicao"})
+				processa ({|| U_VA_PEDMRG('GrvLibPV'), "Calculando margem de contribuicao"})
+				
 				_nMargMin = GetMv ("VA_MCPED1")
 				if m->c5_vaMCont < _nMargMin
 					_nOpcao = aviso ("Margem de contribuicao muito baixa", ;
@@ -425,7 +428,7 @@ user function GrvLibPV (_lLiberar)
 		endif
 
 		// validacoes RAPEL
-		if _lLiberar
+		if _lLiberar .and. m->c5_tipo <> 'B'
 			_wbaserapel = fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VABARAP")
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
