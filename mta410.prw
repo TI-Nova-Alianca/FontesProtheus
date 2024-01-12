@@ -102,6 +102,7 @@
 // 23/09/2022 - Claudia - Incluida validação para fazer bloqueio por vendedor apenas na inclusao de pedidos. GLPI: 12623
 // 03/05/2023 - Claudia - Incluida obrigatoriedade de adm em pix,cc e cd. GLPI: 13507
 // 05/05/2023 - Claudia - Incluida validação para vendedor2/comissão 2. GLPI: 13527
+// 12/01/2024 - Claudia - Incluida nova rotina de calculo de margem. GLPI: 14644
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -250,7 +251,8 @@ User Function MTA410 ()
 	// Recalcula valor previsto para a nota fiscal e margem por que ficam persistidos em campos do SC5 que sao consultados fora desta tela. 
 	if _lRet
 		m->c5_vaVlFat = Ma410Impos (iif (inclui, 3, 4), .T.)  // (nOpc, lRetTotal, aRefRentab)
-		processa ({|| U_VA_McPed (.F., .T.), "Calculando margem de contribuicao"})
+		//processa ({|| U_VA_McPed (.F., .T.), "Calculando margem de contribuicao"})
+		processa ({|| U_VA_PEDMRG('MTA410'), "Calculando margem de contribuicao"})
 	endif
 
 	// validação condição de pagamento/forma de pagamento
