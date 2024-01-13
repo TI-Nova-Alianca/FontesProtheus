@@ -80,6 +80,8 @@
 // 24/07/2023 - Claudia - Incluído LPAD's para pagar.me. GLPI: 12280
 // 30/08/2023 - Robert  - Criado tratamento para LPAD 650/040 e 651/001 (GLPI 14099)
 // 12/09/2023 - Claudia - Incluido LPAD 520/024de taxa pagar.me. GLPI: 14141
+// 11/01/2024 - Robert  - Desabilitado envio de alguns avisos de acompanhamento.
+//
 
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
@@ -716,25 +718,25 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			case SD3->D3_TIPO == 'IA' ; _xRet = '701010301017'
 			otherwise
 
-				// Envia aviso para a TI
-				_oAviso := ClsAviso ():New ()
-				_oAviso:Tipo       = 'E'
-				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-				_oAviso:Titulo     = "Sem tratamento no LPad/seq " + _sLPad + _sSeq
-				_oAviso:Texto      = "Sem tratamento no LPad/seq '" + _sLPad + _sSeq
-				_oAviso:Texto     += " filial=" + sd3 -> d3_filial
-				_oAviso:Texto     += " tipo=" + sd3 -> d3_tipo
-				_oAviso:Texto     += " produto=" + alltrim (sd3 -> d3_cod)
-				_oAviso:Texto     += " grupo=" + sd3 -> d3_grupo
-				_oAviso:Texto     += " CC='" + sd3 -> d3_cc
-				_oAviso:Texto     += " recnoSD3=" + cvaltochar (sd3 -> (recno ()))
-				_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
-				_oAviso:Origem     = procname ()
-				_oAviso:Grava ()
+			// ninguem olha...	// Envia aviso para a TI
+			// ninguem olha...	_oAviso := ClsAviso ():New ()
+			// ninguem olha...	_oAviso:Tipo       = 'E'
+			// ninguem olha...	_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+			// ninguem olha...	_oAviso:Titulo     = "Sem tratamento no LPad/seq " + _sLPad + _sSeq
+			// ninguem olha...	_oAviso:Texto      = "Sem tratamento no LPad/seq '" + _sLPad + _sSeq
+			// ninguem olha...	_oAviso:Texto     += " filial=" + sd3 -> d3_filial
+			// ninguem olha...	_oAviso:Texto     += " tipo=" + sd3 -> d3_tipo
+			// ninguem olha...	_oAviso:Texto     += " produto=" + alltrim (sd3 -> d3_cod)
+			// ninguem olha...	_oAviso:Texto     += " grupo=" + sd3 -> d3_grupo
+			// ninguem olha...	_oAviso:Texto     += " CC='" + sd3 -> d3_cc
+			// ninguem olha...	_oAviso:Texto     += " recnoSD3=" + cvaltochar (sd3 -> (recno ()))
+			// ninguem olha...	_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
+			// ninguem olha...	_oAviso:Origem     = procname ()
+			// ninguem olha...	_oAviso:Grava ()
 
-				// Copia do aviso para responsavel contabilidade.
-				_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
-				_oAviso:Grava ()
+			// ninguem olha...	// Copia do aviso para responsavel contabilidade.
+			// ninguem olha...	_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
+			// ninguem olha...	_oAviso:Grava ()
 			endcase
 		endif
 

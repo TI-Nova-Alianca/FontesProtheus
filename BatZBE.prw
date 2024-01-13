@@ -14,6 +14,7 @@
 // Historico de alteracoes:
 // 05/04/2023 - Robert - Grava evento referenciando a chave da nota.
 //                     - Limpeza e envio de mensagem passa a ser dentro de controle de transacao.
+// 11/01/2024 - Robert - Desabilitado envio de avisos de acompanhamento.
 //
 
 // ----------------------------------------------------------------
@@ -81,9 +82,9 @@ user function BatZBE ()
 			_oAviso:Origem     = procname ()
 			_oAviso:Grava ()
 
-			// copia para testes
-			_oAviso:DestinAvis = 'robert.koch'
-			_oAviso:Grava ()
+	//		// copia para testes
+	//		_oAviso:DestinAvis = 'robert.koch'
+	//		_oAviso:Grava ()
 		endif
 
 		_oBatch:Mensagens += 'Eliminados ' + cvaltochar (len (_aRegZBE)) + ' registros desnecessarios da tabela ZBE'
