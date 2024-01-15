@@ -40,6 +40,7 @@
 // 06/03/2023 - Robert - Batch agendado na matriz para receber transf.do SZI passa a ter menos prioridade.
 // 13/03/2023 - Robert - Novos parametros FINA090. EXecuta apenas 10 registros por vez (temporariamente).
 // 16/03/2023 - Robert - Criado controle de semaforo nas static functions.
+// 15/01/2024 - Robert - Ajuste para nao validar cadastro fornecedor 005567 ref. FUNRURAL
 //
 
 // --------------------------------------------------------------------------
@@ -197,6 +198,7 @@ static function _ConfCadas ()
 	_oSQL:_sQuery += "SELECT distinct GX0001_ASSOCIADO_CODIGO, GX0001_ASSOCIADO_LOJA"
 	_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA"
 	_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_RESTRICAO = ''"
+	_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO != '005567'"  // Unico caso de PJ
 	_oSQL:_sQuery += " ORDER BY GX0001_ASSOCIADO_CODIGO, GX0001_ASSOCIADO_LOJA"
 	_oSQL:Log ('[' + procname () + ']')
 	_aFornece = aclone (_oSQL:Qry2Array (.f., .f.))
@@ -788,7 +790,7 @@ static function _ConfSZI ()
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
 	_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
-	_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO < '" + dtos (dDataBase - 2) + "'"  // Isso por que a transf. eh feita sempre 2 dias depois (para dar tempo de cancelar a contranota no dia seguinte, se precisar)
+	_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO < '" + dtos (dDataBase - 3) + "'"  // A transf.p/matriz eh feita alguns dias depois (para dar tempo de cancelar a contranota no dia seguinte, se precisar)
 	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
 	_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
 	_oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
