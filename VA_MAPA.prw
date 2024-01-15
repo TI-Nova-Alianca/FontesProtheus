@@ -11,6 +11,7 @@
 // #Modulos 		  #COOP
 //
 // Historico de alteracoes:
+// 15/01/2024 - Claudia - Incluida nova coluna de comercialização. GLPI: 14729
 //
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -89,6 +90,16 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		AND B9_COD = B1_COD "
     _oSQL:_sQuery += " 		AND B9_DATA = '" + dtos(_dFinAnoAtual) +"') "
     _oSQL:_sQuery += " 	* B1_LITROS AS QTD_ESTOQUE_ANO_ENVASE_LITROS "
+    _oSQL:_sQuery += "     ,(SELECT "
+    _oSQL:_sQuery += " 			SUM(CASE "
+    _oSQL:_sQuery += " 				WHEN F4_MARGEM = '1' THEN QTLITROS "
+    _oSQL:_sQuery += " 				WHEN F4_MARGEM = '2' THEN QTLITROS * -1 "
+    _oSQL:_sQuery += " 				WHEN F4_MARGEM = '3' THEN 0 " // bonificações
+    _oSQL:_sQuery += " 				WHEN F4_MARGEM = '9' THEN 0 " // esse outros sao NF's para outros fins (material para cozinha, por ex)
+    _oSQL:_sQuery += " 			END) "
+    _oSQL:_sQuery += " 		FROM.BI_ALIANCA.dbo.VA_FATDADOS "
+    _oSQL:_sQuery += " 		WHERE EMISSAO BETWEEN '"+ dtos(_dIniAnoAtual) +"' AND '"+ dtos(_dFinAnoAtual) +"' "
+    _oSQL:_sQuery += " 		AND PRODUTO = B1_COD) AS QTD_COMERCIALIZADA_ANO "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SB1") + " SB1 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB5") + " SB5 "
     _oSQL:_sQuery += " 	ON SB5.D_E_L_E_T_ = '' "
