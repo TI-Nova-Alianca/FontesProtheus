@@ -12,6 +12,7 @@
 // #Modulos           #FAT 
 //
 // Historico de alteracoes:
+// 18/01/2034 - Claudia - Alterada a filial para a filial atendida. GLPI 14643
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -65,16 +66,18 @@ static function _CalcMargem(_sPrgName)
     local _nTotMargem   := 0 
     local _aZC1         := {}    
 
+    _sFilial := fbuscacpo("SA1",1,xFilial("SA1")+ m->c5_cliente + m->c5_lojacli,"A1_VAFILAT")
+
     // Busca nome do usuário de execução
     PsWorder(1)         // Ordena arquivo de senhas por ID do usuario
 	PswSeek(__cUserID)  // Pesquisa usuario corrente
 	_sUserName := alltrim(PswRet(1) [1, 2])
 
     // Busca Sequencial para ZC1
-    _sSeq := _BuscaSequencial(m->c5_filial, m->c5_cliente, m->c5_lojacli, m->c5_num)
+    _sSeq := _BuscaSequencial(_sFilial, m->c5_cliente, m->c5_lojacli, m->c5_num)
 
     // Calcula Frete e Meses para financeiro
-    _nVFrete  := _CalcFrete()
+    _nVFrete  := _CalcFrete(_sFilial)
     _nQtdDias := _CalcMeses() 
     
     MaFisEnd()  // Limpa variaveis da rotina para valor liquido dos itens do pedido
@@ -145,9 +148,9 @@ static function _CalcMargem(_sPrgName)
             _nPMargem := (_nVMargem / _nVVenda) * 100
 
             if FBuscaCpo("SF4",1,XFILIAL("SF4")+aCols[_x,_nPosTes],"F4_DUPLIC") <> "N"
-                
+
                 // Campos ZC1
-                aadd(_aZC1, {   m->c5_filial                    ,;  // ZC1_FILIAL
+                aadd(_aZC1, {   _sFilial                        ,;  // ZC1_FILIAL
                                 'VD'                            ,;  // ZC1_TIPO
                                 m->c5_cliente                   ,;  // ZC1_CLI 
                                 m->c5_lojacli                   ,;  // ZC1_LOJA
@@ -200,7 +203,7 @@ static function _CalcMargem(_sPrgName)
 
     // Imprime totalizador de pedido
     if len(_aZC1) > 0
-        aadd(_aZC1, {   m->c5_filial                ,;  // ZC1_FILIAL
+        aadd(_aZC1, {   _sFilial                    ,;  // ZC1_FILIAL
                         'TP'                        ,;  // ZC1_TIPO
                         m->c5_cliente               ,;  // ZC1_CLI 
                         m->c5_lojacli               ,;  // ZC1_LOJA
@@ -272,7 +275,7 @@ Return _sSeq
 //
 // ----------------------------------------------------------------------------------------------------
 // Retorna valor do frete
-Static Function _CalcFrete()
+Static Function _CalcFrete(_sFilial)
     local _oSQL      := NIL
     local _nVlProdut := 0
     local _x	     := 0
@@ -294,7 +297,7 @@ Static Function _CalcFrete()
         _oSQL:_sQuery += " 		GUL_VAPFRE "
         _oSQL:_sQuery += " FROM " + RetSQLName ("GUL") 
         _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-        _oSQL:_sQuery += " AND GUL_FILIAL   = '" + m->c5_filial + "' "
+        _oSQL:_sQuery += " AND GUL_FILIAL   = '" + _sFilial + "' "
         _oSQL:_sQuery += " AND '" + _sCEP + "' BETWEEN GUL_CEPINI AND GUL_CEPFIM "
         _aGUL := aclone (_oSQL:Qry2Array ())
 
@@ -313,7 +316,7 @@ Static Function _CalcFrete()
             _oSQL:_sQuery += " 		GU9_VAPFRE "
             _oSQL:_sQuery += " FROM " + RetSQLName ("GU9") 
             _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-            _oSQL:_sQuery += " AND GU9_FILIAL   = '" + m->c5_filial + "'"
+            _oSQL:_sQuery += " AND GU9_FILIAL   = '" + _sFilial     + "'"
             _oSQL:_sQuery += " AND GU9_CDUF     = '" + m->c5_vaest  + "'"
             _oSQL:_sQuery += " AND GU9_SIT      = '1'"
             _aGU9 := aclone (_oSQL:Qry2Array ())
