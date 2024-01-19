@@ -34,6 +34,7 @@
 //                      - Inseridas tags para catalogacao de fontes.
 // 23/01/2023 - Robert  - Tratamento para medicao de grau (usado em vendas de mosto durante a safra).
 // 12/01/2024 - Claudia - Incluida nova rotina de calculo de margem. GLPI: 14644
+// 19/01/2024 - Claudia - Solicitado pelo cesar voltar a rotina antiga para verificação de registros antigos.
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function A410CONS()
@@ -59,7 +60,7 @@ static function _Menu()
 
 	// Define opcoes a mostrar
 	if type("_sCodRep") != "C"  // Representantes externos nao visualizam este botao.
-		//aadd(_aF3, {"Margem de contribuicao"		, "MCont"		})
+		aadd(_aF3, {"Margem de contribuicao"		, "MCont"		})
 		aadd(_aF3, {"Margem de contribuicao (Novo)"	, "MCont"		})
 		if inclui .or. altera
 			aadd(_aF3, {"Liberacao pedido"			, "Liberar"		})
@@ -79,8 +80,8 @@ static function _Menu()
 	_nF3 = U_F3Array(_aF3, "Opcoes", _aCols, oMainWnd:nClientWidth / 3, oMainWnd:nClientHeight / 1.5, "", "", .F.)
 
 	do case
-		// case _nF3 != 0 .and. _aF3 [_nF3, 2] == "MCont"
-		// 	processa({|| U_VA_McPed(.T., .T.), "Calculando margem de contribuicao"})
+		case _nF3 != 0 .and. _aF3 [_nF3, 2] == "MCont"
+		 	processa({|| U_VA_McPed(.T., .T.), "Calculando margem de contribuicao"})
 
 		case _nF3 != 0 .and. _aF3 [_nF3, 2] == "MCont"
 			processa({|| U_VA_PedMrg('A410CONS'), "Calculando margem de contribuicao"})
