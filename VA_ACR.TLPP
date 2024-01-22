@@ -18,7 +18,7 @@
 // 24/11/2023 - Robert - Ao atualizar o campo B1_CUSTD, nao atualizava o campo B1_DATREF
 // 29/11/2023 - Robert - Verifica se falta informar B1_REVATU (GLPI 14559)
 //                     - Mostrar B1_CODLIN e B1_UM (1a. e 2a. telas respectivamente) - GLPI 14559
-// 03/12/2023 - Robert - Opcao de cuatear pelo medio em vez do standard
+// 03/12/2023 - Robert - Opcao de custear pelo medio em vez do standard
 //                     - Opcao de selecionar os PAs com base em determinado componente.
 // 13/12/2203 - Robert - Opcao de exportar todas as estruturas numa unica planilha.
 // 18/12/2023 - Robert - Itens sem SB9 (novos) nao eram considerados. Passa a usar LEFT JOIN.

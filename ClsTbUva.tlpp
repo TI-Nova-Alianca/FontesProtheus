@@ -14,6 +14,7 @@
 
 // Historico de alteracoes:
 // 12/11/2023 - Robert - Gravacao de agios em array interna e inicio de definicao de formulas para calculo de precos.
+// 18/01/2024 - Robert - Criada tag 'PrecoFinaLatadaClasDS' (antes havia 'PrecoFinaLatadaClasD')
 //
 
 #Include "Protheus.ch"
@@ -200,6 +201,7 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			_oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] = _aDados [_nDado, 13]
 			_oGrupoTbUva ['AcrescimoLatadaClasA']      = _aDados [_nDado, 14]
 			_oGrupoTbUva ['AcrescimoLatadaClasD']      = _aDados [_nDado, 15]
+			_oGrupoTbUva ['AcrescimoLatadaClasDS']     = _aDados [_nDado, 15]  // Nao tenho um tratamento especifico para diferenciar D e DS (latada) quanto a precos.
 			_oGrupoTbUva ['AgioOrganicaBordadura']     = _aDados [_nDado, 16]
 			_oGrupoTbUva ['AgioOrganicaEmConversao']   = _aDados [_nDado, 17]
 			_oGrupoTbUva ['AgioOrganicaOrganica']      = _aDados [_nDado, 18]
@@ -322,7 +324,8 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 						_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _oGrupoTbUva ['PrecoMinimo']
 						_oGrauDeGrupo ['PrecoFinaLatadaClasA']        = _oGrupoTbUva ['PrecoMinimo']
 						_oGrauDeGrupo ['PrecoFinaLatadaClasB']        = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaLatadaClasD']        = _oGrupoTbUva ['PrecoMinimo']
+					//	_oGrauDeGrupo ['PrecoFinaLatadaClasD']        = _oGrupoTbUva ['PrecoMinimo']
+						_oGrauDeGrupo ['PrecoFinaLatadaClasDS']       = _oGrupoTbUva ['PrecoMinimo']
 						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasPR']   = _oGrupoTbUva ['PrecoMinimo']
 						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasAA']   = _oGrupoTbUva ['PrecoMinimo']
 						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasA']    = _oGrupoTbUva ['PrecoMinimo']
@@ -344,7 +347,8 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 						_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'] = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaEmConversao'] / 100)
 						_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaOrganica'] / 100)
 						_oGrauDeGrupo ['PrecoFinaLatadaClasA']        = _nPreco * (1 + _oGrupoTbUva ['AcrescimoLatadaClasA'] / 100)
-						_oGrauDeGrupo ['PrecoFinaLatadaClasD']        = _nPreco * (1 + _oGrupoTbUva ['AcrescimoLatadaClasD'] / 100)
+					//	_oGrauDeGrupo ['PrecoFinaLatadaClasD']        = _nPreco * (1 + _oGrupoTbUva ['AcrescimoLatadaClasD'] / 100)
+						_oGrauDeGrupo ['PrecoFinaLatadaClasDS']       = _nPreco * (1 + _oGrupoTbUva ['AcrescimoLatadaClasDS'] / 100)
 						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasPR']   = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasPR'] / 100)
 						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasAA']   = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasAA'] / 100)
 						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasA']    = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasA'] / 100)
@@ -382,7 +386,8 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			elseif ::TipoUva == 'F' .and. ::Conducao == 'L'
 				_sObsSubgrupo := 'Clas.A: +' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasA']) + '%'
 				_sObsSubgrupo += '<br>Clas.B: base'
-				_sObsSubgrupo += '<br>Clas.D: ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasD']) + '%'
+				_sObsSubgrupo += '<br>Clas.D:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasD']) + '%'
+				_sObsSubgrupo += '<br>Clas.DS: ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasDS']) + '%'
 				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : '' , 'ObsSubgrupo' : _sObsSubgrupo})
 			endif
 

@@ -39,6 +39,7 @@
 // 10/05/2023 - Robert  - Passa a validar usuarios pelo campo T1_CODFUNC = __cUserID
 //                      - Criado tratamento para o campo T1_VATPFIL
 // 28/06/2023 - Robert  - Nao manda mais terceiros para ninguem
+// 22/01/2024 - Robert  - Filtra centros de custo (tabela CCT) bloqueados.
 //
 
 #include "PROTHEUS.ch"
@@ -82,6 +83,12 @@ User Function MNTNG()
 			_oAviso:InfoSessao = .T.
 			_oAviso:Grava ()
 		EndIf
+
+
+	// Filtro para centros de custo
+	ElseIf _sIDdLocal == "FILTER_COSTCENTER"
+		_xRet = "AND CTT_BLOQ != '1'"
+		U_Log2 ('info', '[' + procname () + ']Filtrando c.custo: _xRet = ' + _xRet)
 
 
 	// Filtro para ordens de servico

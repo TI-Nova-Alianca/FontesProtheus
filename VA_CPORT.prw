@@ -419,12 +419,9 @@ static function _SegPesSZE ()
 			private _sModelBal := ""  // Deixar private para ser vista por outras rotinas.
 			private _nMultBal  := ""  // Deixar private para ser vista por outras rotinas.
 			private _nPesoEmb  := ""  // Deixar private para ser vista por outras rotinas.
-//			private _lImpTick  := ""  // Deixar private para ser vista por outras rotinas.
-//			private _sPortTick := ""  // Deixar private para ser vista por outras rotinas.
 			private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
 			private _nQViasTk1 := 0   // Deixar private para ser vista por outras rotinas.
 			private _nQViasTk2 := 0   // Deixar private para ser vista por outras rotinas.
-			//private _lTickPeso := .F. // Deixar private para ser vista por outras rotinas.
 			private _xSAFRAJ   := U_IniSafra ()  // Retorna o Ano da Safra (ML_SZ9.PRW)
 			private aRotina    := {}
 			private cPerg      := 'VA_RUS'

@@ -34,6 +34,7 @@ user function va_rusLI (_nPesagem, _lSimular)
 	local _sLinkSrv   := U_LkServer ('NAWEB')
 	local _aClasUva   := {}
 	local _sMsg       := ''
+	private _sPrefLog  := 'Car.' + sze -> ze_carga
 
 	if _lSimular
 		u_log2 ('aviso', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Iniciando em modo de SIMULACAO')
@@ -81,7 +82,7 @@ user function va_rusLI (_nPesagem, _lSimular)
 		_aRusInsp = aclone (afill (array (.InspecoesSafraQtColunas), ''))
 
 		if (_sAliasInsp) -> (eof ())
-			u_log2 ('aviso', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Sem retorno na consulta de inspecoes. Vou assumir valores padrao.')
+			u_log2 ('aviso', '[' + procname () + ']Sem retorno na consulta de inspecoes da carga ' + sze -> ze_carga + '. Vou assumir valores padrao.')
 
 			// Se nao encontrou inspecao, assume status vazio e nao conforme para facilitar nos testes posteriores.
 			_aRusInsp [.InspecoesSafraSituacao]         = '   '
@@ -95,8 +96,8 @@ user function va_rusLI (_nPesagem, _lSimular)
 			_sInspMEst = ''
 			//_sInspDesu = ''
 			if _nPesagem == 2
-				_sMsg = "A T E N C A O: Nao foi possivel buscar as inspecoes desta carga. Verifique se a inspecao foi feita e se foi feita sincronizacao do APP de safra. Se voce prosseguir, a classificacao final da uva VAI FICAR COMPROMETIDA."
-				U_Log2 ('aviso', '[' + procname () + '][Carga:' + sze -> ze_carga + ']' + _sMsg)
+				_sMsg = "A T E N C A O: Nao foi possivel buscar no NaWeb as inspecoes da carga " + sze -> ze_carga + ". Verifique se a inspecao foi feita e se foi feita sincronizacao do APP de safra com o NaWeb. Se voce prosseguir, a classificacao final da uva VAI FICAR COMPROMETIDA."
+				U_Log2 ('aviso', '[' + procname () + ']' + _sMsg)
 				if ! _lSimular
 					_lContinua = U_MsgNoYes (_sMsg + " Deseja continuar assim mesmo?")
 					if _lContinua
@@ -146,7 +147,7 @@ user function va_rusLI (_nPesagem, _lSimular)
 				if ! _lSimular
 					_lContinua = U_MsgNoYes (_sMsg + " Deseja continuar assim mesmo?")
 					if _lContinua
-						_oCarSaf:GrvEvt ('SZE002', "Recebimento da carga com status '" + _aRusInsp [.InspecoesSafraSituacao] + "' no sistema de agendamento.")
+						_oCarSaf:GrvEvt ('SZE002', "Recebimento da carga com status '" + _aRusInsp [.InspecoesSafraSituacao] + "' no sistema de agendamento. Usuario confirmou o seguinte aviso: " + _sMsg)
 					endif
 				endif
 			endif

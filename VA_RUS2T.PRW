@@ -7,6 +7,7 @@
 // Historico de alteracoes:
 // 01/02/2023 - Robert - Passa a chamar, tambem, o metodo ClsCarSaf.SegPesTOk()
 // 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
+// 20/01/2024 - Robert - Melhorados logs, eliminadas linhas comentariadas.
 //
 
 #include "totvs.ch"
@@ -19,22 +20,11 @@ user function VA_RUS2T (_nOpc, _oCarSaf)
 	local _nBkpN     := N
 	local _nLinha    := 0
 	local _nCpoSZE   := 0
+	private _sPrefLog  := 'Car.' + iif (inclui, m->ze_carga, sze -> ze_carga)
 
 	//  COM O TEMPO, PRETENDO MIGRAR PARA O METODO ClsCarSaf:SegPesTOk()
 
-	u_Log2 ('info', 'Iniciando ' + procname ())
-
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.	if (cEmpAnt + cFilAnt == '0101' .and. ! m->ze_local $ 'LB/QL/GS/GB') ;
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0103' .and. ! m->ze_local $ 'LV') ;
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0107' .and. ! m->ze_local $ 'JC') ;
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0109' .and. ! m->ze_local $ 'SP') ;
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0110' .and. ! m->ze_local $ 'SA') ;
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0111' .and. ! m->ze_local $ 'NP') ;
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0112' .and. ! m->ze_local $ 'PB/AP') ;
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		.or. (cEmpAnt + cFilAnt == '0113' .and. ! m->ze_local $ 'AL')
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		u_help ("Balanca invalida para esta filial ou filial nao autorizada a receber safra.",, .t.)
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.		_lRet = .F.
-// Migrando conceito de 'balanca' para 'filial'. Robert, 18/11/23.	endif
+//	u_Log2 ('info', 'Iniciando ' + procname ())
 
 	// Em caso de inclusao via web service, tenta validar todos os campos.
 	if _lRet .and. inclui .and. IsInCallStack ("U_GERASZE")
@@ -167,40 +157,5 @@ user function VA_RUS2T (_nOpc, _oCarSaf)
 		endif
 	endif
 
-	// Em caso de carga compartilhada (mais de um fornecedor no mesmo veiculo),
-	// preciso validar as demais cargas.
-//	u_help ("falta validar compartilhamento")
-//	if _lRet .and. ! empty (m->ze_ccompar)
-//		_lRet = _ValCompar (m->ze_cargaC1)
-//	endif
-
 	N = _nBkpN
-return _lRet
-
-
-
-// --------------------------------------------------------------------------
-// Valida 'carga compartilhada'.
-// Em caso de mais de um fornecedor no mesmo caminhao, preciso validar as demais cargas.
-static function _ValCompar (_sCarComp)
-	local _aAreaSZE  := {}
-	local _lRet      := .T.
-//	local _oSQL      := NIL
-	//local _sCarUsada := ''
-
-	U_Log2 ('debug', '[' + procname () + ']Validando carga compartilhada1: ' + _sCarComp)
-	_aAreaSZE := sze -> (getarea ())
-	sze -> (dbsetorder (1))  // filial + safra + carga + item
-	if _lRet .and. ! sze -> (dbseek (xfilial ("SZE") + m->ze_safra + _sCarComp, .F.))
-		u_help ("Carga compartilhada '" + _sCarComp + "' nao localizada.",, .t.)
-		_lRet = .F.
-	endif
-	if _lRet .and. ! empty (sze -> ze_status $ 'C/D')
-		U_help ("Carga compartilhada '" + _sCarComp + "' foi cancelada ou redirecionada para outra filial.",, .t.)
-		_lRet = .f.
-	endif
-	if _lRet .and. ! empty (sze -> ze_nfger)
-		_lRet = U_MsgNoYes ("Carga compartilhada '" + _sCarComp + "' ja gerou contranota. Quando compartilhadas, as cargas devem ser geradas em sequencia para poder, posteriormente, compartilhar informacoes como grau, precos, etc. Confirma assim mesmo?")
-	endif
-	sze -> (restarea (_aAreaSZE))
 return _lRet

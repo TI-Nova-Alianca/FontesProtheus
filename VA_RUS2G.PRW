@@ -34,8 +34,9 @@ user Function VA_RUS2G (_nOpc, _oCarSaf)
 	local _nLinha    := 0
 	local _nAglut    := 0
 	local _nCompart  := 0
+	private _sPrefLog  := 'Car.' + sze -> ze_carga
 
-	u_log2 ('info', 'Iniciando ' + procname ())
+//	u_log2 ('info', 'Iniciando ' + procname ())
 	//U_PerfMon ('I', 'Interno_VA_Rus2G')
 
 	if inclui .and. !_oCarSaf:PodeGravar ()
@@ -82,6 +83,7 @@ user Function VA_RUS2G (_nOpc, _oCarSaf)
 		next
 
 		msunlock ("SZE")
+		U_Log2 ('debug', '[' + procname () + ']Dei msunlock() no SZE. ZE_SEGREG ficou ' + sze -> ze_segreg)
 
 		// Tratamento para cargas compartilhadas (que vieram no mesmo veiculo)
 		// Preciso manter amarracao entre elas (cada carga aponta para as demais)
@@ -179,7 +181,7 @@ user Function VA_RUS2G (_nOpc, _oCarSaf)
 
 
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
-		_oCarSaf:Log ()
+//		_oCarSaf:Log ()
 
 		// Atualiza tabela de comunicacao com leitor de grau.
 		if _oCarSaf:PesoBruto > 0  // Sem 1a.pesagem, nem adianta enviar.

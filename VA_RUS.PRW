@@ -224,6 +224,7 @@ return
 user function VA_RUSOO (_sQueFazer)
 	local _sEvtManu := ''
 	local _sMotSeg  := ''
+	private _sPrefLog  := 'Car.' + sze -> ze_carga
 
 	// Deixa atributos alimentados no objeto, por que a maioria das rotinas vai precisar.
 	_oCarSaf:GeraAtrib ("SZE")

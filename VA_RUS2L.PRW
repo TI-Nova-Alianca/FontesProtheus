@@ -26,6 +26,7 @@ user function VA_RUS2L ()
 	local _oSQL      := NIL
 	local _aLimEspum := {}
 	local _sUvaBase  := ''
+	private _sPrefLog  := 'Car.' + sze -> ze_carga
 
 	if _lRet .and. m->ze_aglutin == "D" .and. GDDeleted ()
 		u_help ("Nao eh permitido alterar itens de cargas aglutinadas",, .T.)
