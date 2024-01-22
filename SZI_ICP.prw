@@ -92,6 +92,9 @@ static function _Gera ()
 	// que foi integralizado, uma vez que nao havia nenhum controle formal.
 	_oSQL:_sQuery +=   " AND dbo.VA_ASSOC_DT_ENTRADA (SA2.A2_VACBASE, SA2.A2_VALBASE, " + dtos (dDataBase) + ") >= '20111101'"
 	
+	// Este associado integralizou tudo numa parcela somente, em 28/05/2015
+	_oSQL:_sQuery +=   " AND SA2.A2_VACBASE != '004994'"
+
 	_oSQL:_sQuery += " ORDER BY SA2.A2_VACBASE, SA2.A2_VALBASE"
 	_oSQL:Log ()
 	_aCBase := aclone (_oSQL:Qry2Array (.F., .F.))

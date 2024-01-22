@@ -299,9 +299,9 @@ User Function va_rusN (_lSimulNF)
 		endif
 	endif
 
-	// Se existe mistura de variedades, precifica pela de menor valor.
-	// Como a funcao jah retorna uma lista das variedades, fica mais facil
-	// identificar mistura de variedades.
+//	// Se existe mistura de variedades, precifica pela de menor valor.
+//	// Como a funcao jah retorna uma lista das variedades, fica mais facil
+//	// identificar mistura de variedades.
 	if _lContinua
 	//	_aMenorVlr = aclone (_oCarSaf:VarMenorVl ())
 	//	if len (_aMenorVlr) == 0
@@ -789,8 +789,6 @@ User Function va_rusN (_lSimulNF)
 		// Endereca (saldos a distribuir) o lote de uva recebido por esta contranota
 		// e atualiza status no sistema de agendamento/inspecao.
 		if ! empty (_oCarSaf:Contranota)
-		//	U_VA_RusAI ('INS/AGE/LIB', 'CON')
-//			U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)
 			_oCarSaf:AtuAgenda ()
 			if ! _oCarSaf:EnderEstq ('I')
 				u_help ("Problemas para enderecar estoque: " + _oCarSaf:UltMsg,, .t.)
@@ -799,7 +797,7 @@ User Function va_rusN (_lSimulNF)
 
 		// Atualiza conta corrente associados
 		if ! empty (sze -> ze_nfger) .and. _sTpForUva == 'A'
-			// Resolvi fazer em batch, pois nao tem pressa e eh muito lento.
+			// Resolvi fazer isso no U_BatSafr, pois nao preciso disso agora, e o processo ficaria muito lento.
 		endif
 
 	endif
@@ -807,7 +805,7 @@ User Function va_rusN (_lSimulNF)
 	U_Log2 ('info', '[' + procname () + ']############################## Final da rotina de geracao de contranota')
 
 	_nRetMem := U_UsoMem ()
-	u_log2 ('info', 'Achei minha thread usando ' + transform (_nRetMem, "@E 999,999,999,999,999") + ' bytes de memoria')
+	U_Log2 ('info', '[' + procname () + ']Achei minha thread usando ' + transform (_nRetMem, "@E 999,999,999,999,999") + ' bytes de memoria')
 	if _nRetMem > 300000000
 		u_help ("ATENCAO: Esta sessao esta usando muita memoria e vai ser finalizada. Por favor acesse novamente para continuar seu trabalho.",, .T.)
 		Final ("Termino proposital para alivio de memoria")

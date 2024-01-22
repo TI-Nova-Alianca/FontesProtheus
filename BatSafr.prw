@@ -41,6 +41,7 @@
 // 13/03/2023 - Robert - Novos parametros FINA090. EXecuta apenas 10 registros por vez (temporariamente).
 // 16/03/2023 - Robert - Criado controle de semaforo nas static functions.
 // 15/01/2024 - Robert - Ajuste para nao validar cadastro fornecedor 005567 ref. FUNRURAL
+// 16/01/2024 - Robert - Removida filial 09 do e-mail diario de acompanhamento de safra.
 //
 
 // --------------------------------------------------------------------------
@@ -198,7 +199,7 @@ static function _ConfCadas ()
 	_oSQL:_sQuery += "SELECT distinct GX0001_ASSOCIADO_CODIGO, GX0001_ASSOCIADO_LOJA"
 	_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA"
 	_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_RESTRICAO = ''"
-	_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO != '005567'"  // Unico caso de PJ
+	_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_CODIGO != '005567'"  // Unico caso de PJ
 	_oSQL:_sQuery += " ORDER BY GX0001_ASSOCIADO_CODIGO, GX0001_ASSOCIADO_LOJA"
 	_oSQL:Log ('[' + procname () + ']')
 	_aFornece = aclone (_oSQL:Qry2Array (.f., .f.))
@@ -227,7 +228,7 @@ static function _ConfCadas ()
 			endif
 		endif
 	next
-
+	//
 	// Conferencia produtos
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
@@ -249,7 +250,6 @@ static function _ConfCadas ()
 			endif
 		endif
 	next
-
 	if ! empty (_sMsg)
 		_oAviso := ClsAviso():new ()
 		_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
@@ -261,6 +261,23 @@ static function _ConfCadas ()
 		_oAviso:Grava ()
 	endif
 
+	// Conferencia tabela ZZA (integracao com programa de medicao de grau)
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT COUNT (*)"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '*'"
+	_oSQL:Log ('[' + procname () + ']')
+	if _oSQL:RetQry (1, .f.) > 0
+		_oAviso := ClsAviso():new ()
+		_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
+		_oAviso:Titulo     = "Tabela ZZA nao pode ter registros deletados"
+		_oAviso:Texto      = "A tabela " + RetSQLName ("ZZA") + " nao pode ter registros deletados, pois o programa BL01, que integra com ela, desconhece esse conceito."
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+		_oAviso:Origem     = procname ()
+		_oAviso:Formato    = 'T'  // [T]exto ou [H]tml
+		_oAviso:Grava ()
+	endif
 return
 
 
@@ -608,8 +625,8 @@ static function _MailAcomp ()
 	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '03' AND C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_F03"
 	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '07' THEN PESO_LIQ ELSE 0 END) AS KG_F07"
 	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '07' AND C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_F07"
-	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '09' THEN PESO_LIQ ELSE 0 END) AS KG_F09"
-	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '09' AND C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_F09"
+//	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '09' THEN PESO_LIQ ELSE 0 END) AS KG_F09"
+//	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '09' AND C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_F09"
 	_oSQL:_sQuery += " , SUM (PESO_LIQ) AS KG_GERAL"
 	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_GERAL"
 	_oSQL:_sQuery += " FROM C"
@@ -624,8 +641,8 @@ static function _MailAcomp ()
 	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '03'), 0), 1) AS GRAU_F03"
 	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '07' THEN PESO_LIQ ELSE 0 END) AS KG_F07"
 	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '07'), 0), 1) AS GRAU_F07"
-	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '09' THEN PESO_LIQ ELSE 0 END) AS KG_F09"
-	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '09'), 0), 1) AS GRAU_F09"
+//	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '09' THEN PESO_LIQ ELSE 0 END) AS KG_F09"
+//	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '09'), 0), 1) AS GRAU_F09"
 	_oSQL:_sQuery += " , SUM (PESO_LIQ) AS KG_GERAL"
 //	_oSQL:_sQuery += " , 0 AS GRAU_GERAL"
 	_oSQL:_sQuery += " , ROUND(ISNULL((SELECT SUM(PESO_LIQ * GRAU) / SUM(PESO_LIQ) FROM C AS C2), 0), 1) AS GRAU_GERAL"
@@ -643,8 +660,8 @@ static function _MailAcomp ()
 	aadd (_aCols, {'Grau F03',   'right',  '@E 99.9'})
 	aadd (_aCols, {'Kg F07',     'right',  '@E 999,999,999'})
 	aadd (_aCols, {'Grau F07',   'right',  '@E 99.9'})
-	aadd (_aCols, {'Kg F09',     'right',  '@E 999,999,999'})
-	aadd (_aCols, {'Grau F09',   'right',  '@E 99.9'})
+//	aadd (_aCols, {'Kg F09',     'right',  '@E 999,999,999'})
+//	aadd (_aCols, {'Grau F09',   'right',  '@E 99.9'})
 	aadd (_aCols, {'Kg geral',   'right',  '@E 999,999,999'})
 	aadd (_aCols, {'Grau geral', 'right',  '@E 99.9'})
 
@@ -653,8 +670,7 @@ static function _MailAcomp ()
 		u_log2 ('debug', _sMsg)
 
 		// Envia para o contato principal dos associados e os demais como copia oculta.
-	//	U_SendMail ("cristina.stringhi@novaalianca.coop.br", "Acompanhamento cargas safra", _sMsg, {}, NIL, NIL, 'acomp.safra@novaalianca.coop.br;informatica@novaalianca.coop.br')
-		U_SendMail ("karina.moraes@novaalianca.coop.br", "Acompanhamento cargas safra", _sMsg, {}, NIL, NIL, 'acomp.safra@novaalianca.coop.br;informatica@novaalianca.coop.br')
+		U_SendMail ("karina.moraes@novaalianca.coop.br", "Acompanhamento cargas safra", _sMsg, {}, NIL, NIL, 'acomp.safra@novaalianca.coop.br')
 
 	endif
 

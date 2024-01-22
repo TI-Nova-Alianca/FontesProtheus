@@ -83,6 +83,11 @@ User Function RBatch (_sEmp, _sFil)
 
 	if file (_sArqEmpFi)
 		_nUltEmpFi = val(alltrim (memoread (_sArqEmpFi)))
+		
+		// Jah tive casos do arquivo estav vazio, ou conter nulos
+		if _nUltEmpFi == 0
+			_nUltEmpFi = 1
+		endif
 	else
 		_nUltEmpFi = 1
 	endif

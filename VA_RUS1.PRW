@@ -35,7 +35,7 @@ User Function va_rus1 ()
 	local _nF3         := 0
 	local _oSQL        := NIL
 
-	u_Log2 ('info', 'Iniciando ' + procname ())
+//	u_Log2 ('info', 'Iniciando ' + procname ())
 
 	private _oAssoc    := NIL
 	private _ZESAFRA   := _xSafraJ   // Variavel private para alimentar a tela final de AxInclui

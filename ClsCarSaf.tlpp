@@ -28,6 +28,7 @@
 // 13/11/2023 - Robert - Passa a herdar a chasse ClsBase para uso de metodos mais padronizados.
 // 18/11/2023 - Robert - Versao inicial do metodo :PodeGravar().
 // 01/01/2024 - Robert - Criado metodo :FormataGrau().
+// 16/01/2024 - Robert - Exclusao de carga marcava o ZZA como deletado, mas precisa excluir de verdade.
 //
 
 #Include "Protheus.ch"
@@ -304,12 +305,12 @@ METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 		//	U_Log2 ('debug', '[' + procname () + ']Pesqusando ZZA com >>' + _sChaveZZA + '<<')
 		
 			if ! zza -> (dbseek (_sChaveZZA, .F.))
-				u_log2 ('info', '[' + procname () + ']Carga:' + ::Carga + ' Item: ' + ::ItItem [_nItem] + ' Incluindo ZZA')
+				u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Carga:' + ::Carga + ' Item: ' + ::ItItem [_nItem] + ' Incluindo ZZA')
 				reclock ("ZZA", .T.)
 				// Se nao existia ZZA, nem vou tratar como reenvio.
 				_lReenvio = .F.
 			else
-				u_log2 ('info', '[' + procname () + ']Carga:' + ::Carga + ' Item: ' + ::ItItem [_nItem] + ' Vou alterar ZZA (zza_status encontra-se com ' + zza -> zza_status + ')')
+				u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Carga:' + ::Carga + ' Item: ' + ::ItItem [_nItem] + ' Vou alterar ZZA (zza_status encontra-se com ' + zza -> zza_status + ')')
 				reclock ("ZZA", .F.)
 			endif
 
@@ -354,7 +355,7 @@ METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 						zza -> zza_status = '1'
 					endif
 				elseif ::PesoBruto > 0 .and. ::PesoTara > 0 .and. zza -> zza_status == '3'  // Segunda pesagem OK
-					u_log2 ('aviso', "Nao vou enviar nada para o programa do grau por que, no grau, esta carga jah encontra-se com status=3 (finalizada)")
+					u_log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + "]Nao vou enviar nada para o programa do grau por que, no grau, esta carga jah encontra-se com status=3 (finalizada)")
 				else
 					u_help ("Situacao imprevista na gravacao do campo ZZA_STATUS. Revise programa!",, .t.)
 				endif
@@ -699,8 +700,11 @@ METHOD ExclDef (_sOrigem) Class ClsCarSaf
 	// Exclui itens enviados para o grau
 	if _lRetED
 		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := "UPDATE " + RetSQLName ("ZZA")
-		_oSQL:_sQuery +=   " SET D_E_L_E_T_ = '*'"
+		// Nao posso marcar como excluido por que o programa do grau (BL01)
+		// desconhece esse conceito. Preciso excluir, mesmo!
+		//_oSQL:_sQuery := "UPDATE " + RetSQLName ("ZZA")
+		// _oSQL:_sQuery +=   " SET D_E_L_E_T_ = '*'"
+		_oSQL:_sQuery := "DELETE " + RetSQLName ("ZZA")
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND ZZA_FILIAL  = '" + ::Filial + "'"
 		_oSQL:_sQuery +=   " AND ZZA_SAFRA   = '" + ::Safra  + "'"
@@ -1092,7 +1096,7 @@ METHOD ImprimeTk (_nQualTk as numeric) Class ClsCarSaf
 	local _nQtVias := 0
 	local _lRet    := .T.
 
-	U_Log2 ('debug', '[' + procname () + ']iniciando...' + cvaltochar (_nQualTk))
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']iniciando...' + cvaltochar (_nQualTk))
 	if _lRet .and. empty (_nQualTk)
 		_Super:SomaMsg ("Para impressao de ticket deve ser informado se deseja 1a. ou 2a. pesagem.")
 		_lRet  = .F.
@@ -1101,10 +1105,6 @@ METHOD ImprimeTk (_nQualTk as numeric) Class ClsCarSaf
 		_Super:SomaMsg ("Opcao de impressao de ticket somente para 1a. ou 2a. pesagem.")
 		_lRet  = .F.
 	endif
-//	if _lRet .and. _nQualTk == 1 .and. ::PesoBruto == 0
-//		_Super:SomaMsg ("Solicitada impressao de ticket de 1a. pesagem, mas a carga ainda nao tem peso bruto.")
-//		_lRet  = .F.
-//	endif
 	if _lRet .and. _nQualTk == 2 .and. ::PesoTara == 0
 		_Super:SomaMsg ("Solicitada impressao de ticket de 2a. pesagem, mas a carga ainda nao tem peso tara.")
 		_lRet  = .F.
@@ -1116,7 +1116,7 @@ METHOD ImprimeTk (_nQualTk as numeric) Class ClsCarSaf
 		else
 			_nQtVias := iif (_nQualTk == 1, 1, 2)
 		endif
-		U_Log2 ('debug', '[' + procname () + ']vou chamar U_VA_RusTk')
+//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']vou chamar U_VA_RusTk')
 		U_VA_RusTk (_nQualTk, ::PortImpTk, _nQtVias, {}, 'bematech', .t.)
 	endif
 return _lRet
@@ -1128,12 +1128,12 @@ METHOD Log () Class ClsCarSaf
 	local _sLogCar  := ''
 	local _nItCarga := 0
 
-	_sLogCar += '  Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + ' Status: ' + ::StatusCar + chr (13) + chr (10)
-	_sLogCar += '  Peso bruto: ' + cvaltochar (::PesoBruto) + ' Peso tara: ' + cvaltochar (::PesoTara) + chr (13) + chr (10)
-	_sLogCar += '  Fornecedor: ' + ::Fornece + '/' + ::Loja + ' - ' + ::NomeFornec + chr (13) + chr (10)
-	_sLogCar += '  Porta ticket: ' + cvaltochar (::PortImpTk) + chr (13) + chr (10)
+	_sLogCar += '## Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + ' Status: ' + ::StatusCar + iif (::Segregada, ' SEGREGADA', ' Nao segregada') + chr (13) + chr (10)
+	_sLogCar += '## Peso bruto: ' + cvaltochar (::PesoBruto) + ' Peso tara: ' + cvaltochar (::PesoTara) + chr (13) + chr (10)
+	_sLogCar += '## Fornecedor: ' + ::Fornece + '/' + ::Loja + ' - ' + ::NomeFornec + chr (13) + chr (10)
+	_sLogCar += '## Porta ticket: ' + cvaltochar (::PortImpTk) + chr (13) + chr (10)
 	for _nItCarga = 1 to len (::ItItem)
-		_sLogCar += '    It.' + ::ItItem [_nItCarga] + ': '
+		_sLogCar += '##   It.' + ::ItItem [_nItCarga] + ': '
 		_sLogCar += U_TamFixo (::ItProduto [_nItCarga], 7, ' ')  // Se criarem itens maiores, ajustar aqui
 		_sLogCar += U_TamFixo (alltrim (::ItDescri  [_nItCarga]), 25, ' ')
 		_sLogCar += ' ' + ::ItFinaOuComum [_nItCarga]
@@ -1150,19 +1150,23 @@ METHOD Log () Class ClsCarSaf
 		_sLogCar += ' $p/NF: ' + transform (::ItPrcParaNF [_nItCarga], "@E 9.9999")
 		_sLogCar += ' Vitic: ' + ::ItPropRur [_nItCarga]
 		_sLogCar += ' Obs: ' + ::ItObs [_nItCarga]
+	//	_sLogCar += iif (_nItCarga < len (::ItItem), chr (13) + chr (10), '')
 		_sLogCar += chr (13) + chr (10)
 	next
-	_sLogCar += '  Varied.menor valor: ' + ::VariedadeMenorValorCodigo + ' cond: ' + ::VariedadeMenorValorConducao + chr (13) + chr (10)
-	_sLogCar += '  Grupo pagto: ' + ::GrupoPagamento + chr (13) + chr (10)
+	_sLogCar += '## Varied.menor valor: ' + ::VariedadeMenorValorCodigo + ' cond: ' + ::VariedadeMenorValorConducao + chr (13) + chr (10)
+	_sLogCar += '## Grupo pagto: ' + ::GrupoPagamento + chr (13) + chr (10)
 	if ! empty (::UltMsg)
-		_sLogCar += '  Ult.msg: ' + ::UltMsg + chr (13) + chr (10)
+		_sLogCar += '## Ult.msg: ' + ::UltMsg + chr (13) + chr (10)
 	endif
 	if len (::CCompart) > 0
-		_sLogCar += '  ' + ::ConsCompar ()
+		_sLogCar += '## ' + ::ConsCompar ()
 	endif
-	U_Log2 ('info', 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv')
+	if right (_sLogCar, 2) == chr (13) + chr (10)  // Remove ultima linha vazia
+		_sLogCar = left (_sLogCar, len (_sLogCar) - 2)
+	endif
+	//U_Log2 ('info', 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv')
 	U_Log2 ('info', _sLogCar)
-	U_Log2 ('info', '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+	//U_Log2 ('info', '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
 return _sLogCar
 
 
@@ -1310,15 +1314,20 @@ METHOD Precifica (_sQualPreco as character) class ClsCarSaf
 
 					if ::TipoPrecoParaNF == 6  // Buscar na tabela ZBI
 						if _lUsarPrecoDS
-							_oSQL := ClsSQL ():New ()
-							_oSQL:_sQuery := ""
-							_oSQL:_sQuery += "SELECT COD_FINA_CLAS_COMUM"
-							_oSQL:_sQuery +=  " FROM VA_VFAMILIAS_UVAS"
-							_oSQL:_sQuery += " WHERE COD_BASE = '" + ::ItProduto [_nIdxItem] + "'"
-							_sProdutoAUsar = _oSQL:RetQry (1, .f.)
-							if empty (_sProdutoAUsar)
-								_Super:SomaMsg ("Nao foi possivel definir o codigo 'fina_sem_classificacao' correspondente ao produto '" + ::ItProduto [_nIdxItem] + "'. Impossivel determinao o preco para NF.")
-								_lContinua = .F.
+							// Se a variedade recebida jah for a 'classificada como cumum', nem preciso procurar mais.
+							if fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ItProduto [_nIdxItem], "B1_VAFCUVA") == 'C'
+								_sProdutoAUsar = ::ItProduto [_nIdxItem]
+							else
+								_oSQL := ClsSQL ():New ()
+								_oSQL:_sQuery := ""
+								_oSQL:_sQuery += "SELECT COD_FINA_CLAS_COMUM"
+								_oSQL:_sQuery +=  " FROM VA_VFAMILIAS_UVAS"
+								_oSQL:_sQuery += " WHERE COD_BASE = '" + ::ItProduto [_nIdxItem] + "'"
+								_sProdutoAUsar = _oSQL:RetQry (1, .f.)
+								if empty (_sProdutoAUsar)
+									_Super:SomaMsg ("Nao foi possivel definir o codigo 'fina_sem_classificacao' correspondente ao produto '" + ::ItProduto [_nIdxItem] + "'. Impossivel determinao o preco para NF.")
+									_lContinua = .F.
+								endif
 							endif
 						else
 							_sProdutoAUsar = ::ItProduto [_nIdxItem]
@@ -1364,7 +1373,7 @@ METHOD Precifica (_sQualPreco as character) class ClsCarSaf
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retornando ' + cvaltochar (_lContinua))
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retornando ' + cvaltochar (_lContinua))
 return _lContinua
 
 
@@ -1638,8 +1647,8 @@ return
 METHOD StatusZZA () Class ClsCarSaf
 	local _sRetStZZA := ''
 
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Avaliando carga recebida em ' + ::CXouGranel + ' com registros assim:')
-	U_Log2 ('debug', ::aIntegGrau)
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Avaliando carga recebida em ' + ::CXouGranel + ' com registros assim:')
+//	U_Log2 ('debug', ::aIntegGrau)
 	
 	// Quando a carga eh recebida em caixas, vale o 'menor' status por
 	// que provavelmente cada variedade vai ser processada separadamente.

@@ -71,6 +71,10 @@ User Function va_rus2 (_nOpc, _lFechPort)
 	private _aCadVitic := {}  // Deixar private para ser vista por outras rotinas.
 	private _aAglut    := {}  // Deixar private para ser vista por outras rotinas.
 	private cArqMnu    := FWGetMnuFile()  //'COOPERATIVA.XNU'
+	private _sPrefLog  := 'Car.' + sze -> ze_carga
+
+	// Cria variaveis M->... para a enchoice (a funcao nao cria sozinha)
+	RegToMemory ("SZE", inclui, inclui)
 
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
@@ -78,10 +82,11 @@ User Function va_rus2 (_nOpc, _lFechPort)
 	endif
 
 	if inclui
+		_sPrefLog = 'Car.' + m->ze_carga
 		u_Log2 ('info', '[' + procname () + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
 		u_Log2 ('debug', '[' + procname () + ']Nao preciso atualizar objeto _oCarSaf')
 	else
-		u_Log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
+		u_Log2 ('info', '[' + procname () + '][ze_carga:' + sze -> ze_carga + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza objeto com dados do arquivo.
 	endif
 
@@ -172,8 +177,8 @@ User Function va_rus2 (_nOpc, _lFechPort)
 
 	if _lContinua
 		
-		// Cria variaveis M->... para a enchoice (a funcao nao cria sozinha)
-		RegToMemory ("SZE", inclui, inclui)
+//		// Cria variaveis M->... para a enchoice (a funcao nao cria sozinha)
+//		RegToMemory ("SZE", inclui, inclui)
 		
 		// Monta aHeader e eCols para a getdados.
 		aHeader := aclone (U_GeraHead ("SZF", .F., {}, {}, .F.))
@@ -325,7 +330,6 @@ User Function va_rus2 (_nOpc, _lFechPort)
 
 	// Tratamento caso o usuario tenha confirmado a tela modelo3.
 	if _lContinua .and. _lDlgOK
-//		U_VA_RUS2G (_nOpc, _nLock)
 		U_VA_RUS2G (_nOpc, _oCarSaf)
 	endif
 
