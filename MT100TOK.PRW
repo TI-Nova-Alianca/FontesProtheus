@@ -72,6 +72,7 @@
 // 05/01/2023 - Robert  - Desabilitadas validacoes tabela ZZX (vamos comecar a usar o importador da TRS)
 // 03/02/2023 - Sandra  - Incluso para aceite de chave para tipo de nota NF3E - (GLPI 13143)
 // 25/05/2023 - Robert  - Nao bloqueia duas NF origem diferentes quando chamado pelo U_VA_GNF2.
+// 19/01/2024 - Sandra  - Habilitado variavel _ValXML. - GLPI (14565) 
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -198,12 +199,12 @@ User Function MT100TOK()
 		endif
 	endif
 
-	/* Estamos migrando para o importador da TRS
+	// Estamos migrando para o importador da TRS
 	// Validacoes com o XML do fornecedor.
 	if _lRet .and. cFormul != "S" // .and. ! IsInCallStack ("ZZX")
 		_lRet = _ValXML ()
 	endif
-	*/
+	
 
 	// Validacoes itens controlados policia federal
 	if _lRet
@@ -443,7 +444,7 @@ static function _ValChvNFe ()
 return _lRet
 //
 
-/*
+
 // --------------------------------------------------------------------------
 // Verifica dados no XML do fornecedor, caso esteja disponivel.
 static function _ValXML ()
@@ -730,7 +731,7 @@ static function _ValXML ()
   	   endif   
     endif
 return _lRet
-*/
+
 //
 // --------------------------------------------------------------------------
 // Valida NF Origem
