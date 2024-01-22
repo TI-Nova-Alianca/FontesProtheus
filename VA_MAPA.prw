@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 15/01/2024 - Claudia - Incluida nova coluna de comercialização. GLPI: 14729
+// 22/01/2024 - Claudia - Incluida nova coluna com pais de exportação. GLPI: 14776
 //
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -100,6 +101,24 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		FROM.BI_ALIANCA.dbo.VA_FATDADOS "
     _oSQL:_sQuery += " 		WHERE EMISSAO BETWEEN '"+ dtos(_dIniAnoAtual) +"' AND '"+ dtos(_dFinAnoAtual) +"' "
     _oSQL:_sQuery += " 		AND PRODUTO = B1_COD) AS QTD_COMERCIALIZADA_ANO "
+    _oSQL:_sQuery += "     ,(SELECT
+    _oSQL:_sQuery += " 			    YA_DESCR
+    _oSQL:_sQuery += " 		    FROM SD2010 SD2
+    _oSQL:_sQuery += " 		    INNER JOIN SA1010 SA1
+    _oSQL:_sQuery += " 			    ON SA1.D_E_L_E_T_ = ''
+    _oSQL:_sQuery += " 			    AND A1_COD = SD2.D2_CLIENTE
+    _oSQL:_sQuery += " 			    AND SA1.A1_LOJA = SD2.D2_LOJA
+    _oSQL:_sQuery += " 			    AND A1_EST = 'EX'
+    _oSQL:_sQuery += " 		    INNER JOIN SYA010 SYA
+    _oSQL:_sQuery += " 			    ON SYA.D_E_L_E_T_ = ''
+    _oSQL:_sQuery += " 			    AND YA_CODGI = A1_PAIS
+    _oSQL:_sQuery += " 		    WHERE SD2.D_E_L_E_T_ = ''
+    _oSQL:_sQuery += " 		    AND D2_COD = B1_COD
+    _oSQL:_sQuery += " 		    AND SD2.D2_EMISSAO BETWEEN '"+ dtos(_dIniAnoAtual) +"' AND '"+ dtos(_dFinAnoAtual) +"' "
+    _oSQL:_sQuery += " 		    GROUP BY A1_PAIS
+    _oSQL:_sQuery += " 				    ,YA_DESCR
+    _oSQL:_sQuery += " 				    ,SD2.D2_COD
+    _oSQL:_sQuery += " 				    ,SD2.D2_DESC) AS PAIS_EXPORTACAO
     _oSQL:_sQuery += " FROM " + RetSQLName ("SB1") + " SB1 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB5") + " SB5 "
     _oSQL:_sQuery += " 	ON SB5.D_E_L_E_T_ = '' "
