@@ -2336,37 +2336,22 @@ static function _CargSaf ()
 
 	sze -> (dbsetorder (1))
 	dbselectarea ("SZE")
-	set filter to ze_filial = cFilAnt .and. ze_safra = '2023' .and. !ze_status $ 'C/D' .AND. ZE_CARGA $ '0460/0461/0463'
+	set filter to ze_filial = cFilAnt .and. ze_safra = '2024' .AND. ze_carga = '0034'  //.and. !ze_status $ 'C/D'
 	sze -> (dbgotop ())
-	do while ! sze -> (eof ()) .and. _nContador++ <= 100
+	do while ! sze -> (eof ()) .and. _nContador++ <= 10
 		U_Log2 ('debug', '[' + procname () + ']' + sze -> ze_filial + ' ' + sze -> ze_safra + ' ' + sze -> ze_carga)
 		_oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
 		if empty (_oCarSaf:Carga)
 			u_help ("Impossivel instanciar carga (ou carga invalida).", _oCarSaf:UltMsg, .t.)
 			exit
 		endif
-
-		U_Log2 ('debug', '[' + procname () + ']Vou buscar menor valor')
-		if ! _oCarSaf:BuscaVarMenorVl ()
+//		if ! _oCarSaf:Precifica ('ParaNF')
+//			U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
+//		endif
+//		_oCarSaf:Log ()
+		if ! _oCarSaf:AtuAgenda ()
 			U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
 		endif
-		_oCarSaf:Log ()
-
-		if ! _oCarSaf:BuscaGrupoPagto ()
-			U_Log2 ('erro', '[' + procname () + ']' + _oCarSaf:UltMsg)
-		endif
-		_oCarSaf:Log ()
-
-		U_VA_RUSN (.t.)
-
-	//	_xNovo := _oCarSaf:VarMenorVl (_oCarSaf:TipoPrecoParaNF) [1, 1]
-	//	// U_Log2 ('debug', '[' + procname () + ']Novo:' + _xNovo)
-	//	_xOld := U_VA_RusMV ()
-	//	if _xNovo != _xOld
-	//		U_Log2 ('erro', '[' + procname () + ']Diferenca!!! OLD:' + cvaltochar (_xOld) + ' NOVO: ' + cvaltochar (_xNovo))
-	//		_oCarSaf:Log ()
-	//	endif
-	EXIT // DURANTE TESTES
 
 		sze -> (dbskip ())
 	enddo
@@ -2759,7 +2744,7 @@ return
 
 // --------------------------------------------------------------------------
 static function _BatSafr ()
-	u_batsafr ('ConfCadastros')  // Conferencia cadastros basicos
+//	u_batsafr ('ConfCadastros')  // Conferencia cadastros basicos
 //	u_batsafr ('CargasSemContranota')  // cargas sem contranota
 //	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
 //	u_batsafr ('ConferirFrete')  // conferencia fretes
@@ -2769,6 +2754,7 @@ static function _BatSafr ()
 //	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
 //	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
 //	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+	u_batsafr ('ConfInspecoes')  // conferencia cargas X NaWeb
 return
 
 // --------------------------------------------------------------------------
@@ -4037,13 +4023,14 @@ return
 // --------------------------------------------------------------------------
 // Ajusta cadastro produtos em lote
 static function _AtuSB1 ()
+/*
 	//local _lContinua := .T.
 	local _oSQL      := NIL
 	local _aPrev     := {}
 	local _aDados    := {}
 	local _nDado     := 0
 
-	U_MudaLog ('GLPI14539_B1_CUSTD.log')
+	U_MudaLog ('GLPI14539_B1_PESO.log')
 
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
@@ -4128,6 +4115,43 @@ static function _AtuSB1 ()
 		endif
 	next
 	u_acolsXLS (_aPrev)
+*/
+
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	sb1 -> (dbgotop ())
+	do while ! sb1 -> (eof ())
+		if sb1 -> b1_tipo = 'PS' .and. sb1 -> b1_um == 'G ' .and. sb1 -> b1_peso = 0
+			u_log2 ('info', 'Verificando item ' + sb1 -> b1_tipo + ' ' + sb1 -> b1_cod + ' ' + SB1 -> B1_DESC)
+			sb5 -> (dbsetorder (1))
+			if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+				u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+			else
+
+				// Cria variaveis para uso na gravacao do evento de alteracao
+				regtomemory ("SB1", .F., .F.)
+				//regtomemory ("SB5", .F., .F.)
+				//m->b5_vasisde = 'S'
+				m->b1_peso = 0.001
+
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'Atualizar pesos insumos', .F.)
+				reclock ("SB1", .f.)
+				sb1 -> B1_peso = m->b1_peso
+				// comentariado pra dar erro em caso de executar indevidamente  ---> msunlock ()
+				//reclock ("SB5", .f.)
+				//sb5->b5_vasisde = m->b5_vasisde
+				//msunlock ()
+				U_AtuMerc ("SB1", sb1 -> (recno ()))
+			endif
+
+			// Cai fora no primeiro, para testes.
+			//exit
+			
+		endif
+		sb1 -> (dbskip ())
+	enddo
 
 	// Ajusta cadastro produtos em lote (itens das lojas)
 	// sb1 -> (dbsetorder (1))

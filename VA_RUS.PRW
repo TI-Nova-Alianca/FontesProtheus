@@ -320,6 +320,9 @@ user function VA_RUSOO (_sQueFazer)
 						_oCarSaf:GrvEvt ("SZE009", "Nao foi possivel segregar o(s) lote(s) de estoque." + _oCarSaf:UltMsg)
 						u_help ("Nao foi possivel segregar o(s) lote(s) de estoque. Notifique setor de producao! " + _oCarSaf:UltMsg,, .t.)
 					endif
+					if ! _oCarSaf:AtuAgenda ()
+						u_help ("Nao foi possivel atualizar o status da agenda no NaWeb: " + _oCarSaf:UltMsg,, .t.)
+					endif
 				endif
 			endif
 		endif

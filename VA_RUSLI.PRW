@@ -166,6 +166,7 @@ user function va_rusLI (_nPesagem, _lSimular)
 			reclock ("SZE", .F.)
 			sze->ze_segreg = iif (_aRusInsp [.InspecoesSafraSituacao] == "SEG", 'S', 'N')
 			msunlock ()
+			_oCarSaf:Segregada = .t.
 			_oCarSaf:GrvEvt ("SZE009", "Segregando carga cfe. situacao lida nas inspecoes.")
 		endif
 	endif

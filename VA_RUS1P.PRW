@@ -84,7 +84,9 @@ user function va_rus1P (_lPortaria)
 
 	if _lContinua
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
-		_oCarSaf:AtuAgenda ()
+		if ! _oCarSaf:AtuAgenda ()
+			u_help ("Nao foi possivel atualizar o status da agenda no NaWeb: " + _oCarSaf:UltMsg,, .t.)
+		endif
 
 		// Atualiza itens da carga (SZF) e status para medicao de grau (ZZA).
 		_oCarSaf:AtuZZA (.F.)

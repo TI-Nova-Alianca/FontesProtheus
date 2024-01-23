@@ -29,6 +29,7 @@
 // 18/11/2023 - Robert - Versao inicial do metodo :PodeGravar().
 // 01/01/2024 - Robert - Criado metodo :FormataGrau().
 // 16/01/2024 - Robert - Exclusao de carga marcava o ZZA como deletado, mas precisa excluir de verdade.
+// 23/01/2024 - Robert - Melhorado envio de atualizacao de agenda para NaWeb (algumas validacoes e mensagens) - GLPI 14778
 //
 
 #Include "Protheus.ch"
@@ -183,11 +184,13 @@ return _sRet
 // --------------------------------------------------------------------------
 // Altera o status do agendamento relacionado a esta carga na agenda do NaWeb.
 METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
-	local _lRetWSNA  := .F.
 	local _oWSNaWeb  := NIL
 	local _sXMLCarg  := ''
 	local _lContinua := .T.
 	local _sZZAAtual := ''
+	local _sStatAtu  := ''
+	local _oSQL      := NIL
+	local _sLinkSrv  := U_LkServer ('NAWEB')
 
 	// Lista de status passados pela Daiana em 26/10/22:
 	// Dis Disponível
@@ -211,12 +214,18 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 	// ocorre caso de problemas somente na documentacao, etc. e o outro
 	// produtor nao merece a mesma penalidade. Robert, 02/02/2023.
 
-	// Analisa situacao do arquivo de integracao com medidor de grau
-	_sZZAAtual = ::StatusZZA ()
+	if _lContinua .and. empty (_sLinkSrv)
+		_Super:SomaMsg ("Linked server para o NaWeb nao definido.")
+		_lContinua = .F.
+	endif
 
-	// Define o que vai enviar para o NaWeb
-	_sStatPara = ''
 	if _lContinua
+
+		// Analisa situacao do arquivo de integracao com medidor de grau
+		_sZZAAtual = ::StatusZZA ()
+
+		// Define o que vai enviar para o NaWeb
+		_sStatPara = ''
 		do case
 		case ::Segregada
 			_sStatPara = 'SEG'  // Segregada
@@ -230,10 +239,34 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 			_sStatPara = 'LIB'  // Liberada (para ir ate o tombador e descarregar)
 		otherwise
 			u_help ("Situacao nao prevista. Nao sei o que enviar para o NaWeb para definir o status da carga " + ::Carga,, .T.)
+			_Super:SomaMsg ("Situacao nao prevista. Nao sei o que enviar para o NaWeb para definir o status da carga")
 			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']_sZZAAtual: ' + cvaltochar (_sZZAAtual))
 			u_logObj (::Self)
+
+			// Grava evento para posterior rastreamento
+			::GrvEvt ('SZE004', "Situacao nao prevista. Nao sei o que enviar para o NaWeb para definir o status da carga", 360)
+
 			_lContinua = .F.
 		endcase
+	endif
+
+	// Valida algumas coisas cfe. status atual da agenda
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery += " SELECT SITUACAO"
+		_oSQL:_sQuery +=   " FROM " + _sLinkSrv + ".VA_VINSPECOES_SAFRA_" + ::Safra
+		_oSQL:_sQuery +=  " WHERE SAFRA  = '" + ::Safra  + "'"
+		_oSQL:_sQuery +=    " AND FILIAL = '" + ::Filial + "'"
+		_oSQL:_sQuery +=    " AND CARGA  = '" + ::Carga  + "'"
+	//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_sStatAtu = alltrim (upper (_oSQL:RetQry (1, .f.)))
+		U_Log2 ('debug', '[' + procname () + ']Situacao retornada pela view VA_VINSPECOES_SAFRA: ' + _sStatAtu)
+		if ! empty (_sStatAtu)
+			if _sStatAtu == 'SEG' .and. _sStatPara != 'SEG'
+				_Super:SomaMsg ("Carga ja consta com status " + _sStatAtu + " no NaWeb e nao pode mais ser alterada.")
+				_lContinua = .F.
+			endif
+		endif
 	endif
 
 	if _lContinua
@@ -256,18 +289,22 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 
 		if cvaltochar (_oWSNaWeb:cSaida) == 'OK'
 			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Alteracao da carga foi aceita pelo NaWeb')
-			_lRetWSNA = .T.
+
+			// Grava evento para posterior rastreamento
+			::GrvEvt ('SZE004', "Enviado novo status (" + _sStatPara + ") para o NaWeb", 360)
+
+			_lContinua = .T.
 		else
 		//	::UltMsg += "Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
 			_Super:SomaMsg ("Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida))
 			u_help (::UltMsg,, .t.)
-			_lRetWSNA = .F.
+			_lContinua = .F.
 
 			// Grava evento para posterior rastreamento
-			::GrvEvt ('SZE004', "ERRO ao enviar novo status (" + _sStatPara + ") para o NaWeb: " + ::UltMsg)
+			::GrvEvt ('SZE004', "ERRO ao enviar novo status (" + _sStatPara + ") para o NaWeb: " + ::UltMsg, 360)
 		endif
 	endif
-return _lRetWSNA
+return _lContinua
 
 
 // --------------------------------------------------------------------------
@@ -1072,7 +1109,7 @@ return _lContinua
 
 // --------------------------------------------------------------------------
 // Grava evento padrao do sistema.
-METHOD GrvEvt (_sCodEvt, _sTxtEvt) Class ClsCarSaf
+METHOD GrvEvt (_sCodEvt as character, _sTxtEvt as character, _nDiasValid as numeric) Class ClsCarSaf
 	local _oEvento := NIL
 
 	_oEvento := ClsEvent():new ()
@@ -1086,6 +1123,7 @@ METHOD GrvEvt (_sCodEvt, _sTxtEvt) Class ClsCarSaf
 	_oEvento:SerieEntr  = ::SerieCtrn
 	_oEvento:Fornece    = ::Fornece
 	_oEvento:LojaFor    = ::Loja
+	_oEvento:DiasValid  = iif (_nDiasValid == NIL, 0, _nDiasValid)
 	_oEvento:Grava ()
 return
 

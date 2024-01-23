@@ -42,10 +42,11 @@
 // 16/03/2023 - Robert - Criado controle de semaforo nas static functions.
 // 15/01/2024 - Robert - Ajuste para nao validar cadastro fornecedor 005567 ref. FUNRURAL
 // 16/01/2024 - Robert - Removida filial 09 do e-mail diario de acompanhamento de safra.
+// 23/01/2024 - Robert - Criada verificacao de inspecoes.
 //
 
 // --------------------------------------------------------------------------
-user function BatSafr (_sQueFazer, _lAjustar)
+user function BatSafr (_sQueFazer)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _sMsg      := ""
@@ -56,7 +57,6 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	local _oAViso    := NIL
 
 	_sQueFazer = iif (_sQueFazer == NIL, '', _sQueFazer)
-	_lAjustar = iif (_lAjustar == NIL, .F., _lAjustar)
 
 	U_Log2 ('info', 'Iniciando ' + procname () + ' com _sQueFazer=' + _sQueFazer)
 
@@ -106,7 +106,7 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	// Como as primeiras notas sairam erradas, optei por fazer esta rotina de novo para identifica-las
 	// e manter monitoramento.
 	elseif _sQueFazer == 'ConferirParcelamento' .and. year (date ()) >= 2021
-		_ConfParc (_lAjustar)
+		_ConfParc ()
 
 	// Verifica contranotas "sem carga". Isso indica possivel problema nas amarracoes entre tabelas.
 	elseif _sQueFazer == 'ContranotasSemCarga'
@@ -166,6 +166,10 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	elseif _sQueFazer == 'ConfCadastros'
 		_ConfCadas ()
 
+	// Confere inspecoes no NaWeb
+	elseif _sQueFazer == 'ConfInspecoes'
+		_ConfInsp ()
+
 	else
 		u_help ("Sem definicao para o que fazer quando parametro = '" + _sQueFazer + "'.",, .T.)
 		//_oBatch:Retorno += "Sem definicao para verificacao '" + _sQueFazer + "'."
@@ -181,8 +185,8 @@ return .T.
 
 
 
-// Conferencia de alguns cadastros basicos
 // --------------------------------------------------------------------------
+// Conferencia de alguns cadastros basicos
 static function _ConfCadas ()
 	local _oSQL     := NIL
 	local _aFornece := {}
@@ -281,6 +285,70 @@ static function _ConfCadas ()
 return
 
 
+// --------------------------------------------------------------------------
+// Conferencia de alguns dados das cargas X inspecoes no NaWeb
+static function _ConfInsp ()
+	local _oSQL     := NIL
+	local _oAviso   := NIL
+	local _sAliasQ   := ''
+	local _sMsg     := ''
+	local _sLinkSrv   := U_LkServer ('NAWEB')
+
+	if empty (_sLinkSrv)
+		_oAviso := ClsAviso():new ()
+		_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
+		_oAviso:Titulo     = "Sem definicao de linked server para NaWeb"
+		_oAviso:Texto      = "Impossivel rodar verificacao de safra " + procname ()
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+		_oAviso:Origem     = procname ()
+		_oAviso:Formato    = 'T'  // [T]exto ou [H]tml
+		_oAviso:Grava ()
+	else
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT P.FILIAL, P.CARGA, P.SEGREGADA, isnull (N.SITUACAO, 'NULL') as SITUACAO"
+		_oSQL:_sQuery += " FROM VA_VCARGAS_SAFRA P"
+		_oSQL:_sQuery +=   " LEFT JOIN " + _sLinkSrv + ".VA_VINSPECOES_SAFRA_" + cvaltochar (year (date ())) + " N "
+		_oSQL:_sQuery +=      " ON (N.SAFRA  = P.SAFRA"
+		_oSQL:_sQuery +=      " AND N.FILIAL = P.FILIAL"
+		_oSQL:_sQuery +=      " AND N.CARGA  = P.CARGA)"
+		_oSQL:_sQuery += " WHERE P.SAFRA = '" + cvaltochar (year (date ())) + "'"
+		_oSQL:_sQuery +=   " AND P.STATUS != 'C'"  // Cancelada
+		_oSQL:_sQuery +=   " AND P.AGLUTINACAO != 'O'"  // Aglutinada em outra carga
+		_oSQL:_sQuery +=   " AND P.PESO_LIQ > 0"  // Para evitar cargas 'em recebimento'
+		_oSQL:_sQuery +=   " AND P.CONTRANOTA != ''"
+		_oSQL:_sQuery +=   " AND P.NF_DEVOLUCAO = ''"  // Para evitar cargas devolvidas'
+		_oSQL:_sQuery += " ORDER BY P.FILIAL, P.CARGA"
+		_oSQL:Log ('[' + procname () + ']')
+		_sAliasQ := _oSQL:Qry2Trb (.f.)
+		do while ! (_sAliasQ) -> (eof ())
+		//	U_Log2 ('debug', '[' + procname () + ']F' + (_sAliasQ) -> filial + ' Carga ' + (_sAliasQ) -> carga + ' >>' + alltrim (upper ((_sAliasQ) -> Situacao)) + '>> x >>' + (_sAliasQ) -> segregada + '<<')
+			if alltrim (upper ((_sAliasQ) -> Situacao)) == 'NULL'
+				_sMsg += 'F' + (_sAliasQ) -> filial + ' Carga ' + (_sAliasQ) -> carga + ': Inspecao nao encontrada no NaWeb.<br>'
+			else
+				if alltrim (upper ((_sAliasQ) -> Situacao)) == 'SEG' .and. (_sAliasQ) -> segregada != 'S'
+					_sMsg += 'F' + (_sAliasQ) -> filial + ' Carga ' + (_sAliasQ) -> carga + ': Segregada SOMENTE no NaWeb.<br>'
+				endif
+			endif
+			(_sAliasQ) -> (dbskip ())
+		enddo
+		(_sAliasQ) -> (dbclosearea ())
+		dbselectarea ("SB1")
+		U_Log2 ('debug', '[' + procname () + ']_sMsg: ' + _sMsg)
+		if ! empty (_sMsg)
+			_oAviso := ClsAviso():new ()
+			_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
+			_oAviso:Titulo     = "Inconsist.inspecoes Protheus X NaWeb"
+			_oAviso:Texto      = _sMsg
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+			_oAviso:Origem     = procname ()
+			_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
+			_oAviso:Grava ()
+		endif
+	endif
+return
+
+
 // Conferencia frete
 // --------------------------------------------------------------------------
 static function _ConfFrt ()
@@ -345,7 +413,7 @@ return
 
 // --------------------------------------------------------------------------
 // Confere parcelas geradas nas notas de compra da safra.
-static function _ConfParc (_lAjustar)
+static function _ConfParc ()
 	local _sAliasQ   := ''
 	local _oSQL      := NIL
 	local _aParcPrev := {}
@@ -379,17 +447,13 @@ static function _ConfParc (_lAjustar)
 	_oSQL:_sQuery +=    " AND FILIAL = '" + cFilAnt + "'"
 	_oSQL:_sQuery +=    " AND NOT (TIPO_NF = 'V' AND DATA = '20220309')"  // COMPLEMENTOS DE FRETE GLPI 11721
 
-	
-	// glpi 13265
-//	_oSQL:_sQuery +=    " AND DOC IN ('000001031','000001032','000001037','000023599','000023893','000023911','000023991','000024057','000024162','000024371','000024447','000024509','000024547','000024587','000024789','000024849')"
-
-
-
-	if _lAjustar  // Soh uso pra casos especiais
-		_oSQL:_sQuery +=    " and FILIAL = '01'"
-		_oSQL:_sQuery +=    " and ASSOCIADO = '002978'"
-		_oSQL:_sQuery +=    " and DOC = '000023832'"
+	// temporario
+	if 'ROBERT' $ upper (GetEnvServer ())
+		_oSQL:_sQuery +=    " AND DOC IN ('000026266')"
 	endif
+
+
+
 
 	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO, DATA"
 	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"

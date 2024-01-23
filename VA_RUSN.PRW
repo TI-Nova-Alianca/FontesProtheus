@@ -789,7 +789,9 @@ User Function va_rusN (_lSimulNF)
 		// Endereca (saldos a distribuir) o lote de uva recebido por esta contranota
 		// e atualiza status no sistema de agendamento/inspecao.
 		if ! empty (_oCarSaf:Contranota)
-			_oCarSaf:AtuAgenda ()
+			if ! _oCarSaf:AtuAgenda ()
+				u_help ("Nao foi possivel atualizar o status da agenda no NaWeb: " + _oCarSaf:UltMsg,, .t.)
+			endif
 			if ! _oCarSaf:EnderEstq ('I')
 				u_help ("Problemas para enderecar estoque: " + _oCarSaf:UltMsg,, .t.)
 			endif

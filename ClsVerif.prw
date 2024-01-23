@@ -1534,8 +1534,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=                      " AND SZ8.Z8_SAFRA   = '" + ::Param01 + "')"
 
 	case ::Numero == 26
-		::Ativa      = .T.
-		::Setores   = 'PCP/CUS/CTB'
+		::Ativa     = .T.
+		::Setores   = 'INF'  //'PCP/CUS/CTB'
 		::ViaBatch  = .T.
 		::Descricao = 'Diferenca saldo estq do produto X lotes X enderecos'
 		::Sugestao  = 'Reprocesse saldo atual; possivelmente nao tenha sido gerado lote inicial (telas MATA805 ou MATA390); verifique fechamento (SB9 x SBJ x SBK); verifique movimentacao.'
@@ -1852,8 +1852,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 37
 		::Ativa      = .T.
-		::Setores    = 'CUS'
-		::ViaBatch  = .T.
+		::Setores    = 'INF'  //'CUS'
+		::ViaBatch   = .T.
 		::Descricao  = "Almox inexistente na tabela de saldos"
 		::Sugestao   = "Verifique movimentacao e tabela de saldos (SB2)"
 		::QuandoUsar = "A qualquer momento"
