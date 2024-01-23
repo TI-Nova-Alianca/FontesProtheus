@@ -33,6 +33,7 @@
 // 22/02/2023 - Robert - Chamada simulacao frete nao tinha objeto ClsCarSaf() instanciado.
 //                     - Novo parametros chamada U_VA_SZNC()
 // 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
+// 23/01/2023 - Robert - Submenu ordenado alfabeticamente.
 //
 
 // --------------------------------------------------------------------------
@@ -169,31 +170,31 @@ User Function va_rus ()
 
 		// Submenu para Outros.
 		_aMenuOut = {}
-		aadd (_aMenuOut, {"&Parametros",                     "U_VA_RUSLP (.T.)", 0,4})
-		aadd (_aMenuOut, {"&Ticket 1a.pesag",                "U_VA_RUSOO ('Tk1Pes')",0,4})
-		aadd (_aMenuOut, {"&Ticket 2a.pesag",                "U_VA_RUSOO ('Tk2Pes')",0,4})
-		aadd (_aMenuOut, {"&Impr.Recibo",                    "U_VA_RUSR ()", 0,4})
-		aadd (_aMenuOut, {"&Cons.Aglutinacoes",              "U_VA_RUSCA (1, .F.)",0,4})
-		aadd (_aMenuOut, {"&Reenviar p/grau",                "U_VA_RUSOO ('ReenviarParaGrau')",0,4})
-		aadd (_aMenuOut, {"&Rastrear estoque",               "U_VA_RUSRC ()", 0,4})
-		aadd (_aMenuOut, {"&NF remessa coop",                "U_VA_RUSNR ('A')", 0,4})
-		aadd (_aMenuOut, {"Controle Portaria",               "U_VA_CPORT ()", 0,4})
-		aadd (_aMenuOut, {"Exportar medicoes do grau",       "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
-		aadd (_aMenuOut, {"Enderecar uva no estoque",        "U_VA_RusOO ('EnderecarEstoque')", 0,4})
-		aadd (_aMenuOut, {"Estornar enderecamento uva",      "U_VA_RusOO ('EstornarEnderecamento')", 0,4})
-		aadd (_aMenuOut, {"Registrar evento/comentario",     "U_VA_RusOO ('EventoManual')", 0,4})
-//		aadd (_aMenuOut, {"Consultar eventos",               "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
-		aadd (_aMenuOut, {"Consultar eventos",               "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra, sze -> ze_carga)", 0,4})
-		aadd (_aMenuOut, {"Consultar cargas compartilhadas", "U_VA_RusOO ('ConsultarCompartilhamento')", 0,4})
-		aadd (_aMenuOut, {"Simular frete",                   "U_VA_RusOO ('SimularFrete')", 0,4})
+		aadd (_aMenuOut, {"&Parametros",                        "U_VA_RUSLP (.T.)", 0,4})
+		aadd (_aMenuOut, {"&Ticket 1a.pesag",                   "U_VA_RUSOO ('Tk1Pes')",0,4})
+		aadd (_aMenuOut, {"&Ticket 2a.pesag",                   "U_VA_RUSOO ('Tk2Pes')",0,4})
+		aadd (_aMenuOut, {"&Impr.Recibo",                       "U_VA_RUSR ()", 0,4})
+		aadd (_aMenuOut, {"&Cons.Aglutinacoes",                 "U_VA_RUSCA (1, .F.)",0,4})
+		aadd (_aMenuOut, {"Grau - Reenviar carga p/ medicao",   "U_VA_RUSOO ('ReenviarParaGrau')",0,4})
+		aadd (_aMenuOut, {"Estoque - Rastrear lotes",           "U_VA_RUSRC ()", 0,4})
+		aadd (_aMenuOut, {"&NF remessa coop",                   "U_VA_RUSNR ('A')", 0,4})
+		aadd (_aMenuOut, {"Controle Portaria",                  "U_VA_CPORT ()", 0,4})
+		aadd (_aMenuOut, {"Grau - Exportar medicoes",           "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"Estoque - enderecar",                "U_VA_RusOO ('EnderecarEstoque')", 0,4})
+		aadd (_aMenuOut, {"Estoque - estornar enderecamento",   "U_VA_RusOO ('EstornarEnderecamento')", 0,4})
+		aadd (_aMenuOut, {"Eventos - incluir evt.manual",       "U_VA_RusOO ('EventoManual')", 0,4})
+		aadd (_aMenuOut, {"Eventos - consultar",                "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra, sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"Consultar cargas compartilhadas",    "U_VA_RusOO ('ConsultarCompartilhamento')", 0,4})
+		aadd (_aMenuOut, {"Frete - simular calculo",            "U_VA_RusOO ('SimularFrete')", 0,4})
+		aadd (_aMenuOut, {"Inspecoes - simular leitura",        "U_VA_RusLI (iif (sze -> ze_status == '1', 1, 2), .t.)", 0,4})
 		if upper (alltrim (cUserName)) $ 'ROBERT.KOCH/DAIANA.RIBAS'
-			aadd (_aMenuOut, {"Simular leitura inspecoes",      "U_VA_RusLI (iif (sze -> ze_status == '1', 1, 2), .t.)", 0,4})
 			aadd (_aMenuOut, {"Eliminar carga definitivamente", "U_VA_RusED (sze -> ze_safra, sze -> ze_carga)", 0,4})
 			aadd (_aMenuOut, {"Segregar carga",                 "U_VA_RusOO ('SegregarCarga')", 0,4})
 		endif
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
 			aadd (_aMenuOut, {"Recuperar carga cancelada (ainda nao pronto!)", "U_VA_RusOO ('RecuperarCargaCancelada')", 0,4})
 		endif
+		_aMenuOut = asort (_aMenuOut,,, {|_x, _y| _x [1] < _y [1]})
 
 		// Menu principal
 		aadd (aRotina, {"&Pesquisar"        , "AxPesqui",           0,1})

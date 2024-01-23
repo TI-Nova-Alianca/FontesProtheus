@@ -131,6 +131,7 @@
 // 27/10/2023 - Claudia - Incluida a rotina GravaPgtoContaCorrente. GLPI: 14346
 // 04/12/2023 - Robert  - Refeitas algumas indentacoes.
 // 07/12/2023 - Robert  - Tratamento porta X filial para poder manter sessao aberta.
+// 23/01/2023 - Robert  - Desabilitada acao ConsultaEstruturaComCustos
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -324,8 +325,6 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 			_InutEtiq ()
 		case _sAcao == 'ZZUVincularUsuario'
 			_ZZU ('VincularUsuario')
-		case _sAcao == 'ConsultaEstruturaComCustos'
-			_EstrCust ()
 		case _sAcao == 'TesteRobert'
 			_TstRobert ()
 		case _sAcao == 'InsereSolicManut'
@@ -2689,20 +2688,20 @@ static function _InutEtiq ()
 
 	if empty (_sErroWS) ; _sEtiq    = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",      .T., .F.) ; endif
 
-		// Validacao inicial do numero da etiqueta.
-		if empty (_sErroWS)
-			_oEtiq := ClsEtiq ():New (_sEtiq)
-			if _oEtiq:Codigo != _sEtiq
-				_SomaErro ("Numero de etiqueta invalido.")
+	// Validacao inicial do numero da etiqueta.
+	if empty (_sErroWS)
+		_oEtiq := ClsEtiq ():New (_sEtiq)
+		if _oEtiq:Codigo != _sEtiq
+			_SomaErro ("Numero de etiqueta invalido.")
+		else
+			if ! _oEtiq:Inutiliza (.F.)
+				_SomaErro (_oEtiq:UltMsg)
 			else
-				if ! _oEtiq:Inutiliza (.F.)
-					_SomaErro (_oEtiq:UltMsg)
-				else
-					_sMsgRetWS += _oEtiq:UltMsg
-				endif
+				_sMsgRetWS += _oEtiq:UltMsg
 			endif
 		endif
-		return
+	endif
+return
 
 
 // --------------------------------------------------------------------------
@@ -2711,74 +2710,22 @@ static function _ZZU (_sQueFazer)
 	local _sCodZZU   := ''
 
 	if empty (_sErroWS) ; _sCodZZU = _ExtraiTag ("_oXML:_WSAlianca:_GrupoZZU", .T., .F.) ; endif
-		if empty (_sErroWS)
+	if empty (_sErroWS)
 // usar isto quando criar function para o ZX5		_oTabGen := ClsTabGen ():New (_sCodZZU)
 // usar isto quando criar function para o ZX5		if empty (_oTabGen:CodTabela)
 // usar isto quando criar function para o ZX5			_SomaErro (_oTabGen:UltMsg)
 // usar isto quando criar function para o ZX5		endif
-		endif
-		if empty (_sErroWS)
-			do case
-			case _sQueFazer == 'VincularUsuario'
-				_SomaErro ('Metodo ainda nao 100% implementado')
-				// _sMsgRetWS += _oTabGen:UltMsg
-			otherwise
-				_SomaErro ('Operacao ' + _sQueFazer + ' desconhecida na rotina ' + procname ())
-			endcase
-		endif
-		return
-
-
-// --------------------------------------------------------------------------
-// Consulta estrutura com custos.
-static function _EstrCust ()
-	local _oSQL      := NIL
-	local _sProdIni  := ''
-	local _sProdFim  := ''
-	local _sTpPrdIni := ''
-	local _sTpPrdFim := ''
-	local _sLComIni  := ''
-	local _sLComFim  := ''
-
-	if empty (_sErroWS) ; _sProdIni  = _ExtraiTag ("_oXML:_WSAlianca:_ProdutoInicial",        .F., .F.) ; endif
-		if empty (_sErroWS) ; _sProdFim  = _ExtraiTag ("_oXML:_WSAlianca:_ProdutoFinal",          .F., .F.) ; endif
-			if empty (_sErroWS) ; _sTpPrdIni = _ExtraiTag ("_oXML:_WSAlianca:_TipoProdutoInicial",    .F., .F.) ; endif
-				if empty (_sErroWS) ; _sTpPrdFim = _ExtraiTag ("_oXML:_WSAlianca:_TipoProdutoFinal",      .F., .F.) ; endif
-					if empty (_sErroWS) ; _sLComIni  = _ExtraiTag ("_oXML:_WSAlianca:_LinhaComercialInicial", .F., .F.) ; endif
-						if empty (_sErroWS) ; _sLComFim  = _ExtraiTag ("_oXML:_WSAlianca:_LinhaComercialFinal",   .F., .F.) ; endif
-
-							// Verifica se vai gerar muitos produtos
-							if empty (_sErroWS)
-								_oSQL := ClsSQL ():New ()
-								_oSQL:_sQuery := ""
-								_oSQL:_sQuery += "SELECT count (*)"
-								_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
-								_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
-								_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-								_oSQL:_sQuery +=   " AND SB1.B1_TIPO    BETWEEN '" + _sTpPrdIni + "' AND '" + _sTpPrdFim + "'"
-								_oSQL:_sQuery +=   " AND SB1.B1_COD     BETWEEN '" + _sProdIni  + "' AND '" + _sProdFim  + "'"
-								_oSQL:_sQuery +=   " AND SB1.B1_CODLIN  BETWEEN '" + _sLComIni  + "' AND '" + _sLComFim  + "'"
-								_oSQL:_sQuery +=   " AND EXISTS (SELECT *"  // Quero conat somente itens que tenham estrutura.
-								_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SG1") + " SG1"
-								_oSQL:_sQuery +=                " WHERE SG1.D_E_L_E_T_ = ''"
-								_oSQL:_sQuery +=                  " AND SG1.G1_FILIAL  = '" + xfilial ("SG1") + "'"
-								_oSQL:_sQuery +=                  " AND SG1.G1_COD     = SB1.B1_COD)"
-								_oSQL:Log ('[' + procname () + ']')
-								if _oSQL:RetQry (1, .f.) > 10
-									_SomaErro ("A selecao feita buscaria " + cvaltochar (_oSQL:_xRetQry) + " produtos, um processamento muito grande. Mude a selecao de modo a retornar menos produtos.")
-								endif
-							endif
-							if empty (_sErroWS)
-								U_GravaSX1 ('VA_CCR2', '01', U_TamFixo (_sProdIni,  tamsx3 ("B1_COD")[1]))
-								U_GravaSX1 ('VA_CCR2', '02', U_TamFixo (_sProdFim,  tamsx3 ("B1_COD")[1]))
-								U_GravaSX1 ('VA_CCR2', '03', U_TamFixo (_sTpPrdIni, tamsx3 ("B1_TIPO")[1]))
-								U_GravaSX1 ('VA_CCR2', '04', U_TamFixo (_sTpPrdFim, tamsx3 ("B1_TIPO")[1]))
-								U_GravaSX1 ('VA_CCR2', '05', 1)  // 1=apenas pais ativos; 2=todos
-								U_GravaSX1 ('VA_CCR2', '06', U_TamFixo (_sLComIni,  tamsx3 ("B1_CODLIN")[1]))
-								U_GravaSX1 ('VA_CCR2', '07', U_TamFixo (_sLComFim,  tamsx3 ("B1_CODLIN")[1]))
-								_sMsgRetWS += u_va_ccr2 (.t., .t.)
-							endif
-							return
+	endif
+	if empty (_sErroWS)
+		do case
+		case _sQueFazer == 'VincularUsuario'
+			_SomaErro ('Metodo ainda nao 100% implementado')
+			// _sMsgRetWS += _oTabGen:UltMsg
+		otherwise
+			_SomaErro ('Operacao ' + _sQueFazer + ' desconhecida na rotina ' + procname ())
+		endcase
+	endif
+return
 
 
 // --------------------------------------------------------------------------

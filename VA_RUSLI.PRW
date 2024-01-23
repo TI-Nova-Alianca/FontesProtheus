@@ -265,7 +265,7 @@ user function va_rusLI (_nPesagem, _lSimular)
 			szf -> (dbskip ())
 		enddo
 		if _lSimular
-			//u_showarray (_aClasUva, 'Classificacoes encontradas')
+			u_showarray (_aClasUva, 'Classificacoes encontradas')
 		endif
 	endif
 

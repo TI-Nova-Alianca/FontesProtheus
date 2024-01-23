@@ -1386,7 +1386,10 @@ METHOD Precifica (_sQualPreco as character) class ClsCarSaf
 								_lContinua = .F.
 							endif
 						elseif ::ItFinaOuComum [_nIdxItem] == 'C'
-							_sChaveZBI += '  ' // Uvas comuns nao tem classificacao.
+							// Como as uvas comuns nao consideram classificacao para
+							// o preco (pelo menos nao nesta safra), achei mais economico
+							// nem gerar todas as combinacoes no ZBI.
+							_sChaveZBI += '  '
 						endif
 						if _lContinua
 							U_Log2 ('debug', '[' + procname () + ']Pesquisando ZBI com chave >>' + _sChaveZBI + '<<')
