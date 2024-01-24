@@ -11,8 +11,10 @@
 // #Modulos   		  #FAT 
 //
 // Historico de alteracoes:
+// 19/01/2024 - Claudia - Incluida validação para verificar existencia de cabeçalho da tabela. GLPI: 14251
+// 23/01/2024 - Claudia - Alterada a chave de pesquisa para não verificar mais o item. GLPI: 14251
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "Rwmake.ch"
 
@@ -21,13 +23,14 @@ User Function VA_DA0IMP()
     u_help("Atualizado!")
 Return
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 // Processamento da importação
 Static function _ProcessaTab()
     Local _sArqOri := ""
     Local _i       := 0
     Local _sDA0Est := ""
     Local _aMsg    := {}
+    Local _lCont   := .T.
     
     _sArqOri := tFileDialog( "CSV files (*.csv) ", 'Seleção de Arquivos', , , .F., )
 
@@ -36,62 +39,77 @@ Static function _ProcessaTab()
     for _i := 2 to len(_aDados)
         _sFilial  := PADL(ALLTRIM(_aDados[_i, 1]),2,'0')
         _sTabela  := PADL(ALLTRIM(_aDados[_i, 2]),3,'0')
-        _sItem    := PADL(ALLTRIM(_aDados[_i, 3]),4,'0')
-		_sProduto := ALLTRIM(_aDados[_i, 4])
-		_sEstado  := alltrim(_aDados[_i, 5])
-        _nValor   := _ConverteValor(_aDados[_i, 6])
-        _sStatus  := alltrim(_aDados[_i, 7])
 
         DbSelectArea("DA0")
         DbSetOrder(1) // DA0_FILIAL+DA0_CODTAB 
-        If DbSeek(_sFilial + _sTabela ,.F.)
-            _sDA0Est := DA0->DA0_VAUF
-        EndIf             
+        If !DbSeek(_sFilial + _sTabela ,.F.)
+            u_help("Cabeçalho da tabela de preço filial<"+ _sFilial +"> Tabela <" + _sTabela +"> não encontrado. Planilha não pode ser importada!")
+            _lCont   := .F.
+        EndIf   
+    next
 
-        Do Case
-            Case _sStatus == 'A'
-                _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
+    If _lCont
+        for _i := 2 to len(_aDados)
+            _sFilial  := PADL(ALLTRIM(_aDados[_i, 1]),2,'0')
+            _sTabela  := PADL(ALLTRIM(_aDados[_i, 2]),3,'0')
+            _sItem    := PADL(ALLTRIM(_aDados[_i, 3]),4,'0')
+            _sProduto := ALLTRIM(_aDados[_i, 4])
+            _sEstado  := alltrim(_aDados[_i, 5])
+            _nValor   := _ConverteValor(_aDados[_i, 6])
+            _sStatus  := alltrim(_aDados[_i, 7])
 
-            Case _sStatus == 'I'
-                _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
-
-            Case _sStatus == 'E'
-                _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
-        EndCase
-
-        If _i == len(_aDados)
             DbSelectArea("DA0")
             DbSetOrder(1) // DA0_FILIAL+DA0_CODTAB 
             If DbSeek(_sFilial + _sTabela ,.F.)
                 _sDA0Est := DA0->DA0_VAUF
+            EndIf             
 
-                reclock("DA0", .f.)
-                    DA0->DA0_ATIVO := '2'
-                msunlock()
+            Do Case
+                Case _sStatus == 'A'
+                    _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
 
-                //U_AtuMerc ('DA0', da0 -> (recno ()))
-            EndIf                                                                                                                                  
+                Case _sStatus == 'I'
+                    _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
+
+                Case _sStatus == 'E'
+                    _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
+            EndCase
+
+            If _i == len(_aDados)
+                DbSelectArea("DA0")
+                DbSetOrder(1) // DA0_FILIAL+DA0_CODTAB 
+                If DbSeek(_sFilial + _sTabela ,.F.)
+                    _sDA0Est := DA0->DA0_VAUF
+
+                    reclock("DA0", .f.)
+                        DA0->DA0_ATIVO := '2'
+                    msunlock()
+
+                    //U_AtuMerc ('DA0', da0 -> (recno ()))
+                EndIf                                                                                                                                  
+            EndIf
+        Next
+        
+        _sMsg := ""
+        For _i := 1 to Len(_aMsg)
+            _sMsg += _aMsg[_i, 1] + ' -> ' + _aMsg[_i, 2] + CRLF
+        Next
+
+        If !empty(_sMsg)
+            _MsgLog(_sMsg, _sTabela)
         EndIf
-	Next
-    
-     _sMsg := ""
-     For _i := 1 to Len(_aMsg)
-        _sMsg += _aMsg[_i, 1] + ' -> ' + _aMsg[_i, 2] + CRLF
-     Next
-
-    If !empty(_sMsg)
-        _MsgLog(_sMsg, _sTabela)
     EndIf
 Return
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 // Atualiza registros
 Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor,_sDA0Est, _aMsg)
 
     DbSelectArea("DA1")
-    DbSetOrder(3) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
+    //DbSetOrder(3) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
+    DbSetOrder(9)// DA1_FILIAL+DA1_CODTAB+DA1_CANAL+DA1_ESTADO+DA1_CODPRO  
 
-    If DbSeek(_sFilial + _sTabela + _sItem ,.F.)
+    If DbSeek(_sFilial + _sTabela + '  ' + _sEstado + _sProduto ,.F.)
         _sCliente := DA1->DA1_CLIENT
         _sLoja    := DA1->DA1_LOJA
         _sEstAnt  := DA1->DA1_ESTADO
@@ -125,7 +143,7 @@ Static Function _AtuRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
     EndIf        	
 Return 
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 // Inclui registros
 Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor,_sDA0Est,_aMsg)
     Local _lCont := .T.
@@ -171,9 +189,10 @@ Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
 
     If _lCont 
         DbSelectArea("DA1")
-        DbSetOrder(3) // DA1_FILIAL+DA1_CODTAB+DA1_ITEM                                                                                                                                  
+        //DbSetOrder(3) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
+        DbSetOrder(9)// DA1_FILIAL+DA1_CODTAB+DA1_CANAL+DA1_ESTADO+DA1_CODPRO  
 
-        If !DbSeek(_sFilial + _sTabela + _sItem)
+        If !DbSeek(_sFilial + _sTabela + '  ' + _sEstado + _sProduto ,.F.)
             _sCliente := DA1->DA1_CLIENT
             _sLoja    := DA1->DA1_LOJA
 
@@ -210,14 +229,15 @@ Static Function _IncRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
     EndIf      	
 Return 
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 // Exclui registros
 Static Function _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _nValor, _sDA0Est, _aMsg)
 
     DbSelectArea("DA1")
-    DbSetOrder(3) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
+    //DbSetOrder(3) // DA1_FILIAL+DA1_CODPRO+DA1_CODTAB+DA1_ITEM
+    DbSetOrder(9)// DA1_FILIAL+DA1_CODTAB+DA1_CANAL+DA1_ESTADO+DA1_CODPRO  
 
-    If DbSeek(_sFilial + _sTabela + _sItem ,.F.)
+    If DbSeek(_sFilial + _sTabela + '  ' + _sEstado + _sProduto ,.F.)
         reclock("DA1", .F.)
             DA1->(DbDelete())                                                                   	                                                                 
         MsUnLock()
@@ -237,7 +257,7 @@ Static Function _ExcRegistro(_sFilial, _sTabela, _sItem, _sProduto, _sEstado, _n
     EndIf        	
 Return
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 // Regra do gatilho de ICMS - DA1_ESTADO para DA1_ICMS
 Static Function _RegraICMS(_sEstado)
     _sMVAliqIcm := U_SeparaCpo(alltrim (GetMv("MV_ALIQICM",, "")), "/")
@@ -262,7 +282,7 @@ Static Function _RegraICMS(_sEstado)
     _xRet= val( _sMVAliqIcm [_nPiece] )
 Return _xRet
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 // Regra do ST - DA1_PRCVEN para DA1_VAST
 Static Function _RegraST(_sEstado,_sDA0Est,_nValor,_sCliente,_sLoja,_sProduto) 
     _xRet    := 0
@@ -275,7 +295,7 @@ Static Function _RegraST(_sEstado,_sDA0Est,_nValor,_sCliente,_sLoja,_sProduto)
     _xRet = U_CalcST4(_sEstado, _sProduto, _nValor, _sCliente, _sLoja, 1, '801')
 Return _xRet
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 // faz tratamentos de valores
 Static Function _ConverteValor(_sValor)
     Local _nValor := 0
@@ -286,7 +306,7 @@ Static Function _ConverteValor(_sValor)
 
 Return _nValor
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 // Mostra Log
 Static Function _MsgLog(cMsg, _sTabela)
 	Local lRetMens := .F.
@@ -305,7 +325,7 @@ Static Function _MsgLog(cMsg, _sTabela)
 
 Return lRetMens
 //
-// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 //Função para gerar um arquivo texto 
 Static Function _SalvArq(cMsg, _sTabela)
     Local cFileNom :='\x_arq_'+dToS(Date())+StrTran(Time(),":")+".txt"
