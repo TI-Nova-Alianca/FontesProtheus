@@ -78,6 +78,7 @@
 // 02/02/2023 - Claudia - Liberação e-mail nfe@novaalianca.coop.br campo A2_E-MAIL - GLPI 13137
 // 11/07/2023 - Claudia - Chamada a função de limpeza de caracteres especiais. GLPI: 13865
 // 12/01/2024 - Claudia - Validação para desconsiderar tipo de pedido "utiliza fornecedor" para rapel. GLPI: 14706
+// 24/01/2024 - Claudia - Ultimo preço de venda será buscado diretamente da ultima NF faturada. GLPI: 14796
 //
 // --------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV(_lLiberar)
@@ -96,8 +97,8 @@ user function GrvLibPV(_lLiberar)
 	local _lFaturado := .F.
 	local _lBonific  := .F.
 	local _lSoGranel := .F.
-	local _wdtreajuste   := dtos(GetMv("VA_DTREAJ"))
-	local _wpercreajuste := GetMv("VA_PERCREA")
+	//local _wdtreajuste   := dtos(GetMv("VA_DTREAJ"))
+	//local _wpercreajuste := GetMv("VA_PERCREA")
 	local _nLinha    := 0
 
 	// verifica se o pedido esta salvo antes de fazer a liberação
@@ -277,42 +278,42 @@ user function GrvLibPV(_lLiberar)
 											_aRetQry [1, 5]						 })
 					endif
 	
-					if len (_aRetQry) > 0 .and. round (GDFieldGet ("C6_PRCVEN"), 2) < round (_aRetQry [1, 1]+(_aRetQry [1, 1]*_wpercreajuste/100), 2) // substituir por parametros
-						if  _aRetQry [1, 3] <= _wdtreajuste  // substituir pelo parametro
+					// if len (_aRetQry) > 0 .and. round (GDFieldGet ("C6_PRCVEN"), 2) < round (_aRetQry [1, 1]+(_aRetQry [1, 1]*_wpercreajuste/100), 2) // substituir por parametros
+					// 	if  _aRetQry [1, 3] <= _wdtreajuste  // substituir pelo parametro
 
-							aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))								, ;
-												alltrim (GDFieldGet ("C6_DESCRI"))								, ;
-												GDFieldGet ("C6_PRCVEN")										, ; 
-												round (_aRetQry [1, 1]+(_aRetQry [1, 1]*_wpercreajuste/100), 2)	, ;
-												_aRetQry [1, 2]													, ;
-												dtoc (stod (_aRetQry [1, 3]))									, ;
-												_aRetQry [1, 4]													, ;
-												_aRetQry [1, 5]													 })
-						endif						
-					endif
+					// 		aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))								, ;
+					// 							alltrim (GDFieldGet ("C6_DESCRI"))								, ;
+					// 							GDFieldGet ("C6_PRCVEN")										, ; 
+					// 							round (_aRetQry [1, 1]+(_aRetQry [1, 1]*_wpercreajuste/100), 2)	, ;
+					// 							_aRetQry [1, 2]													, ;
+					// 							dtoc (stod (_aRetQry [1, 3]))									, ;
+					// 							_aRetQry [1, 4]													, ;
+					// 							_aRetQry [1, 5]													 })
+					// 	endif						
+					// endif
 					
-					if m->c5_tabela == "151"  // Se for tabela 151 e o preco informado for menor que da tabela, deve ser bloqueado
-						_sQuery := ""
-						_sQuery += " SELECT DA1_PRCVEN, DA1_FILIAL "
-						_sQuery +=   " FROM " + RetSQLName ("DA1") + " DA1 "
-						_sQuery +=   " WHERE DA1.D_E_L_E_T_  = ''"
-						_sQuery +=   " AND DA1_CODTAB = '151' "
-						_sQuery +=   " AND DA1_CODPRO = '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "'"
-						_sQuery +=   " AND DA1_FILIAL = '" + xfilial ("DA1")  + "'"
-						_aRetQry = aclone (U_Qry2Array (_sQuery, .F., .F.))
+					// if m->c5_tabela == "151"  // Se for tabela 151 e o preco informado for menor que da tabela, deve ser bloqueado
+					// 	_sQuery := ""
+					// 	_sQuery += " SELECT DA1_PRCVEN, DA1_FILIAL "
+					// 	_sQuery +=   " FROM " + RetSQLName ("DA1") + " DA1 "
+					// 	_sQuery +=   " WHERE DA1.D_E_L_E_T_  = ''"
+					// 	_sQuery +=   " AND DA1_CODTAB = '151' "
+					// 	_sQuery +=   " AND DA1_CODPRO = '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "'"
+					// 	_sQuery +=   " AND DA1_FILIAL = '" + xfilial ("DA1")  + "'"
+					// 	_aRetQry = aclone (U_Qry2Array (_sQuery, .F., .F.))
 
-						if len (_aRetQry) > 0 .and. round (_aRetQry [1, 1], 2) > round (GDFieldGet ("C6_PRCVEN"), 2)
+					// 	if len (_aRetQry) > 0 .and. round (_aRetQry [1, 1], 2) > round (GDFieldGet ("C6_PRCVEN"), 2)
 
-							aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))	, ;
-												alltrim (GDFieldGet ("C6_DESCRI"))	, ;
-												GDFieldGet ("C6_PRCVEN")			, ; 
-												_aRetQry [1, 1]						, ; 
-												_aRetQry [1, 2]						, ;
-												dtoc(date())						, ;
-												"TAB PRC"							, ;
-												"151"								 })
-						endif
-					endif
+					// 		aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))	, ;
+					// 							alltrim (GDFieldGet ("C6_DESCRI"))	, ;
+					// 							GDFieldGet ("C6_PRCVEN")			, ; 
+					// 							_aRetQry [1, 1]						, ; 
+					// 							_aRetQry [1, 2]						, ;
+					// 							dtoc(date())						, ;
+					// 							"TAB PRC"							, ;
+					// 							"151"								 })
+					// 	endif
+					// endif
 				endif
 			endif
 		next
