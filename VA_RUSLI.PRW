@@ -167,7 +167,7 @@ user function va_rusLI (_nPesagem, _lSimular)
 			sze->ze_segreg = iif (_aRusInsp [.InspecoesSafraSituacao] == "SEG", 'S', 'N')
 			msunlock ()
 			_oCarSaf:Segregada = .t.
-			_oCarSaf:GrvEvt ("SZE009", "Segregando carga cfe. situacao lida nas inspecoes.")
+			_oCarSaf:GrvEvt ("SZE009", "Assumindo (no Protheus) como carga segregada, cfe. situacao lida nas inspecoes.")
 		endif
 	endif
 

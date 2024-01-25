@@ -214,6 +214,11 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 	// ocorre caso de problemas somente na documentacao, etc. e o outro
 	// produtor nao merece a mesma penalidade. Robert, 02/02/2023.
 
+	if _lContinua .and. ::Segregada
+		_Super:SomaMsg ("Carga segregada. Nao atualizarei mais o status no NaWeb.")
+		_lContinua = .F.
+	endif
+
 	if _lContinua .and. empty (_sLinkSrv)
 		_Super:SomaMsg ("Linked server para o NaWeb nao definido.")
 		_lContinua = .F.
@@ -258,7 +263,7 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 		_oSQL:_sQuery +=  " WHERE SAFRA  = '" + ::Safra  + "'"
 		_oSQL:_sQuery +=    " AND FILIAL = '" + ::Filial + "'"
 		_oSQL:_sQuery +=    " AND CARGA  = '" + ::Carga  + "'"
-	//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_sStatAtu = alltrim (upper (_oSQL:RetQry (1, .f.)))
 		U_Log2 ('debug', '[' + procname () + ']Situacao retornada pela view VA_VINSPECOES_SAFRA: ' + _sStatAtu)
 		if ! empty (_sStatAtu)

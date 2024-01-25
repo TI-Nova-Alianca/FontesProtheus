@@ -462,8 +462,14 @@ static function _ValXML ()
     local _lRet2     := .T.  
     local _nNota	 := 0      
 
+	// Ignora especie(s) de NF de servico, que nao temos interpretacao do XML por enquanto.
+	if _lContinua .and. alltrim (cEspecie) $ "NF3E/"
+		_lContinua = .F.
+	endif
+
 	// Tenta buscar pela chave da NF-e, em qualquer filial.
-	if _lRet .and. type ("aNFeDANFe") == "A" .and. ! empty (aNFeDANFe [13])
+//	if _lRet .and. type ("aNFeDANFe") == "A" .and. ! empty (aNFeDANFe [13])
+	if _lContinua .and. _lRet .and. type ("aNFeDANFe") == "A" .and. ! empty (aNFeDANFe [13])
 		_sQuery := ""
 		_sQuery += " SELECT R_E_C_N_O_"
 		_sQuery +=   " FROM " + RetSQLName ("ZZX") + " ZZX "
