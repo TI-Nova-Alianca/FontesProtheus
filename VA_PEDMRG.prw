@@ -327,7 +327,7 @@ Static Function _CalcFrete(_sFilial)
         endif
 
         for _x := 1 to len(aCols)
-            if ! GDDeleted(_x) .and. empty (GDFieldGet("C6_BLOQ", _x))
+            if !GDDeleted(_x) .and. empty (GDFieldGet("C6_BLQ", _x))
                 _nVlProdut += GDFieldGet("C6_VALOR", _x)
             endif
         next
