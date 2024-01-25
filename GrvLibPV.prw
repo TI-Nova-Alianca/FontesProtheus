@@ -79,6 +79,7 @@
 // 11/07/2023 - Claudia - Chamada a função de limpeza de caracteres especiais. GLPI: 13865
 // 12/01/2024 - Claudia - Validação para desconsiderar tipo de pedido "utiliza fornecedor" para rapel. GLPI: 14706
 // 24/01/2024 - Claudia - Ultimo preço de venda será buscado diretamente da ultima NF faturada. GLPI: 14796
+// 25/01/2024 - Claudia - Melhorias no layout dos e-mails. GLPI: 14805
 //
 // --------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV(_lLiberar)
@@ -321,14 +322,15 @@ user function GrvLibPV(_lLiberar)
 		if len (_aUltPrc) > 0
 
    			// Prepara mensagem para visualizacao
-			_sMsg := ""
-			_sMsg += "Pedido de venda '" + m->c5_num + "' com precos menores que a ultima venda/tabela de precos" + chr (13) + chr (10)
-			_sMsg += "Cliente: " + m->c5_cliente + " - " + m->c5_nomecli + chr (13) + chr (10)
-			_sMsg += "Representante: " + m->c5_vend1 + " - " + fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend1, "A3_NOME") + chr (13) + chr (10)
-			_sMsg += 'Produtos:' + chr (13) + chr (10)
+			_sMsg := "<html>"
+			_sMsg += "<b>Pedido de venda:</b> " + m->c5_num + "<br>" 
+			_sMsg += "<b>Cliente:</b> " + m->c5_cliente + " - " + m->c5_nomecli + "<br>"
+			_sMsg += "<b>Representante:</b> " + m->c5_vend1 + " - " + fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend1, "A3_NOME") + "<br>"
+			_sMsg += "<b>Produtos:</b> <br><br>"
 			for _nUltPrc = 1 to len (_aUltPrc)
-				_sMsg += _aUltPrc [_nUltPrc, 1] + ' - ' + _aUltPrc [_nUltPrc, 2] + ' (preco atual: ' + cvaltochar (_aUltPrc [_nUltPrc, 3]) + ' - ult.venda: ' + cvaltochar (_aUltPrc [_nUltPrc, 4]) + ')' + chr (13) + chr (10) 
+				_sMsg += "<b>"+ _aUltPrc [_nUltPrc, 1] + " </b> - " + _aUltPrc [_nUltPrc, 2] + "(preco atual: " + cvaltochar (_aUltPrc [_nUltPrc, 3]) + " - ult.venda: " + cvaltochar (_aUltPrc [_nUltPrc, 4]) + ")<br>"
 			next
+			_sMsg += "</html>"
 
 			_nOpcao = aviso ("Precos abaixo da regras de estabelecidas pelo comercial", ;
 				"Estao sendo vendidos produtos com precos abaixo das regras estabelecidas pelo comercial!" + chr (13) + chr (10) + "Se confirmar assim mesmo, o pedido ficara´ com bloqueio gerencial.", ;
