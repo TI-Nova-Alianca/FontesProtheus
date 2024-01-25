@@ -165,472 +165,11 @@
 // 24/01/2024 - Claudia - Orhanização das funções e alterada a busca do ultimo preço de venda. GLPI:
 //
 // --------------------------------------------------------------------------------------------------------------------
-user function GrvLibPV(_lLiberar)
-	local _aAreaAnt  := U_ML_SRArea ()
-	local _n         := N
-	local _sErro     := ""
-	local _nQtdEnt   := 0
-	local _aUltPrc   := {}
-	local _nUltPrc   := 0
-	local _sMsg      := ""
-	local _nOpcao    := 0
-	local _sRetEstq  := ""
-	local _nLinAnt   := 0
-	local _nAcumAnt  := 0
-	local _lFaturado := .F.
-	local _lBonific  := .F.
-	local _lSoGranel := .F.
-	local _nLinha    := 0
-
-	// Verifica se o pedido esta salvo antes de fazer a liberação
-	if _lLiberar
-		_lLiberar := _PedidoSalvo()
-	endif
-
-	// Validação de campos 
-	if _lLiberar 
-		_lLiberar := _ValidaCampos()
-	endif
-	
-	// Grupo que pode liberar
-	if _lLiberar .and. !U_ZZUVL('005')
-		_lLiberar := .F.
-	endif
-
-	// Validacao da TES por item do pedido, libera somente grupos autorizados.
-	if _lLiberar
-		_lLiberar := _ValidaTES()
-	endif
-	
-	// Verifica se controla endereço e lote
-	if _lLiberar
-		_lLiberar := _ControlaEnderLote()
-	endif
-
-	// Verifica cadastros de rapel
-	if _lLiberar
-		_lLiberar := _ValidaRapel()
-	endif
-
-	// Grava valor previsto para a nota fiscal. Vai ser usado posteriormente nos calculos de frete e margem de contribuicao
-	if _lLiberar
-		m->c5_vaVlFat := Ma410Impos(iif(inclui, 3, 4), .T.)  // (nOpc, lRetTotal, aRefRentab)
-	endif
-	
-	if _lLiberar
-		CursorWait ()
-
-		// Caso o pedido jah esteja com bloqueio, remove o bloqueio antes de efetuar nova verificacao.
-		m->c5_vaBloq := ''
-		_n = N
-
-		for _nLinha := 1 to len(aCols)
-			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-			if ! GDDeleted()                                                        
-				// Busca quantidade jah entregue (possivel faturamento parcial)
-				if inclui
-					_nQtdEnt := 0
-				else
-					_nQtdEnt := fBuscaCpo("SC6", 1, xfilial("SC6") + m->c5_num + GDFieldGet("C6_ITEM") + GDFieldGet("C6_PRODUTO"), "C6_QTDENT")
-				endif
-
-				// Acumula quantidades deste produto em linhas anteriores do mesmo pedido.
-				_nAcumAnt := 0
-				for _nLinAnt = 1 to len (aCols)
-					if ! GDDeleted (_nLinAnt) ;
-							.and. GDFieldGet ("C6_PRODUTO", _nLinAnt) == GDFieldGet ("C6_PRODUTO") ;
-							.and. GDFieldGet ("C6_LOCAL", _nLinAnt)   == GDFieldGet ("C6_LOCAL") ;
-							.and. GDFieldGet ("C6_LOCALIZ", _nLinAnt) == GDFieldGet ("C6_LOCALIZ") ;
-							.and. (fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinAnt), "F4_ESTOQUE") == 'S' ;
-							.or.  fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinAnt), "F4_VAFDEP") == 'S')
-						_nAcumAnt += GDFieldGet("C6_QTDLIB", _nLinAnt)
-					endif
-				next
-				
-				// Verifica estoque desta linha
-				if !alltrim(GDFieldGet("C6_BLQ")) $ "SR"  // Bloqueio manual ou por eliminacao de residuo
-					_sRetEstq := U_VerEstq("2", GDFieldGet("C6_PRODUTO"), m->c5_vaFEmb, GDFieldGet("C6_LOCAL"), (GDFieldGet("C6_QTDVEN") - _nQtdEnt + _nAcumAnt), GDFieldGet("C6_TES"), GDFieldGet("C6_ENDPAD"), GDFieldGet("C6_LOTECTL"), m->c5_num)
-					if !empty(_sRetEstq)
-						_sErro += "Item " + GDFieldGet("C6_ITEM") + ": " + _sRetEstq + chr (13) + chr (10)
-					else
-						GDFieldPut("C6_QTDLIB", GDFieldGet("C6_QTDVEN") - _nQtdEnt)
-					endif
-				endif
-				
-				// Valida preco de venda com ultimo pedido do cliente.
-				if empty (_sErro) .and. ! m->c5_tipo $ 'DB' .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_DUPLIC") == "S"
-					_oSQL := ClsSQL():New()
-					_oSQL:_sQuery := " 
-					_oSQL:_sQuery += " SELECT TOP 1 "
-					_oSQL:_sQuery += "       D2_PRCVEN "
-					_oSQL:_sQuery += " 		,D2_FILIAL "
-					_oSQL:_sQuery += " 		,D2_EMISSAO "
-					_oSQL:_sQuery += " 		,D2_DOC "
-					_oSQL:_sQuery += " 		,D2_PEDIDO"
-					_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " SD2 "
-					_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_  = ''"
-					_oSQL:_sQuery += " AND SD2.D2_CLIENTE  = '" + m->c5_cliente + "'"
-					_oSQL:_sQuery += " AND SD2.D2_LOJA     = '" + m->c5_lojacli + "'"
-					_oSQL:_sQuery += " AND SD2.D2_TIPO     = '" + m->c5_tipo    + "'"
-					_oSQL:_sQuery += " AND SD2.D2_COD      = '" + GDFieldGet ("C6_PRODUTO") + "'"
-					_oSQL:_sQuery += " ORDER BY D2_EMISSAO DESC"
-					_aRetQry = aclone(_oSQL:Qry2Array())
-
-					if len(_aRetQry) > 0 .and. round(_aRetQry[1, 1], 2) > round(GDFieldGet("C6_PRCVEN"), 2)
-
-						aadd(_aUltPrc,{	alltrim(GDFieldGet("C6_PRODUTO"))	, ;
-										alltrim(GDFieldGet("C6_DESCRI"))	, ;
-										GDFieldGet("C6_PRCVEN")				, ; 
-										_aRetQry[1, 1]						, ; 
-										_aRetQry[1, 2]						, ;
-										dtoc(stod(_aRetQry[1, 3]))			, ;
-										_aRetQry[1, 4]						, ;
-										_aRetQry[1, 5]						 })
-					endif
-				endif
-			endif
-		next
-              
-		if len(_aUltPrc) > 0
-
-			// Prepara mensagem para visualizacao
-			_sMsg := "<html>"
-			_sMsg += "<b>Pedido de venda:</b> " + m->c5_num + "<br>" 
-			_sMsg += "<b>Cliente:</b> " + m->c5_cliente + " - " + m->c5_nomecli + "<br>"
-			_sMsg += "<b>Representante:</b> " + m->c5_vend1 + " - " + fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend1, "A3_NOME") + "<br>"
-			_sMsg += "<b>Produtos:</b> <br><br>"
-			for _nUltPrc = 1 to len (_aUltPrc)
-				_sMsg += "<b>"+ _aUltPrc [_nUltPrc, 1] + " </b> - " + _aUltPrc [_nUltPrc, 2] + "(preco atual: " + cvaltochar (_aUltPrc [_nUltPrc, 3]) + " - ult.venda: " + cvaltochar (_aUltPrc [_nUltPrc, 4]) + ")<br>"
-			next
-			_sMsg += "</html>"
-
-			for _nUltPrc := 1 to len(_aUltPrc)
-				_sMsg += _aUltPrc [_nUltPrc, 1] + ' - ' + _aUltPrc [_nUltPrc, 2] + ' .Preco atual: ' + cvaltochar (_aUltPrc [_nUltPrc, 3]) + ' - ult.venda: ' + cvaltochar (_aUltPrc [_nUltPrc, 4]) + ';' + chr (13) + chr (10) 
-			next
-
-			_nOpcao := aviso("Precos abaixo da regras de estabelecidas pelo comercial", ;
-							 "Estao sendo vendidos produtos com precos abaixo das regras estabelecidas pelo comercial!" + chr (13) + chr (10) + "Se confirmar assim mesmo, o pedido ficara com bloqueio gerencial.", ;
-							{"Sim", "Nao", "Verificar"}	, ;
-							3							, ;
-							"Precos abaixo da venda anterior/Tabela de Precos/ Precos abaixo do aumento especificado")
-			
-			if _nOpcao == 1 // Bloqueia o pedido
-
-				m->c5_vaBloq = iif('P' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'P')
-
-				// Grava a maior variacao
-				for _nUltPrc := 1 to len(_aUltPrc)
-					m->c5_vaPrPed := max(m->c5_vaPrPed, 100 - _aUltPrc [_nUltPrc, 3] * 100 / _aUltPrc [_nUltPrc, 4])
-				next
-			
-				// verifica se o bloqueio é por ser menor que o aumento
-				for _nUltPrc = 1 to len (_aUltPrc)
-					if _aUltPrc [_nUltPrc, 3] < _aUltPrc [_nUltPrc, 4] // bloqueia por preço menor que o aumento estabelecido						
-						m->c5_vaBloq := iif('A' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'A')
-					endif
-				next									
-
-				// Cria variavel publica com mensagem, para posterior envio pelo P.E. M410STTS se o usuario vier a gravar o pedido.
-				public _sMsgPUltV := _sMsg
-
-			elseif _nOpcao == 2
-				u_help("Venda nao confirmada - preco abaixo do preco anterior/tabela de precos.")
-				_lLiberar = .F.
-
-			elseif _nOpcao == 3
-				U_ShowMemo (_sMsg)
-				u_help("Venda nao confirmada - preco abaixo do preco anterior/tabela de precos.")
-				_lLiberar = .F.
-			endif
-		endif
-		N = _n
-
-		// Prepara algumas variaveis para validacoes posteriores.
-		if _lLiberar
-			_lFaturado = .F.
-			_lBonific  = .F.
-			_lSoGranel = .T.
-
-			sf4 -> (dbsetorder (1))
-			_n = N
-			for _nLinha = 1 to len(aCols)
-				N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-				if ! GDDeleted()
-					if ! sf4 -> (msseek(xfilial("SF4") + GDFieldGet("C6_TES"), .F.))
-						u_help("Cadastro do TES '" + GDFieldGet("C6_TES") + "' nao localizado!")
-						_lLiberar = .F.
-					else
-						_lFaturado = (sf4 -> f4_margem == '1')
-						_lBonif    = (sf4 -> f4_margem == '3')
-					endif
-					if _lSoGranel .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C6_PRODUTO"), "B1_GRPEMB") != '18'
-						_lSoGranel = .F.
-					endif
-				endif
-			next
-			u_log('contem itens faturados:', _lFaturado, 'contem itens bonificados:', _lBonific, 'contem apenas itens a granel:', _lSoGranel)
-		endif
-
-		// Valida margem de contribuicao.
-		if _lLiberar 
-			N = _n
-			if _lFaturado .and. ! _lSoGranel  // Ignora bloqueio de margem para pedidos de granel
-				//processa ({|| U_VA_McPed (.F., .T.), "Calculando margem de contribuicao"})
-				processa ({|| U_VA_PEDMRG('GrvLibPV'), "Calculando margem de contribuicao"})
-				
-				_nMargMin = GetMv ("VA_MCPED1")
-				if m->c5_vaMCont < _nMargMin
-					_nOpcao = aviso ("Margem de contribuicao muito baixa", ;
-					                 "Margem de " + cvaltochar (m->c5_vaMCont) + "% (abaixo de " + cvaltochar (_nMargMin) + "%). Pedido vai ficar com bloqueio gerencial. Confirma assim mesmo?", ;
-					                 {"Sim", "Nao"} , ;
-					                 3				, ;
-					                 "Margem minima"  )
-					if _nOpcao == 1							
-						m->c5_vaBloq = iif ('M' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'M')
-					elseif _nOpcao == 2
-						_sErro = "Pedido nao confirmado."
-					endif
-				endif
-				
-				if cFilAnt == '01' .and. empty (m->c5_vabloq) .and. m->c5_tpfrete == 'C' .and. m->c5_mvfre == 0 .and. GetMv ("VA_BLPSF") == 'S'
-					_sErro += "Parametro VA_BLPSF: Pedido com frete CIF, mas sem valor de frete para calculo de margem. Liberacao nao sera feita. Cadastre rota valida no entregou.com ou informe frete negociado no cadastro do cliente."
-				endif
-			endif
-		endif
-
-		// se pedido é bonificação
-		If _lLiberar
-			If _lBonif // É bonificação
-				m->c5_vaBloq = iif ('B' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'B')
-			EndIf
-		EndIf
-
-		// Se alguma das linhas tinha problemas, nao libera nenhuma.
-		if ! empty(_sErro)
-			u_help(_sErro)
-			for _nLinha = 1 to len(aCols)
-				N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-				if ! GDDeleted()
-					GDFieldPut("C6_QTDLIB", 0)
-				endif
-			next
-		endif
-		CursorArrow ()
-
-	else  // Remover liberacao
-		if ! empty(_sErro)
-			u_help(_sErro)
-		endif
-		CursorWai ()
-
-		for _nLinha = 1 to len (aCols)
-			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-			if ! GDDeleted ()
-				GDFieldPut ("C6_QTDLIB", 0)
-			endif
-		next
-		CursorArrow ()
-	endif
-
-	N := _n
-	if type ("oGetDad") == "O"
-		oGetDad:oBrowse:Refresh ()
-	endif
-
-	U_ML_SRArea (_aAreaAnt)
-return
-//
-// --------------------------------------------------------------------------------------------------
-// Verifica se o pedido esta salvo antes de fazer a liberação
-Static Function _PedidoSalvo()
-	Local _lRet    := .T.
-	Local _aPedido := {}
-
-	_oSQL := ClsSQL():New()
-	_oSQL:_sQuery := " SELECT "
-	_oSQL:_sQuery += " 		C5_NUM "
-	_oSQL:_sQuery += " FROM " + RetSQLName ("SC5")
-	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND C5_FILIAL    = '" + m->c5_filial  + "'"
-	_oSQL:_sQuery += " AND C5_NUM       = '" + m->c5_num     + "'"
-	_oSQL:_sQuery += " AND C5_CLIENTE   = '" + m->c5_cliente + "'"
-	_oSQL:_sQuery += " AND C5_LOJACLI   = '" + m->c5_lojacli + "'"
-	_aPedido := aclone(_oSQL:Qry2Array())
-
-	if Len(_aPedido) <= 0
-		_lRet := .F.
-		u_help("A liberação deve ocorrer após a gravação do pedido!")
-	endif
-Return _lRet
-//
-// --------------------------------------------------------------------------------------------------
-// Verifica campos obrigatorios
-Static Function _ValidaCampos()
-	Local _lRet := .T.
-
-	// retira caracteres especiais do campo de OBS
-	m->c5_obs := U_LimpaEsp(m->c5_obs)
-
-	// Filial de embarque campo obrigatorio
-	if _lRet .and. empty(m->c5_vaFEmb)
-		u_help("Antes de liberar o pedido, o campo '" + alltrim(RetTitle("C5_VAFEMB")) + "' deve ser informado.")
-		_lRet := .F.
-	endif
-
-	// Verifica desconto em folha
-	if _lRet .and. M->C5_CONDPAG = '997' 
-		u_help("Condição de pagamento 997 exclusiva para venda nas lojas.")
-		_lRet := .F.
-	endif
-
-	// Validacoes de e-mail DANFE
-	if _lRet 
-		if M->C5_TIPO = 'N' // cliente
-			_sEmail := fBuscaCpo('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VAMDANF")
-			if _lRet .and. 'lixo@nova' $ _sEmail
-				u_help("E-mail para DANFE inválido. Por favor, verifique!'")
-				_lRet := .F.
-			endif
-
-			_sEmail := fBuscaCpo('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_EMAIL")
-			if _lRet .and. 'lixo@nova' $ _sEmail
-				u_help("E-mail inválido. Por favor, verifique!'")
-				_lRet := .F.
-			endif
-		else
-			_sEmail := fBuscaCpo('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_VAMDANF")
-			if _lRet .and. 'lixo' $ _sEmail
-				u_help("E-mail para DANFE inválido. Por favor, verifique!")
-				_lRet := .F.
-			endif
-
-			if _lRet .and. _sEmail != 'associados@novaalianca.coop.br' .and. 'novaalianca' $ _sEmail
-				if alltrim(_sEmail) =='nfe@novaalianca.coop.br'
-					_lRet := .T.
-				else                                                          
-					u_help("E-mail para DANFE inválido. Por favor, verifique!")
-					_lRet := .F.
-				endif
-			endif
-
-			_sEmail := fBuscaCpo('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_EMAIL")
-			if _lRet .and. 'lixo' $ _sEmail
-				u_help("E-mail inválido. Por favor, verifique!")
-				_lRet := .F.
-			endif
-		endif
-	endif
-
-Return _lRet
-//
-// --------------------------------------------------------------------------------------------------
-// Validacao da TES por item do pedido, libera somente grupos autorizados.
-Static Function _ValidaTES()
-	Local _lRet   := .T.
-	Local _lTes   := .F.
-	Local _nLinha := 0
-
-	for _nLinha := 1 to len(aCols)
-		N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-		if !GDDeleted()
-			if GDFieldGet("C6_TES") $ '630/657'
-				if ! U_ZZUVL('101', __cUserId, .F.)
-					u_help("Usuário sem permissão para emissão de nota fiscal de baixa de estoque (Rotina 101)",, .t.)
-					_lTes := .T.
-					exit
-				endif
-			endif	
-		endif
-	next
-	if _lTes == .T.
-		_lRet := .F.
-	endif
-Return _lRet
-//
-// --------------------------------------------------------------------------------------------------
-// Verifica se controla endereço e lote
-Static Function _ControlaEnderLote()
-	Local _lRet   := .T.
-	Local _nLinha := 0
-
-	for _nLinha := 1 to len(aCols)
-		N := _nLinha  
-		if !GDDeleted()
-			if fBuscaCpo("SF4",1,xFilial("SF4")+GDFieldGet ("C6_TES"),"F4_ESTOQUE") = 'S'
-				if m->c5_tpcarga == '2' .and. Localiza(GDFieldGet ("C6_PRODUTO")) .and. (empty(GDFieldGet("C6_LOCALIZ")) .or. empty(GDFieldGet("C6_ENDPAD")))
-					u_help("Item " + GDFieldGet("C6_ITEM") + ": Pedido nao utiliza carga, mas o produto '" + alltrim(GDFieldGet("C6_PRODUTO")) + "' controla localizacao. Informe endereco para retirada nos campos '" + alltrim(RetTitle("C6_LOCALIZ")) + "' e '" + alltrim(RetTitle ("C6_ENDPAD")) + "'." )
-					_lRet := .F.
-				endif
-			endif
-		endif
-	next
-Return _lRet
-//
-// --------------------------------------------------------------------------------------------------
-// Verifica cadastros de rapel
-Static Function _ValidaRapel()
-	Local _lRet := .T.
-
-	if m->c5_tipo <> 'B'
-		_sBaseRapel := fBuscaCpo('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VABARAP")
-
-		if _sBaseRapel != '0' 
-			_oSQL := ClsSQL():New()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT dbo.VA_FRAPELPADRAO ('" + m->c5_cliente + "','" + m->c5_lojacli + "', '')"
-			_nRapel := _oSQL:RetQry(1, .F.)
-		
-			if _nRapel == 0
-				u_help ("Tabela de rapel não cadastrada para esse cliente. Verifique!")
-				_lRet := .F.										
-			endif
-		else
-			_oSQL := ClsSQL():New()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT 1"
-			_oSQL:_sQuery += " FROM " + RetSQLName ("ZAX") + " AS ZAX "
-			_oSQL:_sQuery += " WHERE ZAX.D_E_L_E_T_  = ''"
-			_oSQL:_sQuery += " AND ZAX_CLIENT  = '" + m->c5_cliente + "'"
-			_oSQL:_sQuery += " AND ZAX_LOJA    = '" + m->c5_lojacli    + "'"
-			_aDados := aclone(_oSQL:Qry2Array())  
-
-			if len(_aDados) > 0
-				u_help("Cliente sem base de rapel e com percentuais de rapel cadastrados. Verifique!")
-				_lRet := .F.
-			endif
-		endif
-
-		// verifica a vigencia de contrato e contrato
-		if _sBaseRapel != '0'
-			_sCodBase  := fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VACBASE")
-			_sLojaBase := fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VALBASE")
-
-			_oSQL := ClsSQL():New()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT
-			_oSQL:_sQuery += " 		ZA7_CONT "
-			_oSQL:_sQuery += " FROM " + RetSQLName ("ZA7") + " AS ZA7 "
-			_oSQL:_sQuery += " WHERE ZA7.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += " AND ZA7_CLI      = '" + _sCodBase           + "'"
-			_oSQL:_sQuery += " AND ZA7_LOJA     = '" + _sLojaBase          + "'"
-			_oSQL:_sQuery += " AND ZA7_VINI    <= '" + DTOS(m->c5_emissao) + "'"
-			_oSQL:_sQuery += " AND ZA7_VFIM    >= '" + DTOS(m->c5_emissao) + "'"
-			_aContrato := aclone(_oSQL:Qry2Array()) 
-
-			if Len(_aContrato) <= 0
-				u_help("Cliente sem contrato e/ou contrato válido. Verifique!")
-				_lRet := .F.
-			endif
-		endif
-	endif
-Return _lRet
-
 // user function GrvLibPV(_lLiberar)
 // 	local _aAreaAnt  := U_ML_SRArea ()
 // 	local _n         := N
 // 	local _sErro     := ""
 // 	local _nQtdEnt   := 0
-// 	local _sQuery    := ""
 // 	local _aUltPrc   := {}
 // 	local _nUltPrc   := 0
 // 	local _sMsg      := ""
@@ -641,137 +180,62 @@ Return _lRet
 // 	local _lFaturado := .F.
 // 	local _lBonific  := .F.
 // 	local _lSoGranel := .F.
-// 	//local _wdtreajuste   := dtos(GetMv("VA_DTREAJ"))
-// 	//local _wpercreajuste := GetMv("VA_PERCREA")
 // 	local _nLinha    := 0
 
-// 	// verifica se o pedido esta salvo antes de fazer a liberação
-// 	_oSQL := ClsSQL():New()
-// 	_oSQL:_sQuery := " SELECT "
-// 	_oSQL:_sQuery += " 		C5_NUM "
-// 	_oSQL:_sQuery += " FROM " + RetSQLName ("SC5")
-// 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-// 	_oSQL:_sQuery += " AND C5_FILIAL    = '" + m->c5_filial  + "'"
-// 	_oSQL:_sQuery += " AND C5_NUM       = '" + m->c5_num     + "'"
-// 	_oSQL:_sQuery += " AND C5_CLIENTE   = '" + m->c5_cliente + "'"
-// 	_oSQL:_sQuery += " AND C5_LOJACLI   = '" + m->c5_lojacli + "'"
-// 	_aPedido := aclone (_oSQL:Qry2Array ())
-
-// 	if Len(_aPedido) <= 0
-// 		_lLiberar := .F.
-// 		u_help("A liberação deve ocorrer após a gravação do pedido!")
+// 	// Verifica se o pedido esta salvo antes de fazer a liberação
+// 	if _lLiberar
+// 		_lLiberar := _PedidoSalvo()
 // 	endif
 
-// 	if _lLiberar .and. empty (m->c5_vaFEmb)
-// 		u_help ("Antes de liberar o pedido, o campo '" + alltrim (RetTitle ("C5_VAFEMB")) + "' deve ser informado.")
-// 		return
+// 	// Validação de campos 
+// 	if _lLiberar 
+// 		_lLiberar := _ValidaCampos()
 // 	endif
 	
-// 	if ! U_ZZUVL ('005')
+// 	// Grupo que pode liberar
+// 	if _lLiberar .and. !U_ZZUVL('005')
 // 		_lLiberar := .F.
-// 	endif
-	
-// 	if _lLiberar .and. M->C5_CONDPAG = '997' // DESCONTO EM FOLHA - NAO PODE USAR
-// 		_sErro += "Condição de pagamento exclusiva para venda nas lojas."
-// 		_lLiberar = .F.
-// 	endif
-	
-// 	// Validacoes de e-mail DANFE
-// 	if _lLiberar	
-// 		if M-> C5_TIPO = 'N'
-// 			_wEmailA1 = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VAMDANF")
-// 			if 'lixo@nova' $ _wEmailA1
-// 				_sErro += "E-mail para DANFE inválido. Por favor, verifique!'"
-// 				_lLiberar = .F.
-// 			endif
-// 			_wEmailA1 = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_EMAIL")
-// 			if 'lixo@nova' $ _wEmailA1
-// 				_sErro += "E-mail para DANFE inválido. Por favor, verifique!'"
-// 				_lLiberar = .F.
-// 			endif
-// 		else
-// 			_wEmailA2 = fBuscaCpo ('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_VAMDANF")
-// 			if  'lixo' $ _wEmailA2
-// 			   	_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
-// 				_lLiberar = .F.
-// 			endif
-// 			if  _wEmailA2 != 'associados@novaalianca.coop.br' .and. 'novaalianca' $ _wEmailA2
-// 				If alltrim(_wEmailA2) =='nfe@novaalianca.coop.br'
-// 					_lLiberar = .T.
-// 				else                                                          
-// 			   		_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
-// 					_lLiberar = .F.
-// 				endif
-// 			endif
-//     		_wEmailA2 = fBuscaCpo ('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_EMAIL")
-// 			if  'lixo' $ _wEmailA2
-// 			   	_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
-// 				_lLiberar = .F.
-// 			endif
-// 		endif
 // 	endif
 
 // 	// Validacao da TES por item do pedido, libera somente grupos autorizados.
 // 	if _lLiberar
-// 		_lTes = .F.
-// 		for _nLinha = 1 to len (aCols)
-// 			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-// 			if ! GDDeleted ()
-// 			    IF GDFieldGet ("C6_TES") $ '630/657'
-// 					if ! U_ZZUVL ('101', __cUserId, .F.)
-//  						u_help ("Usuário sem permissão para emissão de nota fiscal de baixa de estoque",, .t.)
-//  						_sErro += "Usuário sem permissão para emissão de nota fiscal de baixa de estoque. Rotina 101"
-// 						_lTes = .T.
-// 						exit
-// 					endif
-// 				ENDIF	
-// 			endif
-// 		next
-// 		if _lTes = .T.
-// 			_lLiberar = .F.
-// 		endif
+// 		_lLiberar := _ValidaTES()
 // 	endif
 	
-// 	// verifica se controla endereço e lote
+// 	// Verifica se controla endereço e lote
 // 	if _lLiberar
-// 		for _nLinha = 1 to len (aCols)
-// 			N := _nLinha  
-// 			if ! GDDeleted ()
-// 				if fBuscaCpo("SF4",1,xFilial("SF4")+GDFieldGet ("C6_TES"),"F4_ESTOQUE") = 'S'
-// 					if m->c5_tpcarga == '2' .and. Localiza (GDFieldGet ("C6_PRODUTO")) .and. (empty (GDFieldGet ("C6_LOCALIZ")) .or. empty (GDFieldGet ("C6_ENDPAD")))
-// 						u_help ("Item " + GDFieldGet ("C6_ITEM") + ": Pedido nao utiliza carga, mas o produto '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "' controla localizacao. Informe endereco para retirada nos campos '" + alltrim (RetTitle ("C6_LOCALIZ")) + "' e '" + alltrim (RetTitle ("C6_ENDPAD")) + "'." )
-// 						_lLiberar := .F.
-// 					endif
-// 				endif
-// 			endif
-// 		next
+// 		_lLiberar := _ControlaEnderLote()
 // 	endif
 
-// 	// Grava valor previsto para a nota fiscal. Vai ser usado posteriormente nos calculos de frete e margem de contribuicao.
+// 	// Verifica cadastros de rapel
 // 	if _lLiberar
-// 		m->c5_vaVlFat = Ma410Impos (iif (inclui, 3, 4), .T.)  // (nOpc, lRetTotal, aRefRentab)
+// 		_lLiberar := _ValidaRapel()
+// 	endif
+
+// 	// Grava valor previsto para a nota fiscal. Vai ser usado posteriormente nos calculos de frete e margem de contribuicao
+// 	if _lLiberar
+// 		m->c5_vaVlFat := Ma410Impos(iif(inclui, 3, 4), .T.)  // (nOpc, lRetTotal, aRefRentab)
 // 	endif
 	
 // 	if _lLiberar
 // 		CursorWait ()
 
 // 		// Caso o pedido jah esteja com bloqueio, remove o bloqueio antes de efetuar nova verificacao.
-// 		m->c5_vaBloq = ''
-
+// 		m->c5_vaBloq := ''
 // 		_n = N
-// 		for _nLinha = 1 to len (aCols)
-// 			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
 
+// 		for _nLinha := 1 to len(aCols)
+// 			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
 // 			if ! GDDeleted()                                                        
 // 				// Busca quantidade jah entregue (possivel faturamento parcial)
 // 				if inclui
-// 					_nQtdEnt = 0
+// 					_nQtdEnt := 0
 // 				else
-// 					_nQtdEnt = fBuscaCpo ("SC6", 1, xfilial ("SC6") + m->c5_num + GDFieldGet ("C6_ITEM") + GDFieldGet ("C6_PRODUTO"), "C6_QTDENT")
+// 					_nQtdEnt := fBuscaCpo("SC6", 1, xfilial("SC6") + m->c5_num + GDFieldGet("C6_ITEM") + GDFieldGet("C6_PRODUTO"), "C6_QTDENT")
 // 				endif
 
 // 				// Acumula quantidades deste produto em linhas anteriores do mesmo pedido.
-// 				_nAcumAnt = 0
+// 				_nAcumAnt := 0
 // 				for _nLinAnt = 1 to len (aCols)
 // 					if ! GDDeleted (_nLinAnt) ;
 // 							.and. GDFieldGet ("C6_PRODUTO", _nLinAnt) == GDFieldGet ("C6_PRODUTO") ;
@@ -779,55 +243,57 @@ Return _lRet
 // 							.and. GDFieldGet ("C6_LOCALIZ", _nLinAnt) == GDFieldGet ("C6_LOCALIZ") ;
 // 							.and. (fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinAnt), "F4_ESTOQUE") == 'S' ;
 // 							.or.  fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinAnt), "F4_VAFDEP") == 'S')
-// 						_nAcumAnt += GDFieldGet ("C6_QTDLIB", _nLinAnt)
+// 						_nAcumAnt += GDFieldGet("C6_QTDLIB", _nLinAnt)
 // 					endif
 // 				next
 				
 // 				// Verifica estoque desta linha
-// 				if ! alltrim (GDFieldGet ("C6_BLQ")) $ "SR"  // bloqueio manual ou por eliminacao de residuo
-// 					_sRetEstq = U_VerEstq ("2", GDFieldGet ("C6_PRODUTO"), m->c5_vaFEmb, GDFieldGet ("C6_LOCAL"), (GDFieldGet ("C6_QTDVEN") - _nQtdEnt + _nAcumAnt), GDFieldGet ("C6_TES"), GDFieldGet ("C6_ENDPAD"), GDFieldGet ("C6_LOTECTL"), m->c5_num)
-// 					if ! empty (_sRetEstq)
-// 						_sErro += "Item " + GDFieldGet ("C6_ITEM") + ": " + _sRetEstq + chr (13) + chr (10)
+// 				if !alltrim(GDFieldGet("C6_BLQ")) $ "SR"  // Bloqueio manual ou por eliminacao de residuo
+// 					_sRetEstq := U_VerEstq("2", GDFieldGet("C6_PRODUTO"), m->c5_vaFEmb, GDFieldGet("C6_LOCAL"), (GDFieldGet("C6_QTDVEN") - _nQtdEnt + _nAcumAnt), GDFieldGet("C6_TES"), GDFieldGet("C6_ENDPAD"), GDFieldGet("C6_LOTECTL"), m->c5_num)
+// 					if !empty(_sRetEstq)
+// 						_sErro += "Item " + GDFieldGet("C6_ITEM") + ": " + _sRetEstq + chr (13) + chr (10)
 // 					else
-// 						GDFieldPut ("C6_QTDLIB", GDFieldGet ("C6_QTDVEN") - _nQtdEnt)
+// 						GDFieldPut("C6_QTDLIB", GDFieldGet("C6_QTDVEN") - _nQtdEnt)
 // 					endif
 // 				endif
 				
 // 				// Valida preco de venda com ultimo pedido do cliente.
-// 				if empty (_sErro) .and. ! m->c5_tipo $ 'DB' .and. cNumEmp == '0101' .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_DUPLIC") == "S"
+// 				if empty (_sErro) .and. ! m->c5_tipo $ 'DB' .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_DUPLIC") == "S"
+// 					_oSQL := ClsSQL():New()
+// 					_oSQL:_sQuery := " 
+// 					_oSQL:_sQuery += " SELECT TOP 1 "
+// 					_oSQL:_sQuery += "       D2_PRCVEN "
+// 					_oSQL:_sQuery += " 		,D2_FILIAL "
+// 					_oSQL:_sQuery += " 		,D2_EMISSAO "
+// 					_oSQL:_sQuery += " 		,D2_DOC "
+// 					_oSQL:_sQuery += " 		,D2_PEDIDO"
+// 					_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " SD2 "
+// 					_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_  = ''"
+// 					_oSQL:_sQuery += " AND SD2.D2_CLIENTE  = '" + m->c5_cliente + "'"
+// 					_oSQL:_sQuery += " AND SD2.D2_LOJA     = '" + m->c5_lojacli + "'"
+// 					_oSQL:_sQuery += " AND SD2.D2_TIPO     = '" + m->c5_tipo    + "'"
+// 					_oSQL:_sQuery += " AND SD2.D2_COD      = '" + GDFieldGet ("C6_PRODUTO") + "'"
+// 					_oSQL:_sQuery += " ORDER BY D2_EMISSAO DESC"
+// 					_aRetQry = aclone(_oSQL:Qry2Array())
 
-// 					_sQuery := ""
-// 					_sQuery += " SELECT TOP 1 D2_PRCVEN, "
-// 					_sQuery +=              " D2_FILIAL, "
-// 					_sQuery +=              " D2_EMISSAO, "
-// 					_sQuery +=              " D2_DOC, "
-// 					_sQuery +=              " D2_PEDIDO"
-// 					_sQuery +=  " FROM " + RetSQLName ("SD2") + " SD2 "
-// 					_sQuery += " WHERE SD2.D_E_L_E_T_  = ''"
-// 					_sQuery +=   " AND SD2.D2_CLIENTE  = '" + m->c5_cliente + "'"
-// 					_sQuery +=   " AND SD2.D2_LOJA     = '" + m->c5_lojacli + "'"
-// 					_sQuery +=   " AND SD2.D2_TIPO     = '" + m->c5_tipo    + "'"
-// 					_sQuery +=   " AND SD2.D2_COD      = '" + GDFieldGet ("C6_PRODUTO") + "'"
-// 					_sQuery += " ORDER BY D2_EMISSAO DESC"
-// 					_aRetQry = aclone (U_Qry2Array (_sQuery, .F., .F.))
-// 					if len (_aRetQry) > 0 .and. round (_aRetQry [1, 1], 2) > round (GDFieldGet ("C6_PRCVEN"), 2)
+// 					if len(_aRetQry) > 0 .and. round(_aRetQry[1, 1], 2) > round(GDFieldGet("C6_PRCVEN"), 2)
 
-// 						aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))	, ;
-// 											alltrim (GDFieldGet ("C6_DESCRI"))	, ;
-// 											GDFieldGet ("C6_PRCVEN")			, ; 
-// 											_aRetQry [1, 1]						, ; 
-// 											_aRetQry [1, 2]						, ;
-// 											dtoc (stod (_aRetQry [1, 3]))		, ;
-// 											_aRetQry [1, 4]						, ;
-// 											_aRetQry [1, 5]						 })
+// 						aadd(_aUltPrc,{	alltrim(GDFieldGet("C6_PRODUTO"))	, ;
+// 										alltrim(GDFieldGet("C6_DESCRI"))	, ;
+// 										GDFieldGet("C6_PRCVEN")				, ; 
+// 										_aRetQry[1, 1]						, ; 
+// 										_aRetQry[1, 2]						, ;
+// 										dtoc(stod(_aRetQry[1, 3]))			, ;
+// 										_aRetQry[1, 4]						, ;
+// 										_aRetQry[1, 5]						 })
 // 					endif
 // 				endif
 // 			endif
 // 		next
               
-// 		if len (_aUltPrc) > 0
+// 		if len(_aUltPrc) > 0
 
-//    			// Prepara mensagem para visualizacao
+// 			// Prepara mensagem para visualizacao
 // 			_sMsg := "<html>"
 // 			_sMsg += "<b>Pedido de venda:</b> " + m->c5_num + "<br>" 
 // 			_sMsg += "<b>Cliente:</b> " + m->c5_cliente + " - " + m->c5_nomecli + "<br>"
@@ -838,33 +304,29 @@ Return _lRet
 // 			next
 // 			_sMsg += "</html>"
 
-// 			_nOpcao = aviso ("Precos abaixo da regras de estabelecidas pelo comercial", ;
-// 				"Estao sendo vendidos produtos com precos abaixo das regras estabelecidas pelo comercial!" + chr (13) + chr (10) + "Se confirmar assim mesmo, o pedido ficara´ com bloqueio gerencial.", ;
-// 				{"Sim", "Nao", "Verificar"}, ;
-// 				3, ;
-// 				"Precos abaixo da venda anterior/Tabela de Precos/ Precos abaixo do aumento especificado")
-// 			if _nOpcao == 1
+// 			for _nUltPrc := 1 to len(_aUltPrc)
+// 				_sMsg += _aUltPrc [_nUltPrc, 1] + ' - ' + _aUltPrc [_nUltPrc, 2] + ' .Preco atual: ' + cvaltochar (_aUltPrc [_nUltPrc, 3]) + ' - ult.venda: ' + cvaltochar (_aUltPrc [_nUltPrc, 4]) + ';' + chr (13) + chr (10) 
+// 			next
 
-// 				// Bloqueia o pedido.
-// 				m->c5_vaBloq = iif ('P' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'P')
-// 				U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
+// 			_nOpcao := aviso("Precos abaixo da regras de estabelecidas pelo comercial", ;
+// 							 "Estao sendo vendidos produtos com precos abaixo das regras estabelecidas pelo comercial!" + chr (13) + chr (10) + "Se confirmar assim mesmo, o pedido ficara com bloqueio gerencial.", ;
+// 							{"Sim", "Nao", "Verificar"}	, ;
+// 							3							, ;
+// 							"Precos abaixo da venda anterior/Tabela de Precos/ Precos abaixo do aumento especificado")
+			
+// 			if _nOpcao == 1 // Bloqueia o pedido
+
+// 				m->c5_vaBloq = iif('P' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'P')
 
 // 				// Grava a maior variacao
-// 				u_log (_aUltPrc)
-// 				for _nUltPrc = 1 to len (_aUltPrc)
-// 					u_log ('linha', _nUltPrc)
-
-// 					u_log (m->c5_vaPrPed, 100 - _aUltPrc [_nUltPrc, 3] * 100 / _aUltPrc [_nUltPrc, 4])
-// 					m->c5_vaPrPed = max (m->c5_vaPrPed, 100 - _aUltPrc [_nUltPrc, 3] * 100 / _aUltPrc [_nUltPrc, 4])
-// 					u_log ('var=', m->c5_vaPrPed)
+// 				for _nUltPrc := 1 to len(_aUltPrc)
+// 					m->c5_vaPrPed := max(m->c5_vaPrPed, 100 - _aUltPrc [_nUltPrc, 3] * 100 / _aUltPrc [_nUltPrc, 4])
 // 				next
 			
 // 				// verifica se o bloqueio é por ser menor que o aumento
 // 				for _nUltPrc = 1 to len (_aUltPrc)
-// 					if _aUltPrc [_nUltPrc, 3] < _aUltPrc [_nUltPrc, 4]		
-// 						// bloqueia por preço menor que o aumento estabelecido				
-// 						m->c5_vaBloq = iif ('A' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'A')
-// 						U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
+// 					if _aUltPrc [_nUltPrc, 3] < _aUltPrc [_nUltPrc, 4] // bloqueia por preço menor que o aumento estabelecido						
+// 						m->c5_vaBloq := iif('A' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'A')
 // 					endif
 // 				next									
 
@@ -872,12 +334,12 @@ Return _lRet
 // 				public _sMsgPUltV := _sMsg
 
 // 			elseif _nOpcao == 2
-// 				_sErro = "Venda nao confirmada - preco abaixo do preco anterior/tabela de precos."
+// 				u_help("Venda nao confirmada - preco abaixo do preco anterior/tabela de precos.")
 // 				_lLiberar = .F.
 
 // 			elseif _nOpcao == 3
 // 				U_ShowMemo (_sMsg)
-// 				_sErro = "Venda nao confirmada - preco abaixo do preco anterior/tabela de precos."
+// 				u_help("Venda nao confirmada - preco abaixo do preco anterior/tabela de precos.")
 // 				_lLiberar = .F.
 // 			endif
 // 		endif
@@ -888,13 +350,14 @@ Return _lRet
 // 			_lFaturado = .F.
 // 			_lBonific  = .F.
 // 			_lSoGranel = .T.
+
 // 			sf4 -> (dbsetorder (1))
 // 			_n = N
-// 			for _nLinha = 1 to len (aCols)
+// 			for _nLinha = 1 to len(aCols)
 // 				N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-// 				if ! GDDeleted ()
-// 					if ! sf4 -> (msseek (xfilial ("SF4") + GDFieldGet ("C6_TES"), .F.))
-// 						u_help ("Cadastro do TES '" + GDFieldGet ("C6_TES") + "' nao localizado!")
+// 				if ! GDDeleted()
+// 					if ! sf4 -> (msseek(xfilial("SF4") + GDFieldGet("C6_TES"), .F.))
+// 						u_help("Cadastro do TES '" + GDFieldGet("C6_TES") + "' nao localizado!")
 // 						_lLiberar = .F.
 // 					else
 // 						_lFaturado = (sf4 -> f4_margem == '1')
@@ -905,7 +368,7 @@ Return _lRet
 // 					endif
 // 				endif
 // 			next
-// 			u_log ('contem itens faturados:', _lFaturado, 'contem itens bonificados:', _lBonific, 'contem apenas itens a granel:', _lSoGranel)
+// 			u_log('contem itens faturados:', _lFaturado, 'contem itens bonificados:', _lBonific, 'contem apenas itens a granel:', _lSoGranel)
 // 		endif
 
 // 		// Valida margem de contribuicao.
@@ -919,72 +382,20 @@ Return _lRet
 // 				if m->c5_vaMCont < _nMargMin
 // 					_nOpcao = aviso ("Margem de contribuicao muito baixa", ;
 // 					                 "Margem de " + cvaltochar (m->c5_vaMCont) + "% (abaixo de " + cvaltochar (_nMargMin) + "%). Pedido vai ficar com bloqueio gerencial. Confirma assim mesmo?", ;
-// 					                 {"Sim", "Nao"}, ;
-// 					                 3, ;
-// 					                 "Margem minima")
+// 					                 {"Sim", "Nao"} , ;
+// 					                 3				, ;
+// 					                 "Margem minima"  )
 // 					if _nOpcao == 1							
 // 						m->c5_vaBloq = iif ('M' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'M')
-// 						U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
 // 					elseif _nOpcao == 2
 // 						_sErro = "Pedido nao confirmado."
 // 					endif
 // 				endif
 				
 // 				if cFilAnt == '01' .and. empty (m->c5_vabloq) .and. m->c5_tpfrete == 'C' .and. m->c5_mvfre == 0 .and. GetMv ("VA_BLPSF") == 'S'
-// 					_sErro += "Parametro VA_BLPSF: Pedido com frete CIF, mas sem valor de frete para calculo de margem. Liberacao nao sera´ feita. Cadastre rota valida no entregou.com ou informe frete negociado no cadastro do cliente."
+// 					_sErro += "Parametro VA_BLPSF: Pedido com frete CIF, mas sem valor de frete para calculo de margem. Liberacao nao sera feita. Cadastre rota valida no entregou.com ou informe frete negociado no cadastro do cliente."
 // 				endif
 // 			endif
-// 		endif
-
-// 		// validacoes RAPEL
-// 		if _lLiberar .and. m->c5_tipo <> 'B'
-// 			_wbaserapel = fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VABARAP")
-// 			_oSQL := ClsSQL ():New ()
-// 			_oSQL:_sQuery := ""
-// 			_oSQL:_sQuery += "SELECT dbo.VA_FRAPELPADRAO ('" + M->C5_CLIENTE + "','" + M->C5_LOJACLI + "', '')"
-// 			_oSQL:Log ()
-// 			_wRapel = _oSQL:RetQry (1, .F.)
-		
-// 			if _wbaserapel != '0' 
-// 				if _wrapel = 0
-// 					u_help ("Tabela de rapel não cadastrada para esse cliente. Verifique!")
-// 					_lLiberar = .F.										
-// 				endif
-// 			else
-// 				_sQuery := ""
-// 				_sQuery += " SELECT 1"
-// 				_sQuery += "   FROM ZAX010 AS ZAX"
-// 				_sQuery += "  WHERE ZAX.D_E_L_E_T_  = ''"
-// 				_sQuery += "    AND ZAX_CLIENT      = '" + M->C5_CLIENTE + "'"
-// 				_sQuery += "    AND ZAX_LOJA        = '" + M->C5_LOJACLI + "'"
-// 				aDados := U_Qry2Array(_sQuery)
-//      			if len (aDados) > 0
-//      				u_help ("Cliente sem base de rapel e com percentuais de rapel cadastrados. Verifique!")
-// 					_lLiberar = .F.
-//     			endif
-// 			endif
-
-// 			// verifica a vigencia de contrato e contrato
-// 			If _wbaserapel <> '0'
-// 				_sCodBase  := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VACBASE")
-// 				_sLojaBase := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VALBASE")
-
-// 				_sQuery := ""
-// 				_sQuery += " SELECT
-// 				_sQuery += " 	ZA7_CONT"
-// 				_sQuery += " FROM ZA7010"
-// 				_sQuery += " WHERE D_E_L_E_T_ = ''"
-// 				_sQuery += " AND ZA7_CLI      = '" + _sCodBase          + "'"
-// 				_sQuery += " AND ZA7_LOJA     = '" + _sLojaBase         + "'"
-// 				_sQuery += " AND ZA7_VINI    <= '" + DTOS(m->c5_emissao) + "'"
-// 				_sQuery += " AND ZA7_VFIM    >= '" + DTOS(m->c5_emissao) + "'"
-// 				aContrato := U_Qry2Array(_sQuery)
-
-// 				if Len(aContrato) <= 0
-// 					u_help ("Cliente sem contrato e/ou contrato válido. Verifique!")
-// 					_lLiberar = .F.
-// 				endif
-// 			EndIf
 // 		endif
 
 // 		// se pedido é bonificação
@@ -995,22 +406,23 @@ Return _lRet
 // 		EndIf
 
 // 		// Se alguma das linhas tinha problemas, nao libera nenhuma.
-// 		if ! empty (_sErro)
-// 			u_help (_sErro)
-// 			for _nLinha = 1 to len (aCols)
+// 		if ! empty(_sErro)
+// 			u_help(_sErro)
+// 			for _nLinha = 1 to len(aCols)
 // 				N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-// 				if ! GDDeleted ()
-// 					GDFieldPut ("C6_QTDLIB", 0)
+// 				if ! GDDeleted()
+// 					GDFieldPut("C6_QTDLIB", 0)
 // 				endif
 // 			next
 // 		endif
 // 		CursorArrow ()
 
 // 	else  // Remover liberacao
-// 		if ! empty (_sErro)
-// 			u_help (_sErro)
+// 		if ! empty(_sErro)
+// 			u_help(_sErro)
 // 		endif
-// 		CursorWait ()
+// 		CursorWai ()
+
 // 		for _nLinha = 1 to len (aCols)
 // 			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
 // 			if ! GDDeleted ()
@@ -1025,8 +437,596 @@ Return _lRet
 // 		oGetDad:oBrowse:Refresh ()
 // 	endif
 
+// 	U_ML_SRArea (_aAreaAnt)
+// return
+// //
+// // --------------------------------------------------------------------------------------------------
+// // Verifica se o pedido esta salvo antes de fazer a liberação
+// Static Function _PedidoSalvo()
+// 	Local _lRet    := .T.
+// 	Local _aPedido := {}
+
+// 	_oSQL := ClsSQL():New()
+// 	_oSQL:_sQuery := " SELECT "
+// 	_oSQL:_sQuery += " 		C5_NUM "
+// 	_oSQL:_sQuery += " FROM " + RetSQLName ("SC5")
+// 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " AND C5_FILIAL    = '" + m->c5_filial  + "'"
+// 	_oSQL:_sQuery += " AND C5_NUM       = '" + m->c5_num     + "'"
+// 	_oSQL:_sQuery += " AND C5_CLIENTE   = '" + m->c5_cliente + "'"
+// 	_oSQL:_sQuery += " AND C5_LOJACLI   = '" + m->c5_lojacli + "'"
+// 	_aPedido := aclone(_oSQL:Qry2Array())
+
+// 	if Len(_aPedido) <= 0
+// 		_lRet := .F.
+// 		u_help("A liberação deve ocorrer após a gravação do pedido!")
+// 	endif
+// Return _lRet
+// //
+// // --------------------------------------------------------------------------------------------------
+// // Verifica campos obrigatorios
+// Static Function _ValidaCampos()
+// 	Local _lRet := .T.
+
 // 	// retira caracteres especiais do campo de OBS
 // 	m->c5_obs := U_LimpaEsp(m->c5_obs)
 
-// 	U_ML_SRArea (_aAreaAnt)
-// return
+// 	// Filial de embarque campo obrigatorio
+// 	if _lRet .and. empty(m->c5_vaFEmb)
+// 		u_help("Antes de liberar o pedido, o campo '" + alltrim(RetTitle("C5_VAFEMB")) + "' deve ser informado.")
+// 		_lRet := .F.
+// 	endif
+
+// 	// Verifica desconto em folha
+// 	if _lRet .and. M->C5_CONDPAG = '997' 
+// 		u_help("Condição de pagamento 997 exclusiva para venda nas lojas.")
+// 		_lRet := .F.
+// 	endif
+
+// 	// Validacoes de e-mail DANFE
+// 	if _lRet 
+// 		if M->C5_TIPO = 'N' // cliente
+// 			_sEmail := fBuscaCpo('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VAMDANF")
+// 			if _lRet .and. 'lixo@nova' $ _sEmail
+// 				u_help("E-mail para DANFE inválido. Por favor, verifique!'")
+// 				_lRet := .F.
+// 			endif
+
+// 			_sEmail := fBuscaCpo('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_EMAIL")
+// 			if _lRet .and. 'lixo@nova' $ _sEmail
+// 				u_help("E-mail inválido. Por favor, verifique!'")
+// 				_lRet := .F.
+// 			endif
+// 		else
+// 			_sEmail := fBuscaCpo('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_VAMDANF")
+// 			if _lRet .and. 'lixo' $ _sEmail
+// 				u_help("E-mail para DANFE inválido. Por favor, verifique!")
+// 				_lRet := .F.
+// 			endif
+
+// 			if _lRet .and. _sEmail != 'associados@novaalianca.coop.br' .and. 'novaalianca' $ _sEmail
+// 				if alltrim(_sEmail) =='nfe@novaalianca.coop.br'
+// 					_lRet := .T.
+// 				else                                                          
+// 					u_help("E-mail para DANFE inválido. Por favor, verifique!")
+// 					_lRet := .F.
+// 				endif
+// 			endif
+
+// 			_sEmail := fBuscaCpo('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_EMAIL")
+// 			if _lRet .and. 'lixo' $ _sEmail
+// 				u_help("E-mail inválido. Por favor, verifique!")
+// 				_lRet := .F.
+// 			endif
+// 		endif
+// 	endif
+
+// Return _lRet
+// //
+// // --------------------------------------------------------------------------------------------------
+// // Validacao da TES por item do pedido, libera somente grupos autorizados.
+// Static Function _ValidaTES()
+// 	Local _lRet   := .T.
+// 	Local _lTes   := .F.
+// 	Local _nLinha := 0
+
+// 	for _nLinha := 1 to len(aCols)
+// 		N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
+// 		if !GDDeleted()
+// 			if GDFieldGet("C6_TES") $ '630/657'
+// 				if ! U_ZZUVL('101', __cUserId, .F.)
+// 					u_help("Usuário sem permissão para emissão de nota fiscal de baixa de estoque (Rotina 101)",, .t.)
+// 					_lTes := .T.
+// 					exit
+// 				endif
+// 			endif	
+// 		endif
+// 	next
+// 	if _lTes == .T.
+// 		_lRet := .F.
+// 	endif
+// Return _lRet
+// //
+// // --------------------------------------------------------------------------------------------------
+// // Verifica se controla endereço e lote
+// Static Function _ControlaEnderLote()
+// 	Local _lRet   := .T.
+// 	Local _nLinha := 0
+
+// 	for _nLinha := 1 to len(aCols)
+// 		N := _nLinha  
+// 		if !GDDeleted()
+// 			if fBuscaCpo("SF4",1,xFilial("SF4")+GDFieldGet ("C6_TES"),"F4_ESTOQUE") = 'S'
+// 				if m->c5_tpcarga == '2' .and. Localiza(GDFieldGet ("C6_PRODUTO")) .and. (empty(GDFieldGet("C6_LOCALIZ")) .or. empty(GDFieldGet("C6_ENDPAD")))
+// 					u_help("Item " + GDFieldGet("C6_ITEM") + ": Pedido nao utiliza carga, mas o produto '" + alltrim(GDFieldGet("C6_PRODUTO")) + "' controla localizacao. Informe endereco para retirada nos campos '" + alltrim(RetTitle("C6_LOCALIZ")) + "' e '" + alltrim(RetTitle ("C6_ENDPAD")) + "'." )
+// 					_lRet := .F.
+// 				endif
+// 			endif
+// 		endif
+// 	next
+// Return _lRet
+// //
+// // --------------------------------------------------------------------------------------------------
+// // Verifica cadastros de rapel
+// Static Function _ValidaRapel()
+// 	Local _lRet := .T.
+
+// 	if m->c5_tipo <> 'B'
+// 		_sBaseRapel := fBuscaCpo('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VABARAP")
+
+// 		if _sBaseRapel != '0' 
+// 			_oSQL := ClsSQL():New()
+// 			_oSQL:_sQuery := ""
+// 			_oSQL:_sQuery += " SELECT dbo.VA_FRAPELPADRAO ('" + m->c5_cliente + "','" + m->c5_lojacli + "', '')"
+// 			_nRapel := _oSQL:RetQry(1, .F.)
+		
+// 			if _nRapel == 0
+// 				u_help ("Tabela de rapel não cadastrada para esse cliente. Verifique!")
+// 				_lRet := .F.										
+// 			endif
+// 		else
+// 			_oSQL := ClsSQL():New()
+// 			_oSQL:_sQuery := ""
+// 			_oSQL:_sQuery += " SELECT 1"
+// 			_oSQL:_sQuery += " FROM " + RetSQLName ("ZAX") + " AS ZAX "
+// 			_oSQL:_sQuery += " WHERE ZAX.D_E_L_E_T_  = ''"
+// 			_oSQL:_sQuery += " AND ZAX_CLIENT  = '" + m->c5_cliente + "'"
+// 			_oSQL:_sQuery += " AND ZAX_LOJA    = '" + m->c5_lojacli    + "'"
+// 			_aDados := aclone(_oSQL:Qry2Array())  
+
+// 			if len(_aDados) > 0
+// 				u_help("Cliente sem base de rapel e com percentuais de rapel cadastrados. Verifique!")
+// 				_lRet := .F.
+// 			endif
+// 		endif
+
+// 		// verifica a vigencia de contrato e contrato
+// 		if _sBaseRapel != '0'
+// 			_sCodBase  := fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VACBASE")
+// 			_sLojaBase := fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VALBASE")
+
+// 			_oSQL := ClsSQL():New()
+// 			_oSQL:_sQuery := ""
+// 			_oSQL:_sQuery += " SELECT
+// 			_oSQL:_sQuery += " 		ZA7_CONT "
+// 			_oSQL:_sQuery += " FROM " + RetSQLName ("ZA7") + " AS ZA7 "
+// 			_oSQL:_sQuery += " WHERE ZA7.D_E_L_E_T_ = ''"
+// 			_oSQL:_sQuery += " AND ZA7_CLI      = '" + _sCodBase           + "'"
+// 			_oSQL:_sQuery += " AND ZA7_LOJA     = '" + _sLojaBase          + "'"
+// 			_oSQL:_sQuery += " AND ZA7_VINI    <= '" + DTOS(m->c5_emissao) + "'"
+// 			_oSQL:_sQuery += " AND ZA7_VFIM    >= '" + DTOS(m->c5_emissao) + "'"
+// 			_aContrato := aclone(_oSQL:Qry2Array()) 
+
+// 			if Len(_aContrato) <= 0
+// 				u_help("Cliente sem contrato e/ou contrato válido. Verifique!")
+// 				_lRet := .F.
+// 			endif
+// 		endif
+// 	endif
+// Return _lRet
+
+user function GrvLibPV(_lLiberar)
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _n         := N
+	local _sErro     := ""
+	local _nQtdEnt   := 0
+	local _sQuery    := ""
+	local _aUltPrc   := {}
+	local _nUltPrc   := 0
+	local _sMsg      := ""
+	local _nOpcao    := 0
+	local _sRetEstq  := ""
+	local _nLinAnt   := 0
+	local _nAcumAnt  := 0
+	local _lFaturado := .F.
+	local _lBonific  := .F.
+	local _lSoGranel := .F.
+	//local _wdtreajuste   := dtos(GetMv("VA_DTREAJ"))
+	//local _wpercreajuste := GetMv("VA_PERCREA")
+	local _nLinha    := 0
+
+	// verifica se o pedido esta salvo antes de fazer a liberação
+	_oSQL := ClsSQL():New()
+	_oSQL:_sQuery := " SELECT "
+	_oSQL:_sQuery += " 		C5_NUM "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SC5")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND C5_FILIAL    = '" + m->c5_filial  + "'"
+	_oSQL:_sQuery += " AND C5_NUM       = '" + m->c5_num     + "'"
+	_oSQL:_sQuery += " AND C5_CLIENTE   = '" + m->c5_cliente + "'"
+	_oSQL:_sQuery += " AND C5_LOJACLI   = '" + m->c5_lojacli + "'"
+	_aPedido := aclone (_oSQL:Qry2Array ())
+
+	if Len(_aPedido) <= 0
+		_lLiberar := .F.
+		u_help("A liberação deve ocorrer após a gravação do pedido!")
+	endif
+
+	if _lLiberar .and. empty (m->c5_vaFEmb)
+		u_help ("Antes de liberar o pedido, o campo '" + alltrim (RetTitle ("C5_VAFEMB")) + "' deve ser informado.")
+		return
+	endif
+	
+	if ! U_ZZUVL ('005')
+		_lLiberar := .F.
+	endif
+	
+	if _lLiberar .and. M->C5_CONDPAG = '997' // DESCONTO EM FOLHA - NAO PODE USAR
+		_sErro += "Condição de pagamento exclusiva para venda nas lojas."
+		_lLiberar = .F.
+	endif
+	
+	// Validacoes de e-mail DANFE
+	if _lLiberar	
+		if M-> C5_TIPO = 'N'
+			_wEmailA1 = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VAMDANF")
+			if 'lixo@nova' $ _wEmailA1
+				_sErro += "E-mail para DANFE inválido. Por favor, verifique!'"
+				_lLiberar = .F.
+			endif
+			_wEmailA1 = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_EMAIL")
+			if 'lixo@nova' $ _wEmailA1
+				_sErro += "E-mail para DANFE inválido. Por favor, verifique!'"
+				_lLiberar = .F.
+			endif
+		else
+			_wEmailA2 = fBuscaCpo ('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_VAMDANF")
+			if  'lixo' $ _wEmailA2
+			   	_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
+				_lLiberar = .F.
+			endif
+			if  _wEmailA2 != 'associados@novaalianca.coop.br' .and. 'novaalianca' $ _wEmailA2
+				If alltrim(_wEmailA2) =='nfe@novaalianca.coop.br'
+					_lLiberar = .T.
+				else                                                          
+			   		_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
+					_lLiberar = .F.
+				endif
+			endif
+    		_wEmailA2 = fBuscaCpo ('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_EMAIL")
+			if  'lixo' $ _wEmailA2
+			   	_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
+				_lLiberar = .F.
+			endif
+		endif
+	endif
+
+	// Validacao da TES por item do pedido, libera somente grupos autorizados.
+	if _lLiberar
+		_lTes = .F.
+		for _nLinha = 1 to len (aCols)
+			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
+			if ! GDDeleted ()
+			    IF GDFieldGet ("C6_TES") $ '630/657'
+					if ! U_ZZUVL ('101', __cUserId, .F.)
+ 						u_help ("Usuário sem permissão para emissão de nota fiscal de baixa de estoque",, .t.)
+ 						_sErro += "Usuário sem permissão para emissão de nota fiscal de baixa de estoque. Rotina 101"
+						_lTes = .T.
+						exit
+					endif
+				ENDIF	
+			endif
+		next
+		if _lTes = .T.
+			_lLiberar = .F.
+		endif
+	endif
+	
+	// verifica se controla endereço e lote
+	if _lLiberar
+		for _nLinha = 1 to len (aCols)
+			N := _nLinha  
+			if ! GDDeleted ()
+				if fBuscaCpo("SF4",1,xFilial("SF4")+GDFieldGet ("C6_TES"),"F4_ESTOQUE") = 'S'
+					if m->c5_tpcarga == '2' .and. Localiza (GDFieldGet ("C6_PRODUTO")) .and. (empty (GDFieldGet ("C6_LOCALIZ")) .or. empty (GDFieldGet ("C6_ENDPAD")))
+						u_help ("Item " + GDFieldGet ("C6_ITEM") + ": Pedido nao utiliza carga, mas o produto '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "' controla localizacao. Informe endereco para retirada nos campos '" + alltrim (RetTitle ("C6_LOCALIZ")) + "' e '" + alltrim (RetTitle ("C6_ENDPAD")) + "'." )
+						_lLiberar := .F.
+					endif
+				endif
+			endif
+		next
+	endif
+
+	// Grava valor previsto para a nota fiscal. Vai ser usado posteriormente nos calculos de frete e margem de contribuicao.
+	if _lLiberar
+		m->c5_vaVlFat = Ma410Impos (iif (inclui, 3, 4), .T.)  // (nOpc, lRetTotal, aRefRentab)
+	endif
+	
+	if _lLiberar
+		CursorWait ()
+
+		// Caso o pedido jah esteja com bloqueio, remove o bloqueio antes de efetuar nova verificacao.
+		m->c5_vaBloq = ''
+
+		_n = N
+		for _nLinha = 1 to len (aCols)
+			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
+
+			if ! GDDeleted()                                                        
+				// Busca quantidade jah entregue (possivel faturamento parcial)
+				if inclui
+					_nQtdEnt = 0
+				else
+					_nQtdEnt = fBuscaCpo ("SC6", 1, xfilial ("SC6") + m->c5_num + GDFieldGet ("C6_ITEM") + GDFieldGet ("C6_PRODUTO"), "C6_QTDENT")
+				endif
+
+				// Acumula quantidades deste produto em linhas anteriores do mesmo pedido.
+				_nAcumAnt = 0
+				for _nLinAnt = 1 to len (aCols)
+					if ! GDDeleted (_nLinAnt) ;
+							.and. GDFieldGet ("C6_PRODUTO", _nLinAnt) == GDFieldGet ("C6_PRODUTO") ;
+							.and. GDFieldGet ("C6_LOCAL", _nLinAnt)   == GDFieldGet ("C6_LOCAL") ;
+							.and. GDFieldGet ("C6_LOCALIZ", _nLinAnt) == GDFieldGet ("C6_LOCALIZ") ;
+							.and. (fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinAnt), "F4_ESTOQUE") == 'S' ;
+							.or.  fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinAnt), "F4_VAFDEP") == 'S')
+						_nAcumAnt += GDFieldGet ("C6_QTDLIB", _nLinAnt)
+					endif
+				next
+				
+				// Verifica estoque desta linha
+				if ! alltrim (GDFieldGet ("C6_BLQ")) $ "SR"  // bloqueio manual ou por eliminacao de residuo
+					_sRetEstq = U_VerEstq ("2", GDFieldGet ("C6_PRODUTO"), m->c5_vaFEmb, GDFieldGet ("C6_LOCAL"), (GDFieldGet ("C6_QTDVEN") - _nQtdEnt + _nAcumAnt), GDFieldGet ("C6_TES"), GDFieldGet ("C6_ENDPAD"), GDFieldGet ("C6_LOTECTL"), m->c5_num)
+					if ! empty (_sRetEstq)
+						_sErro += "Item " + GDFieldGet ("C6_ITEM") + ": " + _sRetEstq + chr (13) + chr (10)
+					else
+						GDFieldPut ("C6_QTDLIB", GDFieldGet ("C6_QTDVEN") - _nQtdEnt)
+					endif
+				endif
+				
+				// Valida preco de venda com ultimo pedido do cliente.
+				if empty (_sErro) .and. ! m->c5_tipo $ 'DB' .and. cNumEmp == '0101' .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_DUPLIC") == "S"
+
+					_sQuery := ""
+					_sQuery += " SELECT TOP 1 D2_PRCVEN, "
+					_sQuery +=              " D2_FILIAL, "
+					_sQuery +=              " D2_EMISSAO, "
+					_sQuery +=              " D2_DOC, "
+					_sQuery +=              " D2_PEDIDO"
+					_sQuery +=  " FROM " + RetSQLName ("SD2") + " SD2 "
+					_sQuery += " WHERE SD2.D_E_L_E_T_  = ''"
+					_sQuery +=   " AND SD2.D2_CLIENTE  = '" + m->c5_cliente + "'"
+					_sQuery +=   " AND SD2.D2_LOJA     = '" + m->c5_lojacli + "'"
+					_sQuery +=   " AND SD2.D2_TIPO     = '" + m->c5_tipo    + "'"
+					_sQuery +=   " AND SD2.D2_COD      = '" + GDFieldGet ("C6_PRODUTO") + "'"
+					_sQuery += " ORDER BY D2_EMISSAO DESC"
+					_aRetQry = aclone (U_Qry2Array (_sQuery, .F., .F.))
+					if len (_aRetQry) > 0 .and. round (_aRetQry [1, 1], 2) > round (GDFieldGet ("C6_PRCVEN"), 2)
+
+						aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))	, ;
+											alltrim (GDFieldGet ("C6_DESCRI"))	, ;
+											GDFieldGet ("C6_PRCVEN")			, ; 
+											_aRetQry [1, 1]						, ; 
+											_aRetQry [1, 2]						, ;
+											dtoc (stod (_aRetQry [1, 3]))		, ;
+											_aRetQry [1, 4]						, ;
+											_aRetQry [1, 5]						 })
+					endif
+				endif
+			endif
+		next
+              
+		if len (_aUltPrc) > 0
+
+   			// Prepara mensagem para visualizacao
+			_sMsg := "<html>"
+			_sMsg += "<b>Pedido de venda:</b> " + m->c5_num + "<br>" 
+			_sMsg += "<b>Cliente:</b> " + m->c5_cliente + " - " + m->c5_nomecli + "<br>"
+			_sMsg += "<b>Representante:</b> " + m->c5_vend1 + " - " + fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend1, "A3_NOME") + "<br>"
+			_sMsg += "<b>Produtos:</b> <br><br>"
+			for _nUltPrc = 1 to len (_aUltPrc)
+				_sMsg += "<b>"+ _aUltPrc [_nUltPrc, 1] + " </b> - " + _aUltPrc [_nUltPrc, 2] + "(preco atual: " + cvaltochar (_aUltPrc [_nUltPrc, 3]) + " - ult.venda: " + cvaltochar (_aUltPrc [_nUltPrc, 4]) + ")<br>"
+			next
+			_sMsg += "</html>"
+
+			_nOpcao = aviso ("Precos abaixo da regras de estabelecidas pelo comercial", ;
+				"Estao sendo vendidos produtos com precos abaixo das regras estabelecidas pelo comercial!" + chr (13) + chr (10) + "Se confirmar assim mesmo, o pedido ficara´ com bloqueio gerencial.", ;
+				{"Sim", "Nao", "Verificar"}, ;
+				3, ;
+				"Precos abaixo da venda anterior/Tabela de Precos/ Precos abaixo do aumento especificado")
+			if _nOpcao == 1
+
+				// Bloqueia o pedido.
+				m->c5_vaBloq = iif ('P' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'P')
+				U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
+
+				// Grava a maior variacao
+				u_log (_aUltPrc)
+				for _nUltPrc = 1 to len (_aUltPrc)
+					u_log ('linha', _nUltPrc)
+
+					u_log (m->c5_vaPrPed, 100 - _aUltPrc [_nUltPrc, 3] * 100 / _aUltPrc [_nUltPrc, 4])
+					m->c5_vaPrPed = max (m->c5_vaPrPed, 100 - _aUltPrc [_nUltPrc, 3] * 100 / _aUltPrc [_nUltPrc, 4])
+					u_log ('var=', m->c5_vaPrPed)
+				next
+			
+				// verifica se o bloqueio é por ser menor que o aumento
+				for _nUltPrc = 1 to len (_aUltPrc)
+					if _aUltPrc [_nUltPrc, 3] < _aUltPrc [_nUltPrc, 4]		
+						// bloqueia por preço menor que o aumento estabelecido				
+						m->c5_vaBloq = iif ('A' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'A')
+						U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
+					endif
+				next									
+
+				// Cria variavel publica com mensagem, para posterior envio pelo P.E. M410STTS se o usuario vier a gravar o pedido.
+				public _sMsgPUltV := _sMsg
+
+			elseif _nOpcao == 2
+				_sErro = "Venda nao confirmada - preco abaixo do preco anterior/tabela de precos."
+				_lLiberar = .F.
+
+			elseif _nOpcao == 3
+				U_ShowMemo (_sMsg)
+				_sErro = "Venda nao confirmada - preco abaixo do preco anterior/tabela de precos."
+				_lLiberar = .F.
+			endif
+		endif
+		N = _n
+
+		// Prepara algumas variaveis para validacoes posteriores.
+		if _lLiberar
+			_lFaturado = .F.
+			_lBonific  = .F.
+			_lSoGranel = .T.
+			sf4 -> (dbsetorder (1))
+			_n = N
+			for _nLinha = 1 to len (aCols)
+				N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
+				if ! GDDeleted ()
+					if ! sf4 -> (msseek (xfilial ("SF4") + GDFieldGet ("C6_TES"), .F.))
+						u_help ("Cadastro do TES '" + GDFieldGet ("C6_TES") + "' nao localizado!")
+						_lLiberar = .F.
+					else
+						_lFaturado = (sf4 -> f4_margem == '1')
+						_lBonif    = (sf4 -> f4_margem == '3')
+					endif
+					if _lSoGranel .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C6_PRODUTO"), "B1_GRPEMB") != '18'
+						_lSoGranel = .F.
+					endif
+				endif
+			next
+			u_log ('contem itens faturados:', _lFaturado, 'contem itens bonificados:', _lBonific, 'contem apenas itens a granel:', _lSoGranel)
+		endif
+
+		// Valida margem de contribuicao.
+		if _lLiberar 
+			N = _n
+			if _lFaturado .and. ! _lSoGranel  // Ignora bloqueio de margem para pedidos de granel
+				//processa ({|| U_VA_McPed (.F., .T.), "Calculando margem de contribuicao"})
+				processa ({|| U_VA_PEDMRG('GrvLibPV'), "Calculando margem de contribuicao"})
+				
+				_nMargMin = GetMv ("VA_MCPED1")
+				if m->c5_vaMCont < _nMargMin
+					_nOpcao = aviso ("Margem de contribuicao muito baixa", ;
+					                 "Margem de " + cvaltochar (m->c5_vaMCont) + "% (abaixo de " + cvaltochar (_nMargMin) + "%). Pedido vai ficar com bloqueio gerencial. Confirma assim mesmo?", ;
+					                 {"Sim", "Nao"}, ;
+					                 3, ;
+					                 "Margem minima")
+					if _nOpcao == 1							
+						m->c5_vaBloq = iif ('M' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'M')
+						U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
+					elseif _nOpcao == 2
+						_sErro = "Pedido nao confirmado."
+					endif
+				endif
+				
+				if cFilAnt == '01' .and. empty (m->c5_vabloq) .and. m->c5_tpfrete == 'C' .and. m->c5_mvfre == 0 .and. GetMv ("VA_BLPSF") == 'S'
+					_sErro += "Parametro VA_BLPSF: Pedido com frete CIF, mas sem valor de frete para calculo de margem. Liberacao nao sera´ feita. Cadastre rota valida no entregou.com ou informe frete negociado no cadastro do cliente."
+				endif
+			endif
+		endif
+
+		// validacoes RAPEL
+		if _lLiberar .and. m->c5_tipo <> 'B'
+			_wbaserapel = fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VABARAP")
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT dbo.VA_FRAPELPADRAO ('" + M->C5_CLIENTE + "','" + M->C5_LOJACLI + "', '')"
+			_oSQL:Log ()
+			_wRapel = _oSQL:RetQry (1, .F.)
+		
+			if _wbaserapel != '0' 
+				if _wrapel = 0
+					u_help ("Tabela de rapel não cadastrada para esse cliente. Verifique!")
+					_lLiberar = .F.										
+				endif
+			else
+				_sQuery := ""
+				_sQuery += " SELECT 1"
+				_sQuery += "   FROM ZAX010 AS ZAX"
+				_sQuery += "  WHERE ZAX.D_E_L_E_T_  = ''"
+				_sQuery += "    AND ZAX_CLIENT      = '" + M->C5_CLIENTE + "'"
+				_sQuery += "    AND ZAX_LOJA        = '" + M->C5_LOJACLI + "'"
+				aDados := U_Qry2Array(_sQuery)
+     			if len (aDados) > 0
+     				u_help ("Cliente sem base de rapel e com percentuais de rapel cadastrados. Verifique!")
+					_lLiberar = .F.
+    			endif
+			endif
+
+			// verifica a vigencia de contrato e contrato
+			If _wbaserapel <> '0'
+				_sCodBase  := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VACBASE")
+				_sLojaBase := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VALBASE")
+
+				_sQuery := ""
+				_sQuery += " SELECT
+				_sQuery += " 	ZA7_CONT"
+				_sQuery += " FROM ZA7010"
+				_sQuery += " WHERE D_E_L_E_T_ = ''"
+				_sQuery += " AND ZA7_CLI      = '" + _sCodBase          + "'"
+				_sQuery += " AND ZA7_LOJA     = '" + _sLojaBase         + "'"
+				_sQuery += " AND ZA7_VINI    <= '" + DTOS(m->c5_emissao) + "'"
+				_sQuery += " AND ZA7_VFIM    >= '" + DTOS(m->c5_emissao) + "'"
+				aContrato := U_Qry2Array(_sQuery)
+
+				if Len(aContrato) <= 0
+					u_help ("Cliente sem contrato e/ou contrato válido. Verifique!")
+					_lLiberar = .F.
+				endif
+			EndIf
+		endif
+
+		// se pedido é bonificação
+		If _lLiberar
+			If _lBonif // É bonificação
+				m->c5_vaBloq = iif ('B' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'B')
+			EndIf
+		EndIf
+
+		// Se alguma das linhas tinha problemas, nao libera nenhuma.
+		if ! empty (_sErro)
+			u_help (_sErro)
+			for _nLinha = 1 to len (aCols)
+				N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
+				if ! GDDeleted ()
+					GDFieldPut ("C6_QTDLIB", 0)
+				endif
+			next
+		endif
+		CursorArrow ()
+
+	else  // Remover liberacao
+		if ! empty (_sErro)
+			u_help (_sErro)
+		endif
+		CursorWait ()
+		for _nLinha = 1 to len (aCols)
+			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
+			if ! GDDeleted ()
+				GDFieldPut ("C6_QTDLIB", 0)
+			endif
+		next
+		CursorArrow ()
+	endif
+
+	N := _n
+	if type ("oGetDad") == "O"
+		oGetDad:oBrowse:Refresh ()
+	endif
+
+	// retira caracteres especiais do campo de OBS
+	m->c5_obs := U_LimpaEsp(m->c5_obs)
+
+	U_ML_SRArea (_aAreaAnt)
+return
