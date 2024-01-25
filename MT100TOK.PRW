@@ -73,6 +73,7 @@
 // 03/02/2023 - Sandra  - Incluso para aceite de chave para tipo de nota NF3E - (GLPI 13143)
 // 25/05/2023 - Robert  - Nao bloqueia duas NF origem diferentes quando chamado pelo U_VA_GNF2.
 // 19/01/2024 - Sandra  - Habilitado variavel _ValXML. - GLPI (14565) 
+// 25/01/2024 - Robert  - Nao validar XML da especie NF3E (GLPI 14565)
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
