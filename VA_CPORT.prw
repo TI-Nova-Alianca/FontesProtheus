@@ -50,6 +50,7 @@
 // 28/10/2022 - Robert  - Removidos alguns parametros em desuso (da rotina de recebimento safra).
 // 12/01/2023 - Robert  - Instancia object ClsCarSaf antes de chamar tela de fechamento de safra.
 // 25/01/2023 - Robert  - Passa a usar classe ClsCarSaf para atualizar tabela ZZA.
+// 24/01/2024 - Robert  - Criada opcao de exportar historico de pesos lidos da balanca.
 //
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -90,15 +91,17 @@ User Function VA_CPORT ()
 	enddo
 
 	// Submenu de rotinas adicionais
-	aadd (_aRotAdic, {"Pedidos de venda", "U__MATA410 ()" 	, 0, 4})
-	aadd (_aRotAdic, {"SPED NFe"		, "SPEDNFE ()"	  	, 0, 4})
-	aadd (_aRotAdic, {"Guias transito"	, "U_VA_SZQ ()"   	, 0, 4})
-	aadd (_aRotAdic, {"Cons.genericas"	, "EDAPP ()"	  	, 0, 4})
-	aadd (_aRotAdic, {"Cons.NF saida"	, "MATC090 ()"		, 0, 4})
-	aadd (_aRotAdic, {"Pre-nota"		, "MATA140 ()"		, 0, 4})
-	aadd (_aRotAdic, {"Cargas OMS"		, "U_ZT_COMS()"		, 0, 1})
-	aadd (_aRotAdic, {"Receb.uva safra"	, "U_VA_RUS()"		, 0, 4})
-	aadd (_aRotAdic, {"Exporta dados"	, "U_VA_ZZTCON()"	, 0, 4})
+	aadd (_aRotAdic, {"Pedidos de venda"       , "U__MATA410 ()" 	, 0, 4})
+	aadd (_aRotAdic, {"SPED NFe"               , "SPEDNFE ()"	  	, 0, 4})
+	aadd (_aRotAdic, {"Guias transito"         , "U_VA_SZQ ()"   	, 0, 4})
+	aadd (_aRotAdic, {"Cons.genericas"         , "EDAPP ()"	  	, 0, 4})
+	aadd (_aRotAdic, {"Cons.NF saida"          , "MATC090 ()"		, 0, 4})
+	aadd (_aRotAdic, {"Pre-nota"               , "MATA140 ()"		, 0, 4})
+	aadd (_aRotAdic, {"Cargas OMS"             , "U_ZT_COMS()"		, 0, 1})
+	aadd (_aRotAdic, {"Receb.uva safra"        , "U_VA_RUS()"		, 0, 4})
+	aadd (_aRotAdic, {"Exporta dados portaria" , "U_VA_ZZTCON()"	, 0, 4})
+	aadd (_aRotAdic, {"Historico pesos balanca", "U_VA_ZZTHP ()"	, 0, 4})
+	_aRotAdic = asort (_aRotAdic,,, {|_x, _y| _x [1] < _y [1]})
 
 	aRotina = {}
 	aadd (aRotina, {"Pesquisar"		, "AxPesqui"					,0,1})
@@ -109,8 +112,8 @@ User Function VA_CPORT ()
 	aadd (aRotina, {"Impressao"		, "U_ImpZZT(ZZT->ZZT_COD,'', 1)",0,1})
 	aadd (aRotina, {"Lib.peso saida", "U_ZT_LPS ()"					,0,1})
 	aadd (aRotina, {"Manut.XML's"	, "U_ZZX ()"					,0,4})
-	aadd (aRotina, {"&Legenda"		, "U_ZZTLG (.F.)"				,0,5})
-	aadd (aRotina, {"&Outros"		, _aRotAdic						,0,4})
+	aadd (aRotina, {"Legenda"		, "U_ZZTLG (.F.)"				,0,5})
+	aadd (aRotina, {"Outros"		, _aRotAdic						,0,4})
 
 	dbSelectArea("ZZT")
 	dbSetOrder(1)
@@ -907,7 +910,7 @@ User Function VA_ZZTCON()
     Local _aDados := {} 
 
     cPerg   := "VA_ZZTCON"
-	_ValidPerg()
+	_ValidPerg (cPerg)
 	
     If Pergunte(cPerg,.T.)
         _oSQL:= ClsSQL():New ()
@@ -1011,20 +1014,91 @@ User Function VA_ZZTCON()
         u_help("Não foram encontrados dados para consulta")
     EndIf 
 Return
-//
+
+// --------------------------------------------------------------------------
+// Consulta simples do historico de pesos lidos na balanca.
+user function VA_ZZTHP ()
+	local _sTabPeso  := ''
+	local _oSQL      := NIL
+	local _aAmbAnt   := U_SalvaAmb ()
+	local _sPattern  := ''
+	local _lContinua := .T.
+
+	if _lContinua
+		if cFilAnt == '01'
+			_sTabPeso = 'VA_PESOS_BALANCA_MATRIZ'
+		elseif cFilAnt == '07'
+			_sTabPeso = 'VA_PESOS_BALANCA_F07'
+		else
+			u_help ("Sem tratamento para a empresa / filial atual.",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua
+		_ValidPerg ("VA_ZZTHP")
+		if ! pergunte ("VA_ZZTHP")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		// Cria objeto da classe 'expressao regular' para validar formato dos horarios.
+		_oRegex := tlpp.regex.Regex():new ('')
+		_oRegex:setCaseSensitive (.F.)
+
+		// Monta pattern (padrao) de pesquisa usando a sintaxe das expressoes regulares.
+		_sPattern := '([01][0-9]|2[0-3])'  // Horas: de (00 a 19) ou (20 a 23)
+		_sPattern += ':'                   // : separando horas e minutos
+		_sPattern += '[0-5][0-9]'          // Minutos: de 00 a 59
+		_sPattern += ':'                   // : separando minutos e segundos
+		_sPattern += '[0-5][0-9]'          // Segundos: de 00 a 59
+
+		_oRegex:SetPattern (_sPattern)
+
+		if ! _oRegex:PartialMatch (mv_par02)
+			u_help ("Hora inicial '" + mv_par02 + "' invalida. Formato deve ser HH:MM:SS.",, .t.)
+			_lContinua = .F.
+		endif
+		if ! _oRegex:PartialMatch (mv_par04)
+			u_help ("Hora final '" + mv_par04 + "' invalida. Formato deve ser HH:MM:SS.",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery += "SELECT FORMAT (DATAHORA, 'dd/MM/yyyy HH:mm:ss') AS DATA_HORA, PESO AS PESO_KG"
+		_oSQL:_sQuery +=  " FROM " + _sTabPeso
+		_oSQL:_sQuery += " WHERE DATAHORA >= '" + dtos (mv_par01) + ' ' + mv_par02 + "'"
+		_oSQL:_sQuery +=   " AND DATAHORA <= '" + dtos (mv_par03) + ' ' + mv_par04 + "'"
+		_oSQL:_sQuery += " ORDER BY DATAHORA"
+		_oSQL:Log ('[' + procname () + ']')
+		u_showarray (_oSQL:Qry2Array (.f., .f.))
+	endif
+
+	U_SalvaAmb (_aAmbAnt)
+return
+
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
-Static Function _ValidPerg ()
+Static Function _ValidPerg (_sPerg)
     local _aRegsPerg := {}
-    //                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Ticket de       ", "C", 9, 0,  "",   "ZZT", {},  ""})
-    aadd (_aRegsPerg, {02, "Ticket até      ", "C", 9, 0,  "",   "ZZT", {},  ""})
-    aadd (_aRegsPerg, {03, "Dt.entrada de   ", "D", 8, 0,  "",     " ", {},  ""})
-	aadd (_aRegsPerg, {04, "Dt.entrada até  ", "D", 8, 0,  "",     " ", {},  ""})
-    aadd (_aRegsPerg, {05, "Dt.saída de     ", "D", 8, 0,  "",     " ", {},  ""})
-	aadd (_aRegsPerg, {06, "Dt.saída até    ", "D", 8, 0,  "",     " ", {},  ""})
-    aadd (_aRegsPerg, {07, "Placa           ", "C", 8, 0,  "",     " ", {},  ""})
-    aadd (_aRegsPerg, {08, "Peso            ", "N", 1, 0,  "",     " ", {"Ambos", "Com difer.", "Sem difer."},,  ""})
-	
-    U_ValPerg (cPerg, _aRegsPerg)
+
+	if _sPerg == "VA_ZZTCON"
+		//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
+		aadd (_aRegsPerg, {01, "Ticket de       ", "C", 9, 0,  "",   "ZZT", {},  ""})
+		aadd (_aRegsPerg, {02, "Ticket até      ", "C", 9, 0,  "",   "ZZT", {},  ""})
+		aadd (_aRegsPerg, {03, "Dt.entrada de   ", "D", 8, 0,  "",     " ", {},  ""})
+		aadd (_aRegsPerg, {04, "Dt.entrada até  ", "D", 8, 0,  "",     " ", {},  ""})
+		aadd (_aRegsPerg, {05, "Dt.saída de     ", "D", 8, 0,  "",     " ", {},  ""})
+		aadd (_aRegsPerg, {06, "Dt.saída até    ", "D", 8, 0,  "",     " ", {},  ""})
+		aadd (_aRegsPerg, {07, "Placa           ", "C", 8, 0,  "",     " ", {},  ""})
+		aadd (_aRegsPerg, {08, "Peso            ", "N", 1, 0,  "",     " ", {"Ambos", "Com difer.", "Sem difer."},,  ""})
+	elseif _sPerg == "VA_ZZTHP"
+		//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
+		aadd (_aRegsPerg, {01, "Dada inicial                  ", "D", 8, 0,  "",     " ", {},  ""})
+		aadd (_aRegsPerg, {02, "Hora inicial(formato HH:MM:SS)", "C", 8, 0,  "",     " ", {},  ""})
+		aadd (_aRegsPerg, {03, "Dada final                    ", "D", 8, 0,  "",     " ", {},  ""})
+		aadd (_aRegsPerg, {04, "Hora final(formato HH:MM:SS)  ", "C", 8, 0,  "",     " ", {},  ""})
+	endif
+	U_ValPerg (_sPerg, _aRegsPerg)
 Return
