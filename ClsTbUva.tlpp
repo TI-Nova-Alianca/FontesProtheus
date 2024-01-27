@@ -49,6 +49,7 @@ CLASS ClsTbUva from ClsBase
 
 	// Declaracao dos Metodos da classe
 	public  METHOD New ()
+	private METHOD ConferenciaEntreGraus ()
 	private METHOD ConfSeq ()
 	private METHOD DefPAgio ()
 	private METHOD DistrAgios ()
@@ -81,24 +82,77 @@ Return ::self
 
 
 // --------------------------------------------------------------------------
+// Confere se o preco de cada grau eh igual ou maior que o preco do grau anterior.
+// Jah tive varios problemas com isso e achei bom ter uma conferencia geral.
+METHOD ConferenciaEntreGraus () class ClsTbUva
+	local _lRet         := .T.
+	local _nGrupo       := 0
+	local _nPosGrau     := 0
+	local _aPrcParaConferir := {}
+	local _oGrauDeGrupo := NIL
+
+	for _nGrupo = 1 to len (::Grupos)
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Verificando coerencia entre precos do grupo ' + cvaltochar (_nGrupo))
+		_aPrcParaConferir = {}
+		for _nPosGrau = 1 to len (::Grupos [_nGrupo]['ListaDeGraus'])
+			//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Verificando pos ' + cvaltochar (_nPosGrau))
+			_oGrauDeGrupo = ::Grupos [_nGrupo]['ListaDeGraus'][_nPosGrau]
+			aadd (_aPrcParaConferir, {_oGrauDeGrupo ['Grau'], _oGrauDeGrupo ['PrecoCodBase']})
+		next
+		if ! ::ConfSeq (;
+			_aArray = _aPrcParaConferir;
+			, _nColGrau = 1;
+			, _nColValor = 2;
+			, _lPodeSerIgual = .T.;
+			)
+			_Super:SomaMsg ('A distribuicao de precos entre os graus do grupo ' ;
+				+ ::Grupos [_nGrupo]['Codigo'] ;
+				+ '(' + alltrim (::Grupos [_nGrupo]['Descricao']) + ')' ;
+				+ ' nao ficou correta: ' ;
+				+ ::MsgConfSeq ;
+			)
+			::MsgConfSeq = ''
+			_lRet = .F.
+		endif
+	next
+return _lRet
+
+
+// --------------------------------------------------------------------------
 // Confere se a sequencia encontra-se ordenada (valor de cada grau sempre maior que o anterior)
-METHOD ConfSeq (_aArray as array, _nColGrau as numeric, _nColValor as numeric) class ClsTbUva
+METHOD ConfSeq (;
+	_aArray as array;
+	, _nColGrau as numeric;
+	, _nColValor as numeric;
+	, _lPodeSerIgual as logical;
+) class ClsTbUva
+
 	local _nInd1 := 0
 	local _nInd2 := 0
 	local _lRet  := .T.
-	U_Log2 ('debug', '[' + procname () + ']Array para analisar:')
-	U_Log2 ('debug', _aArray)
+	local _lErro := .F.
+
+	// Para cada grau, compara com os anteriores (nao adianta iniciar na primeira posicao)
 	for _nInd1 = 2 to len (_aArray)
-		U_Log2 ('debug', '[' + procname () + ']Testando pos ' + cvaltochar (_nInd1))
+	
+		// Todos os graus anteriores
 		for _nInd2 = _nInd1 - 1 to 1 step -1
-//			U_Log2 ('debug', '[' + procname () + ']Testando pos ' + cvaltochar (_nInd2) + ' contra ' + cvaltochar (_nInd1))
-			if _aArray [_nInd2, _nColValor] >= _aArray [_nInd1, _nColValor]
+			_lErro = .F.
+			if _lPodeSerIgual
+				if _aArray [_nInd2, _nColValor] > _aArray [_nInd1, _nColValor]
+					_lErro = .T.
+				endif
+			else
+				if _aArray [_nInd2, _nColValor] >= _aArray [_nInd1, _nColValor]
+					_lErro = .T.
+				endif
+			endif
+			if _lErro
 				::MsgConfSeq += 'Grau ' + cvaltochar (_aArray [_nInd2, _nColGrau]) ;
 					+ ' (' + cvaltochar (_aArray [_nInd2, _nColValor]) ;
 					+ ') >= grau ' + cvaltochar (_aArray [_nInd1, _nColGrau]) ;
 					+ '(' + cvaltochar (_aArray [_nInd1, _nColValor]) + ')' + chr (13) + chr (10)
 				_lRet = .F.
-				exit
 			endif
 		next
 	next
@@ -347,22 +401,29 @@ METHOD GeraAtrib ( ;
 			(_sAliasQ) -> (dbclosearea ())
 			dbselectarea ("SB1")
 
-			// Gera lista de graus e respectivos % de agio sobre o grau base.
+			// Gera lista de graus para posterior distribuicao de % agio sobre o grau base.
+			// Comentario (estah mais para um desabafo) a quem porventura venha
+			// a dar manutencao neste fonte: inicialmente eu nao usava round()
+			// para gravar o grau na array _aGrausComAgio. Descobri (como
+			// sempre) da pior forma que a array ficava com alguns valores
+			// quebrados (ex: 7,99999999) quando deveria ter o valor inteiro.
+			// Mais adiante, ao testar se eram graus inteiros, dava erro!
 			_aGrausDoGrupo = {}
 			_aGrausComAgio = {}
 			for _nGrau = ::GrauIniTab to ::GrauFimTab step _nStepGrau
-				aadd (_aGrausComAgio, {_nGrau, 0})
+				aadd (_aGrausComAgio, {round (_nGrau, 1), 0})
 			next
 
 			// Define o % de agio (a ser aplicado sobre o grau base) para cada grau.
 			_lContinua = ::DistrAgios (@_aGrausComAgio, _oGrupoTbUva ['GrauBase'])
-			U_Log2 ('debug', '[' + procname () + ']Agios distribuidos:')
-			U_Log2 ('debug', _aGrausComAgio)
+//			U_Log2 ('debug', '[' + procname () + ']Agios distribuidos:')
+//			U_Log2 ('debug', _aGrausComAgio)
 
 			// Confere se a sequencia de agios gerada encontra-se ordenada (cada grau sempre maior que o anterior)
-			if ! ::ConfSeq (_aGrausComAgio, 1, 2)
-				U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']A distribuicao de agios nao esta com sequenciamento correto')
-				U_Log2 ('debug', '[' + procname () + ']' + ::MsgConfSeq)
+			if ! ::ConfSeq (_aGrausComAgio, 1, 2, .F.)
+				U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']A distribuicao de agios do grupo ' + (_sAlias13) -> zx5_13grup + ' nao esta com sequenciamento correto')
+				U_Log2 ('erro', '[' + procname () + ']' + ::MsgConfSeq)
+				::MsgConfSeq = ''
 			endif
 
 			// Para cada grau, calcula seus precos e transforma-o em objeto.
@@ -379,7 +440,7 @@ METHOD GeraAtrib ( ;
 					_nPreco = _oGrupoTbUva ['PrecoGrauBase']
 					_nPreco += _nPreco * _aGrausComAgio [_nGrau, 2] / 100
 					_oGrauDeGrupo ['PrecoCodBase'] = _nPreco
-/*
+
 					// Se foi definido um preco minimo para este grupo...
 					if _oGrupoTbUva ['PrecoMinimo'] > 0
 				//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Preco minimo para este grupo: $ ' + cvaltochar (_oGrupoTbUva ['PrecoMinimo']))
@@ -400,7 +461,7 @@ METHOD GeraAtrib ( ;
 							endif
 						endif
 					endif
-*/
+
 					// Deixa prontas tags de precos das possiveis variacoes,
 					// como organicas e classificacoes de viniferas. Vou
 					// deixar isto chumbado no programa por que, em 15 anos
@@ -418,18 +479,6 @@ METHOD GeraAtrib ( ;
 					_oGrauDeGrupo ['PrecoFinaEspaldeiraClasC']    = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasC'] / 100)
 					_oGrauDeGrupo ['PrecoFinaEspaldeiraClasD']    = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasD'] / 100)
 					_oGrauDeGrupo ['PrecoFinaEspaldeiraClasDS']   = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] / 100)
-
-					// Validacao extra: cada preco deve sempre ser maior que o preco do grau anterior
-					if _nPrcGrauAnt != 0 .and. _oGrauDeGrupo ['PrecoCodBase'] < _nPrcGrauAnt
-						_Super:SomaMsg ("Problemas na geracao de precos! Preco do grau " ;
-							+ cvaltochar (_oGrauDeGrupo ['Grau']) + " = " + cvaltochar (_oGrauDeGrupo ['PrecoCodBase']) ;
-							+ ' contra ' + cvaltochar (_nPrcGrauAnt) + ' do grau anterior.')
-//						_lContinua = .F.
-						U_Log2 ('debug', '[' + procname () + "]Problemas na geracao de precos! Preco do grau " ;
-							+ cvaltochar (_oGrauDeGrupo ['Grau']) + " = " + cvaltochar (_oGrauDeGrupo ['PrecoCodBase']) ;
-							+ ' contra ' + cvaltochar (_nPrcGrauAnt) + ' do grau anterior.')
-					endif
-					_nPrcGrauAnt = _oGrauDeGrupo ['PrecoCodBase']
 
 					// Alimenta array com um objeto representando dados de cada grau deste grupo
 					aadd (_oGrupoTbUva ['ListaDeGraus'], _oGrauDeGrupo)
@@ -470,18 +519,28 @@ METHOD GeraAtrib ( ;
 
 			(_sAlias13) -> (dbskip ())
 		enddo
+		(_sAlias13) -> (dbclosearea ())
+		dbselectarea ("SB1")
+
 		::Grupos:Set (_aGrupos)
 
 		// Durante o desenvolvimento, achei interessante esportar o JSON
 		// para arquivo, onde posso visualizar mais facilmente.
-		_sArq := 'c:\temp\teste.json'
-		if file (_sArq)
-			delete file (_sArq)
-		endif
-		_nHdl = fcreate (_sArq, 0)
-		fwrite (_nHdl, ::Grupos:ToJSON ())
-		fclose (_nHdl)
+		// _sArq := 'c:\temp\teste.json'
+		// if file (_sArq)
+		// 	delete file (_sArq)
+		// endif
+		// _nHdl = fcreate (_sArq, 0)
+		// fwrite (_nHdl, ::Grupos:ToJSON ())
+		// fclose (_nHdl)
 
+	endif
+
+	// Validacao extra: cada preco deve sempre ser maior ou igual ao preco
+	// do grau anterior. Jah tive problemas com isso mais de uma vez, entao
+	// acho interessante gastar um pouco mais de processamento e verificar.
+	if _lContinua
+		_lContinua = ::ConferenciaEntreGraus ()
 	endif
 
 	// Se deu algum problema, limpa os dados principais para inutilizar o objeto.
@@ -600,6 +659,7 @@ METHOD DefPAgio (_nEsteGrau as numeric, _nGrauBase as numeric) Class ClsTbUva
 	else
 		_Super:SomaMsg ("Sem definicao de agio entre graus para tipo '" + ::TipoAgioEntreGraus + "'.")
 	endif
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retornando agio ' + cvaltochar (_nRetAgio) + ' para o grau ' + cvaltochar (_nEsteGrau) + ' (gb = ' + cvaltochar (_nGrauBase) + ')')
 return _nRetAgio
 
 
@@ -629,6 +689,8 @@ METHOD DistrAgios (_aGraus as array, _nGrauBase as numeric) Class ClsTbUva
 		endif
 		_nAuxGrau ++
 	enddo
+//	U_Log2 ('debug', '[' + procname () + ']Agios para graus inteiros:')
+//	U_Log2 ('debug', _aGraus)
 
 	// Tendo os agios entre graus inteiros, vou calcular para os graus decimais (se existirem).
 	_nAuxGrau = 1
@@ -1022,7 +1084,9 @@ return _sHTM
 
 // --------------------------------------------------------------------------
 static function _IsInt (_nValor as numeric)
-return (_nValor == int (_nValor))
+	local _lRet := (_nValor == int (_nValor))
+//	U_Log2 ('debug', '[' + procname () + ']Retornando ' + cvaltochar (_lRet) + ' para ' + cvaltochar (_nValor * 100000000))
+return _lRet
 
 
 // --------------------------------------------------------------------------

@@ -11,7 +11,7 @@
 // #Modulos           #TODOS
 //
 // Historico de alteracoes:
-//
+// 25/01/2024 - Alteração validação dos caracteres º,ª,__,Â, conforme GLPI (14808)
 // ---------------------------------------------------------------------------------------------------------
 User Function LimpaEsp(cConteudo)
     Local aArea       := GetArea()
@@ -43,11 +43,11 @@ User Function LimpaEsp(cConteudo)
     cConteudo := StrTran(cConteudo, "|" , "")
     cConteudo := StrTran(cConteudo, ":" , "")
     cConteudo := StrTran(cConteudo, ";" , "")
-    cConteudo := StrTran(cConteudo, '"' , '')
-    cConteudo := StrTran(cConteudo, '°' , '')
-    cConteudo := StrTran(cConteudo, 'ª' , '')
-    cConteudo := StrTran(cConteudo, '--', '')
-    cConteudo := StrTran(cConteudo, 'Â',  '')
+    cConteudo := StrTran(cConteudo, '"' , "")
+    cConteudo := StrTran(cConteudo, "°" , "")
+    cConteudo := StrTran(cConteudo, "ª" , "")
+    cConteudo := StrTran(cConteudo, "--", "")
+    cConteudo := StrTran(cConteudo, "Â" , "")
      
     RestArea(aArea)
 Return cConteudo
