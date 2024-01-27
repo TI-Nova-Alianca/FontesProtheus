@@ -15,6 +15,9 @@
 // Historico de alteracoes:
 // 12/11/2023 - Robert - Gravacao de agios em array interna e inicio de definicao de formulas para calculo de precos.
 // 18/01/2024 - Robert - Criada tag 'PrecoFinaLatadaClasDS' (antes havia 'PrecoFinaLatadaClasD')
+// 25/01/2024 - Robert - Criada tag 'PrecoFinaLatadaClasC' (simplesmente esqueci quando criei a classe !!!)
+// 26/01/2024 - Robert - Implementado tipo de agio '1' entre graus (campo ZA_TPAGIOG)
+//                     - Melhorias na geracao do HTML
 //
 
 #Include "Protheus.ch"
@@ -37,13 +40,16 @@ CLASS ClsTbUva from ClsBase
 	private data GrauIniTab  // Grau inicial a ser gerado
 	private data GrauFimTab  // Grau final a ser gerado
 	public  data Grupos     // Grupos de uvas cfe. tabela 13 do ZX5
+	private data MsgConfSeq  // Mensagem explicativa do erro encontrado na conferencia de sequenciamento de graus
+	public  data NomeTabela  // Nome (descritivo) da tabela
 	public  data SubGrupos   // Subgrupos de uvas cfe. tabela 13 do ZX5
-	public  data TipoPreco   // [E]ntrada, [C]ompra, [M]oc(CONAB)
+	public  data TipoAgioEntreGraus  // Cfe.campo ZA_TPAGIOG: [A]lianca;[M]OC;...
 	public  data TipoUva     // [C]omum, [F]ina
 	public  data UltMsg      // Mensagens (geralmente de erro)
 
 	// Declaracao dos Metodos da classe
 	public  METHOD New ()
+	private METHOD ConfSeq ()
 	private METHOD DefPAgio ()
 	private METHOD DistrAgios ()
 	public  METHOD GeraAtrib ()
@@ -59,9 +65,11 @@ METHOD New () Class ClsTbUva
 	::CodTabela   = ''
 	::Conducao    = ''
 	::GrauDecimal = ''
-	::Grupos     = JsonObject():New()
+	::Grupos      = JsonObject():New()
+	::MsgConfSeq  = ''
+	::NomeTabela  = ''
 	::SubGrupos   = {}
-	::TipoPreco   = ''
+	::TipoAgioEntreGraus = ''
 	::TipoUva     = ''
 	::UltMsg      = ''
 
@@ -73,25 +81,56 @@ Return ::self
 
 
 // --------------------------------------------------------------------------
+// Confere se a sequencia encontra-se ordenada (valor de cada grau sempre maior que o anterior)
+METHOD ConfSeq (_aArray as array, _nColGrau as numeric, _nColValor as numeric) class ClsTbUva
+	local _nInd1 := 0
+	local _nInd2 := 0
+	local _lRet  := .T.
+	U_Log2 ('debug', '[' + procname () + ']Array para analisar:')
+	U_Log2 ('debug', _aArray)
+	for _nInd1 = 2 to len (_aArray)
+		U_Log2 ('debug', '[' + procname () + ']Testando pos ' + cvaltochar (_nInd1))
+		for _nInd2 = _nInd1 - 1 to 1 step -1
+//			U_Log2 ('debug', '[' + procname () + ']Testando pos ' + cvaltochar (_nInd2) + ' contra ' + cvaltochar (_nInd1))
+			if _aArray [_nInd2, _nColValor] >= _aArray [_nInd1, _nColValor]
+				::MsgConfSeq += 'Grau ' + cvaltochar (_aArray [_nInd2, _nColGrau]) ;
+					+ ' (' + cvaltochar (_aArray [_nInd2, _nColValor]) ;
+					+ ') >= grau ' + cvaltochar (_aArray [_nInd1, _nColGrau]) ;
+					+ '(' + cvaltochar (_aArray [_nInd1, _nColValor]) + ')' + chr (13) + chr (10)
+				_lRet = .F.
+				exit
+			endif
+		next
+	next
+return _lRet
+
+
+// --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
-METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class ClsTbUva
+METHOD GeraAtrib ( ;
+	  _sCodTab  as character ;  // Codigo da tabela. Deve existir no ZA_COD
+	, _sTipoUva as character ;  // Tipo de uva: [C]omum;[F]ina
+	, _sConduc  as character ;  // Forma ed conducao: [L]atada;[E]spaldeira
+	, _sGrauDec as character ;  // Gerar todos os graus [D]ecimais ou somente graus [I]nteiros
+	) Class ClsTbUva
+
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _oSQL      := NIL
-	local _aDados    := {}
-	local _nDado     := 0
 	local _sAliasQ   := ''
 	local _nStepGrau := 0
 	local _nGrau     := 0
 	local _nPreco    := 0
 	local _aGrausComAgio := {}
 	local _aGrausDoGrupo := {}
-	local _oGrauDeGrupo := NIL  // Pensando na impressao da tabela, seriam os dados de uma 'celula' (determinado grau de determinado grupo)
-	local _oGrupoTbUva  := NIL
-	local _aGrupos  := {}
+	local _oGrauDeGrupo  := NIL  // Pensando na impressao da tabela, seriam os dados de uma 'celula' (determinado grau de determinado grupo)
+	local _oGrupoTbUva   := NIL
+	local _aGrupos       := {}
 	local _aListaDeGraus := {}
-	local _oVariedade := NIL
-	local _sObsSubgrupo := ''
+	local _oVariedade    := NIL
+	local _sObsSubgrupo  := ''
+	local _sAlias13      := ''
+	local _nPrcGrauAnt   := 0
 
 	if empty (_sCodTab)
 		_Super:SomaMsg ("Codigo da tabela deve ser informado.")
@@ -112,12 +151,6 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 		::GrauDecimal = _sGrauDec
 		_nStepGrau = iif (::GrauDecimal == 'D', 0.1, 1)
 	endif
-	if empty (_sTipoPrc)
-		_Super:SomaMsg ("Tipo de preco (C=compra; M=MOC) deve ser informada.")
-		_lContinua = .F.
-	else
-		::TipoPreco   = _sTipoPrc
-	endif
 	if empty (_sTipoUva)
 		_Super:SomaMsg ("Tipo de uva (C=comum;V=vinifera) deve ser informado.")
 		_lContinua = .F.
@@ -129,21 +162,20 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 	if _lContinua
 		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou gerar array de grupos')
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT ZX5_13SAFR, ZX5_13GRUP, ZX5_13DESC, ZX5_13GBAS, ZX5_13GMAG, ZX5_13PMIN"
-		if ::TipoPreco == 'C'
-			_oSQL:_sQuery += ", ZX5_13PBCO"
-		else
-			_oSQL:_sQuery += ", 0 as preco"  // Ainda tenho que ver de onde pegar
-		endif
-
+		_oSQL:_sQuery := "SELECT ZA_DESC, ZA_TPAGIOG"
+		_oSQL:_sQuery += ", ZX5_13SAFR, ZX5_13GRUP, ZX5_13DESC, ZX5_13GBAS, ZX5_13GMAG, ZX5_13PMIN, ZX5_13PBCO"
 		_oSQL:_sQuery += ", ZX5_13AEPR, ZX5_13AEAA, ZX5_13AEA, ZX5_13AEC, ZX5_13AED, ZX5_13AEDS"  // Acrescimos cfe classificacao espaldeira
-		_oSQL:_sQuery += ", ZX5_13ALA, ZX5_13ALD"  // Acrescimos cfe classificacao latada
+		_oSQL:_sQuery += ", ZX5_13ALA, ZX5_13ALC, ZX5_13ALDS"  // Acrescimos cfe classificacao latada
 		_oSQL:_sQuery += ", ZX5_13PAOB, ZX5_13PAOE, ZX5_13PAOO"  // Acrescimos cfe bordadura/em conversao/organica
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_13 "
-		_oSQL:_sQuery += " WHERE ZX5_13.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZA") + " SZA "
+		_oSQL:_sQuery +=      " ," + RetSQLName ("ZX5") + " ZX5_13 "
+		_oSQL:_sQuery += " WHERE SZA.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SZA.ZA_FILIAL = '" + xfilial ("SZA") + "'"
+		_oSQL:_sQuery +=   " AND SZA.ZA_COD    = '" + ::CodTabela + "'"
+		_oSQL:_sQuery +=   " AND ZX5_13.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_TABELA = '13'"
-		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13SAFR = '" + ::CodTabela + "'"
+		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13SAFR = SZA.ZA_COD"  //'" + ::CodTabela + "'"
 		_oSQL:_sQuery +=   " AND LEN (ZX5_13.ZX5_13GRUP) >= 3"  // Nao quero listar os 'grandes grupos'
 		if ::TipoUva == 'C'
 			_oSQL:_sQuery += " AND ZX5_13.ZX5_13GRUP like '1%'"  // Lista comuns
@@ -168,11 +200,21 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 		_oSQL:_sQuery +=             ")"
 
 		_oSQL:_sQuery += " ORDER BY ZX5_13GRUP"
-	//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
-		if len (_aDados) == 0
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+	//	_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		_sAlias13 = _oSQL:Qry2Trb (.F.)
+	//	if len (_aDados) == 0
+		if (_sAlias13) -> (eof ())
 			_Super:SomaMsg ("Tabela de precos '" + ::CodTabela + "' nao existe, ou nao tem nenhum grupo de variedades informado.")
 			_lContinua = .F.
+		else
+			if empty ((_sAlias13) -> za_tpagiog)
+				_Super:SomaMsg ("Tipo de agio nao definido no campo ZA_TPAGIOG.")
+				_lContinua = .F.
+			else
+				::NomeTabela         = (_sAlias13) -> za_desc
+				::TipoAgioEntreGraus = (_sAlias13) -> za_tpagiog
+			endif
 		endif
 	endif
 	
@@ -180,31 +222,34 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 	if _lContinua
 		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou gerar grupos')
 		_aGrupos = {}
-		for _nDado = 1 to len (_aDados)
+	//	for _nDado = 1 to len (_aDados)
+		(_sAlias13) -> (dbgotop ())
+		do while ! (_sAlias13) -> (eof ())
 
 			// Pretendo migrar o formato array para formato JSON, mas tenho que
 			// fazer isso com cuidado para nao me perder. Entao trabalharei com
 			// os 2 formatos em paralelo por enquanto. Depois de ter tudo em JSON
 			// pretendo eliminar a parte em array.
 			_oGrupoTbUva = JsonObject():New()
-			_oGrupoTbUva ['Codigo']                    = _aDados [_nDado, 2]
-			_oGrupoTbUva ['Descricao']                 = _aDados [_nDado, 3]
-			_oGrupoTbUva ['GrauBase']                  = _aDados [_nDado, 4]
-			_oGrupoTbUva ['GrauMinimoParaAgio']        = _aDados [_nDado, 5]
-			_oGrupoTbUva ['PrecoMinimo']               = _aDados [_nDado, 6]
-			_oGrupoTbUva ['PrecoGrauBase']             = _aDados [_nDado, 7]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasPR'] = _aDados [_nDado, 8]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasAA'] = _aDados [_nDado, 9]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasA']  = _aDados [_nDado, 10]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasC']  = _aDados [_nDado, 11]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasD']  = _aDados [_nDado, 12]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] = _aDados [_nDado, 13]
-			_oGrupoTbUva ['AcrescimoLatadaClasA']      = _aDados [_nDado, 14]
-			_oGrupoTbUva ['AcrescimoLatadaClasD']      = _aDados [_nDado, 15]
-			_oGrupoTbUva ['AcrescimoLatadaClasDS']     = _aDados [_nDado, 15]  // Nao tenho um tratamento especifico para diferenciar D e DS (latada) quanto a precos.
-			_oGrupoTbUva ['AgioOrganicaBordadura']     = _aDados [_nDado, 16]
-			_oGrupoTbUva ['AgioOrganicaEmConversao']   = _aDados [_nDado, 17]
-			_oGrupoTbUva ['AgioOrganicaOrganica']      = _aDados [_nDado, 18]
+			_oGrupoTbUva ['Codigo']                    = (_sAlias13) -> zx5_13grup  // _aDados [_nDado, 2]
+			_oGrupoTbUva ['Descricao']                 = (_sAlias13) -> zx5_13desc  // _aDados [_nDado, 3]
+			_oGrupoTbUva ['GrauBase']                  = (_sAlias13) -> zx5_13gbas  // _aDados [_nDado, 4]
+			_oGrupoTbUva ['GrauMinimoParaAgio']        = (_sAlias13) -> zx5_13gmag  // _aDados [_nDado, 5]
+			_oGrupoTbUva ['PrecoMinimo']               = (_sAlias13) -> zx5_13pmin  // _aDados [_nDado, 6]
+			_oGrupoTbUva ['PrecoGrauBase']             = (_sAlias13) -> zx5_13pbco  // _aDados [_nDado, 7]
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasPR'] = (_sAlias13) -> zx5_13aepr  // _aDados [_nDado, 8]
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasAA'] = (_sAlias13) -> zx5_13aeaa  // _aDados [_nDado, 9]
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasA']  = (_sAlias13) -> zx5_13aea   // _aDados [_nDado, 10]
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasC']  = (_sAlias13) -> zx5_13aec   // _aDados [_nDado, 11]
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasD']  = (_sAlias13) -> zx5_13aed   // _aDados [_nDado, 12]
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] = (_sAlias13) -> zx5_13aeds  // _aDados [_nDado, 13]
+			_oGrupoTbUva ['AcrescimoLatadaClasA']      = (_sAlias13) -> zx5_13ala  // _aDados [_nDado, 14]
+			_oGrupoTbUva ['AcrescimoLatadaClasC']      = (_sAlias13) -> zx5_13alc  // _aDados [_nDado, 15]  // Nao tenho campo (deveria ser ZX5_13ALC) na tabela ainda
+		//	_oGrupoTbUva ['AcrescimoLatadaClasD']      = (_sAlias13) -> zx5_13al ? // _aDados [_nDado, 15]
+			_oGrupoTbUva ['AcrescimoLatadaClasDS']     = (_sAlias13) -> zx5_13alds  // _aDados [_nDado, 15]  // Nao tenho um tratamento especifico para diferenciar D e DS (latada) quanto a precos.
+			_oGrupoTbUva ['AgioOrganicaBordadura']     = (_sAlias13) -> zx5_13paob  // _aDados [_nDado, 16]
+			_oGrupoTbUva ['AgioOrganicaEmConversao']   = (_sAlias13) -> zx5_13paoe  // _aDados [_nDado, 17]
+			_oGrupoTbUva ['AgioOrganicaOrganica']      = (_sAlias13) -> zx5_13paoo  // _aDados [_nDado, 18]
 			_oGrupoTbUva ['ListaDeSubgrupos']          = {}
 			_oGrupoTbUva ['ListaDeVariedades']         = {}
 			_oGrupoTbUva ['ListaDeGraus']              = {}
@@ -227,7 +272,8 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
-			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+//			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + (_sAlias13) -> zx5_13grup + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_BASE"
 			_oSQL:_sQuery +=   " AND V.FINA_COMUM = 'C'"
 			_oSQL:_sQuery += " union all"
@@ -242,7 +288,8 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
-			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+//			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + (_sAlias13) -> zx5_13grup + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_FINA_CLAS_COMUM"
 			_oSQL:_sQuery +=   " AND V.FINA_COMUM = 'F'"
 			_oSQL:_sQuery += " union all"
@@ -257,7 +304,8 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
-			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+//			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + (_sAlias13) -> zx5_13grup + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_BASE"
 			_oSQL:_sQuery +=   " AND V.FINA_COMUM = 'F'"
 			_oSQL:_sQuery += " union all"
@@ -272,7 +320,8 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = '" + ::CodTabela + "'"
-			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+//			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + _aDados [_nDado, 2] + "'"
+			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = '" + (_sAlias13) -> zx5_13grup + "'"
 			_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = V.COD_PARA_ESPUMANTE"
 			_oSQL:_sQuery +=   " AND V.FINA_COMUM = 'F'"
 			_oSQL:_sQuery += " ORDER BY DESC_RESUM, COD_BASE"
@@ -307,59 +356,84 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 
 			// Define o % de agio (a ser aplicado sobre o grau base) para cada grau.
 			_lContinua = ::DistrAgios (@_aGrausComAgio, _oGrupoTbUva ['GrauBase'])
+			U_Log2 ('debug', '[' + procname () + ']Agios distribuidos:')
+			U_Log2 ('debug', _aGrausComAgio)
+
+			// Confere se a sequencia de agios gerada encontra-se ordenada (cada grau sempre maior que o anterior)
+			if ! ::ConfSeq (_aGrausComAgio, 1, 2)
+				U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']A distribuicao de agios nao esta com sequenciamento correto')
+				U_Log2 ('debug', '[' + procname () + ']' + ::MsgConfSeq)
+			endif
 
 			// Para cada grau, calcula seus precos e transforma-o em objeto.
 			if _lContinua
 				_aListaDeGraus = {}
+				_nPrcGrauAnt = 0
 				for _nGrau = 1 to len (_aGrausComAgio)
 					_oGrauDeGrupo := JsonObject():New()
+					_oGrauDeGrupo ['ObsGrauDeGrupo']      = ''
 					_oGrauDeGrupo ['Grau']                = _aGrausComAgio [_nGrau, 1]
 					_oGrauDeGrupo ['AgioSobreGrauBase']   = _aGrausComAgio [_nGrau, 2]
 
-					// Abaixo de determinado grau, usa preco minimo.
-					if _aGrausComAgio [_nGrau, 1] < _oGrupoTbUva ['GrauMinimoParaAgio']
-						_oGrauDeGrupo ['PrecoCodBase']                = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoCodOrganicaBordadura']   = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'] = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaLatadaClasA']        = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaLatadaClasB']        = _oGrupoTbUva ['PrecoMinimo']
-					//	_oGrauDeGrupo ['PrecoFinaLatadaClasD']        = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaLatadaClasDS']       = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasPR']   = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasAA']   = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasA']    = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasC']    = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasD']    = _oGrupoTbUva ['PrecoMinimo']
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasDS']   = _oGrupoTbUva ['PrecoMinimo']
-					else
-						// Se for um grau 'normal', aplica regra de agio sobre o preco do grau base.
-						_nPreco = _oGrupoTbUva ['PrecoGrauBase']
-						_nPreco += _nPreco * _aGrausComAgio [_nGrau, 2] / 100
-						_oGrauDeGrupo ['PrecoCodBase']                = _nPreco
-						
-						// Deixa prontas tags de precos das possiveis variacoes,
-						// como organicas e classificacoes de viniferas. Vou
-						// deixar isto chumbado no programa por que, em 15 anos
-						// de Cooperativa, soh vi serem criadas novas classes
-						// quando unimos as 5 cooperativas...
-						_oGrauDeGrupo ['PrecoCodOrganicaBordadura']   = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaBordadura'] / 100)
-						_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'] = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaEmConversao'] / 100)
-						_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _nPreco * (1 + _oGrupoTbUva ['AgioOrganicaOrganica'] / 100)
-						_oGrauDeGrupo ['PrecoFinaLatadaClasA']        = _nPreco * (1 + _oGrupoTbUva ['AcrescimoLatadaClasA'] / 100)
-					//	_oGrauDeGrupo ['PrecoFinaLatadaClasD']        = _nPreco * (1 + _oGrupoTbUva ['AcrescimoLatadaClasD'] / 100)
-						_oGrauDeGrupo ['PrecoFinaLatadaClasDS']       = _nPreco * (1 + _oGrupoTbUva ['AcrescimoLatadaClasDS'] / 100)
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasPR']   = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasPR'] / 100)
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasAA']   = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasAA'] / 100)
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasA']    = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasA'] / 100)
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasC']    = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasC'] / 100)
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasD']    = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasD'] / 100)
-						_oGrauDeGrupo ['PrecoFinaEspaldeiraClasDS']   = _nPreco * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] / 100)
+					// Aplica regra de agio sobre o preco do grau base.
+					_nPreco = _oGrupoTbUva ['PrecoGrauBase']
+					_nPreco += _nPreco * _aGrausComAgio [_nGrau, 2] / 100
+					_oGrauDeGrupo ['PrecoCodBase'] = _nPreco
+/*
+					// Se foi definido um preco minimo para este grupo...
+					if _oGrupoTbUva ['PrecoMinimo'] > 0
+				//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Preco minimo para este grupo: $ ' + cvaltochar (_oGrupoTbUva ['PrecoMinimo']))
+					
+						// Se foi definido um grau limite para preco minimo,
+						// tudo que estiver abaixo desse grau vai usar preco minimo.
+						if _oGrupoTbUva ['GrauMinimoParaAgio'] > 0
+				//			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Preco minimo aplicavel abaixo do grau ' + cvaltochar (_oGrupoTbUva ['GrauMinimoParaAgio']))
+							if _aGrausComAgio [_nGrau, 1] < _oGrupoTbUva ['GrauMinimoParaAgio']
+								_oGrauDeGrupo ['PrecoCodBase'] = _oGrupoTbUva ['PrecoMinimo']
+								_oGrauDeGrupo ['ObsGrauDeGrupo'] += 'Preço mínimo (por grau).'
+							endif
+						else
+				//			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Preco minimo independe de grau.')
+							if _oGrauDeGrupo ['PrecoCodBase'] < _oGrupoTbUva ['PrecoMinimo']
+								_oGrauDeGrupo ['PrecoCodBase'] = _oGrupoTbUva ['PrecoMinimo']
+								_oGrauDeGrupo ['ObsGrauDeGrupo'] += 'Preço mínimo (por grupo).'
+							endif
+						endif
 					endif
+*/
+					// Deixa prontas tags de precos das possiveis variacoes,
+					// como organicas e classificacoes de viniferas. Vou
+					// deixar isto chumbado no programa por que, em 15 anos
+					// de Cooperativa, soh vi serem criadas novas classes
+					// quando unimos as 5 cooperativas...
+					_oGrauDeGrupo ['PrecoCodOrganicaBordadura']   = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AgioOrganicaBordadura'] / 100)
+					_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'] = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AgioOrganicaEmConversao'] / 100)
+					_oGrauDeGrupo ['PrecoCodOrganicaOrganica']    = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AgioOrganicaOrganica'] / 100)
+					_oGrauDeGrupo ['PrecoFinaLatadaClasA']        = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoLatadaClasA'] / 100)
+					_oGrauDeGrupo ['PrecoFinaLatadaClasC']        = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoLatadaClasC'] / 100)
+					_oGrauDeGrupo ['PrecoFinaLatadaClasDS']       = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoLatadaClasDS'] / 100)
+					_oGrauDeGrupo ['PrecoFinaEspaldeiraClasPR']   = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasPR'] / 100)
+					_oGrauDeGrupo ['PrecoFinaEspaldeiraClasAA']   = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasAA'] / 100)
+					_oGrauDeGrupo ['PrecoFinaEspaldeiraClasA']    = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasA'] / 100)
+					_oGrauDeGrupo ['PrecoFinaEspaldeiraClasC']    = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasC'] / 100)
+					_oGrauDeGrupo ['PrecoFinaEspaldeiraClasD']    = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasD'] / 100)
+					_oGrauDeGrupo ['PrecoFinaEspaldeiraClasDS']   = _oGrauDeGrupo ['PrecoCodBase'] * (1 + _oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] / 100)
 
+					// Validacao extra: cada preco deve sempre ser maior que o preco do grau anterior
+					if _nPrcGrauAnt != 0 .and. _oGrauDeGrupo ['PrecoCodBase'] < _nPrcGrauAnt
+						_Super:SomaMsg ("Problemas na geracao de precos! Preco do grau " ;
+							+ cvaltochar (_oGrauDeGrupo ['Grau']) + " = " + cvaltochar (_oGrauDeGrupo ['PrecoCodBase']) ;
+							+ ' contra ' + cvaltochar (_nPrcGrauAnt) + ' do grau anterior.')
+//						_lContinua = .F.
+						U_Log2 ('debug', '[' + procname () + "]Problemas na geracao de precos! Preco do grau " ;
+							+ cvaltochar (_oGrauDeGrupo ['Grau']) + " = " + cvaltochar (_oGrauDeGrupo ['PrecoCodBase']) ;
+							+ ' contra ' + cvaltochar (_nPrcGrauAnt) + ' do grau anterior.')
+					endif
+					_nPrcGrauAnt = _oGrauDeGrupo ['PrecoCodBase']
 
 					// Alimenta array com um objeto representando dados de cada grau deste grupo
 					aadd (_oGrupoTbUva ['ListaDeGraus'], _oGrauDeGrupo)
+
 				next
 			endif
 
@@ -386,13 +460,16 @@ METHOD GeraAtrib (_sCodTab, _sTipoPrc, _sTipoUva, _sConduc, _sGrauDec) Class Cls
 			elseif ::TipoUva == 'F' .and. ::Conducao == 'L'
 				_sObsSubgrupo := 'Clas.A: +' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasA']) + '%'
 				_sObsSubgrupo += '<br>Clas.B: base'
-				_sObsSubgrupo += '<br>Clas.D:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasD']) + '%'
+				_sObsSubgrupo += '<br>Clas.C:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasC']) + '%'
+			//	_sObsSubgrupo += '<br>Clas.D:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasD']) + '%'
 				_sObsSubgrupo += '<br>Clas.DS: ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasDS']) + '%'
 				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : '' , 'ObsSubgrupo' : _sObsSubgrupo})
 			endif
 
 			aadd (_aGrupos, _oGrupoTbUva)
-		next
+
+			(_sAlias13) -> (dbskip ())
+		enddo
 		::Grupos:Set (_aGrupos)
 
 		// Durante o desenvolvimento, achei interessante esportar o JSON
@@ -426,7 +503,7 @@ METHOD DefPAgio (_nEsteGrau as numeric, _nGrauBase as numeric) Class ClsTbUva
 	local _nRetAgio := NIL  // Deixar NIL para poder testar mais tarde se deu erro.
 
 	// As variacoes de agio da Alianca costumam ser diferentes da MOC
-	if ::TipoPreco == 'C'  // Compra: usar nossos agios
+	if ::TipoAgioEntreGraus == 'A'  // Padrao Alianca
 		do case
 		case _nEsteGrau == _nGrauBase -12 ; _nRetAgio = -165
 		case _nEsteGrau == _nGrauBase -11 ; _nRetAgio = -150
@@ -458,7 +535,39 @@ METHOD DefPAgio (_nEsteGrau as numeric, _nGrauBase as numeric) Class ClsTbUva
 		case _nEsteGrau == _nGrauBase +15 ; _nRetAgio = 145
 		case _nEsteGrau == _nGrauBase +16 ; _nRetAgio = 155  // Se surgirem novos graus, acrescentar aqui.
 		endcase
-	elseif ::TipoPreco == 'M'  // MOC: usar agios cfe. MOC publicado a cada safra.
+	elseif ::TipoAgioEntreGraus == '1'  // Simulacao 2024
+		do case
+		case _nEsteGrau == _nGrauBase -12 ; _nRetAgio = -110 //-165
+		case _nEsteGrau == _nGrauBase -11 ; _nRetAgio = -100 //-150
+		case _nEsteGrau == _nGrauBase -10 ; _nRetAgio = -90 //-135
+		case _nEsteGrau == _nGrauBase -9  ; _nRetAgio = -80 //-120
+		case _nEsteGrau == _nGrauBase -8  ; _nRetAgio = -70 //-105
+		case _nEsteGrau == _nGrauBase -7  ; _nRetAgio = -60 //-90
+		case _nEsteGrau == _nGrauBase -6  ; _nRetAgio = -50 //-75
+		case _nEsteGrau == _nGrauBase -5  ; _nRetAgio = -40 //-60
+		case _nEsteGrau == _nGrauBase -4  ; _nRetAgio = -30 //-45
+		case _nEsteGrau == _nGrauBase -3  ; _nRetAgio = -20 //-30
+		case _nEsteGrau == _nGrauBase -2  ; _nRetAgio = -10 //-15
+		case _nEsteGrau == _nGrauBase -1  ; _nRetAgio = -5
+		case _nEsteGrau == _nGrauBase +0  ; _nRetAgio = 0
+		case _nEsteGrau == _nGrauBase +1  ; _nRetAgio = 5
+		case _nEsteGrau == _nGrauBase +2  ; _nRetAgio = 15
+		case _nEsteGrau == _nGrauBase +3  ; _nRetAgio = 25
+		case _nEsteGrau == _nGrauBase +4  ; _nRetAgio = 35
+		case _nEsteGrau == _nGrauBase +5  ; _nRetAgio = 45
+		case _nEsteGrau == _nGrauBase +6  ; _nRetAgio = 55
+		case _nEsteGrau == _nGrauBase +7  ; _nRetAgio = 65
+		case _nEsteGrau == _nGrauBase +8  ; _nRetAgio = 75
+		case _nEsteGrau == _nGrauBase +9  ; _nRetAgio = 85
+		case _nEsteGrau == _nGrauBase +10 ; _nRetAgio = 95
+		case _nEsteGrau == _nGrauBase +11 ; _nRetAgio = 105
+		case _nEsteGrau == _nGrauBase +12 ; _nRetAgio = 115
+		case _nEsteGrau == _nGrauBase +13 ; _nRetAgio = 125
+		case _nEsteGrau == _nGrauBase +14 ; _nRetAgio = 135
+		case _nEsteGrau == _nGrauBase +15 ; _nRetAgio = 145
+		case _nEsteGrau == _nGrauBase +16 ; _nRetAgio = 155  // Se surgirem novos graus, acrescentar aqui.
+		endcase
+	elseif ::TipoAgioEntreGraus == 'M'  // Padrao MOC (CONAB)
 		do case
 		case _nEsteGrau == _nGrauBase -12 ; _nRetAgio = -100  // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
 		case _nEsteGrau == _nGrauBase -11 ; _nRetAgio = -95   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
@@ -489,7 +598,7 @@ METHOD DefPAgio (_nEsteGrau as numeric, _nGrauBase as numeric) Class ClsTbUva
 		case _nEsteGrau == _nGrauBase +14 ; _nRetAgio = 135  // Este % nao constam no MOC, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
 		endcase
 	else
-		_Super:SomaMsg ("Sem definicao de agio entre graus para tipo de precos '" + ::TipoPreco + "'.")
+		_Super:SomaMsg ("Sem definicao de agio entre graus para tipo '" + ::TipoAgioEntreGraus + "'.")
 	endif
 return _nRetAgio
 
@@ -580,6 +689,7 @@ METHOD GeraHTM () Class ClsTbUva
 	local _oGrauDeGrupo := NIL
 	local _oVariedade := NIL
 	local _lTemDescSubgrupo := .F.
+	local _nQtColHora := 0
 
 	// Como a quantidade de celulas mescladas eh muito grande, achei melhor
 	// preparar arrays com os dados (jah eh bastante complicado) e, num
@@ -737,7 +847,11 @@ METHOD GeraHTM () Class ClsTbUva
 				endif
 
 				// Define tag para gerar 'tooltip'
-				_sToolTip = '<abbr title="Agio a partir do grau base: ' + alltrim (transform (_oGrauDeGrupo ['AgioSobreGrauBase'], "@E 9999.99")) + '%">'
+				_sToolTip := '<abbr title="'
+				_sToolTip += 'Agio a partir do grau base: ' + alltrim (transform (_oGrauDeGrupo ['AgioSobreGrauBase'], "@E 9999.99")) + '%'
+				_sToolTip += '&#013;' + alltrim (_oGrauDeGrupo ['ObsGrauDeGrupo'])
+				_sToolTip += '">'
+			//	U_Log2 ('debug', '[' + procname () + ']' + _sToolTip)
 
 				// Como sempre existe codigo base de cada variedade, este sempre deverah ter preco
 				aadd (_aLinha, _sTag + _sToolTip + transform (_oGrauDeGrupo ['PrecoCodBase'], "@E 999.9999") + '</th>')
@@ -775,15 +889,18 @@ METHOD GeraHTM () Class ClsTbUva
 		_sHTM +=       'font-size:11.0pt;'
 		_sHTM +=       'font-weight:700;'
 		_sHTM +=       'padding: 2px;'
+		_sHTM +=       'border-right:none;'  // Para nao aparecer borda entre o titulo e a hora
+		_sHTM +=       'height: 30px;'
 		_sHTM +=    '}'
-		_sHTM +=    '.SubTituloTabela{'
+		_sHTM +=    '.HoraGeracaoTabela{'
 		_sHTM +=       'color:#000000;'
 		_sHTM +=       'background:#FFFFFF;'
 		_sHTM +=       'font-family:Arial;'
-		_sHTM +=       'text-align:center;'
+		_sHTM +=       'text-align:right;'
 		_sHTM +=       'font-size:9.0pt;'
 		_sHTM +=       'font-weight:700;'
 		_sHTM +=       'padding: 2px;'
+		_sHTM +=       'border-left:none;'  // Para nao aparecer borda entre o titulo e a hora
 		_sHTM +=    '}'
 		_sHTM +=    '.TituloGrupoClaro{'
 		_sHTM +=       'color:#000000;'
@@ -862,27 +979,22 @@ METHOD GeraHTM () Class ClsTbUva
 		_sHTM += '<table width="80%" border="1" cellspacing="0" cellpadding="0" align="center">'
 		
 		// Linhas iniciais da tabela (descricao, tipos de uvas, datas, etc.
+		//
+		// Reserva colunas (colspan) para data e hora proporcionalmente a qt. total de colunas
+		_nQtColHora = round (len (_aVarGrau [1]) / 5, 0)
+		//
 		_sHTM += '<tr>'
-		_sHTM +=    '<th class="TituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1])) + '>'
+		_sHTM +=    '<th class="TituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1]) - _nQtColHora) + '>'
 		_sHTM +=    alltrim (sm0 -> m0_nomecom)
-		_sHTM +=    ' - Tabela ' + ::CodTabela + ' (preço '
-			if ::TipoPreco == 'E'
-				_sHTM += 'de entrada'
-			elseif ::TipoPreco == 'C'
-				_sHTM += 'de compra'
-			elseif ::TipoPreco == 'M'
-				_sHTM += 'MOC'
-			else
-				_sHTM += '[OUTRAS NAO DEFINIDAS]'
-			endif
-			_sHTM += ')'
-			_sHTM += ' - uvas ' + iif (::TipoUva == 'C', 'comuns', iif (::TipoUva == 'F', 'viniferas', '(SEM DEFINICAO)'))
-			_sHTM += ' ' + iif (::Conducao == 'L', 'latadas', iif (::Conducao == 'E', 'espaldeira', '(SEM DEFINICAO)'))
-			_sHTM += '</th>'
+		_sHTM +=    ' - Tabela ' + ::CodTabela + ' (' + alltrim (::NomeTabela) + ')'
+		_sHTM +=    ' - uvas <b>' + iif (::TipoUva == 'C', 'comuns', iif (::TipoUva == 'F', 'viniferas', '(SEM DEFINICAO)'))
+		_sHTM +=    ' ' + iif (::Conducao == 'L', 'latadas', iif (::Conducao == 'E', 'espaldeira', '(SEM DEFINICAO)')) + '</b>'
+		_sHTM +=    '</th>'
+		_sHTM +=    '<th class="HoraGeracaoTabela" colspan=' + cvaltochar (_nQtColHora) + '>Gerada pelo ERP em ' + dtoc (date ()) + ' - ' + time () + '</th>'
 		_sHTM += '</tr>'
-		_sHTM += '<tr>'
-		_sHTM +=    '<th class="SubTituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1])) + '>Gerada pelo ERP em ' + dtoc (date ()) + ' - ' + time () + '</th>'
-		_sHTM += '</tr>'
+//		_sHTM += '<tr>'
+//		_sHTM +=    '<th class="SubTituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1])) + '>Gerada pelo ERP em ' + dtoc (date ()) + ' - ' + time () + '</th>'
+//		_sHTM += '</tr>'
 
 
 		// Linhas de titulos das colunas (nomes dos grupos, grau base, etc)

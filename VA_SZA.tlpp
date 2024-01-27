@@ -17,6 +17,7 @@
 //                     - Implementada geracao da tabela ZBI
 // 23/01/2024 - Robert - Melhorada geracao ZBI (opcao de gerar apenas variedades faltantes)
 //                     - Viniferas latadas gera SZI classif. 'DS' e nao mais 'D'.
+// 25/01/2024 - Robert - Exportacao para ZBI da tag 'PrecoFinaLatadaClasC'
 //
 
 #include "protheus.ch"
@@ -332,7 +333,6 @@ static function _GeraHTM (_sCodTab)
 	local _aOpcoes   := {}
 	local _sVarUva  := ''
 	local _sConduc  := ''
-	local _sTipoTab := 'C'  // Por enquanto, apenas [C]ompra
 	local _sIntOuDec := ''
 
 	// Monta array de opcoes.
@@ -357,7 +357,7 @@ static function _GeraHTM (_sCodTab)
 			_sVarUva = substring (_aOpcoes [_nOpcao, 3], 1, 1)
 			_sConduc = substring (_aOpcoes [_nOpcao, 3], 2, 1)
 			_sIntOuDec = substring (_aOpcoes [_nOpcao, 3], 3, 1)
-			_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, _sIntOuDec)
+			_oTbUva:GeraAtrib (_sCodTab, _sVarUva, _sConduc, _sIntOuDec)
 			if empty (_oTbUva:CodTabela)
 				u_help (_oTbUva:UltMsg,, .t.)
 			else
@@ -448,7 +448,7 @@ static function _GeraZBI (_sCodTab)
 	if _lContinua
 		incproc ('Gerando tabela para uvas comuns')
 		_oTbUvaCL := ClsTbUva ():New ()
-		if ! _oTbUvaCL:GeraAtrib (_sCodTab, 'C', 'C', 'L', 'D')
+		if ! _oTbUvaCL:GeraAtrib (_sCodTab, 'C', 'L', 'D')
 			u_help ('Problemas na tabela de uvas comuns: ' + _oTbUvaCL:UltMsg,, .t.)
 			_lContinua = .F.
 		endif
@@ -457,7 +457,7 @@ static function _GeraZBI (_sCodTab)
 	if _lContinua
 		incproc ('Gerando tabela para uvas finas latadas')
 		_oTbUvaFL := ClsTbUva ():New ()
-		if ! _oTbUvaFL:GeraAtrib (_sCodTab, 'C', 'F', 'L', 'D')
+		if ! _oTbUvaFL:GeraAtrib (_sCodTab, 'F', 'L', 'D')
 			u_help ('Problemas na tabela de uvas finas latadas: ' + _oTbUvaFL:UltMsg,, .t.)
 			_lContinua = .F.
 		endif
@@ -466,7 +466,7 @@ static function _GeraZBI (_sCodTab)
 	if _lContinua
 		incproc ('Gerando tabela para uvas finas espaldeira')
 		_oTbUvaFE := ClsTbUva ():New ()
-		if ! _oTbUvaFE:GeraAtrib (_sCodTab, 'C', 'F', 'E', 'D')
+		if ! _oTbUvaFE:GeraAtrib (_sCodTab, 'F', 'E', 'D')
 			u_help ('Problemas na tabela de uvas finas espaldeira: ' + _oTbUvaFE:UltMsg,, .t.)
 			_lContinua = .F.
 		endif
@@ -519,14 +519,6 @@ static function _GeraZBI (_sCodTab)
 	//					U_Log2 ('debug', _aListaVar)
 
 						for _nIdxListaVar = 1 to len (_aListaVar)
-//							reclock ("ZBI", .t.)
-//							zbi -> zbi_filial = xfilial ("ZBI")
-//							zbi -> zbi_codtab = _oTbUva:CodTabela
-//							zbi -> zbi_produt = _aListaVar [_nIdxListaVar, 1]
-//							zbi -> zbi_grau   = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau'])
-//							zbi -> zbi_conduc = _oTbUva:Conducao
-//							zbi -> zbi_vunit1 = _aListaVar [_nIdxListaVar, 2]
-//							msunlock ()
 							_GravaZBI (_oTbUva:CodTabela, ;
 										_aListaVar [_nIdxListaVar, 1], ;
 										ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']), ;
@@ -543,7 +535,7 @@ static function _GeraZBI (_sCodTab)
 						if _oTbUva:Conducao == 'L'
 							aadd (_aListaClass, {'A',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasA']})
 							aadd (_aListaClass, {'B',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoCodBase']})
-						//	aadd (_aListaClass, {'D',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasD']})
+							aadd (_aListaClass, {'C',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasC']})
 							aadd (_aListaClass, {'DS', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasDS']})
 						elseif _oTbUva:Conducao == 'E'
 							aadd (_aListaClass, {'PR', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasPR']})
@@ -587,7 +579,7 @@ static function _GravaZBI ( ;
 	, _nPreco   as numeric ;
 )
 	if ! zbi -> (dbseek (xfilial ("ZBI") + _sCodTab + _sProduto + _sConduc + _sGrau + _sClassif, .F.))
-	//	U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
+		// U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
 		reclock ("ZBI", .t.)
 		zbi -> zbi_filial = xfilial ("ZBI")
 		zbi -> zbi_codtab = _sCodTab

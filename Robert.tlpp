@@ -149,7 +149,7 @@ user function robert ()
 		// _sFuncao += '_Sisdevin ()'
 		// _sFuncao += '_ST_MG ()'
 		// _sFuncao += '_SZI ()'
-		// _sFuncao += '_TbUva ()'
+		_sFuncao += '_TbUva ()'
 		// _sFuncao += '_telnet ()'
 		// _sFuncao += '_TrEstq ()'
 		// _sFuncao += '_VACCR2 ()'
@@ -3534,12 +3534,11 @@ static function _TbUva ()
 	local _sHTML  := ''
 	local _nHdl    := 0
 	local _sArq    := ''
-	local _sCodTab := 'S23A'
+	local _sCodTab := '24B'
 	local _sVarUva := 'C'
 	local _sConduc := 'L'
-	local _sTipoTab := 'C'  // Por enquanto, apenas [C]ompra
 	local _oTbUva := ClsTbUva ():New ()
-	_oTbUva:GeraAtrib (_sCodTab, _sTipoTab, _sVarUva, _sConduc, 'I')
+	_oTbUva:GeraAtrib (_sCodTab, _sVarUva, _sConduc, 'D')
 
 	if empty (_oTbUva:CodTabela)
 		U_Log2 ('erro', '[' + procname () + ']' + _oTbUva:UltMsg)
