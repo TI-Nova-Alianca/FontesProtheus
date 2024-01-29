@@ -76,7 +76,9 @@ static function _MailAviso()
 			U_ZZUNU('006', "Pedido de venda '" + m->c5_num + "' liberado por " + alltrim(cUserName) + " com precos menores que a ultima venda.", _sMsg) 
 		endif
 
-		if 'M' $ m->c5_vaBloq  // Bloqueio por margem
+		//if 'M' $ m->c5_vaBloq  // Bloqueio por margem
+		_nMargMin = GetMv("VA_MCPED1")
+		if m->c5_vaMCont < _nMargMin .and. 'M' $ m->c5_vaBloq  // Bloqueio por margem
 			_sMsg := "<html>"
 			_sMsg += "<b>Pedido:</b>" + m->c5_num + "<br>"
 			_sMsg += "<b>Cliente:</b>" + m->c5_cliente + '/' + m->c5_lojacli + ' - '

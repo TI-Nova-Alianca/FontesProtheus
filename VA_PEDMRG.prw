@@ -12,7 +12,8 @@
 // #Modulos           #FAT 
 //
 // Historico de alteracoes:
-// 18/01/2034 - Claudia - Alterada a filial para a filial atendida. GLPI 14643
+// 18/01/2024 - Claudia - Alterada a filial para a filial atendida. GLPI 14643
+// 26/01/2024 - Claudia - Alterada rotina de frete. GLPI: 
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -284,7 +285,7 @@ Static Function _CalcFrete(_sFilial)
     local _nFrete    := 0
     local _nRetFrt   := 0
     local _nPrcFrete := 0
-    local _sCEP      := Posicione("SA1",1, xFilial("SA1") + m->c5_cliente, "A1_CEP") // CEP do cliente
+    local _sCEP      := Posicione("SA1",1, xFilial("SA1") + m->c5_cliente + m->c5_lojacli, "A1_CEP") // CEP do cliente
 
     // Considera frete zerado
     if M->C5_TPFRETE $ 'FTDS'  // C=CIF;F=FOB;T=Por conta terceiros;R=Por conta remetente;D=Por conta destinatário;S=Sem frete                                    
@@ -342,6 +343,8 @@ Static Function _CalcFrete(_sFilial)
 				endif
 			next
 			_nPrcFrete := m->c5_mvfre * 100 / _nPrcFrete
+        else
+			_nPrcFrete := _nRetFrt
 		endif
 	endif
 
