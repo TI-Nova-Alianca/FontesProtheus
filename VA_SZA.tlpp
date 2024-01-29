@@ -410,6 +410,7 @@ static function _GeraZBI (_sCodTab)
 	local _aListaClass    := {}
 	local _nIdxListaClass := 0
 	local _nOperacao := 0
+	local _aQuaisTab := {}
 
 	procregua (100)
 	_sCodTab = U_TamFixo (_sCodTab, TamSX3 ("ZX5_13SAFR")[1], ' ')
@@ -435,17 +436,28 @@ static function _GeraZBI (_sCodTab)
 
 	// Apaga possiveis registros anteriores.
 	if _lContinua .and. _nOperacao == 2
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "DELETE " + RetSQLName ("ZBI")
-		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ZBI_FILIAL = '" + xfilial ("ZBI") + "'"
-		_oSQL:_sQuery +=   " AND ZBI_CODTAB = '" + _sCodTab + "'"
-		_oSQL:Log ('[' + procname () + ']')
-		_lContinua = _oSQL:Exec ()
+		if ! U_MsgNoYes ("Confirma apagar todos os precos da tabela '" + _sCodTab + "' e regerar?")
+			_lContinua = .F.
+		else
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "UPDATE " + RetSQLName ("ZBI") + " SET D_E_L_E_T_ = '*', R_E_C_D_E_L_ = R_E_C_N_O_"
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZBI_FILIAL = '" + xfilial ("ZBI") + "'"
+			_oSQL:_sQuery +=   " AND ZBI_CODTAB = '" + _sCodTab + "'"
+			_oSQL:Log ('[' + procname () + ']')
+			_lContinua = _oSQL:Exec ()
+		endif
 	endif
 
-	if _lContinua
+	// Tela para o usuario selecionar quais tabelas quer gerar.
+	_aQuaisTab = {}
+	aadd (_aQuaisTab, {.f., 'Uvas comuns latadas'})
+	aadd (_aQuaisTab, {.f., 'Uvas finas latadas'})
+	aadd (_aQuaisTab, {.f., 'Uvas finas espaldeira'})
+	U_MBArray (@_aQuaisTab, 'Selecione tabelas a exportar', NIL, 1, NIL, NIL, 'allwaystrue ()', {})
+
+	if _lContinua .and. _aQuaisTab [1, 1]
 		incproc ('Gerando tabela para uvas comuns')
 		_oTbUvaCL := ClsTbUva ():New ()
 		if ! _oTbUvaCL:GeraAtrib (_sCodTab, 'C', 'L', 'D')
@@ -454,7 +466,7 @@ static function _GeraZBI (_sCodTab)
 		endif
 	endif
 
-	if _lContinua
+	if _lContinua .and. _aQuaisTab [2, 1]
 		incproc ('Gerando tabela para uvas finas latadas')
 		_oTbUvaFL := ClsTbUva ():New ()
 		if ! _oTbUvaFL:GeraAtrib (_sCodTab, 'F', 'L', 'D')
@@ -463,7 +475,7 @@ static function _GeraZBI (_sCodTab)
 		endif
 	endif
 
-	if _lContinua
+	if _lContinua .and. _aQuaisTab [3, 1]
 		incproc ('Gerando tabela para uvas finas espaldeira')
 		_oTbUvaFE := ClsTbUva ():New ()
 		if ! _oTbUvaFE:GeraAtrib (_sCodTab, 'F', 'E', 'D')
@@ -480,12 +492,15 @@ static function _GeraZBI (_sCodTab)
 	_nTabela = 1
 	do while _lContinua .and. _nTabela <= 3
 
-		if _nTabela == 1
+		if _nTabela == 1 .and. _aQuaisTab [1, 1]
 			_oTbUva := _oTbUvaCL
-		elseif _nTabela == 2
+		elseif _nTabela == 2 .and. _aQuaisTab [2, 1]
 			_oTbUva := _oTbUvaFL
-		elseif _nTabela == 3
+		elseif _nTabela == 3 .and. _aQuaisTab [3, 1]
 			_oTbUva := _oTbUvaFE
+		else
+			_nTabela ++
+			loop
 		endif
 
 		// Varre todos os grupos de variedades desta tabela
@@ -516,7 +531,6 @@ static function _GeraZBI (_sCodTab)
 						if ! empty (_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodOrganica'])
 							aadd (_aListaVar, {_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodOrganica'], _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau] ['PrecoCodOrganicaOrganica']})
 						endif
-	//					U_Log2 ('debug', _aListaVar)
 
 						for _nIdxListaVar = 1 to len (_aListaVar)
 							_GravaZBI (_oTbUva:CodTabela, ;
@@ -524,7 +538,8 @@ static function _GeraZBI (_sCodTab)
 										ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']), ;
 										_oTbUva:Conducao, ;
 										'', ;
-										_aListaVar [_nIdxListaVar, 2] ;
+										_aListaVar [_nIdxListaVar, 2], ;
+										(_nOperacao != 2) ;
 							)
 						next
 
@@ -546,7 +561,6 @@ static function _GeraZBI (_sCodTab)
 							aadd (_aListaClass, {'D',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasD']})
 							aadd (_aListaClass, {'DS', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasDS']})
 						endif
-	//					U_Log2 ('debug', _aListaClass)
 
 						for _nIdxListaClass = 1 to len (_aListaClass)
 							_GravaZBI (_oTbUva:CodTabela, ;
@@ -554,7 +568,8 @@ static function _GeraZBI (_sCodTab)
 										ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']), ;
 										_oTbUva:Conducao, ;
 										_aListaClass [_nIdxListaClass, 1], ;
-										_aListaClass [_nIdxListaClass, 2] ;
+										_aListaClass [_nIdxListaClass, 2], ;
+										(_nOperacao != 2) ;
 							)
 						next
 					endif
@@ -563,6 +578,30 @@ static function _GeraZBI (_sCodTab)
 		next
 		_nTabela ++
 	enddo
+
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT count (*)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZBI") + " ZBI "
+		_oSQL:_sQuery += " WHERE ZBI.D_E_L_E_T_ = ''
+		_oSQL:_sQuery +=   " AND ZBI.ZBI_CODTAB = '" + _oTbUva:CodTabela + "'"
+		_oSQL:_sQuery +=   " AND EXISTS (SELECT *"
+		_oSQL:_sQuery +=                 " FROM " + RetSQLName ("ZBI") + " PROX "
+		_oSQL:_sQuery +=                " WHERE PROX.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                  " AND PROX.ZBI_FILIAL = ZBI.ZBI_FILIAL"
+		_oSQL:_sQuery +=                  " AND PROX.ZBI_CODTAB = ZBI.ZBI_CODTAB"
+		_oSQL:_sQuery +=                  " AND PROX.ZBI_PRODUT = ZBI.ZBI_PRODUT"
+		_oSQL:_sQuery +=                  " AND PROX.ZBI_GRAU   > ZBI.ZBI_GRAU"
+		_oSQL:_sQuery +=                  " AND PROX.ZBI_CONDUC = ZBI.ZBI_CONDUC"
+		_oSQL:_sQuery +=                  " AND PROX.ZBI_CLASSE = ZBI.ZBI_CLASSE"
+		_oSQL:_sQuery +=                  " AND PROX.ZBI_VUNIT1 < ZBI.ZBI_VUNIT1"
+		_oSQL:_sQuery +=               ")
+		if _oSQL:RetQry (1, .f.) > 0
+			u_help ("Encontrei registros na tabela ZBI onde o preco estah MENOR que o grau anterior!!!", _oSQL:_sQuery, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
 	if _lContinua
 		u_help ("Processo finalizado.")
 	endif
@@ -577,9 +616,12 @@ static function _GravaZBI ( ;
 	, _sConduc  as character ;
 	, _sClassif as character ;
 	, _nPreco   as numeric ;
+	, _lLogInc  as logical ;
 )
 	if ! zbi -> (dbseek (xfilial ("ZBI") + _sCodTab + _sProduto + _sConduc + _sGrau + _sClassif, .F.))
-		// U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
+		if _lLogInc
+			U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
+		endif
 		reclock ("ZBI", .t.)
 		zbi -> zbi_filial = xfilial ("ZBI")
 		zbi -> zbi_codtab = _sCodTab

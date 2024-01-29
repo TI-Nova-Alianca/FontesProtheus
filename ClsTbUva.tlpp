@@ -451,13 +451,13 @@ METHOD GeraAtrib ( ;
 				//			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Preco minimo aplicavel abaixo do grau ' + cvaltochar (_oGrupoTbUva ['GrauMinimoParaAgio']))
 							if _aGrausComAgio [_nGrau, 1] < _oGrupoTbUva ['GrauMinimoParaAgio']
 								_oGrauDeGrupo ['PrecoCodBase'] = _oGrupoTbUva ['PrecoMinimo']
-								_oGrauDeGrupo ['ObsGrauDeGrupo'] += 'Preço mínimo (por grau).'
+								_oGrauDeGrupo ['ObsGrauDeGrupo'] += 'Preço mínimo (abaixo grau ' + cvaltochar (_oGrupoTbUva ['GrauMinimoParaAgio']) + ').'
 							endif
 						else
 				//			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Preco minimo independe de grau.')
 							if _oGrauDeGrupo ['PrecoCodBase'] < _oGrupoTbUva ['PrecoMinimo']
 								_oGrauDeGrupo ['PrecoCodBase'] = _oGrupoTbUva ['PrecoMinimo']
-								_oGrauDeGrupo ['ObsGrauDeGrupo'] += 'Preço mínimo (por grupo).'
+								_oGrauDeGrupo ['ObsGrauDeGrupo'] += 'Preço mínimo do grupo.'
 							endif
 						endif
 					endif
@@ -892,8 +892,15 @@ METHOD GeraHTM () Class ClsTbUva
 			for _nGrupo = 1 to len (::Grupos)
 				_oGrauDeGrupo = ::Grupos [_nGrupo]['ListaDeGraus'][_nGrau]
 
+				// Define tags de linha diferentes para graus inteiros e para decimais
+				if _IsInt (_oGrauDeGrupo ['Grau'])
+					_sTagLinha = 'th'  // Caracter em negrito
+				else
+					_sTagLinha = 'td'  // Caracter normal
+				endif
+
 				if _nGrupo == 1
-					aadd (_aLinha, '<th class="ColunaClaraDescri">' + transform (_oGrauDeGrupo ['Grau'], iif (_IsInt (_oGrauDeGrupo ['Grau']), "@E 99", "@E 99.9")) + '</th>')
+					aadd (_aLinha, '<' + _sTagLinha + ' class="ColunaClaraDescri">' + transform (_oGrauDeGrupo ['Grau'], iif (_IsInt (_oGrauDeGrupo ['Grau']), "@E 99", "@E 99.9")) + '</' + _sTagLinha + '>')
 				endif
 
 				// Para facilitar a visualizacao, a cada troca de grupo, gero
