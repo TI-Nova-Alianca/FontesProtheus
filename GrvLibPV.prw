@@ -80,8 +80,9 @@
 // 12/01/2024 - Claudia - Validação para desconsiderar tipo de pedido "utiliza fornecedor" para rapel. GLPI: 14706
 // 24/01/2024 - Claudia - Ultimo preço de venda será buscado diretamente da ultima NF faturada. GLPI: 14796
 // 25/01/2024 - Claudia - Melhorias no layout dos e-mails. GLPI: 14805
+// 31/01/2024 - Claudia - Validação para não enviar e-mail de preço abaixo quando bloqueio por residuo. GLPI: 14838 
 //
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV(_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _n         := N
