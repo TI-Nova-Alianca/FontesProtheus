@@ -65,8 +65,10 @@ Static Function _Gera()
 	_oSQL:_sQuery := ""
 	
 // COM LOTE CONSIGO LOCALIZAR DENTRO DA FULL O NUMERO DA CARGA
-_oSQL:_sQuery +=  " ;with separacoes as ( "
-_oSQL:_sQuery +=  " SELECT ) as carga, cod_item, SUM (qtde) as quant "
+//_oSQL:_sQuery +=  " ;with separacoes as ( "
+//_oSQL:_sQuery +=  " SELECT ) as carga, cod_item, SUM (qtde) as quant "
+_oSQL:_sQuery +=  " with separacoes as ( "
+_oSQL:_sQuery +=  " SELECT SUBSTRING(documento_id,6,6) as carga, cod_item, SUM (qtde) as quant "
 _oSQL:_sQuery +=  " FROM tb_wms_lotes "
 _oSQL:_sQuery +=  " WHERE lote = '" + mv_par01 +"' "
 _oSQL:_sQuery +=  " group by SUBSTRING(documento_id,6,6), cod_item) "
