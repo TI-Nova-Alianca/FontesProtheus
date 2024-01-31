@@ -159,7 +159,7 @@
 // 20/10/2023 - Robert  - Criado tratamento para venda de tambores a associados (GLPI 14397)
 // 20/11/2023 - Robert  - Verifica C6_QTDVEN antes de dar update no F2_PLIQUI, F2_PBRUTO, F2_VOLUME1
 // 31/01/2024 - Claudia - Ajuste no email de devoluções. GLPI: 14830
-
+//
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -171,7 +171,6 @@ User Function sf2460i ()
 	// Verifica valor rapel
     _sSQL := ""
     _sSQL += " SELECT SUM (D2_VRAPEL)"
-//  	_sSQL += "   FROM SD2010 AS SD2"
   	_sSQL += "   FROM " + RetSQLName ("SD2") + " AS SD2"
  	_sSQL += "  WHERE D_E_L_E_T_ = ''"
    	_sSQL += "    AND SD2.D2_FILIAL   = '" + xfilial ("SD2") + "'"
@@ -239,9 +238,6 @@ User Function sf2460i ()
 	_oSQL:_sQuery +=     " F2_VOLUME1 = ITENS.QTVOLUMES "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " SF2 "
 	_oSQL:_sQuery +=    " INNER JOIN (SELECT D2_FILIAL, D2_DOC, D2_SERIE,"
-//	_oSQL:_sQuery +=                       " SUM ((C6_VAPLIQ * D2_QUANT) / C6_QTDVEN) AS PESOLIQ,"
-//	_oSQL:_sQuery +=                       " SUM ((C6_VAPBRU * D2_QUANT) / C6_QTDVEN) AS PESOBRUTO,"
-//	_oSQL:_sQuery +=                       " SUM ((C6_VAQTVOL * D2_QUANT) / C6_QTDVEN) AS QTVOLUMES"
 	_oSQL:_sQuery +=                       " SUM (CASE WHEN C6_QTDVEN > 0 THEN C6_VAPLIQ  * D2_QUANT / C6_QTDVEN ELSE 0 END) AS PESOLIQ,"
 	_oSQL:_sQuery +=                       " SUM (CASE WHEN C6_QTDVEN > 0 THEN C6_VAPBRU  * D2_QUANT / C6_QTDVEN ELSE 0 END) AS PESOBRUTO,"
 	_oSQL:_sQuery +=                       " SUM (CASE WHEN C6_QTDVEN > 0 THEN C6_VAQTVOL * D2_QUANT / C6_QTDVEN ELSE 0 END) AS QTVOLUMES"
@@ -419,10 +415,6 @@ static function _DadosAdic ()
 		next
     endif
 
-	// Vendedor, pedido, carga(OMS) e ordem de compra
-	//if ! empty (sf2 -> f2_vend1) .and. sf2 -> f2_vend1 != '328'  // Este representante nao quer a mensagem.
-	//	_SomaMsg (@_sMsgContr, "Repr.: " + alltrim (sf2 -> f2_vend1) + "-" + alltrim (fBuscaCpo ("SA3", 1, xfilial ("SA3") + sf2 -> f2_vend1, "A3_NREDUZ")))
-	//endif
 	_SomaMsg (@_sMsgContr, "Pedido: " + alltrim (sc5 -> c5_num))
 
 	if ! empty (sf2 -> f2_carga)
@@ -744,7 +736,6 @@ static function _AtuSZIMudas ()
 			_oSQL:_sQuery += "   and SD2.D2_FILIAL   = '" + xfilial ("SD2") + "'"
 			_oSQL:_sQuery += "   and SD2.D2_DOC      = '" + sf2 -> f2_doc   + "'"
 			_oSQL:_sQuery += "   and SD2.D2_SERIE    = '" + sf2 -> f2_serie + "'"
-	//		_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446','5456')" 
 			_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446','5456','2722')"
 			_aProdOK := aclone (_oSQL:Qry2Array ())
 			
