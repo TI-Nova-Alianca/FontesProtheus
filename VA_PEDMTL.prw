@@ -66,6 +66,7 @@ Static Function _MontaColunas(_sFilial, _sCliente,_sLoja,_sPedido)
     Local _aDados := {}
     Local _x      := 0
 
+
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += " SELECT "
@@ -101,6 +102,15 @@ Static Function _MontaColunas(_sFilial, _sCliente,_sLoja,_sPedido)
     _oSQL:_sQuery += " AND ZC1_CLI    = '"+ _sCliente +"' "
     _oSQL:_sQuery += " AND ZC1_LOJA   = '"+ _sLoja    +"' "
     _oSQL:_sQuery += " AND ZC1_PED    = '"+ _sPedido  +"' "
+    _oSQL:_sQuery += " AND ZC1_SEQ = (SELECT
+	_oSQL:_sQuery += " 				        MAX(ZC1_2.ZC1_SEQ)
+	_oSQL:_sQuery += " 			        FROM ZC1010 ZC1_2
+	_oSQL:_sQuery += " 			        WHERE ZC1_2.D_E_L_E_T_ = ''
+	_oSQL:_sQuery += " 			        AND ZC1_2.ZC1_FILIAL   = '"+ _sFilial  +"' "
+	_oSQL:_sQuery += " 			        AND ZC1_2.ZC1_PED      = '"+ _sPedido  +"' "
+	_oSQL:_sQuery += " 			        AND ZC1_2.ZC1_CLI      = '"+ _sCliente +"' "
+    _oSQL:_sQuery += "                  AND ZC1_2.ZC1_LOJA     = '"+ _sLoja    +"' "
+    _oSQL:_sQuery += "                ) "
     _oSQL:_sQuery += " GROUP BY ZC1_ITEM "
     _oSQL:_sQuery += " 		,ZC1_PROD "
     _oSQL:_sQuery += " 		,B1_DESC "

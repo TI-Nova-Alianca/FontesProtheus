@@ -98,8 +98,8 @@ user function GrvLibPV(_lLiberar)
 	local _lFaturado := .F.
 	local _lBonific  := .F.
 	local _lSoGranel := .F.
-	//local _wdtreajuste   := dtos(GetMv("VA_DTREAJ"))
-	//local _wpercreajuste := GetMv("VA_PERCREA")
+	local _sGeraDupl := ""
+	local _lBloq     := .F.
 	local _nLinha    := 0
 
 	// verifica se o pedido esta salvo antes de fazer a liberação
@@ -250,9 +250,11 @@ user function GrvLibPV(_lLiberar)
 					endif
 				endif
 				
+				_lBloq     := iif(alltrim(GDFieldGet("C6_BLQ")) $ "SR" ,.T.,.F.)
+				_sGeraDupl := fBuscaCpo("SF4", 1, xfilial("SF4") + GDFieldGet("C6_TES"), "F4_DUPLIC") 
+				
 				// Valida preco de venda com ultimo pedido do cliente.
-				if empty (_sErro) .and. ! m->c5_tipo $ 'DB' .and. cNumEmp == '0101' .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_DUPLIC") == "S"
-
+				if empty(_sErro) .and. ! m->c5_tipo $ 'DB' .and. cNumEmp == '0101' .and. _sGeraDupl == "S" .and. _lBloq == .F.
 					_sQuery := ""
 					_sQuery += " SELECT TOP 1 D2_PRCVEN, "
 					_sQuery +=              " D2_FILIAL, "
@@ -267,7 +269,8 @@ user function GrvLibPV(_lLiberar)
 					_sQuery +=   " AND SD2.D2_COD      = '" + GDFieldGet ("C6_PRODUTO") + "'"
 					_sQuery += " ORDER BY D2_EMISSAO DESC"
 					_aRetQry = aclone (U_Qry2Array (_sQuery, .F., .F.))
-					if len (_aRetQry) > 0 .and. round (_aRetQry [1, 1], 2) > round (GDFieldGet ("C6_PRCVEN"), 2)
+
+					if len(_aRetQry) > 0 .and. round(_aRetQry[1, 1], 2) > round(GDFieldGet("C6_PRCVEN"), 2)
 
 						aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))	, ;
 											alltrim (GDFieldGet ("C6_DESCRI"))	, ;
