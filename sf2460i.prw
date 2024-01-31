@@ -158,7 +158,7 @@
 // 01/06/2023 - Claudia - Alterada data de vencimento para titulos a pagar ST. GLPI: 13653
 // 20/10/2023 - Robert  - Criado tratamento para venda de tambores a associados (GLPI 14397)
 // 20/11/2023 - Robert  - Verifica C6_QTDVEN antes de dar update no F2_PLIQUI, F2_PBRUTO, F2_VOLUME1
-//
+// 31/01/2024 - Claudia - Ajuste no email de devoluções. GLPI: 14830
 
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -653,23 +653,63 @@ return
 // --------------------------------------------------------------------------
 // Verifica devolucao de compra.
 static function _VerDev ()
-	local _sMsg      := ""
+	local _sMsg := ""
+	local _x    := 0
 
 	// Avisa interessados sobre devolucoes de compras.
-	_oSQL := ClsSQL ():New ()
+	_oSQL:= ClsSQL():New()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " select distinct D2_COD, D2_DESC, D2_QUANT, D2_UM"
-	_oSQL:_sQuery += " from " + RetSQLName ("SD2") + " SD2"
-	_oSQL:_sQuery += " where SD2.D_E_L_E_T_ != '*'"
-	_oSQL:_sQuery +=   " AND SD2.D2_FILIAL   = '" + xfilial ("SD2")   + "'"
-	_oSQL:_sQuery +=   " AND SD2.D2_DOC      = '" + sf2 -> f2_doc     + "'"
-	_oSQL:_sQuery +=   " AND SD2.D2_SERIE    = '" + sf2 -> f2_serie   + "'"
-	_oSQL:_sQuery +=   " AND SD2.D2_CLIENTE  = '" + sf2 -> f2_cliente + "'"
-	_oSQL:_sQuery +=   " AND SD2.D2_LOJA     = '" + sf2 -> f2_loja    + "'"
-	
-	_sMsg = _oSQL:Qry2HTM ("NF devolucao '" + sf2 -> f2_doc + "' do cliente '" + sf2 -> f2_cliente , NIL, "", .F.)
-	if ! empty (_sMsg)
-		U_ZZUNU ({"072"}, "NF devolucao de compra", _sMsg, .F., cEmpAnt, cFilAnt)
+	_oSQL:_sQuery += " SELECT
+	_oSQL:_sQuery += " 	   SD2.D2_CLIENTE AS FORNECEDOR	"	// 01
+	_oSQL:_sQuery += "    ,SA2.A2_NOME"						// 02
+	_oSQL:_sQuery += "    ,SD2.D2_COD AS PRODUTO"			// 03
+	_oSQL:_sQuery += "    ,SB1.B1_DESC AS DESCRICAO"		// 04
+	_oSQL:_sQuery += "    ,SD2.D2_UM AS UNIDADE_MEDIDA"		// 05
+	_oSQL:_sQuery += "    ,SD2.D2_QUANT AS QUANTIDADE"		// 06
+	_oSQL:_sQuery += "    ,SD2.D2_PRCVEN AS PRECO_VENDA"	// 07
+	_oSQL:_sQuery += "    ,SD2.D2_TOTAL AS VALOR_TOTAL"		// 08
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " SD2"
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " SB1"
+	_oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 		AND SB1.B1_COD = D2_COD"
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA2") + " SA2"
+	_oSQL:_sQuery += " 	ON SA2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 		AND SA2.A2_COD  = SD2.D2_CLIENTE"
+	_oSQL:_sQuery += " 		AND SA2.A2_LOJA = SD2.D2_LOJA"
+	_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND SD2.D2_FILIAL   = '" + xfilial("SD2")    + "'"
+	_oSQL:_sQuery += " AND SD2.D2_DOC      = '" + sf2 -> f2_doc     + "'"
+	_oSQL:_sQuery += " AND SD2.D2_SERIE    = '" + sf2 -> f2_serie   + "'"
+	_oSQL:_sQuery += " AND SD2.D2_CLIENTE  = '" + sf2 -> f2_cliente + "'"
+	_oSQL:_sQuery += " AND SD2.D2_LOJA     = '" + sf2 -> f2_loja    + "'"
+	_aDev := aclone(_oSQL:Qry2Array())
+
+	if len(_aDev) > 0
+		_sMsg := "<html>"
+		_sMsg += "<b>Fornecedor:</b> " + _aDev[1,1] + " - " + _aDev[1,2] + " <br>"
+		_sMsg += "<b>Nota Fiscal:</b> " + sf2 -> f2_doc+ "/" + sf2 -> f2_serie + " <br>"
+		_sMsg += "<br>"
+		_sMsg += "<table border='1'>"
+		_sMsg += "	<tr> "
+		_sMsg += "		<td> Produto </td>"
+		_sMsg += "		<td> Unidade Medida </td>"
+		_sMsg += "		<td> Quantidade </td>"
+		_sMsg += "		<td> Preço de Venda </td>"
+		_sMsg += "		<td> Total </td>"
+		_sMsg += "	</tr>"
+		for _x:=1 to Len(_aDev)
+			_sMsg += "	<tr> "
+			_sMsg += "		<td> " + _aDev[_x,3] + " - "+ _aDev[_x,4] + " </td>"
+			_sMsg += "		<td> " + _aDev[_x,5] + " </td>"
+			_sMsg += "		<td> " + alltrim(str(_aDev[_x,6])) + " </td>"
+			_sMsg += "		<td> " + alltrim(str(_aDev[_x,7])) + " </td>"
+			_sMsg += "		<td> " + alltrim(str(_aDev[_x,8])) + " </td>"
+			_sMsg += "	</tr>"
+		next
+		_sMsg += "</table>"
+	endif
+	if !empty(_sMsg)
+		U_ZZUNU({"072"}, "NF devolucao de compra", _sMsg, .F., cEmpAnt, cFilAnt)
 	endif
 return
 //
