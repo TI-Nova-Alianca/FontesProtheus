@@ -1,12 +1,12 @@
 // Programa...: VA_XLS59
 // Autor......: Robert Koch
 // Data.......: 30/05/2022
-// Descricao..: Exporta Planilha com saldos por conta contabil x CC (GLPI 11540)
+// Descricao..: Exporta Planilha planilha comparativa qt.movimentadas em OP x qt.estrutura (GLPI 11540)
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #exporta_planilha
 // #Descricao         #Exporta planilha comparativa qt.movimentadas em OP x qt.estrutura
-// #PalavasChave      #EST #PCP #AdmOP #Administracao_OP #Previsto_x_realizado
+// #PalavasChave      #EST #PCP #AdmOP #Administracao_OP #Previsto_x_realizado #GLPI_11540
 // #TabelasPrincipais #SD3 #SC2 #SG1
 // #Modulos           #PCP
 //

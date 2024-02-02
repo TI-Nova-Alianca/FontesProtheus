@@ -34,7 +34,7 @@ User Function BlEstF (_oParmSolBloq as json)
 	local _nLock      := 0
 	local _lTelaParaSelecao := .F.
 	local _aAreaAnt   := U_ML_SRArea ()
-	private _oListaSolBloq := JsonObject():New()
+//	private _oListaSolBloq := JsonObject():New()
 	private _sLinkSrv := ''
 	
 	if cEmpAnt + cFilAnt != '0101'
@@ -74,13 +74,11 @@ User Function BlEstF (_oParmSolBloq as json)
 		endif
 
 		if _lTelaParaSelecao
-			if aviso ("Bloqueio/desbloqueio", "Selecione o que deseja fazer", {"Bloquear", "Desbloquear"}, 3, "Selecione acao") == 1
-				//_lContinua = _Bloq ()
-				u_help ("falta fazer!",, .t.)
-			else
-				//_lContinua = _Desbloq ()
-				u_help ("falta fazer!",, .t.)
-			endif
+//			if aviso ("Bloqueio/desbloqueio", "Selecione o que deseja fazer", {"Bloquear", "Desbloquear"}, 3, "Selecione acao") == 1
+//				_lContinua = _Tela ()
+//			else
+				_lContinua = _Tela ()
+//			endif
 		else
 			_lContinua = _Executa (_oParmSolBloq)
 		endif
@@ -91,6 +89,97 @@ User Function BlEstF (_oParmSolBloq as json)
 
 	U_ML_SRArea (_aAreaAnt)
 return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Tela para o usuario selecionar enderecos a (des)bloquear
+static function _Tela ()
+	local _lContinua := .T.
+	local _sProdIni := ''
+	local _sProdFim := ''
+	local _sLoteIni := ''
+	local _sLoteFim := ''
+	local _sEndIni := ''
+	local _sEndFim := ''
+	local _oSQL := NIL
+	local _aSldFull  := {}
+	local _nIdxSldFull  := {}
+	local _aColsF3 := {}
+	local _aListaSolBloq := {}
+	local _oListaSolBloq := JsonObject():New()
+	local _oSolBloq      := NIL
+	private cPerg := 'BLESTF'
+
+	_aColsF3 = {}
+	aadd (_aColsF3, {2, 'Endereco',   60, ''})
+	aadd (_aColsF3, {3, 'Lote',       60, ''})
+	aadd (_aColsF3, {4, 'Produto',    60, ''})
+	aadd (_aColsF3, {5, 'Quantidade', 30, '@E 999,999,999.9999'})
+	aadd (_aColsF3, {6, 'Situacao',   30, ''})
+
+	_ValidPerg ()
+	do while _lContinua
+		_lContinua = pergunte (cPerg, .t.)
+
+		// Busca enderecos dos produtos/lotes existentes no FullWMS
+		if _lContinua
+
+			// O Oracle me parece mais enjoado com strings vazias. Preciso enviar um espaco em branco.
+			_sProdIni = iif (empty (alltrim (mv_par02)), ' ', alltrim (mv_par02))
+			_sProdFim = iif (empty (alltrim (mv_par03)), ' ', alltrim (mv_par03))
+			_sLoteIni = iif (empty (alltrim (mv_par04)), ' ', alltrim (mv_par04))
+			_sLoteFim = iif (empty (alltrim (mv_par05)), ' ', alltrim (mv_par05))
+			_sEndIni  = iif (empty (alltrim (mv_par06)), ' ', alltrim (mv_par06))
+			_sEndFim  = iif (empty (alltrim (mv_par07)), ' ', alltrim (mv_par07))
+
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "select 0 as OK, ENDERECO, LOTE, ITEM_COD_ITEM_LOG as PRODUTO, QTD, SITUACAO_LOTE"
+			_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
+			_oSQL:_sQuery += " 'select ENDERECO, LOTE, ITEM_COD_ITEM_LOG, QTD, SITUACAO_LOTE"
+			_oSQL:_sQuery +=    " from v_alianca_estoques"
+			_oSQL:_sQuery +=   " where empr_codemp       = 1"
+			_oSQL:_sQuery +=     " and item_cod_item_log between ''" + _sProdIni + "'' and ''" + _sProdFim + "''"
+			_oSQL:_sQuery +=     " and lote              between ''" + _sLoteIni + "'' and ''" + _sLoteFim + "''""
+			_oSQL:_sQuery +=     " and endereco          between ''" + _sEndIni  + "'' and ''" + _sEndFim  + "''""
+			_oSQL:_sQuery += " ')"
+			_oSQL:Log ('[' + procname () + ']')
+			_aSldFull := aclone (_oSQL:Qry2Array (.f., .f.))
+			if len (_aSldFull) == 0
+				u_help ("Nao foi encontrado nenhum item/lote/endereco com os parametros informados.",, .t.)
+				_lContinua = .F.
+			endif
+		endif
+		if _lContinua
+			for _nIdxSldFull = 1 to len (_aSldFull)
+				_aSldFull [_nIdxSldFull, 1] = .F.
+			next
+
+			// Selecao dos enderecos
+			U_MbArray (@_aSldFull, 'Selecione enderecos a ' + iif (mv_par01 == 2, 'des', '') + 'bloquear', _aColsF3, 1, NIL, NIL, '.t.', {})
+
+			for _nIdxSldFull = 1 to len (_aSldFull)
+				if _aSldFull [_nIdxSldFull, 1]
+					_oSolBloq = JsonObject():New()
+					_oSolBloq ['IdOper']     = ''
+					_oSolBloq ['Almox']      = '01'
+					_oSolBloq ['Endereco']   = _aSldFull [_nIdxSldFull, 2]
+					_oSolBloq ['Lote']       = _aSldFull [_nIdxSldFull, 3]
+					_oSolBloq ['Produto']    = _aSldFull [_nIdxSldFull, 4]
+					_oSolBloq ['Quantidade'] = _aSldFull [_nIdxSldFull, 5]
+					_oSolBloq ['Operacao']   = iif (mv_par01 == 1, 'B', 'L')
+					_oSolBloq ['Resultado']  = .f.
+					_oSolBloq ['Obs']        = ''
+					_oSolBloq ['StatusFull'] = ''
+					aadd (_aListaSolBloq, _oSolBloq)
+				endif
+			next
+			_oListaSolBloq:Set (_aListaSolBloq)
+		endif
+		if _lContinua .and. U_MsgNoYes ("Confirma a execucao?")
+			_lContinua = _Executa (_oListaSolBloq)
+		endif
+	enddo
+return
 
 
 // --------------------------------------------------------------------------
@@ -137,10 +226,10 @@ static function _Executa (_oListaSolBloq as json)
 			_oSolBloq ['PodeEnviar'] = .F.
 			_oSolBloq ['Obs'] += 'Cadastro do produto nao localizado!'
 		endif
-		if sb1 -> b1_rastro != 'L'
-			_oSolBloq ['PodeEnviar'] = .F.
-			_oSolBloq ['Obs'] += 'Produto nao usa controle de lotes no Protheus.'
-		endif
+//		if sb1 -> b1_rastro != 'L'
+//			_oSolBloq ['PodeEnviar'] = .F.
+//			_oSolBloq ['Obs'] += 'Produto nao usa controle de lotes no Protheus.'
+//		endif
 		if sb1 -> b1_vafullw != 'S'
 			_oSolBloq ['PodeEnviar'] = .F.
 			_oSolBloq ['Obs'] += "Produto nao eh controlado pelo FullWMS."
@@ -210,6 +299,9 @@ static function _Executa (_oListaSolBloq as json)
 			// Instancia uma solicitacao da lista, para analisar seus dados.
 			_oSolBloq := _oListaSolBloq [_nSolBloq]
 
+			U_Log2 ('debug', '[' + procname () + ']Estaria gravando aqui:')
+			U_Log2 ('debug', _oSolBloq)
+			/*
 			reclock ("ZBH", .T.)
 			zbh -> zbh_filial = xfilial ("ZBH")
 			zbh -> zbh_idOper = _oSolBloq ['IdOper']  // Manter aqui consistencia com a view v_wms_bloqueios.
@@ -220,6 +312,7 @@ static function _Executa (_oListaSolBloq as json)
 			zbh -> zbh_oper   = _oSolBloq ['Operacao']
 			msunlock ()
 			U_Log2 ('debug', '[' + procname () + ']ZBH_IdOper ' + zbh -> zbh_idOper + ' criado para item ' + zbh -> zbh_produt)
+			*/
 		next
 	endif
 
@@ -338,3 +431,21 @@ static function _Aguarda (_oListaSolBloq as json)
 
 	// E agora, o que fazer se nao tive retorno do Full para todos os itens?
 return
+
+
+// --------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+	local _aRegsPerg := {}
+	local _aDefaults := {}
+	
+	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                       Help
+	aadd (_aRegsPerg, {01, "Operacao a fazer              ", "N",  1, 0,  "",   "   ", {'Bloquear', 'Desbloquear'}, ""})
+	aadd (_aRegsPerg, {02, "Produto inicial               ", "C", 15, 0,  "",   "SB1", {},                          ""})
+	aadd (_aRegsPerg, {03, "Produto final                 ", "C", 15, 0,  "",   "SB1", {},                          ""})
+	aadd (_aRegsPerg, {04, "Lote (no FulLWMS) inicial     ", "C", 10, 0,  "",   "SB8", {},                          ""})
+	aadd (_aRegsPerg, {05, "Lote (no FulLWMS) final       ", "C", 10, 0,  "",   "SB8", {},                          ""})
+	aadd (_aRegsPerg, {06, "Endereco (no FullWMS) inicial ", "C",  7, 0,  "",   "",    {},                          ""})
+	aadd (_aRegsPerg, {07, "Endereco (no FullWMS) final   ", "C",  7, 0,  "",   "",    {},                          ""})
+	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
+Return

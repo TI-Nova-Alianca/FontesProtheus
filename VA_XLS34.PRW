@@ -179,11 +179,12 @@ Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 	
-	aadd (_aRegsPerg, {01, "Safra                         ", "C", 4, 0,  "",   "   ", {}, ""})
-	aadd (_aRegsPerg, {02, "Filial inicial                ", "C", 2, 0,  "",   "SM0", {}, ""})
-	aadd (_aRegsPerg, {03, "Filial final                  ", "C", 2, 0,  "",   "SM0", {}, ""})
-	aadd (_aRegsPerg, {04, "Data (NF) inicial             ", "D", 8, 0,  "",   "",    {}, ""})
-	aadd (_aRegsPerg, {05, "Data (NF) final               ", "D", 8, 0,  "",   "",    {}, ""})
-	aadd (_aRegsPerg, {06, "Saldo dos lotes               ", "N", 1, 0,  "",   "",    {'Apenas com saldo', 'Todos'}, ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes            Help
+	aadd (_aRegsPerg, {01, "Safra                         ", "C",  4, 0,  "",   "   ", {}, ""})
+	aadd (_aRegsPerg, {02, "Filial inicial                ", "C",  2, 0,  "",   "SM0", {}, ""})
+	aadd (_aRegsPerg, {03, "Filial final                  ", "C",  2, 0,  "",   "SM0", {}, ""})
+	aadd (_aRegsPerg, {04, "Data (NF) inicial             ", "D",  8, 0,  "",   "",    {}, ""})
+	aadd (_aRegsPerg, {05, "Data (NF) final               ", "D",  8, 0,  "",   "",    {}, ""})
+	aadd (_aRegsPerg, {06, "Saldo dos lotes               ", "N",  1, 0,  "",   "",    {'Apenas com saldo', 'Todos'}, ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return
