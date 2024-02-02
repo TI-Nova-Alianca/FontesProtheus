@@ -99,6 +99,7 @@
 //                      - Desmarcadas diversas verificacoes que nao precisam ser rodadas via batch.
 // 29/10/2023 - Robert  - Ao converter para HTML, nao 'escapava' caracteres especiais.
 // 14/11/2023 - Robert  - Criada verificacao 99 (DF-e sem revalidacao de chave recente) - GLPI 14514
+// 01/01/2024 - Sandra  - Alterado case 2 o setor de usuário de ENG para PCP. GLPI 14773.
 //
 
 #include "protheus.ch"
@@ -378,7 +379,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	case ::Numero == 2
 		::Ativa      = .T.
 		::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-		::Setores    = 'ENG'
+		::Setores    = 'PCP'
 		::ViaBatch   = .T.
 		::Descricao  = 'Produto tem revisao padrao informada no seu cadastro, mas o cadastro da propria revisao nao existe'
 		::Sugestao   = "Cadastre a revisão na tabela SG5 (revisões)"

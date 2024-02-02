@@ -56,11 +56,71 @@ User Function claudia ()
 	//u_help("Gera ZC1")
 	//_GeraZC1()
 
-Return
+	//u_help("saldo")
+	//_saldo()
 
-Static Function _GeraZC1()
-	mBrowse(,,,,"ZC1",,,,,,,,,,,,,,)
+	//u_help("Peso")
+	//_PesoProd()
+
+
 Return
+// // -----------------------------------------------------------------------------------
+// Static Function _PesoProd()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:= 0
+
+// 	u_help("Ajusta Peso")
+// 	_aDados = U_LeCSV('C:\Temp\peso.csv', ';')
+
+// 	for _i := 1 to len(_aDados)
+// 		_sCod   := alltrim(_aDados[_i, 1])
+// 		_sPeso  := alltrim(_aDados[_i, 5])
+
+// 		//_sPeso := strtran(_sPeso, '"', '')
+//     	//_sPeso := strtran(_sPeso, ",", ".")
+//     	_nPeso := val(_sPeso) 
+
+// 		DbSelectArea("SB1")
+// 		DbSetOrder(1)
+// 		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = " Peso alterado de " +  alltrim(str(sb1->b1_pesbru)) + " para " + _sPeso
+// 			_oEvento:CodEven  = "SB1001"
+// 			_oEvento:Produto  = sb1 -> b1_cod
+// 			_oEvento:Grava() 
+
+// 			reclock("SB1", .F.)
+// 				sb1->b1_pesbru := _nPeso
+// 			MsUnLock()
+
+// 		endif	
+// 	Next
+// 	u_help("Atualizado!")
+
+// Return
+
+
+
+// Static Function _saldo()
+// 	Local _nLctoCC := 0
+// 	local _sError    := ''
+// 	local _sWarning  := ''
+// 	private _oXMLFech  := NIL 
+// 	_oAssoc := ClsAssoc ():New ('002382', '01')
+
+// 	_oAssoc:FSLctosCC = .T.
+// 	_oAssoc:FSSafra      = '2023'
+// 	_sXmlFech = _oAssoc:FechSafra ()
+// 	_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+// 	for _nLctoCC = 1 to len(_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem)
+
+// 	next
+// Return
+// Static Function _GeraZC1()
+// 	mBrowse(,,,,"ZC1",,,,,,,,,,,,,,)
+// Return
 
 // Static Function _ProdSB5()
 // 	Local _aDados 	:= {}

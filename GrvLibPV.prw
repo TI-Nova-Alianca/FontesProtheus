@@ -80,8 +80,11 @@
 // 12/01/2024 - Claudia - Validação para desconsiderar tipo de pedido "utiliza fornecedor" para rapel. GLPI: 14706
 // 24/01/2024 - Claudia - Ultimo preço de venda será buscado diretamente da ultima NF faturada. GLPI: 14796
 // 25/01/2024 - Claudia - Melhorias no layout dos e-mails. GLPI: 14805
+// 31/01/2024 - Claudia - Validação para não enviar e-mail de preço abaixo quando bloqueio por residuo. GLPI: 14838 
+// 31/01/2024 - Claudia - Envio de e-mail com preço minimo apenas para operações de venda. GLPI: 14837
+// 01/02/2024 - Claudia - Excluidos produtos tipo RE de envio de email de preço abaixo de venda. GLPI: 14812
 //
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV(_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _n         := N
@@ -250,11 +253,13 @@ user function GrvLibPV(_lLiberar)
 					endif
 				endif
 				
-				_lBloq     := iif(alltrim(GDFieldGet("C6_BLQ")) $ "SR" ,.T.,.F.)
-				_sGeraDupl := fBuscaCpo("SF4", 1, xfilial("SF4") + GDFieldGet("C6_TES"), "F4_DUPLIC") 
+				_lBloq     := iif(alltrim(GDFieldGet("C6_BLQ")) $ "SR" ,.T.,.F.)						// Bloqueio por residuos
+				_sGeraDupl := fBuscaCpo("SF4", 1, xfilial("SF4") + GDFieldGet("C6_TES"), "F4_DUPLIC") 	// Gera duplicata
+				_sOper     := alltrim(GDFieldGet("C6_VAOPER")) 											// Operação de vendas
+				_sTipoProd := fBuscaCpo("SB1", 1, xfilial("SB1") + GDFieldGet("C6_PRODUTO"), "B1_TIPO")
 				
 				// Valida preco de venda com ultimo pedido do cliente.
-				if empty(_sErro) .and. ! m->c5_tipo $ 'DB' .and. cNumEmp == '0101' .and. _sGeraDupl == "S" .and. _lBloq == .F.
+				if empty(_sErro) .and. ! m->c5_tipo $ 'DB' .and. cNumEmp == '0101' .and. _sGeraDupl == "S" .and. _lBloq == .F. .and. _sOper == '01' .and. _sTipoProd <> 'RE'
 					_sQuery := ""
 					_sQuery += " SELECT TOP 1 D2_PRCVEN, "
 					_sQuery +=              " D2_FILIAL, "
@@ -299,7 +304,7 @@ user function GrvLibPV(_lLiberar)
 			_sMsg += "</html>"
 
 			_nOpcao = aviso ("Precos abaixo da regras de estabelecidas pelo comercial", ;
-				"Estao sendo vendidos produtos com precos abaixo das regras estabelecidas pelo comercial!" + chr (13) + chr (10) + "Se confirmar assim mesmo, o pedido ficara´ com bloqueio gerencial.", ;
+				"Estao sendo vendidos produtos com precos abaixo das regras estabelecidas pelo comercial!" + chr (13) + chr (10) + "Se confirmar assim mesmo, o pedido ficara com bloqueio gerencial.", ;
 				{"Sim", "Nao", "Verificar"}, ;
 				3, ;
 				"Precos abaixo da venda anterior/Tabela de Precos/ Precos abaixo do aumento especificado")
