@@ -14,6 +14,7 @@
 // 25/01/2023 - Robert - Passa a usar classe ClsCarSaf para atualizar tabela ZZA.
 // 03/02/2023 - Robert - Gravar evento de informacao manual do peso bruto.
 // 20/01/2024 - Robert - Melhorados logs, eliminadas linhas comentariadas.
+// 03/02/2024 - Robert - Logs diversos para rastrear gravação do ZZA (GLPI 14858)
 //
 
 #include "VA_Inclu.prw"
@@ -34,6 +35,25 @@ user function va_rus1P (_lPortaria)
 
 	// Como eh primeira pesagem, tenho que alimentar o objeto com dados do arquivo.
 	_oCarSaf:GeraAtrib ("SZE")
+
+
+
+	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT *"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + sze -> ze_safra + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + sze -> ze_carga + "'"
+	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+	U_Log2 ('debug', '[' + procname () + ']Entrando na funcao com o ZZA assim:')
+	U_Log2 ('debug', _aDebugZZA)
+
+
+
 
 	_lPortaria = iif (_lPortaria == NIL, .F., _lPortaria)
 	
@@ -82,6 +102,25 @@ user function va_rus1P (_lPortaria)
 		endif
 	endif
 
+
+
+
+	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT *"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + sze -> ze_safra + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + sze -> ze_carga + "'"
+	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+	U_Log2 ('debug', '[' + procname () + ']Antes de chamar novo GeraAtrib:')
+	U_Log2 ('debug', _aDebugZZA)
+
+
+
 	if _lContinua
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
 		if ! _oCarSaf:AtuAgenda ()
@@ -91,6 +130,25 @@ user function va_rus1P (_lPortaria)
 		// Atualiza itens da carga (SZF) e status para medicao de grau (ZZA).
 		_oCarSaf:AtuZZA (.F.)
 	endif
+
+
+
+
+	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT *"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + sze -> ze_safra + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + sze -> ze_carga + "'"
+	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+	U_Log2 ('debug', '[' + procname () + ']Saindo da funcao com o ZZA assim:')
+	U_Log2 ('debug', _aDebugZZA)
+
+
 
 	U_ML_SRArea (_aAreaAnt)
 return

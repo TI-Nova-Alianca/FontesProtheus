@@ -30,6 +30,8 @@
 // 01/01/2024 - Robert - Criado metodo :FormataGrau().
 // 16/01/2024 - Robert - Exclusao de carga marcava o ZZA como deletado, mas precisa excluir de verdade.
 // 23/01/2024 - Robert - Melhorado envio de atualizacao de agenda para NaWeb (algumas validacoes e mensagens) - GLPI 14778
+// 02/02/2024 - Robert - Filial 01 passa a receber viniferas com clas.A/B/D (conversa pelo Whats com Andre Gasperin)
+// 03/02/2024 - Robert - Logs diversos para rastrear gravação do ZZA (GLPI 14858)
 //
 
 #Include "Protheus.ch"
@@ -302,7 +304,7 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 		else
 		//	::UltMsg += "Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
 			_Super:SomaMsg ("Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida))
-			u_help (::UltMsg,, .t.)
+		//	u_help (::UltMsg,, .t.)
 			_lContinua = .F.
 
 			// Grava evento para posterior rastreamento
@@ -314,11 +316,29 @@ return _lContinua
 
 // --------------------------------------------------------------------------
 // Envia atualizacao para o sistema de medicao de grau.
-METHOD AtuZZA (_lReenvio) Class ClsCarSaf
+METHOD AtuZZA (_lReenvio as logical) Class ClsCarSaf
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lRetAtZZA := .T.
 	local _nItem     := 0
 	local _sChaveZZA := ''
+	local _oSQL      := NIL
+
+
+	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT *"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
+	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Entrando no metodo com o ZZA assim:')
+	U_Log2 ('debug', _aDebugZZA)
+
+
 
 	// Possiveis situacoes para o campo ZZA_STATUS:
 	// 0 = carga cadastrada no Protheus, ainda nao pesada. Programa BL01 ignora-a;
@@ -328,10 +348,10 @@ METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 	// M = usuario (do Protheus) finalizou manualmente (ZZA_STATUS nao estava 3 por algum motivo).
 	// C = Carga cancelada no Protheus
 
-	if _lRetAtZZA .and. ::PesoBruto <= 0 .and. ::StatusCar != 'C'
-		u_help ("Carga ainda nao tem peso bruto. Efetue, antes, a primeira pesagem.",, .t.)
-		_lRetAtZZA = .F.
-	endif
+//	if _lRetAtZZA .and. ::PesoBruto <= 0 .and. ::StatusCar != 'C'
+//		u_help ("Carga ainda nao tem peso bruto. Efetue, antes, a primeira pesagem.",, .t.)
+//		_lRetAtZZA = .F.
+//	endif
 	if _lRetAtZZA .and. ::StatusCar $ 'R/N/D'  // 1=Primeira pesagem OK;2=Segunda pesagem OK;R=Recibo impresso;N=NF gerada;D=Redirecionada;C=Cancelada
 		u_help ("Status da carga nao permite mais ser reenviada para leitura de grau.",, .t.)
 		_lRetAtZZA = .F.
@@ -349,8 +369,7 @@ METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 			if ! zza -> (dbseek (_sChaveZZA, .F.))
 				u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Carga:' + ::Carga + ' Item: ' + ::ItItem [_nItem] + ' Incluindo ZZA')
 				reclock ("ZZA", .T.)
-				// Se nao existia ZZA, nem vou tratar como reenvio.
-				_lReenvio = .F.
+				_lReenvio = .F.  // // Se nao existia ZZA, nem vou tratar como reenvio.
 			else
 				u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Carga:' + ::Carga + ' Item: ' + ::ItItem [_nItem] + ' Vou alterar ZZA (zza_status encontra-se com ' + zza -> zza_status + ')')
 				reclock ("ZZA", .F.)
@@ -366,6 +385,7 @@ METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 
 			// Quando solicitado reenvio manualmente, faz algumas verificacoes adicionais.
 			if _lReenvio
+				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Reenvio = .T.')
 				if zza -> zza_status == '1'
 					u_help ("Status do item " + zza -> zza_nprod + " ja encontra-se como 'aguardando leitura do grau'.",, .t.)
 				elseif zza -> zza_status == '0' .or. (zza -> zza_status == '2' .and. U_MsgNoYes ("Item " + zza -> zza_nprod + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau. Deseja reiniciar o status?"))
@@ -405,6 +425,23 @@ METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 			msunlock ()
 		next
 	endif
+
+
+
+	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT *"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
+	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
+	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Saindo do metodo com o ZZA assim:')
+	U_Log2 ('debug', _aDebugZZA)
+
 
 	U_ML_SRArea (_aAreaAnt)
 return _lRetAtZZA
@@ -942,7 +979,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 			do case
 			case ::Filial == '01'
 				::RecebeOrg  = 'S'  // Recebe convencionais e organicas
-				::RecebeVini = '4'  // Recepcao de viniferas: 1=nao recebe;2=classif.latada(A/B/D);3=classif.espaldeira(PR/AA/A/B/C/D/DS);4=recebe viniferas, mas classifica como comum
+				// Passado para '2' em 02/02/2024 apos conversa pelo Whats com Andre Gasperin. ---> ::RecebeVini = '4'  // Recepcao de viniferas: 1=nao recebe;2=classif.latada(A/B/D);3=classif.espaldeira(PR/AA/A/B/C/D/DS);4=recebe viniferas, mas classifica como comum
+				::RecebeVini = '2'  // Recepcao de viniferas: 1=nao recebe;2=classif.latada(A/B/D);3=classif.espaldeira(PR/AA/A/B/C/D/DS);4=recebe viniferas, mas classifica como comum
 				::AxEntrada  = '03' // Almox.para o qual devo gerar contranota. Geralmente '03'.
 				::CxOuGranel = 'G'
 			case ::Filial == '03'

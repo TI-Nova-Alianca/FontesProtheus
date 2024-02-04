@@ -249,7 +249,6 @@ User Function DelZZT()
 						msunlock ()
 				
 						// Atualiza tabela de comunicacao com leitor de grau.
-					//	U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
 						_oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
 						_oCarSaf:AtuZZA (.F.)
 					endif

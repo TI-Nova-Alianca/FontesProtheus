@@ -15,6 +15,7 @@
 // 03/02/2023 - Robert - Gravacao de eventos cfe. campos ZE_AlManPB,ZE_AlManPT, ZF_AlManGR
 // 10/02/2023 - Robert - Gravacao evento cancelamento carga.
 // 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
+// 03/02/2023 - Robert - Soh gravava ZZA se jah tivesse o peso bruto, mas isso deu problema com as triggers do ZZA (GLPI 14858)
 //
 
 #include "totvs.ch"
@@ -35,9 +36,6 @@ user Function VA_RUS2G (_nOpc, _oCarSaf)
 	local _nAglut    := 0
 	local _nCompart  := 0
 	private _sPrefLog  := 'Car.' + sze -> ze_carga
-
-//	u_log2 ('info', 'Iniciando ' + procname ())
-	//U_PerfMon ('I', 'Interno_VA_Rus2G')
 
 	if inclui .and. !_oCarSaf:PodeGravar ()
 		_lContinua = .F.
@@ -184,9 +182,9 @@ user Function VA_RUS2G (_nOpc, _oCarSaf)
 //		_oCarSaf:Log ()
 
 		// Atualiza tabela de comunicacao com leitor de grau.
-		if _oCarSaf:PesoBruto > 0  // Sem 1a.pesagem, nem adianta enviar.
-			_oCarSaf:AtuZZA (.F.)
-		endif
+//		if _oCarSaf:PesoBruto > 0  // Sem 1a.pesagem, nem adianta enviar.
+		_oCarSaf:AtuZZA (.F.)
+//		endif
 
 		// Imprime ticket
 		if inclui

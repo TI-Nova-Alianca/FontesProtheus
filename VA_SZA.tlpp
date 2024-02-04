@@ -538,8 +538,7 @@ static function _GeraZBI (_sCodTab)
 										ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']), ;
 										_oTbUva:Conducao, ;
 										'', ;
-										_aListaVar [_nIdxListaVar, 2], ;
-										(_nOperacao != 2) ;
+										_aListaVar [_nIdxListaVar, 2] ;
 							)
 						next
 
@@ -568,8 +567,7 @@ static function _GeraZBI (_sCodTab)
 										ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']), ;
 										_oTbUva:Conducao, ;
 										_aListaClass [_nIdxListaClass, 1], ;
-										_aListaClass [_nIdxListaClass, 2], ;
-										(_nOperacao != 2) ;
+										_aListaClass [_nIdxListaClass, 2] ;
 							)
 						next
 					endif
@@ -616,12 +614,9 @@ static function _GravaZBI ( ;
 	, _sConduc  as character ;
 	, _sClassif as character ;
 	, _nPreco   as numeric ;
-	, _lLogInc  as logical ;
 )
 	if ! zbi -> (dbseek (xfilial ("ZBI") + _sCodTab + _sProduto + _sConduc + _sGrau + _sClassif, .F.))
-		if _lLogInc
-			U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
-		endif
+		//	U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
 		reclock ("ZBI", .t.)
 		zbi -> zbi_filial = xfilial ("ZBI")
 		zbi -> zbi_codtab = _sCodTab

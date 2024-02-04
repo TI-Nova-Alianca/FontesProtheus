@@ -81,6 +81,7 @@
 // 23/08/2022 - Robert  - Passa a aceitar CFOP de industrializacao para outros tipos alem de BN (GLPI 12509)
 // 29/08/2022 - Robert  - Criada validacao para exigir F4_ESTOQUE=S quando tiver D1_ORDEM.
 // 30/11/2022 - Robert  - Passa a exigir dados de rastreabilidade para tipos de nota (antes era apenas cTipo=N)
+// 29/01/2024 - Robert  - Passa a exigir campo D1_DFABRIC quando item controla lotes.
 //
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -496,9 +497,12 @@ static function _VerLotes (_lTransFil, _lVA_Retor)
 	local _lRet    := .T.
 
 //	if _lRet .and. ! _lVA_Retor .and. cTipo == 'N' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
-	if _lRet .and. ! _lVA_Retor .and. ! cTipo $ 'ICP' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
+//	if _lRet .and. ! _lVA_Retor .and. ! cTipo $ 'ICP' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
+	if _lRet .and. ! _lVA_Retor .and. ! cTipo $ 'ICP';
+		.and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID")) .or. empty (GDFieldGet ("D1_DFABRIC")));
+		.and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
 		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == "S"
-			u_help ("O produto '" + GDFieldGet ("D1_COD") + "' possui controle de lotes. O lote do fornecedor (campo '" + alltrim (RetTitle ("D1_LOTEFOR")) + "') e data de validade (campo '" + alltrim (RetTitle ("D1_DTVALID")) + "') devem ser informados para possibilitar a rastreabilidade.",, .t.)
+			u_help ("O produto '" + GDFieldGet ("D1_COD") + "' possui controle de lotes. a data de fabricacao (campo '" + alltrim (RetTitle ("D1_DFABRIC")) + "'), o lote do fornecedor (campo '" + alltrim (RetTitle ("D1_LOTEFOR")) + "') e data de validade (campo '" + alltrim (RetTitle ("D1_DTVALID")) + "') devem ser informados para possibilitar a rastreabilidade.",, .t.)
 			_lRet = .F.
 		endif
 	endif

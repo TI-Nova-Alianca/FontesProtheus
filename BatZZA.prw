@@ -19,42 +19,46 @@
 //                     - Busca ano safra pela funcao U_IniSafra().
 // 17/01/2021 - Robert - Eliminados logs desnecessarios.
 //                     - Inseridas tags para catalogo de programas.
+// 03/02/2024 - Robert - Grava em log os dados do ZZA que pretende altetar (GLPI 14858)
 //
 
 // --------------------------------------------------------------------------
 user function BatZZA ()
-	local _oSQL   := NIL
-//	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
-//	_sArqLog := U_NomeLog (.t., .f.)
-//	u_logIni ()
-//	u_logDH ()
-	U_Log2 ('info', 'Iniciando ' + procname ())
+	local _oSQL      := NIL
+	local _sWhere    := ''
+	local _aDebugZZA := {}
 
 	// Altera o status das cargas para 'jah lidas' no ZZA quando tiverem mas de 1 dia de vida, pois
 	// ocorrem varios casos de nao finalizar a gravacao do grau, seja por queda de rede, por descuido
 	// do operador, travamento de sistema, etc... e essas cargas ficam atrapalhando a selecao das proximas.
+	_sWhere := ''
+	_sWhere +=  " FROM " + RetSQLName ("ZZA") + " ZZA, "
+	_sWhere +=             RetSQLName ("SZE") + " SZE "
+	_sWhere += " WHERE ZZA_SAFRA = '" + U_IniSafra (date ()) + "'"
+	_sWhere +=   " AND ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+	_sWhere +=   " AND ZZA_STATUS in ('1', '2')"
+	_sWhere +=   " AND ZZA.D_E_L_E_T_ = ''"
+	_sWhere +=   " AND ZE_SAFRA = ZZA_SAFRA"
+	_sWhere +=   " AND SZE.D_E_L_E_T_ = ''"
+	_sWhere +=   " AND ZE_FILIAL = ZZA_FILIAL"
+	_sWhere +=   " AND ZE_CARGA  = ZZA_CARGA"
+	_sWhere +=   " AND (ZE_NFGER != '' OR ZE_AGLUTIN != '')"
+	_sWhere +=   " AND (ZE_DATA   < '" + dtos (date () - 1) + "' OR ZE_NFGER != '')"
+
+	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := "SELECT * "
+	_oSQL:_sQuery += _sWhere
+	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+	U_Log2 ('debug', '[' + procname () + ']ZZA encontra-se assim:')
+	U_Log2 ('debug', _aDebugZZA)
+
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " UPDATE ZZA SET ZZA_STATUS = 'C'"
-	_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZZA") + " ZZA, "
-	_oSQL:_sQuery +=              RetSQLName ("SZE") + " SZE "
-//	_oSQL:_sQuery +=  " WHERE ZZA_SAFRA = '" + cvaltochar (year (date ())) + "'"
-	_oSQL:_sQuery +=  " WHERE ZZA_SAFRA = '" + U_IniSafra (date ()) + "'"
-	_oSQL:_sQuery +=    " AND ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
-//	_oSQL:_sQuery +=    " AND ZZA_STATUS = '1'"
-	_oSQL:_sQuery +=    " AND ZZA_STATUS in ('1', '2')"
-	_oSQL:_sQuery +=    " AND ZZA.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND ZE_SAFRA = ZZA_SAFRA"
-	_oSQL:_sQuery +=    " AND SZE.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND ZE_FILIAL = ZZA_FILIAL"
-	_oSQL:_sQuery +=    " AND ZE_CARGA  = ZZA_CARGA"
-	_oSQL:_sQuery +=    " AND (ZE_NFGER != '' OR ZE_AGLUTIN != '')"
-//	_oSQL:_sQuery +=    " AND ZE_DATA   < '" + dtos (date () - 1) + "'"
-	_oSQL:_sQuery +=    " AND (ZE_DATA   < '" + dtos (date () - 1) + "' OR ZE_NFGER != '')"
+	_oSQL:_sQuery += _sWhere
 	_oSQL:Log ()
 	_oSQL:Exec ()
 
-//	u_logFim ()
-//	_sArqLog = _sArqLog2
 return .T.
 
