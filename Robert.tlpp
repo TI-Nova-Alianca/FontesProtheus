@@ -149,7 +149,7 @@ user function robert ()
 		// _sFuncao += '_Sisdevin ()'
 		// _sFuncao += '_ST_MG ()'
 		// _sFuncao += '_SZI ()'
-		_sFuncao += '_TbUva ()'
+		// _sFuncao += '_TbUva ()'
 		// _sFuncao += '_telnet ()'
 		// _sFuncao += '_TrEstq ()'
 		// _sFuncao += '_VACCR2 ()'
@@ -2256,10 +2256,10 @@ return
 // --------------------------------------------------------------------------
 // Gera simulacoes de pagamentos safra 2023 (versao consad nov/23)
 static function _GLPI14483 ()
-	local _aMenorVl  := {}
-	local _oCarSaf   := NIL
+//	local _aMenorVl  := {}
+//	local _oCarSaf   := NIL
 //	local _aRetPrc   := {}
-	local _aRetPrcS1 := {}
+//	local _aRetPrcS1 := {}
 	/*
 	// Passo 1: gero pre-notas com os detalhes de misturas, etc e o preco efetivo ateh entao.
 	cPerg = "VAGNF3"
@@ -2280,7 +2280,7 @@ static function _GLPI14483 ()
 	U_GravaSX1 (cPerg, '15', 'z')    // Filial final
 	U_VA_GNF3 (.T.)
 	*/
-
+	/*
 	// Passo 2: altero a tabela de precos da uva
 	// e rodo novamente alimentando outro campo com os novos precos.
 	dbselectarea ("ZZ9")
@@ -2326,6 +2326,25 @@ static function _GLPI14483 ()
 		endif
 		zz9 -> (dbskip ())
 	enddo
+	*/
+	// Passo 3: com a tabela ZZ9 ajustada e conferida, gero as contranotas.
+	Private cPerg   := "VAGNF2"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2023') // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'Q')    // Parcelas sep.barras (bco=todas)
+	U_GravaSX1 (cPerg, '07', '')     // Grupo pagto (vazio=todos)
+	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
+	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
+	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
+	U_GravaSX1 (cPerg, '11', '801')  // Cond pagto
+	U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
+	U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
+	u_va_gnf2 (.t.)
+
 return
 
 // --------------------------------------------------------------------------
@@ -2624,13 +2643,13 @@ static function _va_xls ()
 //	U_GravaSX1 (cPerg, '03', 'RS-866/2020')  // codigo CR
 //	u_va_xls38 (.T.)
 
-Private cPerg   := "VAXLS40"
-U_GravaSX1 (cPerg, '01', 'S23A')  // safra
-U_GravaSX1 (cPerg, '02', 2)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
-U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
-U_GravaSX1 (cPerg, '04', 2)  // Todos(decimais) / Apenas inteiros
-U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
-u_va_xls40 (.T.)
+// Private cPerg   := "VAXLS40"
+// U_GravaSX1 (cPerg, '01', 'S23A')  // safra
+// U_GravaSX1 (cPerg, '02', 2)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
+// U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
+// U_GravaSX1 (cPerg, '04', 2)  // Todos(decimais) / Apenas inteiros
+// U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
+// u_va_xls40 (.T.)
 
 //	Private cPerg   := "VAXLS41"
 //	U_GravaSX1 (cPerg, '01', '')  // assoc 
@@ -2708,6 +2727,10 @@ u_va_xls40 (.T.)
 	// U_GravaSX1 (cPerg, '03', stod ('20221101'))
 	// U_GravaSX1 (cPerg, '04', stod ('20221120'))
 	// u_va_xls63 (.T.)
+
+	Private cPerg   := "VAXLS65"
+	U_GravaSX1 (cPerg, '01', '13408101')
+	u_va_xls65 (.T.)
 return
 
 // --------------------------------------------------------------------------
@@ -3534,7 +3557,7 @@ static function _TbUva ()
 	local _sHTML  := ''
 	local _nHdl    := 0
 	local _sArq    := ''
-	local _sCodTab := '24B'
+	local _sCodTab := '24A'
 	local _sVarUva := 'C'
 	local _sConduc := 'L'
 	local _oTbUva := ClsTbUva ():New ()

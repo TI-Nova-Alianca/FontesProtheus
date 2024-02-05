@@ -508,7 +508,7 @@ static function _AjSE2 ()
 	endif
 
 	// Se for uma contranota de safra...
-	if sf1 -> f1_tipo $ "N/C" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) //.and. (IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2"))
+	if sf1 -> f1_tipo $ "N/C" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) // .and. ! empty (sf1 -> f1_vagpsaf) //.and. (IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2"))
 		if ! ExistBlock ("MTCOLSE2")
 		// Se for uma nota de compra de uva (em 2021 jah vamos gerar contranotas de compra em vez de 'entrada'), ajusta vencimentos.
 			U_Log2 ('info', 'Ajustando datas de vencimento dos titulos de nota de compra de safra.')
@@ -576,7 +576,7 @@ static function _AjSE2 ()
 					U_Log2 ('debug', '[' + procname () + '] e2_parcela ' + se2 -> e2_parcela + ': alterando e2_vencrea de ' + dtoc (se2 -> e2_vencrea) + ' para ' + dtoc (_dVctSafra))
 				endif
 				reclock ("SE2", .F.)
-				se2 -> e2_hist    = alltrim (se2 -> e2_hist) + 'SAFRA ' + sf1 -> f1_vasafra + ' GRP.' + sf1 -> F1_VAGPSAF
+				se2 -> e2_hist    = alltrim (se2 -> e2_hist) + 'SAFRA ' + sf1 -> f1_vasafra + iif (! empty (sf1 -> f1_vagpsaf), ' GRP.' + sf1 -> F1_VAGPSAF, '')
 				se2 -> e2_vencto  = _dVctSafra
 				se2 -> e2_vencrea = _dVctSafra
 				se2 -> e2_vasafra = sf1 -> f1_vasafra

@@ -91,6 +91,12 @@ User Function MNTNG()
 		U_Log2 ('info', '[' + procname () + ']Filtrando c.custo: _xRet = ' + _xRet)
 
 
+// nao consegui abrir a documentacao em https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878	// Filtro para executantes de S.S. com o usuario logado.
+// nao consegui abrir a documentacao em https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878	ElseIf _sIDdLocal == "FILTER_EXECUTOR"
+// nao consegui abrir a documentacao em https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878		_xRet = ""
+// nao consegui abrir a documentacao em https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878		U_Log2 ('info', '[' + procname () + ']Filtrando executor: _xRet = ' + _xRet)
+
+
 	// Filtro para ordens de servico
 	ElseIf _sIDdLocal == "FILTER_ORDER"
 		_xRet = ''
