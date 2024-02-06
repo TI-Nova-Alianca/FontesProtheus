@@ -109,16 +109,12 @@ Static Function _Gera()
     _oSQL:_sQuery += "                          	WHEN  V.COR ='B' THEN  'BRANCO'    	  "
     _oSQL:_sQuery += "                           	WHEN  V.COR ='R' THEN  'ROSE'         "
     _oSQL:_sQuery += "                      END AS COR                 	              	  "
-	
 	_oSQL:_sQuery += "                      ,CASE                               						 "
     _oSQL:_sQuery += "                         		WHEN  V.TIPO_ORGANICO = 'C' THEN  'CONVENCIONAL'     "
     _oSQL:_sQuery += "                          	WHEN  V.TIPO_ORGANICO = 'O' THEN 'ORGANICA'          "
     _oSQL:_sQuery += "                           	WHEN  V.TIPO_ORGANICO = 'E' THEN 'EM_CONVERSAO'      "
     _oSQL:_sQuery += "                          	WHEN  V.TIPO_ORGANICO = 'B' THEN 'BORDADURA'         "
 	_oSQL:_sQuery += "                      END AS TIPO  											     "
-	
-	
-
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SF1") + " SF1, "
 	_oSQL:_sQuery +=             RetSQLName ("SD1") + " SD1, "
 	_oSQL:_sQuery +=           " VA_VNOTAS_SAFRA V"
