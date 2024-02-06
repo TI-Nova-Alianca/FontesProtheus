@@ -16,6 +16,7 @@
 //                     - Busca maior item da carga, para casos de mesmo produto (talhoes diferentes).
 // 28/03/2022 - Robert - Nao considerava contranotas de producao propria.
 // 10/02/2023 - Robert - Leitura campo ZZA_TQPULM
+// 06/02/2024 - Sandra - Incluso campos cor e tipo - GLPI 14764.
 //
 
 // --------------------------------------------------------------------------
@@ -103,6 +104,21 @@ Static Function _Gera()
 	_oSQL:_sQuery +=        ",CASE WHEN CARGAS.ZZA_TQPULM != 0 AND CARGAS.ZZA_TQPULM != CARGAS.ZZA_LINHA"
 	_oSQL:_sQuery +=        " THEN 'Desviado do tombador ' + CARGAS.ZZA_LINHA"
 	_oSQL:_sQuery +=        " ELSE '' END AS DESVIO"
+	_oSQL:_sQuery += "                      ,CASE                               		  "
+    _oSQL:_sQuery += "                         		WHEN  V.COR ='T' THEN  'TINTO'        "
+    _oSQL:_sQuery += "                          	WHEN  V.COR ='B' THEN  'BRANCO'    	  "
+    _oSQL:_sQuery += "                           	WHEN  V.COR ='R' THEN  'ROSE'         "
+    _oSQL:_sQuery += "                      END AS COR                 	              	  "
+	
+	_oSQL:_sQuery += "                      ,CASE                               						 "
+    _oSQL:_sQuery += "                         		WHEN  V.TIPO_ORGANICO = 'C' THEN  'CONVENCIONAL'     "
+    _oSQL:_sQuery += "                          	WHEN  V.TIPO_ORGANICO = 'O' THEN 'ORGANICA'          "
+    _oSQL:_sQuery += "                           	WHEN  V.TIPO_ORGANICO = 'E' THEN 'EM_CONVERSAO'      "
+    _oSQL:_sQuery += "                          	WHEN  V.TIPO_ORGANICO = 'B' THEN 'BORDADURA'         "
+	_oSQL:_sQuery += "                      END AS TIPO  											     "
+	
+	
+
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SF1") + " SF1, "
 	_oSQL:_sQuery +=             RetSQLName ("SD1") + " SD1, "
 	_oSQL:_sQuery +=           " VA_VNOTAS_SAFRA V"
