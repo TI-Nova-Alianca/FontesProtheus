@@ -151,6 +151,7 @@ user function robert ()
 		// _sFuncao += '_SZI ()'
 		// _sFuncao += '_TbUva ()'
 		// _sFuncao += '_telnet ()'
+		// _sFuncao += '_TesteAssoc ()'
 		// _sFuncao += '_TrEstq ()'
 		// _sFuncao += '_VACCR2 ()'
 		// _sFuncao += '_VA_ACR ()'
@@ -3965,6 +3966,29 @@ static function _SZI ()
 return
 
 // --------------------------------------------------------------------------
+// Testes com associados
+static function _TesteAssoc ()
+	local _oSQL := NIL
+	local _aAssoc := {}
+	local _nAssoc := 0
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT distinct ZI_ASSOC, ZI_LOJASSO"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = '*'"
+	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
+	_aAssoc = _oSQL:Qry2Array ()
+	for _nAssoc = 1 to len (_aAssoc)
+		u_log (cvaltochar (_nAssoc) + ' de ' + cvaltochar (len (_aAssoc)))
+		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+		if ! empty (_oAssoc:Codigo)
+			U_Log (_oAssoc:SldQuotCap (date ()) [.QtCapRetTXT])
+		endif
+	next
+return
+
+// --------------------------------------------------------------------------
 // Testes classe transf.estq.
 static function _TrEstq ()
 	private _sErroAuto := ''
@@ -7416,28 +7440,6 @@ return
 	U_GravaSX1 (cPerg, '14', 'O')    // parcela final
 	U_GravaSX1 (cPerg, '15', 2)      // regrava se ja tiver preco {"Sim", "Nao"}
 	U_VA_ZZ9P (.t.)
-return
-*/
-/*
-	// Recalcula saldos associados (ZZM)
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT ZZM_ASSOC, ZZM_LOJA"
-	_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZZM") + " ZZM "
-	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = '*'"
-	_oSQL:_sQuery +=    " AND ZZM_ERRSAL = 'S'"
-	_oSQL:_sQuery +=    " AND ZZM_ASSOC  = '002498'"
-	_oSQL:_sQuery +=  " ORDER BY ZZM_ASSOC, ZZM_LOJA"
-	_aAssoc = _oSQL:Qry2Array ()
-	for _i = 1 to len (_aAssoc)
-		_oAssoc := ClsAssoc():New (_aAssoc [_i, 1], _aAssoc [_i, 2])
-		u_logIni (_oAssoc:Codigo + "/" + _oAssoc:Loja)
-		_oSQL := ClsSQL ():New ()
-		//_oSQL:_sQuery := "update ZZM010 SET D_E_L_E_T_ = '*', R_E_C_D_E_L_ = R_E_C_N_O_ WHERE ZZM_ASSOC = '" + _oAssoc:Codigo + "' and ZZM_LOJA = '" + _oAssoc:Loja + "'"
-		//_oSQL:Exec ()
-		_oAssoc:AtuSaldo (DATE ())
-		u_logFim (_oAssoc:Codigo + "/" + _oAssoc:Loja)
-	next
 return
 */
 
