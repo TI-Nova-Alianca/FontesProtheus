@@ -143,6 +143,7 @@ User Function MNTNG()
 
 	ElseIf _sIDdLocal == "FINISH_VALID_ORDER"
 		If FWJsonDeserialize(PARAMIXB[2]:GetContent(), @_oObjMnt)
+			U_Log2 ('info', '[' + procname () + ']Validando encerramento OS ' + _oObjMnt:ORDER)
 			If Empty(_oObjMnt:observation ) //verifica campo observação foi passado vazio
 				_xRet = "Campo observação deve ser informado."
 			EndIf
@@ -155,7 +156,10 @@ User Function MNTNG()
 			
 			// Verifica se tem pedido de compra em aberto relacionado a esta OS
 			_xRet = _VerPdCom (_oObjMnt:ORDER)
-
+			
+			if ! empty (_xRet)
+				U_Log2 ('aviso', '[' + procname () + ']Msg retorno validacao encerramento: ' + _xRet)
+			endif
 		else
 			_xRet = ''
 			_oAviso := ClsAviso ():New ()

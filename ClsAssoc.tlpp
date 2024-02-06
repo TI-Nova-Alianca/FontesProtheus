@@ -122,6 +122,7 @@
 // 15/12/2023 - Robert  - Portado de .prw para .tlpp e passa a herdar a ClsBase (GLPI 14548)
 //                      - Iniciada versao 3 do calculo de correcao monetaria.
 // 09/01/2024 - Robert  - Ajustes versao 3 do calculo de correcao monetaria.
+// 06/02/2024 - Robert  - Metodo SldQuotCap - ignorar saida indevida assoc 002848 (GLPI 14843)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -2372,8 +2373,19 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 		_oSQL:_sQuery +=                  " AND SA2.A2_VALBASE = '" + ::LojaBase + "'"
 		_oSQL:_sQuery +=   " )"
 		_oSQL:_sQuery +=   " AND SZI.ZI_TM IN ('10','11','12','17','18','19','20','27')"
+
+		// Ignora lctos feitos por engano (era para outro associado) cfe. GLPI 14843
+		// Nao deletei-os por que deram origem a toitulos no SE2 que nao quisemos mais
+		// apagar por que o exercicio jah encontra-se encerrado.
+		_oSQL:_sQuery +=   " AND NOT (ZI_FILIAL  = '01'"
+		_oSQL:_sQuery +=        " AND ZI_ASSOC   = '002848'"
+		_oSQL:_sQuery +=        " AND ZI_LOJASSO = '01'"
+		_oSQL:_sQuery +=        " AND ZI_DOC     = '13112023'"
+		_oSQL:_sQuery +=        " AND ZI_TM      = '11'"
+		_oSQL:_sQuery +=        ") "
+
 		_oSQL:_sQuery += " ORDER BY ZI_DATA"
-		_oSQL:Log ()
+	//	_oSQL:Log ()
 		_aRetQry = _oSQL:Qry2Array ()
 		_aRet = afill (array (.QtCapQtColunas), 0)
 		for _nRetQry = 1 to len (_aRetQry)
