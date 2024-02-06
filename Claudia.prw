@@ -62,8 +62,28 @@ User Function claudia ()
 	//u_help("Peso")
 	//_PesoProd()
 
+	// u_help('Envia clientes para mercanet')
+	// _enviaClientes()
+
 
 Return
+// // ------------------------------------------------------------------------------------
+// Static Function _enviaClientes()
+
+// 	dbselectarea("SA1")
+// 	sa1 -> (dbsetorder(1))
+// 	sa1 -> (dbgotop())
+// 	do while ! sa1 -> (eof()) 
+// 		if sa1-> a1_msblql=='2'
+// 			U_AtuMerc ("SA1", sa1 -> (recno ()))
+// 			u_log2('info', 'Atualizado cliente:'+ sa1->a1_cod +'-'+ sa1->a1_nome)
+// 		endif
+// 		sa1 -> (dbskip ())
+// 	enddo
+
+// 	u_help("Atualizado!")
+// Return
+
 // // -----------------------------------------------------------------------------------
 // Static Function _PesoProd()
 // 	Local _aDados 	:= {}
