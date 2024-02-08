@@ -584,7 +584,10 @@ static function _ConfParc ()
 							//if ! _lPagaFUNR .and. _nParc == 1
 							//	_nVlParcPr -= round (((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt) * _nAlqFunru / 100, 2)
 							//endif
-							if _nVlParcRe != _nVlParcPr
+						//	if _nVlParcRe != _nVlParcPr
+							
+							// Vou ignorar diferencas ateh 1 centavo
+							if abs (_nVlParcRe - _nVlParcPr) > 0.01
 								_sMsg += "Diferenca nos valores de uva - linha " + cvaltochar (_nParc) + " Parcela real: " + cvaltochar (_nVlParcRe) + " prevista: " + cvaltochar (_nVlParcPr) + '<br>'
 								_lErrParc = .T.
 							endif
@@ -630,18 +633,15 @@ static function _ConfParc ()
 				U_Log2 ('aviso', _aParcPrev)
 			endif
 
-			// Hoje estou fazendo ajustes no programa e nao quero enviar avisos
-			if date () != stod ('20230330')
-				_oAviso := ClsAviso():new ()
-				_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
-				_oAviso:Titulo     = 'Verif.parcelamento safra NF ' + (_sAliasQ) -> doc + ' forn ' + (_sAliasQ) -> associado
-				_oAviso:Texto      = _sMsg
-				_oAviso:DestinZZU  = {'122'}  // Grupo 122 = TI
-				_oAviso:Origem     = procname (1)+'.'+procname ()  // Acrescentar aqui o que for interessante para rastrear posteriormente
-				_oAviso:Formato    = 'T'  // [T]exto ou [H]tml
-				_oAviso:DiasDeVida = 10  // Dias para exclusao automatica (default Erro=90;Aviso=60;Info=30)
-				_oAviso:Grava ()
-			endif
+			_oAviso := ClsAviso():new ()
+			_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
+			_oAviso:Titulo     = 'Verif.parcelamento safra NF ' + (_sAliasQ) -> doc + ' forn ' + (_sAliasQ) -> associado
+			_oAviso:Texto      = _sMsg
+			_oAviso:DestinZZU  = {'122'}  // Grupo 122 = TI
+			_oAviso:Origem     = procname (1)+'.'+procname ()  // Acrescentar aqui o que for interessante para rastrear posteriormente
+			_oAviso:Formato    = 'T'  // [T]exto ou [H]tml
+			_oAviso:DiasDeVida = 10  // Dias para exclusao automatica (default Erro=90;Aviso=60;Info=30)
+			_oAviso:Grava ()
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
