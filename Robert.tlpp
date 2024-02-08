@@ -4167,7 +4167,7 @@ static function _AtuSB1 ()
 	sb5 -> (dbsetorder (1))
 	sb1 -> (dbgotop ())
 	do while ! sb1 -> (eof ())
-		if sb1 -> b1_tipo = 'PS' .and. sb1 -> b1_um == 'G ' .and. sb1 -> b1_peso = 0
+		if sb1 -> b1_tipo = 'PS' .and. sb1 -> b1_um == 'KG' .and. sb1 -> b1_pesbru < sb1 -> b1_peso
 			u_log2 ('info', 'Verificando item ' + sb1 -> b1_tipo + ' ' + sb1 -> b1_cod + ' ' + SB1 -> B1_DESC)
 			sb5 -> (dbsetorder (1))
 			if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
@@ -4178,14 +4178,14 @@ static function _AtuSB1 ()
 				regtomemory ("SB1", .F., .F.)
 				//regtomemory ("SB5", .F., .F.)
 				//m->b5_vasisde = 'S'
-				m->b1_peso = 0.001
+				m->b1_pesbru = sb1 -> b1_peso
 
 				// Grava evento de alteracao
 				_oEvento := ClsEvent():new ()
 				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'Atualizar pesos insumos', .F.)
-				reclock ("SB1", .f.)
-				sb1 -> B1_peso = m->b1_peso
-				// comentariado pra dar erro em caso de executar indevidamente  ---> msunlock ()
+				// pra me obrigar a revisar ---> reclock ("SB1", .f.)
+				sb1 -> B1_pesbru = m->b1_pesbru
+				msunlock ()
 				//reclock ("SB5", .f.)
 				//sb5->b5_vasisde = m->b5_vasisde
 				//msunlock ()
@@ -4193,7 +4193,7 @@ static function _AtuSB1 ()
 			endif
 
 			// Cai fora no primeiro, para testes.
-			//exit
+			exit
 			
 		endif
 		sb1 -> (dbskip ())
@@ -4821,14 +4821,14 @@ return
 static function _Sisdevin ()
 	// Gera arq. Sisdeclara.
 	cPerg := "ML_DEC"
-	U_GravaSX1 (cPerg, "01", stod ("20230701"))
-	U_GravaSX1 (cPerg, "02", stod ("20230730"))
+	U_GravaSX1 (cPerg, "01", stod ("20240109"))
+	U_GravaSX1 (cPerg, "02", stod ("20240112"))
 	U_GravaSX1 (cPerg, "03", 1)  // 1=mov.mensal;2=entradas uvas
 	U_GravaSX1 (cPerg, "04", 'teste robert')  // Nome diretor empresa
 	U_GravaSX1 (cPerg, "05", '????????')  // CRQ - '05404198' = Hugo    '05403148' = Flavio
 	U_GravaSX1 (cPerg, "06", 'c:\temp\Sisdevin_teste.txt')
 	U_GravaSX1 (cPerg, "07", 'robert.koch@novaalianca.coop.br')
-	U_GravaSX1 (cPerg, "08", 2)  // Gera arq conferencia (s/n)
+	U_GravaSX1 (cPerg, "08", 1)  // Gera arq conferencia (s/n)
 	U_GravaSX1 (cPerg, "09", 2)  // Exporta guias? (s/n)
 	U_GravaSX1 (cPerg, "10", '11422401/11128701')  // Lotes de PA a ignorar
 	U_ML_DEC (.t.)
