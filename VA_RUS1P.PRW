@@ -38,19 +38,19 @@ user function va_rus1P (_lPortaria)
 
 
 
-	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT *"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
-	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + sze -> ze_safra + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + sze -> ze_carga + "'"
-	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
-	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
-	U_Log2 ('debug', '[' + procname () + ']Entrando na funcao com o ZZA assim:')
-	U_Log2 ('debug', _aDebugZZA)
+//	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//	_oSQL:_sQuery += "SELECT *"
+//	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+//	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + sze -> ze_safra + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + sze -> ze_carga + "'"
+//	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+//	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+//	U_Log2 ('debug', '[' + procname () + ']Entrando na funcao com o ZZA assim:')
+//	U_Log2 ('debug', _aDebugZZA)
 
 
 
@@ -105,19 +105,19 @@ user function va_rus1P (_lPortaria)
 
 
 
-	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT *"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
-	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + sze -> ze_safra + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + sze -> ze_carga + "'"
-	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
-	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
-	U_Log2 ('debug', '[' + procname () + ']Antes de chamar novo GeraAtrib:')
-	U_Log2 ('debug', _aDebugZZA)
+//	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//	_oSQL:_sQuery += "SELECT *"
+//	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+//	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + sze -> ze_safra + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + sze -> ze_carga + "'"
+//	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+//	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+//	U_Log2 ('debug', '[' + procname () + ']Antes de chamar novo GeraAtrib:')
+//	U_Log2 ('debug', _aDebugZZA)
 
 
 
@@ -134,19 +134,19 @@ user function va_rus1P (_lPortaria)
 
 
 
-	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT *"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
-	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + sze -> ze_safra + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + sze -> ze_carga + "'"
-	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
-	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
-	U_Log2 ('debug', '[' + procname () + ']Saindo da funcao com o ZZA assim:')
-	U_Log2 ('debug', _aDebugZZA)
+//	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//	_oSQL:_sQuery += "SELECT *"
+//	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+//	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + sze -> ze_safra + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + sze -> ze_carga + "'"
+//	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+//	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+//	U_Log2 ('debug', '[' + procname () + ']Saindo da funcao com o ZZA assim:')
+//	U_Log2 ('debug', _aDebugZZA)
 
 
 

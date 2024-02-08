@@ -3393,7 +3393,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=   " AND U.USR_ID = A.USR_ID"
 		::Query +=   " AND U.USR_MSBLQL != '1'"
 		::Query +=   " AND A.USR_ACESSO = 'T'"
-		::Query +=   " AND A.USR_ID NOT IN ('000000')"
+		::Query +=   " AND A.USR_ID != '000000'"  // admin
+		::Query +=   " AND A.USR_ID != '000496'"  // Sandra
+		::Query +=   " AND A.USR_ID != '000622'"  // Claudia
 		::Query += " UNION ALL"
 		::Query += " SELECT SUM.USR_ID, SU.USR_CODIGO, SUM.USR_CODMOD"
 		::Query += " FROM SYS_USR_MODULE SUM, SYS_USR SU"

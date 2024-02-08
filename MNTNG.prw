@@ -40,6 +40,7 @@
 //                      - Criado tratamento para o campo T1_VATPFIL
 // 28/06/2023 - Robert  - Nao manda mais terceiros para ninguem
 // 22/01/2024 - Robert  - Filtra centros de custo (tabela CCT) bloqueados.
+// 06/02/2024 - Robert  - Log de validacao de encerramento de OS
 //
 
 #include "PROTHEUS.ch"
@@ -143,6 +144,7 @@ User Function MNTNG()
 
 	ElseIf _sIDdLocal == "FINISH_VALID_ORDER"
 		If FWJsonDeserialize(PARAMIXB[2]:GetContent(), @_oObjMnt)
+			U_Log2 ('info', '[' + procname () + ']Validando encerramento OS ' + _oObjMnt:ORDER)
 			If Empty(_oObjMnt:observation ) //verifica campo observação foi passado vazio
 				_xRet = "Campo observação deve ser informado."
 			EndIf
@@ -155,7 +157,10 @@ User Function MNTNG()
 			
 			// Verifica se tem pedido de compra em aberto relacionado a esta OS
 			_xRet = _VerPdCom (_oObjMnt:ORDER)
-
+			
+			if ! empty (_xRet)
+				U_Log2 ('aviso', '[' + procname () + ']Msg retorno validacao encerramento: ' + _xRet)
+			endif
 		else
 			_xRet = ''
 			_oAviso := ClsAviso ():New ()
