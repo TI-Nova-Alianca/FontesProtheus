@@ -282,14 +282,12 @@ Static Function _GeraPed(_sSeqPed)
 	local _aLinhaSC6 	:= {}
 	local _sTransp   	:= ""
 	local _oEvento   	:= NIL
-	local _i		 	:= 0
 	local _sB1Cod    	:= ""
 	local _sCodNovo  	:= ""
 	local _sObsPed  	:= ""
 	local _sTpFrete  	:= ""
 	local _sMsgErro  	:= ""
 	local _lMarcaPro 	:= .F.
-	local _lTabPreco 	:= .T.
 	private lMsHelpAuto := .F.
 	private lMsErroAuto := .F.
 	private _sErroAuto 	:= ""  // Deixar private para que a funcao U_Help possa gravar possiveis mensagens durante as rotinas automaticas.
