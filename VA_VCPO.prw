@@ -187,7 +187,7 @@
 // 09/08/2023 - Robert  - Removida validacao B1_CODBAR (Migrada para PE_MATA010)
 // 01/12/2023 - Robert  - Criada validacao para B1_RASTRO 
 // 31/12/2023 - Robert  - Criada validacao para ZA_COD.
-//
+// 07/02/2024 - Claudia - Incluida validação de item eliminado por residuo. GLPI: 14835
 
 // -------------------------------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
@@ -719,15 +719,22 @@ user function VA_VCpo (_sCampo)
 		case _sCampo == "M->C5_PEDCLI"
 			if ! empty (m->c5_cliente)
 				_sQuery := ""
-				_sQuery += " select count (C5_FILIAL)"
-				_sQuery += "   from " + RetSQLName ("SC5")
-				_sQuery += "  where D_E_L_E_T_ = ''"
-				_sQuery += "    and C5_FILIAL  = '" + xfilial ("SC5") + "'"
-				_sQuery += "    and C5_CLIENTE = '" + m->c5_cliente + "'"
-				_sQuery += "    and C5_LOJACLI = '" + m->c5_lojacli + "'"
-				_sQuery += "    and C5_PEDCLI  = '" + m->c5_pedcli  + "'"
+				_sQuery += " SELECT "
+				_sQuery += " 		COUNT(C5_FILIAL) "
+				_sQuery += " FROM " + RetSQLName ("SC5") + " SC5 "
+				_sQuery += " 	INNER JOIN " + RetSQLName ("SC6") + " SC6 "
+				_sQuery += "    	ON SC6.D_E_L_E_T_ = '' "
+				_sQuery += "    	AND SC6.C6_FILIAL = SC5.C5_FILIAL "
+				_sQuery += "    	AND SC6.C6_NUM = SC5.C5_NUM "
+				_sQuery += "    	AND C6_BLQ <> 'R' "
+				_sQuery += " WHERE SC5.D_E_L_E_T_ = '' "
+				_sQuery += " AND C5_FILIAL  = '" + xfilial ("SC5") + "'"
+				_sQuery += " AND C5_CLIENTE = '" + m->c5_cliente   + "'"
+				_sQuery += " AND C5_LOJACLI = '" + m->c5_lojacli   + "'"
+				_sQuery += " AND C5_PEDCLI  = '" + m->c5_pedcli    + "'"
+
 				if U_RetSQL (_sQuery) > 0
-					_lRet = U_MsgNoYes ("Ordem de compra '" + alltrim (m->c5_pedcli) + "' ja' existe para este cliente. Confirma mesmo assim?", .T.)
+					_lRet = U_MsgNoYes ("Pedido de compra '" + alltrim (m->c5_pedcli) + "' ja existe para este cliente. Confirma mesmo assim?", .T.)
 				endif
 			endif
 
