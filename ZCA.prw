@@ -1,5 +1,5 @@
 // Programa...: ZCA
-// Autor......: ClÃ¡udia LionÃ§o
+// Autor......: Claudia Lionco
 // Data.......: 21/07/2023
 // Descricao..: Responsaveis CRM X representantes
 //
@@ -11,8 +11,10 @@
 // #Modulos   		  #FAT 
 //
 // Historico de alteracoes:
+// 07/02/2024 - Claudia - Incluida opção de atualização de representantes 
+//                        no menu outras ações. GLPI: 14875
 //
-// --------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------
 #Include "Totvs.ch"
 #Include "FWMVCDef.ch"
 
@@ -47,10 +49,11 @@ Static Function MenuDef()
 	Local aRotina := {}
 
 	//Adicionando opcoes do menu
-	ADD OPTION aRotina TITLE "Visualizar" ACTION "VIEWDEF.ZCA" OPERATION 1 ACCESS 0
-	ADD OPTION aRotina TITLE "Incluir" ACTION "VIEWDEF.ZCA" OPERATION 3 ACCESS 0
-	ADD OPTION aRotina TITLE "Alterar" ACTION "VIEWDEF.ZCA" OPERATION 4 ACCESS 0
-	ADD OPTION aRotina TITLE "Excluir" ACTION "VIEWDEF.ZCA" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina TITLE "Visualizar" 			ACTION "VIEWDEF.ZCA" OPERATION 1 ACCESS 0
+	ADD OPTION aRotina TITLE "Incluir" 				ACTION "VIEWDEF.ZCA" OPERATION 3 ACCESS 0
+	ADD OPTION aRotina TITLE "Alterar"				ACTION "VIEWDEF.ZCA" OPERATION 4 ACCESS 0
+	ADD OPTION aRotina TITLE "Excluir" 				ACTION "VIEWDEF.ZCA" OPERATION 5 ACCESS 0
+	ADD OPTION aRotina TITLE "Atu.Representante" 	ACTION "U_VA_CRMIMP()" OPERATION 6 ACCESS 0
 
 Return aRotina
 //
