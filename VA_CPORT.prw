@@ -51,6 +51,7 @@
 // 12/01/2023 - Robert  - Instancia object ClsCarSaf antes de chamar tela de fechamento de safra.
 // 25/01/2023 - Robert  - Passa a usar classe ClsCarSaf para atualizar tabela ZZA.
 // 24/01/2024 - Robert  - Criada opcao de exportar historico de pesos lidos da balanca.
+// 10/02/2024 - Robert  - Varieval _lLeBrix desabilitada (assume default .T.)
 //
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -421,14 +422,14 @@ static function _SegPesSZE ()
 			private _sModelBal := ""  // Deixar private para ser vista por outras rotinas.
 			private _nMultBal  := ""  // Deixar private para ser vista por outras rotinas.
 			private _nPesoEmb  := ""  // Deixar private para ser vista por outras rotinas.
-			private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
+		//	private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
 			private _nQViasTk1 := 0   // Deixar private para ser vista por outras rotinas.
 			private _nQViasTk2 := 0   // Deixar private para ser vista por outras rotinas.
 			private _xSAFRAJ   := U_IniSafra ()  // Retorna o Ano da Safra (ML_SZ9.PRW)
 			private aRotina    := {}
 			private cPerg      := 'VA_RUS'
-			private _zx509fina := _oCarSaf:RecebeVini  // U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09FINA')
-			private _zx509orga := _oCarSaf:RecebeOrg   // U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09ORGA')
+			private _zx509fina := _oCarSaf:RecebeVini
+			private _zx509orga := _oCarSaf:RecebeOrg
 			private _lIntPort  := ""  // Deixar private para ser vista por outras rotinas.
 
 			aadd (aRotina, {"&Pesquisar"        , "AxPesqui"			, 0,1})
@@ -890,7 +891,6 @@ return
 User function PesaZZT()
 	private _nPLidoBal := 0
 
-	//MsgRun ("Aguarde, lendo dados da balanca", "Leitura balanca", {|| _nPLidoBal := U_LeBalan2 ()})
 	processa ({|| _nPLidoBal := U_LeBalan3 ()})
 
 	if _sOperPort $ '14'

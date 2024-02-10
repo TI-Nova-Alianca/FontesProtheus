@@ -1,0 +1,153 @@
+// Programa:  VA_AtuCR
+// Autor:     Robert Koch
+// Data:      09/02/2024
+// Descricao: Atualiza B1_CUSTD a partir do custo medio dos itens
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Atualiza B1_CUSTD a partir do custo medio dos itens
+// #PalavasChave      #custo_reposicao #custo_medio #atualizacao #b1_custd
+// #TabelasPrincipais #SB1 #SB9
+// #Modulos           #EST
+
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+User Function VA_AtuCR (_lAutomat)
+	Local cCadastro := "Atualiza custo de reposicao (B1_CUSTD) dos produtos a partir do seu custo medio."
+	Local aSays     := {}
+	Local aButtons  := {}
+	Local nOpca     := 0
+	Local lPerg     := .F.
+	local _nLock    := 0
+	private _lAuto  := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
+
+	// Verifica se o usuario tem liberacao para uso desta rotina.
+	if U_ZZUVL ('069', __cUserID, .T.)
+
+		// Controle de semaforo.
+		_nLock := U_Semaforo (procname (), .t.)
+		if _nLock != 0
+			Private cPerg := "VA_ATUCR"
+			_ValidPerg()
+			Pergunte(cPerg,.F.)
+
+			if _lAuto != NIL .and. _lAuto
+				Processa( { |lEnd| _Gera() } )
+			else
+				AADD(aSays,cCadastro)
+				AADD(aSays,"")
+				AADD(aSays,"")
+				AADD(aButtons, { 5, .T.,{|| lPerg := Pergunte(cPerg,.T. ) } } )
+				AADD(aButtons, { 1, .T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
+				AADD(aButtons, { 2, .T.,{|| FechaBatch() }} )
+				FormBatch( cCadastro, aSays, aButtons)
+				If nOpca == 1
+					Processa( { |lEnd| _Gera() } )
+				Endif
+			endif
+		endif
+	endif
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
+return
+
+
+// --------------------------------------------------------------------------
+// 'Tudo OK' do FormBatch.
+Static Function _TudoOk ()
+	local _lRet := .T.
+return _lRet
+
+
+// --------------------------------------------------------------------------
+// Geracao do processo
+static function _Gera ()
+	//local _lContinua := .T.
+	local _oSQL      := NIL
+	local _aPrev     := {}
+	local _aDados    := {}
+	local _nDado     := 0
+
+	
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " WITH PRODUTOS AS"
+	_oSQL:_sQuery += " ("
+	_oSQL:_sQuery +=    " SELECT B1_TIPO, B1_COD, B1_DESC, B1_CUSTD, B1_DATREF"
+	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB1") + " SB1"
+	_oSQL:_sQuery +=     " WHERE SB1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=       " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+	_oSQL:_sQuery +=       " AND SB1.B1_TIPO    = '" + mv_par01 + "'"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " , ULTIMOS_SB9 AS"
+	_oSQL:_sQuery += " ("
+	_oSQL:_sQuery +=    " SELECT B9_COD, MAX (B9_DATA) B9_DATA"
+	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB9") + " ULT"
+	_oSQL:_sQuery +=     " WHERE ULT.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=       " AND ULT.B9_FILIAL  = '" + xfilial ("SB9") + "'"
+	_oSQL:_sQuery +=       " AND ULT.B9_QINI    > 0"
+	_oSQL:_sQuery +=       " AND ULT.B9_VINI1   > 0"
+	_oSQL:_sQuery +=       " AND EXISTS (SELECT *"
+	_oSQL:_sQuery +=                     " FROM PRODUTOS"
+	_oSQL:_sQuery +=                    " WHERE B1_COD = ULT.B9_COD"
+	_oSQL:_sQuery +=                   ")"
+	_oSQL:_sQuery +=     " GROUP BY ULT.B9_COD"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " , TEMP1 AS ("
+	_oSQL:_sQuery += " SELECT PRODUTOS.*"
+	_oSQL:_sQuery +=      " , ISNULL ((SELECT SUM (B9_VINI1) / SUM (B9_QINI) AS MEDIO"
+	_oSQL:_sQuery +=                   " FROM " + RetSQLName ("SB9") + " SB9"
+	_oSQL:_sQuery +=                  " WHERE SB9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                    " AND SB9.B9_FILIAL  = '01'"  // Atualmente focamos na matriz por que eh onde temos o envase.
+	_oSQL:_sQuery +=                    " AND SB9.B9_COD     = PRODUTOS.B1_COD"
+	_oSQL:_sQuery +=                    " AND SB9.B9_QINI    > 0"
+	_oSQL:_sQuery +=                    " AND SB9.B9_VINI1   > 0"
+	_oSQL:_sQuery +=                    " AND SB9.B9_DATA    = ULTIMOS_SB9.B9_DATA"
+	_oSQL:_sQuery +=                 "), 0) AS CUSMED"
+	_oSQL:_sQuery +=  " FROM PRODUTOS, ULTIMOS_SB9"
+	_oSQL:_sQuery += " WHERE B9_COD = B1_COD"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " SELECT *"
+	_oSQL:_sQuery +=   " FROM TEMP1"
+	_oSQL:_sQuery +=  " WHERE ROUND (B1_CUSTD, 4) != ROUND (MEDIO, 4)"  // APENAS ORIDUTOS COM CUSTO DIFERENTE
+	_oSQL:_sQuery +=  " ORDER BY B1_COD"
+	_oSQL:Log ('[' + procname () + ']')
+	local _sAliasQ := ''
+	_sAliasQ := _oSQL:Qry2Trb (.T.)
+	if mv_par01 == 1  // Simular
+		U_ShowTrb (_sAliasQ, 'Simulacao atualizacao custo reposicao', NIL)
+	else
+		sb1 -> (dbsetorder (1))
+		(_sAliasQ) -> (dbgotop ())
+		do while ! (_sAliasQ) -> (eof ())
+			if ! sb1 -> (dbseek (xfilial ("SB1") + (_sAliasQ) -> b1_cod, .F.))
+				u_help ("Cadastro do produto '" + (_sAliasQ) -> b1_cod + "' nao localizado!",, .t.)
+			else
+			U_Log2 ('debug', '[' + procname () + ']' + sb1 -> b1_cod)
+
+			// Cria variaveis para uso na gravacao do evento de alteracao
+			regtomemory ("SB1", .F., .F.)
+			m->b1_CUSTD = (_sAliasQ) -> medio
+			m->b1_datref = date ()
+
+			// Grava evento de alteracao
+			_oEvento := ClsEvent():new ()
+			_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'Atualizar custo repos. pelo custo medio', .F.)
+			reclock ("SB1", .f.)
+			sb1 -> B1_custd = m->b1_custd
+			sb1 -> B1_datref = m->b1_datref
+			msunlock ()
+			U_AtuMerc ("SB1", sb1 -> (recno ()))
+
+			// Cai fora no primeiro, para testes.
+			exit
+
+			(_sAliasQ) -> (dbskip ())
+		endif
+	endif
+	(_sAliasQ) -> (dbclosearea ())
+	dbselectarea ("SB1")
+return

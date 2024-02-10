@@ -40,6 +40,7 @@
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 // 03/02/2023 - Robert - Alimentar campo virtual ZF_GRAUANT
 // 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
+// 10/02/2024 - Robert - Varieval _lLeBrix desabilitada (assume default .T.)
 //
 
 #include "totvs.ch"
@@ -115,8 +116,8 @@ User Function va_rus2 (_nOpc, _lFechPort)
 		u_help ("Esta carga foi aglutinada com outras e somente pode ser excluida/cancelada depois da carga aglutinadora. Consulte aglutinacoes para mais detalhes.",, .t.)
 		_lContinua = .F.
 	endif
-	if _lContinua .and. _nOpc == 4 .and. sze -> ze_local != _sBalanca
-		u_help ("Carga gerada na balanca '" + sze -> ze_local + "'. Deve ser finalizada na mesma balanca.",, .t.)
+	if _lContinua .and. _nOpc == 4 .and. sze -> ze_filial != cFilAnt
+		u_help ("Carga gerada na filial '" + sze -> ze_filial + "'. Deve ser finalizada na mesma filial.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua .and. _nOpc == 4 .and. sze -> ze_pesobru == 0
@@ -132,7 +133,7 @@ User Function va_rus2 (_nOpc, _lFechPort)
 			_lContinua = .F.
 		endif
 	endif
-	if _lContinua .and. _nOpc == 4 .and. _lLeBrix
+	if _lContinua .and. _nOpc == 4 //.and. _lLeBrix
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery += "SELECT COUNT (*)"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA "

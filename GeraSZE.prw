@@ -15,6 +15,7 @@
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 // 25/01/2023 - Robert - Removidos alguns logs e medicoes de performance.
 // 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
+// 10/02/2024 - Robert - Varieval _lLeBrix desabilitada (assume default .T.)
 //
 
 #include "VA_INCLU.prw"
@@ -51,14 +52,15 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _sModelBal := 0
 		private _nMultBal  := 10
 		private _nPesoEmb  := 20
-		private _lLeBrix   := .T.
+	//	private _lLeBrix   := .T.
 		private _nQViasTk1 := 1
 		private _nQViasTk2 := 2
 		private _lIntPort  := .F.
 		private agets      := {}  // Alimentada pelas rotinas do sistema e necessaria para validacoes de campos obrigatorios.
 		private aTela      := {}  // Alimentada pelas rotinas do sistema e necessaria para validacoes de campos obrigatorios.
 		private _ZESAFRA   := _sSafra
-		private _ZELOCAL   := _sBalanca
+//		private _ZELOCAL   := _sBalanca
+		private _ZELOCAL   := iif (sze -> ze_filial == '01', 'LB', iif (sze -> ze_filial == '03', 'LV', iif (sze -> ze_filial == '07', 'JC', iif (sze -> ze_filial == '09', 'SP', ''))))  // Variavel private para alimentar a tela final de AxInclui
 		private _ZECOOP    := "000021"
 		private _ZELOJCOOP := "01"
 		private _ZENOMCOOP := "Alianca"

@@ -34,6 +34,7 @@
 //                     - Novo parametros chamada U_VA_SZNC()
 // 18/11/2023 - Robert - Versao inicial do metodo ClsCarSaf:PodeGravar().
 // 23/01/2023 - Robert - Submenu ordenado alfabeticamente.
+// 10/02/2024 - Robert - Varieval _lLeBrix desabilitada (assume default .T.)
 //
 
 // --------------------------------------------------------------------------
@@ -55,7 +56,7 @@ User Function va_rus ()
 	private _nPesoEmb  := ""  // Deixar private para ser vista por outras rotinas.
 //	private _lImpTick  := ""  // Deixar private para ser vista por outras rotinas.
 //	private _sPortTick := ""  // Deixar private para ser vista por outras rotinas.
-	private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
+//	private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
 	private _nQViasTk1 := 0   // Deixar private para ser vista por outras rotinas.
 	private _nQViasTk2 := 0   // Deixar private para ser vista por outras rotinas.
 	//private _lTickPeso := .F. // Deixar private para ser vista por outras rotinas.
@@ -87,16 +88,8 @@ User Function va_rus ()
 	_ValidPerg ()
 	_lContinua = U_VA_RUSLP (.T.)
 
-//	if _lContinua .and. empty (U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09LOCA'))
-//		u_help ("Relacao balanca X safra nao cadastrada. Verifique tabela 09 do ZX5.")
-//		_lContinua = .F.
-//	endif
-//	if _lContinua
-//		_zx509fina = U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09FINA')
-//		_zx509orga = U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09ORGA')
-		_zx509fina = _oCarSaf:RecebeVini
-		_zx509orga = _oCarSaf:RecebeOrg
-//	endif
+	_zx509fina = _oCarSaf:RecebeVini
+	_zx509orga = _oCarSaf:RecebeOrg
 
 	// Cria algumas variaveis private para agilizar o uso, jah que eh uma tela que vai
 	// ficar em uso durante toda a safra.
@@ -551,8 +544,8 @@ Static Function _ValidPerg ()
 //	aadd (_aRegsPerg, {09, "Usa impressora de ticket      ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 	aadd (_aRegsPerg, {09, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {10, "Impressora de ticket          ", "C", 2,  0,  "",   "ZX549", {},                                ""})
-//	aadd (_aRegsPerg, {10, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
-	aadd (_aRegsPerg, {11, "Comunicacao c/ medidor de brix", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
+//	aadd (_aRegsPerg, {11, "Comunicacao c/ medidor de brix", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
+	aadd (_aRegsPerg, {11, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 //	aadd (_aRegsPerg, {12, "Qt. de vias ticket 1a.pesagem ", "N", 1,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {12, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
 //	aadd (_aRegsPerg, {13, "Qt. de vias ticket 2a.pesagem ", "N", 1,  0,  "",   "",      {},                                ""})

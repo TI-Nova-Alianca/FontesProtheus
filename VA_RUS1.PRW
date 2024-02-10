@@ -39,7 +39,8 @@ User Function va_rus1 ()
 
 	private _oAssoc    := NIL
 	private _ZESAFRA   := _xSafraJ   // Variavel private para alimentar a tela final de AxInclui
-	private _ZELOCAL   := _sBalanca  // Variavel private para alimentar a tela final de AxInclui
+//	private _ZELOCAL   := _sBalanca  // Variavel private para alimentar a tela final de AxInclui
+	private _ZELOCAL   := iif (sze -> ze_filial == '01', 'LB', iif (sze -> ze_filial == '03', 'LV', iif (sze -> ze_filial == '07', 'JC', iif (sze -> ze_filial == '09', 'SP', ''))))  // Variavel private para alimentar a tela final de AxInclui
 	private _ZECOOP    := ""  // Variavel private para alimentar a tela final de AxInclui
 	private _ZELOJCOOP := ""  // Variavel private para alimentar a tela final de AxInclui
 	private _ZENOMCOOP := ""  // Variavel private para alimentar a tela final de AxInclui
@@ -51,12 +52,6 @@ User Function va_rus1 ()
 	private _ZEPATRIAR := ""  // Variavel private para alimentar a tela final de AxInclui
 	private _ZESNFPROD := ""  // Variavel private para alimentar a tela final de AxInclui
 	private _ZENFPROD  := ""  // Variavel private para alimentar a tela final de AxInclui
-
-// Validacao migrada para ClsCarSaf:PodeGravar()	// Este teste parece que vai exigir manutencao eterna...
-// Validacao migrada para ClsCarSaf:PodeGravar()	if _ZESAFRA >= '2014' .and. ! cEmpAnt + cFilAnt $ '0101/0103/0107/0109/0110/0111/0112/0113'
-// Validacao migrada para ClsCarSaf:PodeGravar()		u_help ("Filial nao liberada para recebimento de safra.")
-// Validacao migrada para ClsCarSaf:PodeGravar()		return
-// Validacao migrada para ClsCarSaf:PodeGravar()	endif
 
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
