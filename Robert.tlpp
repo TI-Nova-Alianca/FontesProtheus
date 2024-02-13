@@ -97,6 +97,7 @@ user function robert ()
 
 		_sFuncao := ''
 		// _sFuncao += '_AjLoteEnd ()'
+		_sFuncao += '_AtuCR ()'
 		// _sFuncao += '_AtuSB1 ()'
 		// _sFuncao += '_aviso ()'
 		// _sFuncao += '_batBlUsr ()'
@@ -4101,6 +4102,16 @@ return
 	endif
 */
 return
+
+// --------------------------------------------------------------------------
+static function _AtuCR ()
+	U_GravaSX1 ('VA_ATUCR', '01', 1)  // Simular ou executar
+	U_GravaSX1 ('VA_ATUCR', '02', 'VD')  // Tipo produto
+	U_GravaSX1 ('VA_ATUCR', '03', '1200')  // Produto inicial
+	U_GravaSX1 ('VA_ATUCR', '04', '2000')  // Produto final
+	U_VA_AtuCR (.t.)
+return
+
 
 // --------------------------------------------------------------------------
 // Ajusta cadastro produtos em lote

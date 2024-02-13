@@ -32,7 +32,9 @@
 // 09/07/2020 - Robert  - Melhorada gravacao de logs e mensagens.
 // 21/10/2020 - Claudia - Ajuste da rotina incluindo scripts SQL. GLPI: 8690
 // 11/05/2021 - Claudia - Ajustada a chamada para tabela SX1 devido a R27. GLPI: 8825
+// 12/02/2024 - Robert  - Chamadas de _oSQL:Qry2Array nao passavam parametros .F. para troca de tipo (baixa performance)
 //
+
 // ----------------------------------------------------------------------------------------------------------
 
 user function GravaSX1 (_sGrupo, _sPerg, _xValor, _sDelProf)
@@ -59,7 +61,8 @@ user function GravaSX1 (_sGrupo, _sPerg, _xValor, _sDelProf)
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sGrupo) + "'"
 	_oSQL:_sQuery += " AND X1_ORDEM     = '" + alltrim(_sPerg)  + "'"
-	_aSX1  = aclone (_oSQL:Qry2Array ())	
+//	_aSX1  = aclone (_oSQL:Qry2Array ())	
+	_aSX1  = aclone (_oSQL:Qry2Array (.f., .f.))
 
 	If Len(_aSX1) > 0
 		For _x:= 1 to Len(_aSX1)
@@ -155,7 +158,8 @@ static function _AtuProf (_sUserName, _sGrupo, _sPerg)
 	_oSQL:_sQuery += " AND P_EMPANT = '" + cEmpAnt + "'"
 	_oSQL:_sQuery += " order by R_E_C_N_O_ desc"
 
-	_aDados := aclone (_oSQL:Qry2Array ())
+//	_aDados := aclone (_oSQL:Qry2Array ())
+	_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	 If len(_aDados) > 0
 		// Carrega memo com o profile do usuario (o profile fica gravado em um campo memo)
@@ -192,7 +196,8 @@ static function _AtuProf (_sUserName, _sGrupo, _sPerg)
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sGrupo) + "'"
 	_oSQL:_sQuery += " AND X1_ORDEM     = '" + alltrim(_sPerg)  + "'"
-	_aSX1  = aclone (_oSQL:Qry2Array ())	
+//	_aSX1  = aclone (_oSQL:Qry2Array ())	
+	_aSX1  = aclone (_oSQL:Qry2Array (.f., .f.))
 
 	for _x := 1 to Len(_aSX1)
 		_sLinha = _aSX1[_x,6] + "#" + _aSX1[_x,3] + "#" + iif (_aSX1[_x,3] == "C", cValToChar (_aSX1[_x,7]), _aSX1[_x,8]) + chr (13) + chr (10)

@@ -85,7 +85,7 @@ user function ShowTRB (_sAlias, _sMsg, _aCampos)
 	@ _oShowTrb:nClientHeight / 2 - 57, 230 get _oGetChave  var _sChave  size 100, 8 of _oShowTrb pixel valid _Pesquisa (_sChave)
 	TButton ():New(_oShowTrb:nClientHeight / 2 - 55, _oShowTrb:nClientWidth / 2 - 100, "Set deleted on",  _oShowTrb, {|| _SetDel ("ON")},  40, 10,,,, .T.)
 	TButton ():New(_oShowTrb:nClientHeight / 2 - 40, _oShowTrb:nClientWidth / 2 - 100, "Set deleted off", _oShowTrb, {|| _SetDel ("OFF")}, 40, 10,,,, .T.)
-	TButton ():New(_oShowTrb:nClientHeight / 2 - 55, _oShowTrb:nClientWidth / 2 - 50,  "Excel", _oShowTrb, {|| U_Trb2XLS (_sAlias)}, 40, 10,,,, .T.)
+	TButton ():New(_oShowTrb:nClientHeight / 2 - 55, _oShowTrb:nClientWidth / 2 - 50,  "Planilha", _oShowTrb, {|| U_Trb2XLS (_sAlias)}, 40, 10,,,, .T.)
 	SButton():New (_oShowTrb:nClientHeight / 2 - 40, _oShowTrb:nClientWidth / 2 - 50,  1, {|| _oShowTrb:End ()},, .T.)
 	_oBrwTrb:oBrowse:bLDblClick := {|| _edita (_aCpos)}
 	activate msdialog _oShowTrb centered

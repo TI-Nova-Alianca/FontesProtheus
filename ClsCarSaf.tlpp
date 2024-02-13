@@ -34,6 +34,7 @@
 // 03/02/2024 - Robert - Logs diversos para rastrear gravação do ZZA (GLPI 14858)
 // 10/02/2024 - Robert - Metodo Precifica() passa a fazer queries em vez de DbSeek()
 //                       e deixa de validar sistema de conducao das uvas comuns.
+// 12/02/2024 - Robert - Gravar evento quando usuario confirmar reenvio para grau (ocorre em determinadas situacoes)
 //
 
 #Include "Protheus.ch"
@@ -324,22 +325,24 @@ METHOD AtuZZA (_lReenvio as logical) Class ClsCarSaf
 	local _lRetAtZZA := .T.
 	local _nItem     := 0
 	local _sChaveZZA := ''
-	local _oSQL      := NIL
+	local _sMsgReen  := ''
+	local _lConfReen := .f.
+//	local _oSQL      := NIL
 
 
-	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT *"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
-	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
-	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
-	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Entrando no metodo com o ZZA assim:')
-	U_Log2 ('debug', _aDebugZZA)
+//	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//	_oSQL:_sQuery += "SELECT *"
+//	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+//	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
+//	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+//	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Entrando no metodo com o ZZA assim:')
+//	U_Log2 ('debug', _aDebugZZA)
 
 
 
@@ -391,16 +394,25 @@ METHOD AtuZZA (_lReenvio as logical) Class ClsCarSaf
 				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Reenvio = .T.')
 				if zza -> zza_status == '1'
 					u_help ("Status do item " + zza -> zza_nprod + " ja encontra-se como 'aguardando leitura do grau'.",, .t.)
-				elseif zza -> zza_status == '0' .or. (zza -> zza_status == '2' .and. U_MsgNoYes ("Item " + zza -> zza_nprod + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau. Deseja reiniciar o status?"))
+//				elseif zza -> zza_status == '0' .or. (zza -> zza_status == '2' .and. U_MsgNoYes ("Item " + zza -> zza_nprod + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau. Deseja reiniciar o status?"))
+				elseif zza -> zza_status == '0'
 					zza -> zza_status = iif (::PesoBruto <= 0, '0', '1')
+				elseif zza -> zza_status == '2'
+					_sMsgReen = "Item " + alltrim (zza -> zza_nprod) + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau."
+					if U_MsgNoYes (_sMsgReen + "Deseja reiniciar o status?")
+						zza -> zza_status = iif (::PesoBruto <= 0, '0', '1')
+						_lConfReen = .t.
+					endif
 
 				elseif zza -> zza_status $ '3/M'
-					_sMsg = "Status do item " + zza -> zza_nprod + " encontra-se 'concluido' na tabela de integracao com o medidor de grau (resultado: " + cvaltochar (zza -> zza_grau) + " gravado em " + zza -> zza_inist3 + "."
+					_sMsg = "Status do item " + alltrim (zza -> zza_nprod) + " encontra-se 'concluido' na tabela de integracao com o medidor de grau (resultado: " + cvaltochar (zza -> zza_grau) + " gravado em " + zza -> zza_inist3 + "."
 					
 					// Se foi gravado com grau zero, deve ter dado algum problema, ou clicaram em 'armazenar' sem medir nada.
 					if zza -> zza_grau = 0
 						if u_msgNoYes (_sMsg + " Deseja reenviar para nova medicao?")
 							zza -> zza_status = iif (::PesoBruto <= 0, '0', '1')
+							_sMsgReen = _sMsg
+							_lConfReen = .t.
 						endif
 					else
 						u_help (_sMsg + " Reenvio para medicao de grau nao permitida, pois ja contem valor no grau.")
@@ -429,22 +441,24 @@ METHOD AtuZZA (_lReenvio as logical) Class ClsCarSaf
 		next
 	endif
 
+//	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//	_oSQL:_sQuery += "SELECT *"
+//	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+//	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
+//	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
+//	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
+//	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Saindo do metodo com o ZZA assim:')
+//	U_Log2 ('debug', _aDebugZZA)
 
-
-	// Estou com o campo ZZA_INIST1 ficando vazio e nao sei onde ocorre... desabilitar este trecho depois!
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT *"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
-	_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + xfilial ("ZZA") + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
-	_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
-	_oSQL:_sQuery += " ORDER BY ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT"
-	_aDebugZZA := aclone (_oSQL:Qry2Array (.f., .t.))
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Saindo do metodo com o ZZA assim:')
-	U_Log2 ('debug', _aDebugZZA)
-
+	// Grava evento para posterior rastreamento
+	if _lConfReen
+		::GrvEvt ('SZE012', "Usuario confirmou reenvio da carga para o programa de medicao de grau, com a seguinte mensagem: " + _sMsgReen, 720)
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
 return _lRetAtZZA

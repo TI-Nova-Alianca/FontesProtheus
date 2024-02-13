@@ -33,7 +33,6 @@
 	"ClsSQL:Exec":       {"prefix": "Exec"     ,  "body": ["Exec ()"]},
 	"ClsSQL:F3Array":    {"prefix": "F3Array"  ,  "body": ["F3Array (_sMsgTit, _lSempre)"]},
 	"ClsSQL:FormatIn":   {"prefix": "FormatIn" ,  "body": ["FormatIn ()"]},
-	"ClsSQL:MudaTipo":   {"prefix": "MudaTipo" ,  "body": ["MudaTipo ()"]},
 	"ClsSQL:InsValues":  {"prefix": "InsValues",  "body": ["InsValues (_sTabela, _aDados)"]},
 	"ClsSQL:Log":        {"prefix": "Log"      ,  "body": ["Log (_lQuebra)"]},
 	"ClsSQL:Qry2Array":  {"prefix": "Qry2Array",  "body": ["Qry2Array (_lSetField, _lRetNomes)"]},

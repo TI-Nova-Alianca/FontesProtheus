@@ -57,6 +57,7 @@
 // 19/05/2022 - Robert - Posiciona no inicio do arquivo ao final do metodo :Copy2Trb() - GLPI 12080
 // 30/01/2023 - Robert - Criados atributos TentaExcel e DirDestXLS
 // 14/07/2023 - Robert - Criado atributo MsgF3Vazio
+// 12/02/2024 - Robert - Metodo :MudaTipo() passa a varrer o SX3 somente quando explicitamente solicitado.
 //
 
 #include "protheus.ch"
@@ -68,7 +69,7 @@ CLASS ClsSQL
 	// Declaracao das propriedades da Classe
 	public  DATA aHeader
 	public  DATA ArqDestXLS
-	public  DATA _aSetField
+	private DATA _aSetField
 	public  DATA DirDestXLS
 	public  DATA lGeraHead
 	public  data MsgF3Vazio  // Mensagem a mostrar quando array vazia para F3Array
@@ -343,33 +344,41 @@ return ::TmpTblRealName
 // --------------------------------------------------------------------------
 // Muda os tipos das colunas. Deve ser executado logo apos a execucao da query
 // e antes que o resultado da mesma seja usado para alguma coisa.
-METHOD MudaTipo () Class ClsSQL
+METHOD MudaTipo (_lTodosCampos as logical) Class ClsSQL
 //	local _aCampos   := {}
 	local _nCampo    := 0
 	local _aAreaQry  := GetArea ()
 	local _aAreaSX3  := {}
 
 	// Varre SX3 procurando campos de mesmo nome dos existentes na query.
-	dbselectarea ("SX3")
-	_aAreaSX3 = GetArea ()
-	sx3 -> (dbsetorder (2))
-	for _nCampo = 1 to (::_sAliasQry) -> (fcount ())
-		if sx3 -> (dbseek (padr (alltrim ((::_sAliasQry) -> (FieldName (_nCampo))), 10, " "), .F.))
-			if sx3 -> x3_tipo $ "ND"  // Numerico ou data
-				TCSetField (::_sAliasQry, sx3 -> x3_campo, sx3 -> x3_tipo, sx3 -> x3_tamanho, sx3 -> x3_decimal)
+	if _lTodosCampos
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou verificar SX3')
+		u_logpcham ()
+		dbselectarea ("SX3")
+		_aAreaSX3 = GetArea ()
+		sx3 -> (dbsetorder (2))
+		for _nCampo = 1 to (::_sAliasQry) -> (fcount ())
+			if sx3 -> (dbseek (padr (alltrim ((::_sAliasQry) -> (FieldName (_nCampo))), 10, " "), .F.))
+				if sx3 -> x3_tipo $ "ND"  // Numerico ou data
+					TCSetField (::_sAliasQry, sx3 -> x3_campo, sx3 -> x3_tipo, sx3 -> x3_tamanho, sx3 -> x3_decimal)
+				endif
 			endif
-		endif
-	next
-	RestArea (_aAreaSX3)
+		next
+		RestArea (_aAreaSX3)
+	endif
 
-	// Verifica se a rotina chamadora especificou algum campo adicional para mudanca de tipo.
+	// Verifica se o programa que gerou a query especificou algum campo em
+	// especifico para mudanca de tipo. Isso tem utilidade, por exemplo, quando
+	// troca-se o nome de um campo na query. Ex: SELECT B1_DATREF AS ULTIMO
+	// Nesse caso, o campo ULTIMO nao consta no SX3.
 	for _nCampo = 1 to len (::_aSetField)
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou mudar tipo do campo ' + ::_aSetField [_nCampo, 1])
 		if (::_sAliasQry) -> (FieldPos (::_aSetField [_nCampo, 1])) > 0
 			//u_log (::_aSetField [_nCampo, 1])
 			TCSetField (::_sAliasQry, ::_aSetField [_nCampo, 1], ::_aSetField [_nCampo, 2], ::_aSetField [_nCampo, 3], ::_aSetField [_nCampo, 4])
 		endif
 	next
-	
+
 	RestArea (_aAreaQry)
 return
 
@@ -426,9 +435,10 @@ METHOD Qry2Array (_lSetField, _lRetNomes) Class ClsSQL
 	_ExecQry (::self)
 
 	// Altera tipo de campos data cfe. dicionario de dados.
-	if _lSetField
-		::MudaTipo ()
-	endif
+//	if _lSetField
+//		::MudaTipo ()
+//	endif
+	::MudaTipo (_lTodosCampos = _lSetField)
 
 	_aArray = {}
 
@@ -535,10 +545,13 @@ METHOD Qry2Trb (_lSetField) Class ClsSQL
 
 	_ExecQry (::self)
 
+	_lSetField := iif (_lSetField == NIL, .T., _lSetField)
+
 	// Altera tipo de campos cfe. dicionario de dados.
-	if _lSetField != NIL .and. _lSetField
-		::MudaTipo ()
-	endif
+//	if _lSetField != NIL .and. _lSetField
+//		::MudaTipo ()
+//	endif
+	::MudaTipo (_lTodosCampos = _lSetField)
 
 return ::_sAliasQry
 
@@ -584,9 +597,10 @@ METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 	U_Log2 ('debug', cvaltochar (::QtLinRet) + ' registros encontrados. Iniciando exportacao de dados CSV para destino ' + _sArq)
 	
 	// Altera tipo de campos data cfe. dicionario de dados.
-	if _lSetField
-		::MudaTipo ()
-	endif
+//	if _lSetField
+//		::MudaTipo ()
+//	endif
+	::MudaTipo (_lTodosCampos = _lSetField)
 
 	// Cria arquivo temporario onde serao gerados os dados.
 	_sArq += ".CSV"
@@ -715,7 +729,7 @@ return ::_xRetQry
 
 // --------------------------------------------------------------------------
 // Adiciona campos `a array de campos para mudar tipo.
-METHOD SetField (_sColuna, _sTipo, _nTamanho, _nDecimal) Class ClsSQL
+METHOD SetField (_sColuna as character, _sTipo as character, _nTamanho as numeric, _nDecimal as numeric) Class ClsSQL
 	aadd (::_aSetField, {_sColuna, _sTipo, _nTamanho, _nDecimal})
 return
 

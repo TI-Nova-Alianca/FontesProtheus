@@ -1559,9 +1559,10 @@ static function _IncCarSaf ()
 		_oSQL:Log ()
 		_aRegSA2 = aclone (_oSQL:Qry2Array (.F., .F.))
 		if len (_aRegSA2) == 0
-			_SomaErro ("Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)")
+//			_SomaErro ("Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)")
+			_SomaErro ("Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE) " + _oSQL:_sQuery)
 		elseif len (_aRegSA2) > 1
-			_SomaErro ("Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)")
+			_SomaErro ("Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE) " + _oSQL:_sQuery)
 		else
 			_oAssoc := ClsAssoc ():New (_aRegSA2 [1, 1], _aRegSA2 [1, 2])
 			if valtype (_oAssoc) != 'O'
