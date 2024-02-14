@@ -40,6 +40,7 @@ CLASS ClsTbUva from ClsBase
 	private data GrauIniTab  // Grau inicial a ser gerado
 	private data GrauFimTab  // Grau final a ser gerado
 	public  data Grupos     // Grupos de uvas cfe. tabela 13 do ZX5
+	public  data MascaraPrecos  // Mascara (casas decimais) para os precos unitarios.
 	private data MsgConfSeq  // Mensagem explicativa do erro encontrado na conferencia de sequenciamento de graus
 	public  data NomeTabela  // Nome (descritivo) da tabela
 	public  data SubGrupos   // Subgrupos de uvas cfe. tabela 13 do ZX5
@@ -63,16 +64,17 @@ ENDCLASS
 METHOD New () Class ClsTbUva
 
 	// Valores default
-	::CodTabela   = ''
-	::Conducao    = ''
-	::GrauDecimal = ''
-	::Grupos      = JsonObject():New()
-	::MsgConfSeq  = ''
-	::NomeTabela  = ''
-	::SubGrupos   = {}
+	::CodTabela          = ''
+	::Conducao           = ''
+	::GrauDecimal        = ''
+	::Grupos             = JsonObject():New()
+	::MascaraPrecos      = "@E 999.9999"
+	::MsgConfSeq         = ''
+	::NomeTabela         = ''
+	::SubGrupos          = {}
 	::TipoAgioEntreGraus = ''
-	::TipoUva     = ''
-	::UltMsg      = ''
+	::TipoUva            = ''
+	::UltMsg             = ''
 
 	// Aumentar ou diminuir aqui a faixa de graus se necessario.
 	// Uso essa faixa tem uns 10 anos e nao me faltou nada ainda...
@@ -216,7 +218,7 @@ METHOD GeraAtrib ( ;
 	if _lContinua
 		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou gerar array de grupos')
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT ZA_DESC, ZA_TPAGIOG"
+		_oSQL:_sQuery := "SELECT ZA_DESC, ZA_TPAGIOG, ZA_QTDECPR"
 		_oSQL:_sQuery += ", ZX5_13SAFR, ZX5_13GRUP, ZX5_13DESC, ZX5_13GBAS, ZX5_13GMAG, ZX5_13PMIN, ZX5_13PBCO"
 		_oSQL:_sQuery += ", ZX5_13AEPR, ZX5_13AEAA, ZX5_13AEA, ZX5_13AEC, ZX5_13AED, ZX5_13AEDS"  // Acrescimos cfe classificacao espaldeira
 		_oSQL:_sQuery += ", ZX5_13ALA, ZX5_13ALC, ZX5_13ALDS"  // Acrescimos cfe classificacao latada
@@ -266,6 +268,7 @@ METHOD GeraAtrib ( ;
 				_Super:SomaMsg ("Tipo de agio nao definido no campo ZA_TPAGIOG.")
 				_lContinua = .F.
 			else
+				::MascaraPrecos      = "@E 999." + replicate ('9', (_sAlias13) -> za_QtDecPr)
 				::NomeTabela         = (_sAlias13) -> za_desc
 				::TipoAgioEntreGraus = (_sAlias13) -> za_tpagiog
 			endif
@@ -923,13 +926,13 @@ METHOD GeraHTM () Class ClsTbUva
 			//	U_Log2 ('debug', '[' + procname () + ']' + _sToolTip)
 
 				// Como sempre existe codigo base de cada variedade, este sempre deverah ter preco
-				aadd (_aLinha, _sTag + _sToolTip + transform (_oGrauDeGrupo ['PrecoCodBase'], "@E 999.9999") + '</th>')
+				aadd (_aLinha, _sTag + _sToolTip + transform (_oGrauDeGrupo ['PrecoCodBase'], ::MascaraPrecos) + '</th>')
 
 				// Estas colunas existem somente para uvas comuns
 				if ::TipoUva == 'C'
-					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaBordadura'], "@E 999.9999") + '</th>')
-					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'], "@E 999.9999") + '</th>')
-					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaOrganica'], "@E 999.9999") + '</th>')
+					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaBordadura'],   ::MascaraPrecos) + '</th>')
+					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'], ::MascaraPrecos) + '</th>')
+					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaOrganica'],    ::MascaraPrecos) + '</th>')
 				endif
 
 			next
@@ -1054,7 +1057,7 @@ METHOD GeraHTM () Class ClsTbUva
 		//
 		_sHTM += '<tr>'
 		_sHTM +=    '<th class="TituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1]) - _nQtColHora) + '>'
-		_sHTM +=    alltrim (sm0 -> m0_nomecom)
+		_sHTM +=    'Coop.Nova Aliança'  // alltrim (sm0 -> m0_nomecom)
 		_sHTM +=    ' - Tabela ' + ::CodTabela + ' (' + alltrim (::NomeTabela) + ')'
 		_sHTM +=    ' - uvas <b>' + iif (::TipoUva == 'C', 'comuns', iif (::TipoUva == 'F', 'viniferas', '(SEM DEFINICAO)'))
 		_sHTM +=    ' ' + iif (::Conducao == 'L', 'latadas', iif (::Conducao == 'E', 'espaldeira', '(SEM DEFINICAO)')) + '</b>'

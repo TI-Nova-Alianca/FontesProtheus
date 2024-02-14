@@ -18,6 +18,7 @@
 // 23/01/2024 - Robert - Melhorada geracao ZBI (opcao de gerar apenas variedades faltantes)
 //                     - Viniferas latadas gera SZI classif. 'DS' e nao mais 'D'.
 // 25/01/2024 - Robert - Exportacao para ZBI da tag 'PrecoFinaLatadaClasC'
+// 13/02/2024 - Robert - Filtrar por item na exportacao para ZBI
 //
 
 #include "protheus.ch"
@@ -411,6 +412,9 @@ static function _GeraZBI (_sCodTab)
 	local _nIdxListaClass := 0
 	local _nOperacao := 0
 	local _aQuaisTab := {}
+	private cPerg    := 'SZA_ZBI'
+
+	_ValidPerg ()
 
 	procregua (100)
 	_sCodTab = U_TamFixo (_sCodTab, TamSX3 ("ZX5_13SAFR")[1], ' ')
@@ -456,6 +460,15 @@ static function _GeraZBI (_sCodTab)
 	aadd (_aQuaisTab, {.f., 'Uvas finas latadas'})
 	aadd (_aQuaisTab, {.f., 'Uvas finas espaldeira'})
 	U_MBArray (@_aQuaisTab, 'Selecione tabelas a exportar', NIL, 1, NIL, NIL, 'allwaystrue ()', {})
+
+	if _lContinua .and. ascan (_aQuaisTab, {|_aVal| _aVal [1] == .T.}) == 0
+		u_help ("Selecione pelo menos uma tabela para alimentar o arquivo ZBI.",, .t.)
+		_lContinua = .F.
+	endif
+
+	if _lContinua .and. ! pergunte (cPerg, .t.)
+		_lContinua = .F.
+	endif
 
 	if _lContinua .and. _aQuaisTab [1, 1]
 		incproc ('Gerando tabela para uvas comuns')
@@ -547,17 +560,17 @@ static function _GeraZBI (_sCodTab)
 						// Monta uma lista de possiveis classificacoes de uvas finas.
 						_aListaClass = {}
 						if _oTbUva:Conducao == 'L'
-							aadd (_aListaClass, {'A',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasA']})
-							aadd (_aListaClass, {'B',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoCodBase']})
-							aadd (_aListaClass, {'C',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasC']})
+							aadd (_aListaClass, {'A ', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasA']})
+							aadd (_aListaClass, {'B ', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoCodBase']})
+							aadd (_aListaClass, {'C ', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasC']})
 							aadd (_aListaClass, {'DS', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaLatadaClasDS']})
 						elseif _oTbUva:Conducao == 'E'
 							aadd (_aListaClass, {'PR', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasPR']})
 							aadd (_aListaClass, {'AA', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasAA']})
-							aadd (_aListaClass, {'A',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasA']})
-							aadd (_aListaClass, {'B',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoCodBase']})
-							aadd (_aListaClass, {'C',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasC']})
-							aadd (_aListaClass, {'D',  _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasD']})
+							aadd (_aListaClass, {'A ', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasA']})
+							aadd (_aListaClass, {'B ', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoCodBase']})
+							aadd (_aListaClass, {'C ', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasC']})
+							aadd (_aListaClass, {'D ', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasD']})
 							aadd (_aListaClass, {'DS', _oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['PrecoFinaEspaldeiraClasDS']})
 						endif
 
@@ -615,22 +628,48 @@ static function _GravaZBI ( ;
 	, _sClassif as character ;
 	, _nPreco   as numeric ;
 )
-	if ! zbi -> (dbseek (xfilial ("ZBI") + _sCodTab + _sProduto + _sConduc + _sGrau + _sClassif, .F.))
-		//	U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
-		reclock ("ZBI", .t.)
-		zbi -> zbi_filial = xfilial ("ZBI")
-		zbi -> zbi_codtab = _sCodTab
-		zbi -> zbi_produt = _sProduto
-		zbi -> zbi_grau   = _sGrau
-		zbi -> zbi_conduc = _sConduc
-		zbi -> zbi_classe = _sClassif
-		zbi -> zbi_vunit1 = _nPreco
-		msunlock ()
-	else
-		if round (zbi -> zbi_vunit1, 4) == round (_nPreco, 4)
-		//	U_Log2 ('debug', '[' + procname () + ']' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco) + ' ja existe')
+	local _lContinua := .T.
+
+	// Filtra parametros adicionais. Eu poderia filtrar antes de chamar esta
+	// funcao, mas teria que filtrar em mais de um local acima. Achei melhor
+	// concentrar tudo aqui.
+	if _sProduto < mv_par01 .or. _sProduto > mv_par02
+		_lContinua = .F.
+	endif
+
+	if _lContinua
+		if ! zbi -> (dbseek (xfilial ("ZBI") + _sCodTab + _sProduto + _sConduc + _sGrau + _sClassif, .F.))
+		// fica muito lento --->	U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
+			reclock ("ZBI", .t.)
+			zbi -> zbi_filial = xfilial ("ZBI")
+			zbi -> zbi_codtab = _sCodTab
+			zbi -> zbi_produt = _sProduto
+			zbi -> zbi_grau   = _sGrau
+			zbi -> zbi_conduc = _sConduc
+			zbi -> zbi_classe = _sClassif
+			zbi -> zbi_vunit1 = _nPreco
+			msunlock ()
 		else
-			U_Log2 ('erro', '[' + procname () + ']' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco) + ' ja existe COM VALOR ' + cvaltochar (zbi -> zbi_vunit1))
+			if round (zbi -> zbi_vunit1, 4) == round (_nPreco, 4)
+		// fica muito lento --->		U_Log2 ('debug', '[' + procname () + ']' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco) + ' ja existe')
+			else
+				U_Log2 ('erro', '[' + procname () + ']' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco) + ' ja existe COM VALOR ' + cvaltochar (zbi -> zbi_vunit1))
+			endif
 		endif
 	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+	local _aRegsPerg := {}
+	local _aDefaults := {}
+	
+	//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes Help
+	aadd (_aRegsPerg, {01, "Produto (variedade) inicial   ", "C", 15, 0,  "",   "SB1   ", {},    ""})
+	aadd (_aRegsPerg, {02, "Produto (variedade) final     ", "C", 15, 0,  "",   "SB1   ", {},    ""})
+
+	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return

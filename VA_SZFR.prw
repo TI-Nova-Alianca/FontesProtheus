@@ -17,13 +17,12 @@
 // 31/03/2017 - Robert - Tratamento para validar cargas devolvidas.
 // 15/03/2018 - Robert - Tratamento para desconsiderar cargas direcionadas para outra filial ou canceladas.
 // 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
+// 13/02/2024 - Robert - Tratamento para nao considerar mais 'balanca' a partir de 2024.
 //
 
 // --------------------------------------------------------------------------
 user function VA_SZFR (_lAutomat)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
-	private _sArqLog := U_NomeLog ()
-	u_logId ()
 
 	// Variaveis obrigatorias dos programas de relatorio
 	cDesc1   := "Cargas recebidas durante a safra"
@@ -89,6 +88,13 @@ user function VA_SZFR (_lAutomat)
 		Return
 	Endif
 	
+	if mv_par01 >= stod ('20240101')
+		if ! empty (mv_par03) .or. upper (mv_par04) != 'ZZ'
+			u_help ("A partir do ano de 2024 a diferenciacao passa a ser feita somente por filial. Por isso, os parametros 'Local recebimento inicial' e 'Local recebimento final' devem ser informados de (vazio) ate ZZ.",, .t.)
+			return
+		endif
+	endif
+
 	processa ({|| _Imprime ()})
 	MS_FLUSH ()
 	DbCommitAll ()
@@ -115,11 +121,10 @@ static function _Imprime ()
 	If !Empty(aReturn[7])
 		u_help ("Este relatorio nao aceita filtro do usuario.")
 		return
-	EndIf	
+	EndIf
 
 	procregua (10)
 	incproc ("Lendo dados...")
-                                                 
 
 	_sQuery := ""
 	_sQuery += "WITH CTE AS ("
