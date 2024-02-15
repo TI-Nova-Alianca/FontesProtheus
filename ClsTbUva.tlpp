@@ -18,10 +18,11 @@
 // 25/01/2024 - Robert - Criada tag 'PrecoFinaLatadaClasC' (simplesmente esqueci quando criei a classe !!!)
 // 26/01/2024 - Robert - Implementado tipo de agio '1' entre graus (campo ZA_TPAGIOG)
 //                     - Melhorias na geracao do HTML
+// 14/02/2024 - Robert - Criado atributo :MascaraPrecos (campo za_QtDecPr)
 //
 
 #Include "Protheus.ch"
-#include "VA_INCLU.prw"
+//#include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
 // Funcao declarada apenas para poder compilar este arquivo fonte.
@@ -957,7 +958,8 @@ METHOD GeraHTM () Class ClsTbUva
 		_sHTM +=       'color:#000000;'
 		_sHTM +=       'background:#FFFFFF;'
 		_sHTM +=       'font-family:Arial;'
-		_sHTM +=       'text-align:center;'
+	//	_sHTM +=       'text-align:center;'
+		_sHTM +=       'text-align:left;'
 		_sHTM +=       'font-size:11.0pt;'
 		_sHTM +=       'font-weight:700;'
 		_sHTM +=       'padding: 2px;'

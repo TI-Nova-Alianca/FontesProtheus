@@ -97,7 +97,7 @@ user function robert ()
 
 		_sFuncao := ''
 		// _sFuncao += '_AjLoteEnd ()'
-		_sFuncao += '_AtuCR ()'
+		// _sFuncao += '_AtuCR ()'
 		// _sFuncao += '_AtuSB1 ()'
 		// _sFuncao += '_aviso ()'
 		// _sFuncao += '_batBlUsr ()'

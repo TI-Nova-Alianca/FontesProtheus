@@ -115,6 +115,7 @@ static function _Imprime ()
 	private _nMaxLin   := 77
 	li = _nMaxLin + 1
 
+	u_logsx1 (cPerg)
 	procregua (3)
 
 	// Nao aceita filtro por que precisaria inserir na query.

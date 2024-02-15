@@ -74,6 +74,7 @@
 // 25/05/2023 - Robert  - Nao bloqueia duas NF origem diferentes quando chamado pelo U_VA_GNF2.
 // 19/01/2024 - Sandra  - Habilitado variavel _ValXML. - GLPI (14565) 
 // 25/01/2024 - Robert  - Nao validar XML da especie NF3E (GLPI 14565)
+// 14/02/2024 - Robert  - Validacao A2_INSCR x _oXml:_emit:_IE:TEXT passa a desconsiderar zeros a esquerda.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -677,7 +678,8 @@ static function _ValXML ()
         Endif
 
 		if !cSerie $ "890#891#892#893#894#895#896#897#898#899"
-    		if _IEFor != _oXml:_emit:_IE:TEXT
+    	//	if _IEFor != _oXml:_emit:_IE:TEXT
+    		if val (strtran (strtran (strtran (_IEFor, '.', ''), '/', ''), '-', '')) != val (strtran (strtran (strtran (_oXml:_emit:_IE:TEXT, '.', ''), '/', ''), '-', ''))
 		   		u_help ("Inscricao Estadual do Fornecedor: no XML consta " + _oXml:_emit:_IE:TEXT + " Verifique!!")
            		if GetMv("VA_VALXML")
   	          		_lRet := .F.		

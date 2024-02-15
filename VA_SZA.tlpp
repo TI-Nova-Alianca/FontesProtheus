@@ -19,10 +19,10 @@
 //                     - Viniferas latadas gera SZI classif. 'DS' e nao mais 'D'.
 // 25/01/2024 - Robert - Exportacao para ZBI da tag 'PrecoFinaLatadaClasC'
 // 13/02/2024 - Robert - Filtrar por item na exportacao para ZBI
+// 14/02/2024 - Robert - Melhoria fluxo exportacao para ZBI.
 //
 
 #include "protheus.ch"
-//#include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
 User Function va_sza()
@@ -420,21 +420,17 @@ static function _GeraZBI (_sCodTab)
 	_sCodTab = U_TamFixo (_sCodTab, TamSX3 ("ZX5_13SAFR")[1], ' ')
 
 	if _lContinua
-		zbi -> (dbsetorder (1))  // ZBI_FILIAL, ZBI_CODTAB, ZBI_PRODUT, ZBI_CONDUC, ZBI_GRAU, ZBI_CLASSE, R_E_C_N_O_, D_E_L_E_T_
-		if zbi -> (dbseek (xfilial ("ZBI") + _sCodTab, .T.))
-			//_lContinua = U_MsgNoYes ("Ja existem dados no arquivo ZBI para esta tabela de precos. Deseja sobregravar?", IsInCallStack ("U_ROBERT"))
-			_nOperacao = aviso ("Arquivo ZBI ja tem registros" ;
-				, "Ja existem dados no arquivo ZBI para esta tabela de precos." + ;
-				"Voce tem opcao de apagar todos os registros existentes e gerar novos, " + ;
-				"ou gerar apenas os novos (por exemplo, se foi incluida uma nova variedade de uva na tabela)." ;
-				, {"Acrescentar novos", "Refazer tudo", "Cancelar"};
-				, 3 ;  //  Largura da janela (1=default, 2 = media, 3 = grande)
-				, "Te liga, bico de luz!" ; // Texto em destaque na parte superior do dialogo
-			)
-			U_Log2 ('debug', '[' + procname () + ']_nOperacao = ' + cvaltochar (_nOperacao))
-			if _nOperacao == 3
-				_lContinua = .F.
-			endif
+		_nOperacao = aviso ("Selecione operacao" ;
+			, "Ja existem dados no arquivo ZBI para esta tabela de precos." + ;
+			"Voce tem opcao de apagar todos os registros existentes e gerar novos, " + ;
+			"ou gerar apenas os novos (por exemplo, se foi incluida uma nova variedade de uva na tabela)." ;
+			, {"Acrescentar novos", "(Re)gerar tudo", "Cancelar"};
+			, 3 ;  //  Largura da janela (1=default, 2 = media, 3 = grande)
+			, "Te liga, bico de luz!" ; // Texto em destaque na parte superior do dialogo
+		)
+		U_Log2 ('debug', '[' + procname () + ']_nOperacao = ' + cvaltochar (_nOperacao))
+		if _nOperacao == 3
+			_lContinua = .F.
 		endif
 	endif
 
@@ -455,20 +451,26 @@ static function _GeraZBI (_sCodTab)
 	endif
 
 	// Tela para o usuario selecionar quais tabelas quer gerar.
+	// Se eh para regerar tudo, nem pergunto.
 	_aQuaisTab = {}
 	aadd (_aQuaisTab, {.f., 'Uvas comuns latadas'})
 	aadd (_aQuaisTab, {.f., 'Uvas finas latadas'})
 	aadd (_aQuaisTab, {.f., 'Uvas finas espaldeira'})
-	U_MBArray (@_aQuaisTab, 'Selecione tabelas a exportar', NIL, 1, NIL, NIL, 'allwaystrue ()', {})
-
-	if _lContinua .and. ascan (_aQuaisTab, {|_aVal| _aVal [1] == .T.}) == 0
-		u_help ("Selecione pelo menos uma tabela para alimentar o arquivo ZBI.",, .t.)
-		_lContinua = .F.
+	if _nOperacao == 1
+		U_MBArray (@_aQuaisTab, 'Selecione tabelas a exportar', NIL, 1, NIL, NIL, 'allwaystrue ()', {})
+		if ascan (_aQuaisTab, {|_aVal| _aVal [1] == .T.}) == 0
+			u_help ("Selecione pelo menos uma tabela para alimentar o arquivo ZBI.",, .t.)
+			_lContinua = .F.
+		endif
+		if _lContinua .and. ! pergunte (cPerg, .t.)
+			_lContinua = .F.
+		endif
+	else
+		_aQuaisTab [1, 1] = .T.
+		_aQuaisTab [2, 1] = .T.
+		_aQuaisTab [3, 1] = .T.
 	endif
 
-	if _lContinua .and. ! pergunte (cPerg, .t.)
-		_lContinua = .F.
-	endif
 
 	if _lContinua .and. _aQuaisTab [1, 1]
 		incproc ('Gerando tabela para uvas comuns')
@@ -546,12 +548,14 @@ static function _GeraZBI (_sCodTab)
 						endif
 
 						for _nIdxListaVar = 1 to len (_aListaVar)
-							_GravaZBI (_oTbUva:CodTabela, ;
-										_aListaVar [_nIdxListaVar, 1], ;
-										ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']), ;
-										_oTbUva:Conducao, ;
-										'', ;
-										_aListaVar [_nIdxListaVar, 2] ;
+							_GravaZBI ( ;
+								_sCodTab       = _oTbUva:CodTabela ;
+								,_sProduto     = _aListaVar [_nIdxListaVar, 1] ;
+								,_sGrau        = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) ;
+								,_sConduc      = _oTbUva:Conducao ;
+								,_sClassif     = '' ;
+								,_nPreco       = _aListaVar [_nIdxListaVar, 2] ;
+								,_lRegerarTudo = (_nOperacao == 2) ;
 							)
 						next
 
@@ -575,12 +579,23 @@ static function _GeraZBI (_sCodTab)
 						endif
 
 						for _nIdxListaClass = 1 to len (_aListaClass)
+/*
 							_GravaZBI (_oTbUva:CodTabela, ;
 										_oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase'], ;
 										ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']), ;
 										_oTbUva:Conducao, ;
 										_aListaClass [_nIdxListaClass, 1], ;
 										_aListaClass [_nIdxListaClass, 2] ;
+							)
+*/
+							_GravaZBI ( ;
+								_sCodTab       = _oTbUva:CodTabela ;
+								,_sProduto     = _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase'] ;
+								, _sGrau       = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) ;
+								,_sConduc      = _oTbUva:Conducao ;
+								,_sClassif     = _aListaClass [_nIdxListaClass, 1] ;
+								,_nPreco       = _aListaClass [_nIdxListaClass, 2] ;
+								,_lRegerarTudo = (_nOperacao == 2) ;
 							)
 						next
 					endif
@@ -621,39 +636,53 @@ return
 
 // --------------------------------------------------------------------------
 static function _GravaZBI ( ;
-	  _sCodTab  as character ;
-	, _sProduto as character ;
-	, _sGrau    as character ;
-	, _sConduc  as character ;
-	, _sClassif as character ;
-	, _nPreco   as numeric ;
+	  _sCodTab      as character ;
+	, _sProduto     as character ;
+	, _sGrau        as character ;
+	, _sConduc      as character ;
+	, _sClassif     as character ;
+	, _nPreco       as numeric ;
+	, _lRegerarTudo as logical ;
 )
 	local _lContinua := .T.
 
-	// Filtra parametros adicionais. Eu poderia filtrar antes de chamar esta
-	// funcao, mas teria que filtrar em mais de um local acima. Achei melhor
-	// concentrar tudo aqui.
-	if _sProduto < mv_par01 .or. _sProduto > mv_par02
-		_lContinua = .F.
-	endif
+	// Se estou regerando tudo, nem perco tempo com dbseek, comparacoes, etc... jah chego atirando
+	if _lRegerarTudo
+		reclock ("ZBI", .t.)
+		zbi -> zbi_filial = xfilial ("ZBI")
+		zbi -> zbi_codtab = _sCodTab
+		zbi -> zbi_produt = _sProduto
+		zbi -> zbi_grau   = _sGrau
+		zbi -> zbi_conduc = _sConduc
+		zbi -> zbi_classe = _sClassif
+		zbi -> zbi_vunit1 = _nPreco
+		msunlock ()
+	else
+		// Filtra parametros adicionais. Eu poderia filtrar antes de chamar esta
+		// funcao, mas teria que filtrar em mais de um local acima. Achei melhor
+		// concentrar tudo aqui.
+		if _sProduto < mv_par01 .or. _sProduto > mv_par02
+			_lContinua = .F.
+		endif
 
-	if _lContinua
-		if ! zbi -> (dbseek (xfilial ("ZBI") + _sCodTab + _sProduto + _sConduc + _sGrau + _sClassif, .F.))
-		// fica muito lento --->	U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
-			reclock ("ZBI", .t.)
-			zbi -> zbi_filial = xfilial ("ZBI")
-			zbi -> zbi_codtab = _sCodTab
-			zbi -> zbi_produt = _sProduto
-			zbi -> zbi_grau   = _sGrau
-			zbi -> zbi_conduc = _sConduc
-			zbi -> zbi_classe = _sClassif
-			zbi -> zbi_vunit1 = _nPreco
-			msunlock ()
-		else
-			if round (zbi -> zbi_vunit1, 4) == round (_nPreco, 4)
-		// fica muito lento --->		U_Log2 ('debug', '[' + procname () + ']' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco) + ' ja existe')
+		if _lContinua
+			if ! zbi -> (dbseek (xfilial ("ZBI") + _sCodTab + _sProduto + _sConduc + _sGrau + _sClassif, .F.))
+			// fica muito lento --->	U_Log2 ('aviso', '[' + procname () + ']Incluindo: ' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco))
+				reclock ("ZBI", .t.)
+				zbi -> zbi_filial = xfilial ("ZBI")
+				zbi -> zbi_codtab = _sCodTab
+				zbi -> zbi_produt = _sProduto
+				zbi -> zbi_grau   = _sGrau
+				zbi -> zbi_conduc = _sConduc
+				zbi -> zbi_classe = _sClassif
+				zbi -> zbi_vunit1 = _nPreco
+				msunlock ()
 			else
-				U_Log2 ('erro', '[' + procname () + ']' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco) + ' ja existe COM VALOR ' + cvaltochar (zbi -> zbi_vunit1))
+				if round (zbi -> zbi_vunit1, 4) == round (_nPreco, 4)
+			// fica muito lento --->		U_Log2 ('debug', '[' + procname () + ']' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco) + ' ja existe')
+				else
+					U_Log2 ('erro', '[' + procname () + ']' + _sCodTab + _sProduto  + _sGrau + _sConduc + _sClassif + ' $' + cvaltochar (_nPreco) + ' ja existe COM VALOR ' + cvaltochar (zbi -> zbi_vunit1))
+				endif
 			endif
 		endif
 	endif
