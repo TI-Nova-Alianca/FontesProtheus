@@ -60,11 +60,12 @@
 // 07/12/2023 - Robert - No metodo :Recebe3() passa a gravar tambem o produto no evento de recebimento da etiqueta.
 //                     - Apesar de popular o atributo ::LoteProduto na geracao de atributos, sobrepunha (desnecessariamente) no metodo ::CmdImpr().
 //                     - Tratamento temporario e especifico para 8 etiq.impressas com lote errado - GLPI 14605
+// 19/02/2024 - Robert - Implementado metodo EndGuardaFull()
 //
 
 #Include "Protheus.ch"
-#Include "RwMake.ch"
-#Include "TbiConn.ch"
+//#Include "RwMake.ch"
+//#Include "TbiConn.ch"
 
 // --------------------------------------------------------------------------
 // Funcao declarada apenas para poder compilar este arquivo fonte.
@@ -123,6 +124,7 @@ CLASS ClsEtiq
 	public METHOD New ()
 	public METHOD ApontaOP ()
 	public METHOD CmdImpr ()  // Intencao de remover o metodo :Imprime()
+	public METHOD EndGuardaFull ()  // Endereco onde foi guardada no FullWMS quando recebeu da producao
 	public METHOD EnviaFull ()
 	public METHOD Exclui ()
 	public METHOD Imprime ()
@@ -445,6 +447,41 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 //	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_sTxtEtiq antes de retornar:' + _sTxtEtiq)
 	U_ML_SRArea (_aAreaAnt)
 return iif (_lRetImpr, _sTxtEtiq, '')
+
+
+// --------------------------------------------------------------------------
+// Busca o endereco onde a etiqueta foi guardada no FullWMS, quando recebida da producao.
+METHOD EndGuardaFull () Class ClsEtiq
+	local _oSQL := NIL
+	local _sRet := ''
+	local _sLinkSrv := ''
+
+	_sLinkSrv = U_LkServer ('FULLWMS_AX01')
+	if empty (_sLinkSrv)
+		_Super:SomaMsg ("Linked server para o FullWMS nao definido. Impossivel verificar onde a etiqueta foi guardada.")
+	else
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select *"
+		_oSQL:_sQuery += " FROM OPENQUERY(" + _sLinkSrv
+		_oSQL:_sQuery +=     " ,'select decode(m.cod_ruasarm_destino, null, m.codigo_area_destino, m.cod_ruasarm_destino || ''-'' ||"
+		_oSQL:_sQuery +=              " m.cod_predio_destino || ''-'' ||"
+		_oSQL:_sQuery +=              " m.cod_la_destino ||"
+		_oSQL:_sQuery +=              " decode(m.cod_subla_destino, null, null, ''-'' ||"
+		_oSQL:_sQuery +=              " m.cod_subla_destino)) as ENDERECO"
+		_oSQL:_sQuery +=         " from wms_tarefas_cd t"
+		_oSQL:_sQuery +=              " left join wms_sub_tarefas_cd s"
+		_oSQL:_sQuery +=                 " left join wms_mov_estoques_cd m"
+		_oSQL:_sQuery +=                    " on (m.empr_codemp = s.empr_codemp"
+		_oSQL:_sQuery +=                    " and m.movestcd_id = s.movestcd_movestcd_id)"
+		_oSQL:_sQuery +=                 " on (s.empr_codemp = t.empr_codemp"
+		_oSQL:_sQuery +=                 " and s.centdist_cod_centdist = t.centdist_cod_centdist"
+		_oSQL:_sQuery +=                 " and s.tarcd_cod_tarefa_cd = t.cod_tarefa_cd)"
+		_oSQL:_sQuery +=        " where t.armovto_codigo_area_origem = ''PROD01''"
+		_oSQL:_sQuery +=          " and t.pal_palete_id = ''" + ::Codigo + "''')"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_sRet = _oSQL:RetQry (1, .f.)
+	endif
+return _sRet
 
 
 // --------------------------------------------------------------------------

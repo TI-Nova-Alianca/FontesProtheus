@@ -422,7 +422,7 @@ return
 
 // --------------------------------------------------------------------------
 // Passa resultado da query para array.
-METHOD Qry2Array (_lSetField, _lRetNomes) Class ClsSQL
+METHOD Qry2Array (_lSetField as logical, _lRetNomes as logical) Class ClsSQL
 	local _aLinha    := {}
 	local _aArray    := {}
 	local _nCampo    := 0

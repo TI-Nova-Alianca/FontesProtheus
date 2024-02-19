@@ -139,6 +139,7 @@ user function robert ()
 		// _sFuncao += '_PerfMon ()'
 		// _sFuncao += '_PreNF ()'
 		// _sFuncao += '_Rast ()'
+		_sFuncao += '_regexp ()'
 		// _sFuncao += '_reginv ()'
 		// _sFuncao += '_recmail ()'
 		// _sFuncao += '_RevCH ()'
@@ -2550,6 +2551,31 @@ return
 
 
 // --------------------------------------------------------------------------
+// Testes/validacoes de expressoes regulares
+static function _regExp ()
+	local _sPattern := ''
+	local _oRegex   := tlpp.regex.Regex():new ('')
+
+	_oRegex:setCaseSensitive (.F.)
+
+	// Monta pattern (padrao) de pesquisa usando a sintaxe das expressoes regulares.
+	_sPattern := '2[0-9]{3}'  // Ano: iniciar por 2 seguido de 3 algarismos
+	_sPattern += '(0[1-9]|1[012])'  // Mes: (0 seguido de [1-9] ou 1 seguido de [012])
+	_sPattern += '(0[1-9]|[12][0-9]|3[01])'  // Dia: (0 seguido de [1-9] ou [12] seguido de [0-9] ou 3 seguido de [0 ou 1])
+	_sPattern += ' '                   // Um espaco entre a data e a hora
+	_sPattern += '([01][0-9]|2[0-3])'  // Horas: de (00 a 19) ou (20 a 23)
+	_sPattern += ':'                   // : separando horas e minutos
+	_sPattern += '[0-5][0-9]'          // Minutos: de 00 a 59
+
+	_oRegex:SetPattern (_sPattern)
+
+	m->zz6_suspen := '20240219 12:30'
+	if ! _oRegex:PartialMatch (m->zz6_suspen)
+		u_help ("Data / hora deve estar no formato AAAAMMDD HH:MM",, .t.)
+	endif
+return
+
+// --------------------------------------------------------------------------
 static function _reginv ()
 	local _aDados := {}
 	local _nDado  := 0
@@ -2777,12 +2803,12 @@ return
 
 // --------------------------------------------------------------------------
 static function _batfull ()
-//	U_MudaLog ('U_BatFullW.log')
-//	U_BatFullW ('E') //, 'ZA1012000617078', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
-//	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+	U_MudaLog ('U_BatFullW.log')
+	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+	U_BatFullW ('E') //, 'ZA1012000617078', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
 
-	U_MudaLog ('U_BatFullM.log')
-	U_BatFullM ()
+//	U_MudaLog ('U_BatFullM.log')
+//	U_BatFullM ()
 return
 
 // --------------------------------------------------------------------------
@@ -3182,17 +3208,23 @@ static function _Etiq ()
 
 	local _nEtiq := 0
 	local _aEtiq := {}
-	aadd (_aEtiq, '2000692694')
+	aadd (_aEtiq, '2000694752')
+	aadd (_aEtiq, '2000694755')
+	aadd (_aEtiq, '2000694756')
+	aadd (_aEtiq, '2000694757')
 	for _nEtiq = 1 to len (_aEtiq)
 		_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq])
 	//	_oEtiq:Imprime ('97')
 	//	_oEtiq:EnviaFull (.f.)
-		if ! _oEtiq:ApontaOP (date(), '1')
+	//	if ! _oEtiq:ApontaOP (date(), '1')
 	//	if ! _oEtiq:Recebe3 ()
 	//	if ! _oEtiq:Inutiliza ()
+		_sEndGuard = _oEtiq:EndGuardaFull ()
+		U_Log2 ('debug', '[' + procname () + ']guardada em ' + _sEndGuard)
+		if empty (_sEndGuard)
 			U_Log2 ('debug', '[' + procname () + ']' + _oEtiq:UltMsg)
 		else
-			U_Log2 ('debug', '[' + procname () + ']ok')
+			U_Log2 ('debug', '[' + procname () + '] executou ok')
 		endif
 	next
 RETURN
@@ -3741,6 +3773,11 @@ static function _verif ()
 	// _oVerif:SetParam ('06', '077')
 	// _oVerif:SetParam ('07', '000017')
 	// _oVerif := ClsVerif():New (26)
+
+	_oVerif := ClsVerif():New (28)
+	_oVerif:SetParam ('01', stod ('20220701'))
+	_oVerif:SetParam ('02', stod ('20220830'))
+
 	//_oVerif := ClsVerif():New (95)
 	//_oVerif:SetParam ('01', date () - 30)
 	//_oVerif:SetParam ('02', date ())
@@ -3753,17 +3790,17 @@ static function _verif ()
 	// _oVerif:SetParam ('04', 'zzzzzzzzzz')
 	// _oVerif:SetParam ('05', 2)
 	//_oVerif := ClsVerif():New (99)
-	//if _oVerif:Executa ()
-	//	u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-	//	u_log2 ('debug', _oVerif:Result)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
 	//// 	//u_acolsxls (_oVerif:Result)
-	//else
-	//	u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	//endif
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
 
 	// _oVerif := ClsVerif():New ()
 	// _sHtmHlp = _oVerif:GeraHelp ()
-	// // Exporta para arquivo, durante a implementacao, para conferencia.
+	// Exporta para arquivo, durante a implementacao, para conferencia.
 	// _sArq := 'c:\temp\verif.htm'
 	// if file (_sArq)
 	// 	delete file (_sArq)
@@ -3774,7 +3811,7 @@ static function _verif ()
 	// ShellExecute ("Open", _sArq, "", "", 1)
 
 //	U_MudaLog ('U_BatVerif.log')
-	u_batverif ()
+//	u_batverif ()
 
 return
 
@@ -4105,10 +4142,9 @@ return
 
 // --------------------------------------------------------------------------
 static function _AtuCR ()
-	U_GravaSX1 ('VA_ATUCR', '01', 1)  // Simular ou executar
-	U_GravaSX1 ('VA_ATUCR', '02', 'VD')  // Tipo produto
-	U_GravaSX1 ('VA_ATUCR', '03', '1200')  // Produto inicial
-	U_GravaSX1 ('VA_ATUCR', '04', '2000')  // Produto final
+	U_GravaSX1 ('VA_ATUCR', '01', 'VD')  // Tipo produto
+	U_GravaSX1 ('VA_ATUCR', '02', '1200')  // Produto inicial
+	U_GravaSX1 ('VA_ATUCR', '03', '2000')  // Produto final
 	U_VA_AtuCR (.t.)
 return
 

@@ -22,6 +22,7 @@
 // 05/10/2021 - Robert  - Desabilitado contorno que permitia ao grupo 029 estornar apont.de etiq.jah vista pelço FullWMS (o pessoal estorna producao sem se importar em fazer o ajuste na integracao com FullWMS).
 // 08/10/2021 - Robert  - Nao considerava status_protheus = 'C' na validacao da integracao com FullWMS (GLPI 10041).
 // 05/10/2022 - Robert  - Valida tabela tb_wms_entrada pelo 'codfor' e nao mais por 'nrodoc'.
+// 19/02/2024 - Robert  - Melhorada validacao campo status_protheus na leitura da tb_wms_entrada.
 //
 
 // ----------------------------------------------------------------
@@ -58,8 +59,8 @@ static function _VerFull ()
 		_oSQL:_sQuery +=   " from tb_wms_entrada"
 //		_oSQL:_sQuery +=  " where nrodoc = '" + sd3 -> d3_doc + "'"
 		_oSQL:_sQuery +=  " where codfor = '" + sd3 -> d3_vaetiq + "'"
-		_oSQL:_sQuery +=    " and status != '9'"
-		_oSQL:_sQuery +=    " and status_protheus != 'C'"
+//		_oSQL:_sQuery +=    " and status != '9'"
+		_oSQL:_sQuery +=    " and status_protheus not like 'C%'"
 		_oSQL:Log ('[' + procname () + ']')
 		if _oSQL:RetQry () > 0
 			_lRet = .F.

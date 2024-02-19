@@ -53,10 +53,11 @@
 // 24/07/2023 - Robert - Criado status 6 (entradas por sol.transf. que tenha 'aceite negado').
 //                     - Valida saldo alm.orig.antes de tentar transferir solic.manuais.
 // 30/10/2023 - Robert - Nao tenta nova execucao se estiver com ZAG_EXEC=E
+// 19/02/2024 - Robert - Programa migrado de .prw para .tlpp
 //
 
 #Include "Protheus.ch"
-#Include "TbiConn.ch"
+//#Include "TbiConn.ch"
 
 // ------------------------------------------------------------------------------------
 User Function BatFullW (_sQueFazer, _sEntrID, _sSaidID)
@@ -144,7 +145,7 @@ static function _Entradas (_sEntrID)
 	endif
 	_oSQL:_sQuery +=  " order by entrada_id"
 	_oSQL:Log ()
-	_sAliasQ := _oSQL:Qry2Trb ()
+	_sAliasQ := _oSQL:Qry2Trb (.f.)
 	(_sAliasQ) -> (dbgotop ())
 	do while ! (_sAliasQ) -> (eof ())
 		U_Log2 ('info', '[' + procname () + "]Verificando tb_wms_entrada.entrada_id = '" + (_sAliasQ) -> entrada_id + "'")
@@ -367,7 +368,7 @@ static function _Saidas (_sSaidID)
 	endif
 	_oSQL:_sQuery +=  " order by saida_id"
 	_oSQL:Log ()
-	_sAliasQ := _oSQL:Qry2Trb ()
+	_sAliasQ := _oSQL:Qry2Trb (.f.)
 	(_sAliasQ) -> (dbgotop ())
 	do while ! (_sAliasQ) -> (eof ())
 		U_Log2 ('info', '[' + procname () + "]Verificando tb_wms_pedidos.saida_id = '" + (_sAliasQ) -> saida_id + "'")
@@ -617,6 +618,40 @@ static function _AtuSaid (_sSaida, _sStatus)
 		endif
 	endif
 return _lRet
+
+
+// --------------------------------------------------------------------------------------------
+// Gera para o FulLWMS uma solicitacao de bloqueio do endereco onde esse pallet foi guardado,
+// para que fique em quarentena ateh liberacao (manual) da qualidade.
+static function _BloqEnder (_oEtiq)
+	local _sEndGuard := ''
+	local _aListaSolBloq := {}
+	local _oListaSolBloq := JsonObject():New()
+	local _oSolBloq      := NIL
+
+	_sEndGuard = _oEtiq:EndGuardaFull ()
+	if empty (_sEndGuard)
+		U_Log2 ('aviso', '[' + procname () + ']Nao foi possivel determinar onde foi guardada a etiqueta ' + _oEtiq:Codigo)
+	else
+		U_Log2 ('debug', '[' + procname () + ']etiqueta ' + _oEtiq:Codigo + ' guardada em ' + _sEndGuard)
+
+		// Como a view soh estah operando em base teste, jah vou gerando ZBH pra ver se roda bem.
+		_oSolBloq = JsonObject():New()
+		_oSolBloq ['IdOper']     = ''
+		_oSolBloq ['Almox']      = '01'
+		_oSolBloq ['Produto']    = _oEtiq:Produto
+		_oSolBloq ['Lote']       = _oEtiq:LoteProduto
+		_oSolBloq ['Endereco']   = _sEndGuard
+		_oSolBloq ['Quantidade'] = _oEtiq:QtApontada
+		_oSolBloq ['Operacao']   = 'B'  // Bloquear
+		_oSolBloq ['Resultado']  = .f.
+		_oSolBloq ['Obs']        = ''
+		_oSolBloq ['StatusFull'] = ''
+		aadd (_aListaSolBloq, _oSolBloq)
+		_oListaSolBloq:Set (_aListaSolBloq)
+		U_BlEstF (_oParmSolBloq = _oListaSolBloq, _nTimeout = 0)  // por enqto zero
+	endif
+return
 
 
 // --------------------------------------------------------------------------------------------

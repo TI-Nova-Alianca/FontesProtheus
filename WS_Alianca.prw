@@ -132,7 +132,7 @@
 // 04/12/2023 - Robert  - Refeitas algumas indentacoes.
 // 07/12/2023 - Robert  - Tratamento porta X filial para poder manter sessao aberta.
 // 23/01/2023 - Robert  - Desabilitada acao ConsultaEstruturaComCustos
-//
+// 19/02/2024 - Robert  - Novos (e obrigatorios) atributos para o metodo _oAssoc:FechSafra()
 
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -2162,7 +2162,8 @@ Static Function _PedidosBloq()
 	_oSQL:_sQuery += " AND C5_NOTA != 'XXXXXXXXX' " // Residuo eliminado (nao sei por que as vezes grava com 9 posicoes)
 	_oSQL:_sQuery += " AND C5_NOTA != 'XXXXXX'  " 	// Residuo eliminado (nao sei por que as vezes grava com 6 posicoes)
 	//_oSQL:Log ()
-	_aPed := aclone(_oSQL:Qry2Array ())
+//	_aPed := aclone(_oSQL:Qry2Array ())
+	_aPed := aclone(_oSQL:Qry2Array (.t., .f.))
 
 	_XmlRet += "<BuscaPedidosBloqueados>"
 	_XmlRet += "	<Registro>"
@@ -2466,41 +2467,43 @@ static function _AsFecSaf ()
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
 	U_Log2 ('debug', '[' + procname () + ']iniciando...')
-	if empty (_sErroWS) ; _sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
-		if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja",  .T., .F.) ; endif
-			if empty (_sErroWS) ; _sSafra = U_ExTagXML ("_oXML:_WSAlianca:_Safra", .T., .F.) ; endif
-				if empty (_sErroWS)
-					_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
-					if valtype (_oAssoc) != 'O'
-						_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
-					endif
-				endif
-				if empty (_sErroWS)
-					U_Log2 ('debug', '[' + procname () + ']parametrizando...')
-					if empty (_sErroWS) ; _oAssoc:FSDFunrur    = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_descontoFUNRURAL",  .F., .F.) == 'S') ; endif
-						if empty (_sErroWS) ; _oAssoc:FSFrete      = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_freteSafra",        .F., .F.) == 'S') ; endif
-							if empty (_sErroWS) ; _oAssoc:FSLctosCC    = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_lctoCC",            .F., .F.) == 'S') ; endif
-								if empty (_sErroWS) ; _oAssoc:FSNFEntrada  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfEntrada",         .F., .F.) == 'S') ; endif
-									if empty (_sErroWS) ; _oAssoc:FSNFCompra   = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfCompra",          .F., .F.) == 'S') ; endif
-										if empty (_sErroWS) ; _oAssoc:FSNFComplem  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfComplemento",     .F., .F.) == 'S') ; endif
-											if empty (_sErroWS) ; _oAssoc:FSNFPrdProp  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfProdPropria",     .F., .F.) == 'S') ; endif
-												if empty (_sErroWS) ; _oAssoc:FSPrevPagto  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_faturaPagamento",   .F., .F.) == 'S') ; endif
-													if empty (_sErroWS) ; _oAssoc:FSRegraPagto = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_regraPagamento",    .F., .F.) == 'S') ; endif
-														if empty (_sErroWS) ; _oAssoc:FSResVaried  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_resumoVariedade",   .F., .F.) == 'S') ; endif
-															if empty (_sErroWS) ; _oAssoc:FSResVarGC   = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_resumoVarGrauClas", .F., .F.) == 'S') ; endif
-																_oAssoc:FSSafra      = _sSafra
-
-																//	//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur
-																//	_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .t.,        .t.)
-																_sRet = _oAssoc:FechSafra ()
-																U_Log2 ('debug', '[' + procname () + ']' + _sRet)
-																if empty (_sRet)
-																	_SomaErro ("Retorno invalido metodo FechSafra " + _oAssoc:UltMsg)
-																else
-																	_sMsgRetWS = _sRet
-																endif
-															endif
-															return
+	if empty (_sErroWS)
+		_sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.)
+	endif
+	if empty (_sErroWS)
+		_sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja",  .T., .F.)
+	endif
+	if empty (_sErroWS)
+		_sSafra = U_ExTagXML ("_oXML:_WSAlianca:_Safra", .T., .F.)
+	endif
+	if empty (_sErroWS)
+		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
+		if valtype (_oAssoc) != 'O'
+			_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
+		endif
+	endif
+	_oAssoc:FSDFunrur    = (U_ExTagXML ("_oXML:_WSAlianca:_descontoFUNRURAL",           .T., .F.) == 'S')
+	_oAssoc:FSFrete      = (U_ExTagXML ("_oXML:_WSAlianca:_freteSafra",                 .T., .F.) == 'S')
+	_oAssoc:FSLctosCC    = (U_ExTagXML ("_oXML:_WSAlianca:_lctoCC",                     .T., .F.) == 'S')
+	_oAssoc:FSNFEntrada  = (U_ExTagXML ("_oXML:_WSAlianca:_nfEntrada",                  .T., .F.) == 'S')
+	_oAssoc:FSNFCompra   = (U_ExTagXML ("_oXML:_WSAlianca:_nfCompra",                   .T., .F.) == 'S')
+	_oAssoc:FSNFComplem  = (U_ExTagXML ("_oXML:_WSAlianca:_nfComplemento",              .T., .F.) == 'S')
+	_oAssoc:FSNFPrdProp  = (U_ExTagXML ("_oXML:_WSAlianca:_nfProdPropria",              .T., .F.) == 'S')
+	_oAssoc:FSPrevPagto  = (U_ExTagXML ("_oXML:_WSAlianca:_faturaPagamento",            .T., .F.) == 'S')
+	_oAssoc:FSPrPgtAbat  = (U_ExTagXML ("_oXML:_WSAlianca:_faturaPagamentoAbatimentos", .T., .F.) == 'S')
+	_oAssoc:FSRegraPagto = (U_ExTagXML ("_oXML:_WSAlianca:_regraPagamento",             .T., .F.) == 'S')
+	_oAssoc:FSResValEfet = (U_ExTagXML ("_oXML:_WSAlianca:_resumoValorEfetivo",         .T., .F.) == 'S')
+	_oAssoc:FSResVaried  = (U_ExTagXML ("_oXML:_WSAlianca:_resumoVariedade",            .T., .F.) == 'S')
+	_oAssoc:FSResVarGC   = (U_ExTagXML ("_oXML:_WSAlianca:_resumoVarGrauClas",          .T., .F.) == 'S')
+	_oAssoc:FSSafra      = _sSafra
+	_sRet = _oAssoc:FechSafra ()
+	U_Log2 ('debug', '[' + procname () + ']' + _sRet)
+	if empty (_sRet)
+		_SomaErro ("Retorno invalido metodo FechSafra " + _oAssoc:UltMsg)
+	else
+		_sMsgRetWS = _sRet
+	endif
+return
 
 
 // --------------------------------------------------------------------------

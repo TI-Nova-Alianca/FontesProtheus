@@ -68,7 +68,8 @@ static function _Gera ()
 	local _oSQL      := NIL
 	local _sAliasQ   := ''
 	local _nRecCount := 0
-	
+	local _lContinua := .T.
+
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " WITH PRODUTOS AS"
@@ -80,8 +81,8 @@ static function _Gera ()
 	_oSQL:_sQuery +=      " FROM " + RetSQLName ("SB1") + " SB1"
 	_oSQL:_sQuery +=     " WHERE SB1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=       " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-	_oSQL:_sQuery +=       " AND SB1.B1_TIPO    = '" + mv_par02 + "'"
-	_oSQL:_sQuery +=       " AND SB1.B1_COD     between '" + mv_par03 + "' AND '" + mv_par04 + "'"
+	_oSQL:_sQuery +=       " AND SB1.B1_TIPO    = '" + mv_par01 + "'"
+	_oSQL:_sQuery +=       " AND SB1.B1_COD     between '" + mv_par02 + "' AND '" + mv_par03 + "'"
 	_oSQL:_sQuery += " )"
 	_oSQL:_sQuery += " , ULTIMOS_SB9 AS"
 	_oSQL:_sQuery += " ("
@@ -126,43 +127,50 @@ static function _Gera ()
 	dbselectarea (_sAliasQ)
 	count to _nRecCount
 	procregua (_nRecCount)
-	if mv_par01 == 1  // Simular
-		(_sAliasQ) -> (dbgotop ())
-		U_ShowTrb (_sAliasQ, 'Simulacao atualizacao custo reposicao', NIL)
-		U_LOGTRB (_sAliasQ, .t.)
-	else
-		if U_MsgNoYes ("Serao atualizados " + cvaltochar (_nRecCount) + " produtos. Confirma?")
-			sb1 -> (dbsetorder (1))
-			(_sAliasQ) -> (dbgotop ())
-			do while ! (_sAliasQ) -> (eof ())
-				incproc ((_sAliasQ) -> produto)
-				if ! sb1 -> (dbseek (xfilial ("SB1") + (_sAliasQ) -> produto, .F.))
-					u_help ("Cadastro do produto '" + (_sAliasQ) -> produto + "' nao localizado!",, .t.)
-				else
-					U_Log2 ('debug', '[' + procname () + ']' + sb1 -> b1_cod)
+	if _nRecCount == 0
+		u_help ("Nao foi encontrado nenhum registro para alterar o custo. Isso pode se dever ao fato de que nao ha itens selecionados dentro dos parametros informados ou por que o custo de reposicao desses itens ja esta igual ao custo medio.",, .t.)
+		_lContinua = .F.
+	endif
+	if _lContinua
+		if U_MsgYesNo ("Encontrei " + cvaltochar (_nRecCount) + " produtos para atualizar. Deseja visualizar a lista antes de prosseguir?")
+			U_TRB2XLS (_sAliasQ, .f., .f., .t., 'VA_ATUCR_' + dtos (date ()) + strtran (time (), ':', ''))
 
-					// Cria variaveis para uso na gravacao do evento de alteracao
-					regtomemory ("SB1", .F., .F.)
-					m->b1_CUSTD = (_sAliasQ) -> novo_custo
-					m->b1_datref = date ()
-
-					// Grava evento de alteracao
-					_oEvento := ClsEvent():new ()
-					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'Atualizar custo repos. pelo custo medio', .F.)
-					reclock ("SB1", .f.)
-					sb1 -> B1_custd = m->b1_custd
-					sb1 -> B1_datref = m->b1_datref
-					msunlock ()
-					U_AtuMerc ("SB1", sb1 -> (recno ()))
-				endif
-
-				// Cai fora no primeiro, para testes.
-				// exit
-
-				(_sAliasQ) -> (dbskip ())
-			enddo
-			u_help ("Processo finalizado. " + cvaltochar (_nRecCount) + " registros atualizados.")
+			// Dorme uns 10 segundos para dar tempo de abrir a planilha na tela do usuário
+			sleep (8000)
 		endif
+		_lContinua = U_MsgYesNo ("Deseja prosseguir com a atualizacao do custo?")
+	endif
+	if _lContinua
+		sb1 -> (dbsetorder (1))
+		(_sAliasQ) -> (dbgotop ())
+		do while ! (_sAliasQ) -> (eof ())
+			incproc ((_sAliasQ) -> produto)
+			if ! sb1 -> (dbseek (xfilial ("SB1") + (_sAliasQ) -> produto, .F.))
+				u_help ("Cadastro do produto '" + (_sAliasQ) -> produto + "' nao localizado!",, .t.)
+			else
+				U_Log2 ('debug', '[' + procname () + ']' + sb1 -> b1_cod)
+
+				// Cria variaveis para uso na gravacao do evento de alteracao
+				regtomemory ("SB1", .F., .F.)
+				m->b1_CUSTD = (_sAliasQ) -> novo_custo
+				m->b1_datref = date ()
+
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'Atualizar custo repos. pelo custo medio', .F.)
+				reclock ("SB1", .f.)
+				sb1 -> B1_custd = m->b1_custd
+				sb1 -> B1_datref = m->b1_datref
+				msunlock ()
+				U_AtuMerc ("SB1", sb1 -> (recno ()))
+			endif
+
+			// Cai fora no primeiro, para testes.
+			// exit
+
+			(_sAliasQ) -> (dbskip ())
+		enddo
+		u_help ("Processo finalizado. " + cvaltochar (_nRecCount) + " registros atualizados.")
 	endif
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("SB1")
@@ -176,9 +184,8 @@ static function _ValidPerg ()
 	local _aDefaults := {}
 
 	//                     PERGUNT                           TIPO TAM DEC VALID F3       Opcoes                         Help
-	aadd (_aRegsPerg, {01, "Simular ou executar?          ", "N",  1, 0,  "",   "    ",  {"Simular", "Executar"},       ""})
-	aadd (_aRegsPerg, {02, "Tipo produto                  ", "C",  2, 0,  "",   "02  ",  {},                            ""})
-	aadd (_aRegsPerg, {03, "Produto inicial               ", "C", 15, 0,  "",   "SB1 ",  {},                            ""})
-	aadd (_aRegsPerg, {04, "Produto final                 ", "C", 15, 0,  "",   "SB1 ",  {},                            ""})
+	aadd (_aRegsPerg, {01, "Tipo produto                  ", "C",  2, 0,  "",   "02  ",  {},                            ""})
+	aadd (_aRegsPerg, {02, "Produto inicial               ", "C", 15, 0,  "",   "SB1 ",  {},                            ""})
+	aadd (_aRegsPerg, {03, "Produto final                 ", "C", 15, 0,  "",   "SB1 ",  {},                            ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return
