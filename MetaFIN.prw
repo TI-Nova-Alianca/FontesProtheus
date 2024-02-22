@@ -38,6 +38,7 @@
 // 17/04/2023 - Robert - Busca valores em separado para IRF 'do mes' e 'do mes futuro'.
 // 05/09/2023 - Robert - Melhorada msg ao usuario quando a remessa vier sem fornecedor.
 // 24/10/2023 - Robert - Passa a usar VA_VTITULOS_CPAGAR3 e nao mais VA_VTITULOS_CPAGAR2 (GLPI 9047)
+// 21/02/2024 - Robert - Gravava status invertido 05/06 apos exclusao do SE2 no campo RHCONTASPAGARHIST.STATUSREGISTRO (GLPI 14960)
 //
 
 #include "colors.ch"
@@ -137,6 +138,9 @@ static function _Incluir ()
 		(_sAliasQ) -> (dbgotop ())
 		do while _lContinua .and. ! (_sAliasQ) -> (eof ())
 			u_log2 ('info', 'Iniciando inclusao seq.' + cvaltochar ((_sAliasQ) -> NroSequencial) + ' tipo ' + (_sAliasQ) -> TpItemCP + ' R$ ' + transform ((_sAliasQ) -> valor, "@E 999,999,999.99") + ' ' + (_sAliasQ) -> hist)
+
+			// Prepara variavel para mais detalhamento do arquivo de log.
+			_sPrefLog := '[Incl.seq.' + cvaltochar ((_sAliasQ) -> NroSequencial) + ']'
 
 			// Alguns movimentos devem ser gerados com data de emissao = ultimo dia do mes anterior.
 			if (_sAliasQ) -> TpItemCP $ '40/41/44/45' .OR. ;  // Folha avulsa/RPA # Ferias # Rescisao principal # Rescisao complementar
@@ -412,6 +416,10 @@ static function _Excluir ()
 		(_sAliasQ) -> (dbgotop ())
 		do while _lExcOK .and. ! (_sAliasQ) -> (eof ())
 			u_log2 ('info', 'Iniciando exclusao - Seq ' + cvaltochar ((_sAliasQ) -> NroSequencial))
+			
+			// Prepara variavel para mais detalhamento do arquivo de log.
+			_sPrefLog := '[Excl.seq.' + cvaltochar ((_sAliasQ) -> NroSequencial) + ']'
+
 			_sChaveSE2 = xfilial ("SE2") + substr ((_sAliasQ) -> SerieDoc, 1, 3) + strzero ((_sAliasQ) -> num, 9) + substr ((_sAliasQ) -> SerieDoc, 4, 1)
 			U_LOG2 ('debug', 'Pesquisando SE2 com a seguinte chave: >>' + _sChaveSE2 + '<<')
 			se2 -> (dbsetorder (1))  // E2_FILIAL+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO+E2_FORNECE+E2_LOJA
@@ -440,13 +448,12 @@ static function _Excluir ()
 				_LogMeta ((_sAliasQ) -> NroSequencial, AllTrim (EnCodeUtf8 (_sMsgSE2)))
 
 				// Muda status da sequencia no Metadados.
-//				if ! _lGLPI9047
-					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-					_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "05", "06") + "'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-					_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
-					_oSQL:Log ()
-					_oSQL:Exec ()
-//				endif
+				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+//				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "05", "06") + "'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "06", "05") + "'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
+				_oSQL:Log ()
+				_oSQL:Exec ()
 			else
 				u_log2 ('info', "Titulo nao encontrado no SE2 (ja deve estar excluido): " + xfilial ("SE2") + substr ((_sAliasQ) -> SerieDoc, 1, 3) + U_TamFixo (cvaltochar ((_sAliasQ) -> num), 9, ' ') + substr ((_sAliasQ) -> SerieDoc, 4, 1))
 				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"

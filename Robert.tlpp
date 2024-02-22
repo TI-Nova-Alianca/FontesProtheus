@@ -110,7 +110,7 @@ user function robert ()
 		// _sFuncao += '_BatXML ()'
 		// _sFuncao += '_batZBE ()'
 		// _sFuncao += '_BlEstF ()'
-		// _sFuncao += '_CargSaf ()'
+		_sFuncao += '_CargSaf ()'
 		// _sFuncao += '_CplSaf23A ()'
 		// _sFuncao += '_CplSaf23B ()'
 		// _sFuncao += '_CplSaf23C ()'
@@ -139,7 +139,7 @@ user function robert ()
 		// _sFuncao += '_PerfMon ()'
 		// _sFuncao += '_PreNF ()'
 		// _sFuncao += '_Rast ()'
-		_sFuncao += '_regexp ()'
+		// _sFuncao += '_regexp ()'
 		// _sFuncao += '_reginv ()'
 		// _sFuncao += '_recmail ()'
 		// _sFuncao += '_RevCH ()'
@@ -2360,9 +2360,10 @@ static function _CargSaf ()
 
 	sze -> (dbsetorder (1))
 	dbselectarea ("SZE")
-	set filter to ze_filial = cFilAnt .and. ze_safra = '2024' //.AND. ze_carga $ '0834/1141/1208'
+	// Safra 2024(F01) Cargas compartilhadas com variedades de precos diferentes: '1332/1334' e '1709/1710/1711'
+	set filter to ze_filial = cFilAnt .and. ze_safra = '2024' .AND. ze_carga >= '1800' //'1822' //0834/1141/1208'
 	sze -> (dbgotop ())
-	do while ! sze -> (eof ()) .and. _nContador++ <= 1000
+	do while ! sze -> (eof ()) .and. _nContador++ <= 100
 		if ! sze -> ze_status $ 'C/D'
 			U_Log2 ('debug', '[' + procname () + ']' + sze -> ze_filial + ' ' + sze -> ze_safra + ' ' + sze -> ze_carga)
 			_oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
@@ -2370,35 +2371,36 @@ static function _CargSaf ()
 				u_help ("Impossivel instanciar carga (ou carga invalida).", _oCarSaf:UltMsg, .t.)
 			else
 				_nSegIni = seconds ()
-				if ! _oCarSaf:Precifica ('Base')
+				if ! _oCarSaf:Precifica_ant ('Base')
 					U_Log2 ('erro', '[' + procname () + ']erro metodo original: ' + _oCarSaf:UltMsg)
 				else
 					_aPrcBas1 := aclone (_oCarSaf:ItPrcBase)
-					if ! _oCarSaf:Precifica ('ParaNF')
+					if ! _oCarSaf:Precifica_ant ('ParaNF')
 						U_Log2 ('erro', '[' + procname () + ']erro metodo original: ' + _oCarSaf:UltMsg)
 					else
 						_nTmp1 += seconds () - _nSegIni
 						_aPrcNF1 := aclone (_oCarSaf:ItPrcParaNF)
 						_nSegIni = seconds ()
-						if ! _oCarSaf:Precifica2 ('Base')
+						if ! _oCarSaf:Precifica ('Base')
 							U_Log2 ('erro', '[' + procname () + ']erro metodo novo: ' + _oCarSaf:UltMsg)
 						else
 							_aPrcBas2 := aclone (_oCarSaf:ItPrcBase)
-							if ! _oCarSaf:Precifica2 ('ParaNF')
+							if ! _oCarSaf:Precifica ('ParaNF')
 								U_Log2 ('erro', '[' + procname () + ']erro metodo novo: ' + _oCarSaf:UltMsg)
 							else
 								_nTmp2 += seconds () - _nSegIni
 								_aPrcNF2 := aclone (_oCarSaf:ItPrcParaNF)
-								U_Log2 ('debug', _aPrcBas1)
-								U_Log2 ('debug', _aPrcNF1)
-								U_Log2 ('debug', _aPrcBas2)
-								U_Log2 ('debug', _aPrcNF2)
+			//					U_Log2 ('debug', _aPrcBas1)
+			//					U_Log2 ('debug', _aPrcNF1)
+			//					U_Log2 ('debug', _aPrcBas2)
+			//					U_Log2 ('debug', _aPrcNF2)
 								for _nItCarga = 1 to len (_oCarSaf:ItItem)
 									if _aPrcBas2 [_nItCarga] != _aPrcBas1 [_nItCarga]
 										U_Log2 ('erro', '[' + procname () + ']Diferenca no preco base')
 									endif
 									if _aPrcNF2 [_nItCarga] != _aPrcNF1 [_nItCarga]
 										U_Log2 ('erro', '[' + procname () + ']Diferenca no preco nota')
+										_oCarSaf:Log ()
 									endif
 								next
 							endif

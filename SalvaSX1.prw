@@ -20,7 +20,9 @@
 //
 // Historico de alteracoes:
 // 14/05/2021 - Cláudia - Ajuste SX1 para R27. GLPI: 8825
+// 21/02/2024 - Robert  - Passar parametros para o metodo :Qry2Array()
 //
+
 // -----------------------------------------------------------------------------------------------
 
 user function SalvaSX1 (_sPerg, _aRest)
@@ -45,7 +47,8 @@ user function SalvaSX1 (_sPerg, _aRest)
 		_oSQL:_sQuery += " FROM SX1010 "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sPerg) + "'"
-		_aSX1 := aclone (_oSQL:Qry2Array ())	
+//		_aSX1 := aclone (_oSQL:Qry2Array ())	
+		_aSX1 := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		_aBak := {}
 		for _x:= 1 to Len(_aSX1)

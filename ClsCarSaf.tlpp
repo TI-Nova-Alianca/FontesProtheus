@@ -35,6 +35,7 @@
 // 10/02/2024 - Robert - Metodo Precifica() passa a fazer queries em vez de DbSeek()
 //                       e deixa de validar sistema de conducao das uvas comuns.
 // 12/02/2024 - Robert - Gravar evento quando usuario confirmar reenvio para grau (ocorre em determinadas situacoes)
+// 20/02/2024 - Robert - Metodo :Precifica() nao considerava variedade de menor valor quando havia mistura de variedades!
 //
 
 #Include "Protheus.ch"
@@ -107,7 +108,7 @@ CLASS ClsCarSaf from ClsBase
 	public METHOD ImprimeTk ()  // Gera impressao do ticket
 	public METHOD Log ()
 	public METHOD PodeGravar ()   // Verifica se tudo ok para gravacao.
-	public METHOD Precifica_old ()    // Calcula os precos unitarios para usar na contranota.
+	public METHOD Precifica_ant ()    // Calcula os precos unitarios para usar na contranota.
 	public METHOD Precifica ()    // Calcula os precos unitarios para usar na contranota.
 	public METHOD SegPesTOk ()  // Verifica se 'tudo ok' com a segunda pesagem.
 	public METHOD SegregarLt () // Segregar lote de estoque (mudar para lote 'NC')
@@ -1226,7 +1227,7 @@ METHOD Log () Class ClsCarSaf
 	local _sLogCar  := ''
 	local _nItCarga := 0
 
-	_sLogCar += '## Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + ' Status: ' + ::StatusCar + iif (::Segregada, ' SEGREGADA', ' Nao segregada') + chr (13) + chr (10)
+	_sLogCar += '## Filial: ' + ::Filial + '  Safra: ' + ::Safra + '  Carga: ' + ::Carga + '  Status: ' + ::StatusCar + '  Segregada: ' + iif (::Segregada, 'SIM', 'Nao') + '  Contranota: ' + ::Contranota + chr (13) + chr (10)
 	_sLogCar += '## Peso bruto: ' + cvaltochar (::PesoBruto) + ' Peso tara: ' + cvaltochar (::PesoTara) + chr (13) + chr (10)
 	_sLogCar += '## Fornecedor: ' + ::Fornece + '/' + ::Loja + ' - ' + ::NomeFornec + chr (13) + chr (10)
 	_sLogCar += '## Porta ticket: ' + cvaltochar (::PortImpTk) + chr (13) + chr (10)
@@ -1245,13 +1246,13 @@ METHOD Log () Class ClsCarSaf
 			endif
 		endif
 		_sLogCar += ' $base: ' + transform (::ItPrcBase [_nItCarga], "@E 9.9999")
-		_sLogCar += ' $p/NF: ' + transform (::ItPrcParaNF [_nItCarga], "@E 9.9999")
+		_sLogCar += ' $NF: ' + transform (::ItPrcParaNF [_nItCarga], "@E 9.9999")
 		_sLogCar += ' Vitic: ' + ::ItPropRur [_nItCarga]
 		_sLogCar += ' Obs: ' + ::ItObs [_nItCarga]
 	//	_sLogCar += iif (_nItCarga < len (::ItItem), chr (13) + chr (10), '')
 		_sLogCar += chr (13) + chr (10)
 	next
-	_sLogCar += '## Varied.menor valor: ' + ::VariedadeMenorValorCodigo + ' cond: ' + ::VariedadeMenorValorConducao + chr (13) + chr (10)
+	_sLogCar += '## Varied.menor valor: ' + ::VariedadeMenorValorCodigo + ' (conducao: ' + ::VariedadeMenorValorConducao + ')' + chr (13) + chr (10)
 	_sLogCar += '## Grupo pagto: ' + ::GrupoPagamento + chr (13) + chr (10)
 	if ! empty (::UltMsg)
 		_sLogCar += '## Ult.msg: ' + ::UltMsg + chr (13) + chr (10)
@@ -1299,7 +1300,7 @@ METHOD PodeGravar () Class ClsCarSaf
 	endif
 return _lRet
 
-
+/*
 // --------------------------------------------------------------------------
 // Alimenta, nas arrays de itens da carga, o preco unitario de cada variedade.
 // Sao buscados 2 precos diferentes para cada variedade:
@@ -1476,7 +1477,7 @@ METHOD Precifica_old (_sQualPreco as character) class ClsCarSaf
 	U_ML_SRArea (_aAreaAnt)
 //	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retornando ' + cvaltochar (_lContinua))
 return _lContinua
-
+*/
 
 // --------------------------------------------------------------------------
 // Alimenta, nas arrays de itens da carga, o preco unitario de cada variedade.
@@ -1484,7 +1485,7 @@ return _lContinua
 // Preco base: sempre no mesmo grau e mesma classificacao, Vai ser usado para
 //             identificar a variedade de menor valor, em caso de mistura.
 // Preco Para NF: considera grau, classificacao e demais politicas.
-METHOD Precifica (_sQualPreco as character) class ClsCarSaf
+METHOD Precifica_ant (_sQualPreco as character) class ClsCarSaf
 	local _lContinua     := .T.
 	local _aAreaAnt      := U_ML_SRArea ()
 	local _nIdxItem      := 0
@@ -1658,6 +1659,206 @@ METHOD Precifica (_sQualPreco as character) class ClsCarSaf
 			endif
 		next
 	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Alimenta, nas arrays de itens da carga, o preco unitario de cada variedade.
+// Sao buscados 2 precos diferentes para cada variedade:
+// Preco base: sempre no mesmo grau e mesma classificacao, Vai ser usado para
+//             identificar a variedade de menor valor, em caso de mistura.
+// Preco Para NF: considera grau, classificacao e demais politicas.
+METHOD Precifica (_sQualPreco as character) class ClsCarSaf
+	local _lContinua     := .T.
+	local _aAreaAnt      := U_ML_SRArea ()
+	local _nIdxItem      := 0
+	local _lUsarPrecoDS  := .F.
+	local _oSQL          := NIL
+	local _sProdutoAUsar := ''
+	local _sClasFina     := ''
+	local _sMenorVlr     := ''
+
+	if ! _sQualPreco $ 'Base/ParaNF'
+		_Super:SomaMsg ("Sem tratamento para precificar '" + _sQualPreco + "'")
+		_lContinua = .F.
+	endif
+
+	_nIdxItem = 1
+	do while _lContinua .and. _nIdxItem <= len (::ItItem)
+		_sClasFina = ''
+		if ::ItFinaOuComum [_nIdxItem] == 'F' .and. ::ItConducao [_nIdxItem] == 'L'
+			_sClasFina = alltrim (::ItClasLatada [_nIdxItem])
+		elseif ::ItFinaOuComum [_nIdxItem] == 'F' .and. ::ItConducao [_nIdxItem] == 'E'
+			_sClasFina = alltrim (::ItClasEspaldeira [_nIdxItem])
+		endif
+
+		// Apesar de que provavelmente nunca mais use, tentarei guardar historico de safras anteriores.
+		if ::Safra == '2019'
+			if _sQualPreco == 'Base'
+				::ItPrcBase [_nIdxItem]   = U_PrcUva19 (::Filial, ::ItProduto [_nIdxItem], 15.0, 'B', ::ItConducao [_nIdxItem])[::TipoPrecoParaNF]
+			elseif _sQualPreco == 'ParaNF'
+				::ItPrcParaNF [_nIdxItem] = U_PrcUva19 (::Filial, iif (! empty (_sMenorVlr), _sMenorVlr, ::ItProduto [_nIdxItem]), val (::ItGrau [_nIdxItem]), _sClasFina, ::ItConducao [_nIdxItem])[::TipoPrecoParaNF]
+			endif
+		elseif ::Safra == '2020'
+			if _sQualPreco == 'Base'
+				::ItPrcBase [_nIdxItem]   = U_PrcUva20 (::Filial, ::ItProduto [_nIdxItem], 15.0, 'B', ::ItConducao [_nIdxItem], .F.)[::TipoPrecoParaNF]  // pos.5=preco MOC
+			elseif _sQualPreco == 'ParaNF'
+				::ItPrcParaNF [_nIdxItem] = U_PrcUva20 (::Filial, iif (! empty (_sMenorVlr), _sMenorVlr, ::ItProduto [_nIdxItem]), val (::ItGrau [_nIdxItem]), _sClasFina, ::ItConducao [_nIdxItem], .F.)[::TipoPrecoParaNF]  // pos.5=preco MOC
+			endif
+		elseif ::Safra == '2021'
+			if _sQualPreco == 'Base'
+				::ItPrcBase [_nIdxItem]   = U_PrcUva21 (::Filial, ::ItProduto [_nIdxItem], 15.0, 'B', ::ItConducao [_nIdxItem], .F., .T.)[::TipoPrecoParaNF]  // pos.2=preco de compra
+			elseif _sQualPreco == 'ParaNF'
+				::ItPrcParaNF [_nIdxItem] = U_PrcUva21 (::Filial, iif (! empty (_sMenorVlr), _sMenorVlr, ::ItProduto [_nIdxItem]), val (::ItGrau [_nIdxItem]), _sClasFina, ::ItConducao [_nIdxItem], .F., .T.)[::TipoPrecoParaNF]  // pos.2=preco de compra
+			endif
+		elseif ::Safra == '2022'
+			if _sQualPreco == 'Base'
+				::ItPrcBase [_nIdxItem]   = U_PrcUva22 (::Filial, ::ItProduto [_nIdxItem], 15.0, 'B', ::ItConducao [_nIdxItem], .F., .T.)[::TipoPrecoParaNF]  // pos.2 = preco de compra.
+			elseif _sQualPreco == 'ParaNF'
+				::ItPrcParaNF [_nIdxItem] = U_PrcUva22 (::Filial, iif (! empty (_sMenorVlr), _sMenorVlr, ::ItProduto [_nIdxItem]), val (::ItGrau [_nIdxItem]), _sClasFina, ::ItConducao [_nIdxItem], .F., .T.)[::TipoPrecoParaNF]  // pos.2 = preco de compra.
+			endif
+		elseif ::Safra == '2023'
+			if _sQualPreco == 'Base'
+				::ItPrcBase [_nIdxItem]   = U_PrcUva23 (::Filial, ::ItProduto [_nIdxItem], 15.0, 'B', ::ItConducao [_nIdxItem], .F., .T.)[::TipoPrecoParaNF]  // pos.5 = preco MOC
+			elseif _sQualPreco == 'ParaNF'
+				if ! ::BuscaVarMenorVl ()
+					_Super:SomaMsg ("Problemas ao buscar variedade de menor valor.")
+				else
+					::ItPrcParaNF [_nIdxItem] = U_PrcUva23 (::Filial, iif (! empty (::VariedadeMenorValorCodigo), ::VariedadeMenorValorCodigo, ::ItProduto [_nIdxItem]), val (::ItGrau [_nIdxItem]), _sClasFina, ::ItConducao [_nIdxItem], .F., .T.)[::TipoPrecoParaNF]  // pos.5 = preco MOC
+				endif
+			endif
+		
+		// A partir deste ano pretendo ter os valores prontos na tabela ZBI.
+		elseif ::Safra >= '2024'
+
+			// Verifica se trata-se de uva vinifera que deve ser tratada como 'sem classificacao'
+			if ::ItFinaOuComum  [_nIdxItem] == 'F' .and. ::RecebeVini $ '1/4'  // 1=nao recebe viniferas; 4=recebe viniferas, mas classifica como comum
+				_lUsarPrecoDS = .T.
+			endif
+			if ::ItFinaOuComum  [_nIdxItem] == 'F' .and. ::ItConducao [_nIdxItem] == 'L' .and. ::ItCor [_nIdxItem] == 'T' .and. val (::ItGrau [_nIdxItem]) < 14 //.and. ! alltrim (sb1 -> b1_cod) $ '9911/9969'  // Nao se aplica ao moscato branco e alicante
+				_lUsarPrecoDS = .T.
+				::SomaObsItem (_nIdxItem, "Vinif.ttas.latadas abaixo de 14 graus: precifica como DS.")
+			endif
+			if ::ItFinaOuComum  [_nIdxItem] == 'F' .and. ::ItConducao [_nIdxItem] == 'L' .and. ::ItCor [_nIdxItem] != 'T' .and. val (::ItGrau [_nIdxItem]) < 11 //.and. ! alltrim (sb1 -> b1_cod) $ '9911/9969'  // Nao se aplica ao moscato branco e alicante
+				_lUsarPrecoDS = .T.
+				::SomaObsItem (_nIdxItem, "Vinif.bcas.latadas abaixo de 11 graus: precifica como DS.")
+			endif
+
+			if _lUsarPrecoDS
+				// Se a variedade recebida jah for a 'classificada como comum', nem preciso procurar mais.
+				if fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ItProduto [_nIdxItem], "B1_VAFCUVA") == 'C'
+					_sProdutoAUsar = ::ItProduto [_nIdxItem]
+				else
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += "SELECT COD_FINA_CLAS_COMUM"
+					_oSQL:_sQuery +=  " FROM VA_VFAMILIAS_UVAS"
+					_oSQL:_sQuery += " WHERE COD_BASE = '" + ::ItProduto [_nIdxItem] + "'"
+					_sProdutoAUsar = _oSQL:RetQry (1, .f.)
+					if empty (_sProdutoAUsar)
+						_Super:SomaMsg ("Nao foi possivel definir o codigo 'fina_sem_classificacao' correspondente ao produto '" + ::ItProduto [_nIdxItem] + "'. Impossivel determinao o preco para NF.")
+						_lContinua = .F.
+					endif
+				endif
+			else
+				_sProdutoAUsar = ::ItProduto [_nIdxItem]
+			endif
+
+			if _sQualPreco == 'Base'
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += "SELECT top 1 ISNULL (ZBI_VUNIT1, 0)"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZBI") + " ZBI"
+				_oSQL:_sQuery += " WHERE ZBI.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND ZBI.ZBI_FILIAL = '" + xfilial ("ZBI") + "'"
+				_oSQL:_sQuery +=   " AND ZBI.ZBI_CODTAB = '" + ::TabelaPreco + "'"
+				_oSQL:_sQuery +=   " AND ZBI.ZBI_PRODUT = '" + _sProdutoAUsar + "'"
+				_oSQL:_sQuery +=   " AND ZBI.ZBI_GRAU   = '15.0'"  // Um grau 'medio' que costuma atender a todas as variedades.
+
+				if ::ItFinaOuComum [_nIdxItem] == 'F'
+					// Somente ha diferenciacao de preco por de forma de conducao nas uvas finas.
+					_oSQL:_sQuery +=   " AND ZBI.ZBI_CONDUC = '" + ::ItConducao [_nIdxItem] + "'"
+
+					// Como as uvas comuns nao consideram classificacao para
+					// o preco (pelo menos nao nesta safra), achei mais economico
+					// nem gerar todas as combinacoes no ZBI.
+					_oSQL:_sQuery +=   " AND ZBI.ZBI_CLASSE = 'B'"
+				endif
+
+			//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+				::ItPrcBase [_nIdxItem] = _oSQL:RetQry (1, .f.)
+				if ::ItPrcBase [_nIdxItem] == 0
+					_Super:SomaMsg ("Nao localizado preco base da uva na tabela ZBI (precos). Verifique se a tabela foi gerada. Dados usados na consulta: " + _oSQL:_sQuery)
+					_lContinua = .F.
+				endif
+
+			elseif _sQualPreco == 'ParaNF'
+
+				// Se tiver mais de uma variedade, preciso usar a de menor
+				// valor para precificar todas as variedades da carga.
+				if ! ::BuscaVarMenorVl ()
+					_Super:SomaMsg ("Problemas ao buscar variedade de menor valor.")
+					_lContinua = .F.
+				endif
+				if _lContinua
+					if ! empty (::VariedadeMenorValorCodigo)
+						_sProdutoAUsar = ::VariedadeMenorValorCodigo
+						U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou definir preco para NF do item ' + cvaltochar (_nIdxItem) + ' com base na variedade de menor valor: ' + _sProdutoAUsar)
+					else
+						_sProdutoAUsar = ::ItProduto [_nIdxItem]
+						U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou definir preco para NF do item ' + cvaltochar (_nIdxItem) + ' com o codigo da propria variedade: ' + _sProdutoAUsar)
+					endif
+				endif
+
+				if _lContinua
+					if ::TipoPrecoParaNF == 6  // Buscar na tabela ZBI
+						_oSQL := ClsSQL ():New ()
+						_oSQL:_sQuery := ""
+						_oSQL:_sQuery += "SELECT top 1 ISNULL (ZBI_VUNIT1, 0)"
+						_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZBI") + " ZBI"
+						_oSQL:_sQuery += " WHERE ZBI.D_E_L_E_T_ = ''"
+						_oSQL:_sQuery +=   " AND ZBI.ZBI_FILIAL = '" + xfilial ("ZBI") + "'"
+						_oSQL:_sQuery +=   " AND ZBI.ZBI_CODTAB = '" + ::TabelaPreco + "'"
+						_oSQL:_sQuery +=   " AND ZBI.ZBI_PRODUT = '" + _sProdutoAUsar + "'"
+						_oSQL:_sQuery +=   " AND ZBI.ZBI_GRAU   = '" + ::ItGrau [_nIdxItem] + "'"
+
+						if ::ItFinaOuComum [_nIdxItem] == 'F'
+							// Somente ha diferenciacao de preco por de forma de conducao nas uvas finas.
+							_oSQL:_sQuery +=   " AND ZBI.ZBI_CONDUC = '" + ::ItConducao [_nIdxItem] + "'"
+
+							// Como as uvas comuns nao consideram classificacao para
+							// o preco (pelo menos nao nesta safra), achei mais economico
+							// nem gerar todas as combinacoes no ZBI.
+							if ::ItConducao [_nIdxItem] == 'L'
+								_oSQL:_sQuery += " AND ZBI.ZBI_CLASSE = '" + ::ItClasLatada [_nIdxItem] + "'"
+							elseif ::ItConducao [_nIdxItem] == 'E'
+								_oSQL:_sQuery += " AND ZBI.ZBI_CLASSE = '" + ::ItClasEspaldeira [_nIdxItem] + "'"
+							else
+								_Super:SomaMsg ("Sem tratamento para conducao '" + ::ItConducao [_nIdxItem] + "' no momento da precificacao.")
+								_lContinua = .F.
+							endif
+						endif
+
+			//			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+						::ItPrcParaNF [_nIdxItem] = _oSQL:RetQry (1, .f.)
+						if ::ItPrcParaNF [_nIdxItem] == 0
+							_Super:SomaMsg ("Nao localizado preco base da uva na tabela ZBI (precos). Verifique se a tabela foi gerada. Dados usados na consulta: " + _oSQL:_sQuery)
+							_lContinua = .F.
+						endif
+					else
+						_Super:SomaMsg ("Sem tratamento para precificacao com tipo de precos '" + cvaltochar (::TipoPrecoParaNF) + "'.")
+						_lContinua = .F.
+					endif
+				endif
+			endif
+		else
+			_Super:SomaMsg ('Sem tratamento para precificacao nesta safra.')
+			_lContinua = .F.
+		endif
+		_nIdxItem ++
+	enddo
 
 	U_ML_SRArea (_aAreaAnt)
 return _lContinua
@@ -2037,8 +2238,8 @@ METHOD BuscaVarMenorVl () class ClsCarSaf
 	else  // Se nao tiver compartilhamento, eh somente a propria carga.
 		_aTodasCar = {::Carga}
 	endif
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_aTodasCar:')
-	U_Log2 ('debug', _aTodasCar)
+	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_aTodasCar:')
+	//U_Log2 ('debug', _aTodasCar)
 
 	// Monta lista de todas as variedades envolvidas.
 	for _nTodasCar = 1 to len (_aTodasCar)
@@ -2114,9 +2315,14 @@ METHOD BuscaVarMenorVl () class ClsCarSaf
 
 	// Se cheguei aqui com mais de um produto, significa que ha, de fato,
 	// uma variedade 'de menor valor'.
-	if _lContinua .and. len (_aProdut) > 1
-		::VariedadeMenorValorCodigo   = _aProdut [1, 1]
-		::VariedadeMenorValorConducao = _aProdut [1, 3]
+	if _lContinua
+		if len (_aProdut) > 1
+			::VariedadeMenorValorCodigo   = _aProdut [1, 1]
+			::VariedadeMenorValorConducao = _aProdut [1, 3]
+		else
+			::VariedadeMenorValorCodigo   = ''
+			::VariedadeMenorValorConducao = ''
+		endif
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
