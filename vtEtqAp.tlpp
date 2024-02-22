@@ -48,6 +48,7 @@ user function vtEtqAp ()
 
 		vtSetSize (_nAltTela, _nLargTela)
 		terCls()
+		U_Log2 ('debug', '[' + procname () + ']Limpei a tela e vou abrir GET para ler codigo de etiqueta')
 
 		if _lContinua
 			terSay(0, 0, "Apontar etiqueta:")
@@ -81,11 +82,14 @@ user function vtEtqAp ()
 			U_Log2 ('debug', '[' + procname () + ']Campos lidos. Vou gerar apontamento')
 			terSay (6, 0, "Aguarde... gerando apontamento")
 			if _oEtiq:ApontaOP (_dDatProd, _sTnoProd)
+				U_Log2 ('debug', '[' + procname () + ']Retornou de _oEtiq:ApontaOP(). Vou dar msg para o usuario.')
 				u_help ("Etiq." + _oEtiq:Codigo + " apontada com sucesso!")
+				U_Log2 ('debug', '[' + procname () + ']Retornou da msg de #apontada com socesso#')
 			else
 				u_help ("ERRO no apontamento.",, .t.)
 			endif
 		endif
+		U_Log2 ('debug', '[' + procname () + ']fim do loop de apontamento')
 	enddo
 return
 

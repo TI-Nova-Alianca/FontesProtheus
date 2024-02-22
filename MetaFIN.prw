@@ -72,8 +72,12 @@ user function MetaFin (_lAuto)
 	endif
 
 	// Processa solicitacoes de inclusao e exclusao separadamente.
+	U_Log2 ('info', '[' + procname () + ']----------------Inicio inclusoes---------------')
 	processa ({|| _Incluir ()})
+	U_Log2 ('info', '[' + procname () + ']----------------Fim inclusoes------------------')
+	U_Log2 ('info', '[' + procname () + ']----------------Inicio exclusoes---------------')
 	processa ({|| _Excluir ()})
+	U_Log2 ('info', '[' + procname () + ']----------------Fim exclusoes------------------')
 
 	// Caso seja execucao em batch, deixa mensagem pronta para retorno.
 	if type ("_oBatch") == "O"
@@ -140,7 +144,7 @@ static function _Incluir ()
 			u_log2 ('info', 'Iniciando inclusao seq.' + cvaltochar ((_sAliasQ) -> NroSequencial) + ' tipo ' + (_sAliasQ) -> TpItemCP + ' R$ ' + transform ((_sAliasQ) -> valor, "@E 999,999,999.99") + ' ' + (_sAliasQ) -> hist)
 
 			// Prepara variavel para mais detalhamento do arquivo de log.
-			_sPrefLog := '[Incl.seq.' + cvaltochar ((_sAliasQ) -> NroSequencial) + ']'
+			_sPrefLog := 'Incl.seq.' + cvaltochar ((_sAliasQ) -> NroSequencial)
 
 			// Alguns movimentos devem ser gerados com data de emissao = ultimo dia do mes anterior.
 			if (_sAliasQ) -> TpItemCP $ '40/41/44/45' .OR. ;  // Folha avulsa/RPA # Ferias # Rescisao principal # Rescisao complementar
@@ -204,8 +208,8 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 	local _sMsgMail     := ''
 	local _lIncOK       := .T.
 	local _sMsgForn     := ''
-	private lMsErroAuto	:= .f.  // Variavel padrao para rotinas automticas.
-	private lMsHelpAuto	:= .f.  // Variavel padrao para rotinas automticas.
+	private lMsErroAuto	:= .f.  // Variavel padrao para rotinas automaticas.
+	private lMsHelpAuto	:= .f.  // Variavel padrao para rotinas automaticas.
 
 	// Gera 'chave externa' para o contas a pagar.
 	_sChvEx = 'META' + cvaltochar (_nSeqMeta)
@@ -418,7 +422,7 @@ static function _Excluir ()
 			u_log2 ('info', 'Iniciando exclusao - Seq ' + cvaltochar ((_sAliasQ) -> NroSequencial))
 			
 			// Prepara variavel para mais detalhamento do arquivo de log.
-			_sPrefLog := '[Excl.seq.' + cvaltochar ((_sAliasQ) -> NroSequencial) + ']'
+			_sPrefLog := 'Excl.seq.' + cvaltochar ((_sAliasQ) -> NroSequencial)
 
 			_sChaveSE2 = xfilial ("SE2") + substr ((_sAliasQ) -> SerieDoc, 1, 3) + strzero ((_sAliasQ) -> num, 9) + substr ((_sAliasQ) -> SerieDoc, 4, 1)
 			U_LOG2 ('debug', 'Pesquisando SE2 com a seguinte chave: >>' + _sChaveSE2 + '<<')
