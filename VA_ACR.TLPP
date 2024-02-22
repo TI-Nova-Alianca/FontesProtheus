@@ -22,6 +22,7 @@
 //                     - Opcao de selecionar os PAs com base em determinado componente.
 // 13/12/2203 - Robert - Opcao de exportar todas as estruturas numa unica planilha.
 // 18/12/2023 - Robert - Itens sem SB9 (novos) nao eram considerados. Passa a usar LEFT JOIN.
+// 22/02/2024 - Robert - Criada coluna no browse principal para mostrar a data do custo medio (GLPI 14945)
 //
 
 #include "protheus.ch"
@@ -104,6 +105,7 @@ static function _Gera ()
 	local _oVerif     := NIL
 	local _nColProd   := 0
 	local _lTemAviso  := .F.
+	local _aLinVazia  := {}
 	private _aEstruts := {}  // Deixar private para ser vista pelas funcoes auxiliares.
 	private _oDlg1    := NIL  // Deixar private para ser vista pelas funcoes auxiliares.
 	private _oGetD1   := NIL  // Deixar private para ser vista pelas funcoes auxiliares.
@@ -132,6 +134,7 @@ static function _Gera ()
 	aadd (_aHeader, {"Linha coml.",         "LINCOM",     "",                25, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Litragem",            "LITRAGEM",   "@E 999.9",         5, 1,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Cus.medio",           "CUSMEDUNIT", "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
+	aadd (_aHeader, {"Dt.Cus.med",          "DTCUSMED",   "@D",               8, 0,  "",   "",   "D", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Cus.rep.atu.",        "CUSTD",      "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Cus.calculado",       "CUSTACUM",   "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Custo ME",            "CUSTOME",    "@E 999,999.9999", 11, 4,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
@@ -148,6 +151,9 @@ static function _Gera ()
 	aadd (_aHeader, {"Part.Out %",          "PPARTOUT",   "@E 999.99",        6, 2,  "",   "",   "N", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Rev.estrut",          "REVATU",     "",                 3, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
 	aadd (_aHeader, {"Avisos",              "AVISOS",     "",               250, 0,  "",   "",   "C", "   ", "V",    "",  "",     '.F.'})
+
+	// Como pretendo ter muitas linhas no aCols, vou deixar uma array pronta para insercao.
+	_aLinVazia := aclone (U_LinVazia (_aHeader))
 
 	// Busca produtos cuja estrutura vai ser analisada.
 	_oSQL := ClsSQL ():New ()
@@ -202,6 +208,7 @@ static function _Gera ()
 	_oSQL:_sQuery +=       " AND SB9.B9_VINI1   > 0"
 	_oSQL:_sQuery +=       " AND SB9.B9_DATA    = ULTIMOS_SB9.B9_DATA"
 	_oSQL:_sQuery +=      "), 0) AS CUSMED"
+	_oSQL:_sQuery +=     " , dbo.VA_DTOC (ULTIMOS_SB9.B9_DATA) AS DTCUSMED"
 	_oSQL:_sQuery +=  " FROM PRODUTOS"
 	_oSQL:_sQuery +=     " LEFT JOIN ULTIMOS_SB9"
 	_oSQL:_sQuery +=        " ON (B9_COD = B1_COD)"
@@ -229,7 +236,7 @@ static function _Gera ()
 		else
 
 			// Passa para _aCols os dados da array lida
-			aadd (_aCols, aclone (U_LinVazia (_aHeader)))
+			aadd (_aCols, aclone (_aLinVazia))
 			_n = len (_aCols)
 			_nCustoTot = _nCustoME +  _nCustoVD + _nCustoMO + _nCustoBN + _nCustoPS + _nCustoOUT
 			GDFieldPut ("PRODUTO",    (_sAliasQ) -> b1_cod,            _n, _aHeader, _aCols)
@@ -240,6 +247,7 @@ static function _Gera ()
 			GDFieldPut ("UN_MED",     (_sAliasQ) -> b1_um,             _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTD",      (_sAliasQ) -> b1_custd,          _n, _aHeader, _aCols)
 			GDFieldPut ("CUSMEDUNIT", (_sAliasQ) -> CusMed,            _n, _aHeader, _aCols)
+			GDFieldPut ("DTCUSMED",   (_sAliasQ) -> DtCusMed,          _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTACUM",   _nCustoTot,                      _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTOME",    _nCustoME,                       _n, _aHeader, _aCols)
 			GDFieldPut ("CUSTOVD",    _nCustoVD,                       _n, _aHeader, _aCols)
@@ -541,6 +549,11 @@ static function _QuemUsa2 (_sCompon as character)
 	if right (_sRet, 1) == ','
 		_sRet = left (_sRet, len (_sRet) - 1)
 	endif
+
+	// Se retornar simplesmente vazio, dar erro na query.
+	if empty (_sRet)
+		_sRet = "''"
+	endif
 return _sRet
 
 
@@ -687,6 +700,7 @@ static function _SimEstru (_sProduto as character, _lExpTodas as logical)
 	local _aAux        := {}
 	local _aAux2       := {}
 	local _nCol        := 0
+	local _aLinVazia   := {}
 	private _oDlgEstr  := NIL  // Deixar private para ser vista pelas funcoes auxiliares.
 	private _oGetDEstr := NIL  // Deixar private para ser vista pelas funcoes auxiliares.
 
@@ -731,6 +745,9 @@ static function _SimEstru (_sProduto as character, _lExpTodas as logical)
 		aadd (_aHeader, {"Ult.comp-1",     "VULTCOMP2",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Ult.comp-2",     "VULTCOMP3",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Rev.estrut",     "REVATU",     "",                    2, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+
+		// Como pretendo ter muitas linhas no aCols, vou deixar uma array pronta para insercao.
+		_aLinVazia := aclone (U_LinVazia (_aHeader))
 	endif
 
 	if _lContinua
@@ -746,7 +763,7 @@ static function _SimEstru (_sProduto as character, _lExpTodas as logical)
 			
 			_aCols = {}
 			for _nCompon = 1 to len (_aAux)
-				aadd (_aCols, aclone (U_LinVazia (_aHeader)))
+				aadd (_aCols, aclone (_aLinVazia))
 				_n = len (_aCols)
 
 				// Monta um codigo 'com pontos' para ajudar a identificar a hereditariedade dos componentes.

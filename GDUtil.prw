@@ -36,6 +36,7 @@
 // 13/05/2021 - Claudia - Ajuste da tabela SX3 devido a R27. GLPI: 8825
 // 13/12/2021 - Robert  - Ao ler SX3 para montar aCols, nao estava fazendo ordenacao.
 // 11/03/2022 - Robert  - Removidos logs desnecessarios.
+// 22/02/2024 - Robert  - Chamadas de ClsSQL:Qry2Array() estavam sem parametros.
 //
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -92,7 +93,7 @@ user function GeraHead (_sAlias, _lNew, _aCposNao, _aCposSim, _lSohEstes)
 			_oSQL:_sQuery += " AND X3_CAMPO     = '" + _aCposSim [_nCampo] + "'"
 			_oSQL:_sQuery += " ORDER BY X3_ARQUIVO, X3_ORDEM"
 			//_oSQL:Log ()
-			_aSX3  = aclone (_oSQL:Qry2Array ())	
+			_aSX3  = aclone (_oSQL:Qry2Array (.f., .f.))
 
 			for _x:= 1 to Len(_aSX3)
 				if X3USO(_aSX3[_x, 10]) .And. cNivel >= _aSX3[_x,13]
@@ -145,7 +146,7 @@ user function GeraHead (_sAlias, _lNew, _aCposNao, _aCposSim, _lSohEstes)
 		_oSQL:_sQuery += " AND X3_ARQUIVO   = '" + _sAlias + "'"
 		_oSQL:_sQuery += " ORDER BY X3_ARQUIVO, X3_ORDEM"
 		//_oSQL:Log ()
-		_aSX3  = aclone (_oSQL:Qry2Array ())	
+		_aSX3  = aclone (_oSQL:Qry2Array (.f., .f.))
 
 		for _x:= 1 to Len(_aSX3)
 			if ascan(_aCposNao, _aSX3[_x,3]) == 0
@@ -293,7 +294,7 @@ user function ObrCols (_nLinha, _sMsg)
 				_oSQL:_sQuery += " FROM SX3010"
 				_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 				_oSQL:_sQuery += " AND X3_CAMPO     = '" + aHeader[_nCampo, 2] + "'"
-				_aSX3  = aclone (_oSQL:Qry2Array ())	
+				_aSX3  = aclone (_oSQL:Qry2Array (.f., .f.))
 
 				for _x := 1 to Len(_aSX3)
 					if (x3uso(_aSX3[_x,10]) .and. ((SubStr(BIN2STR(_aSX3[_x,16]),1,1) == "x") .or. VerByte(_aSX3[_x,17],7)))
@@ -361,7 +362,7 @@ user function LinVazia (aHeader)
 		_oSQL:_sQuery += " FROM SX3010"
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND X3_CAMPO     = '" + aHeader[_nCampo, 2] + "'"
-		_aSX3  = aclone (_oSQL:Qry2Array ())	
+		_aSX3  = aclone (_oSQL:Qry2Array (.f., .f.))
 
 		if Len(_aSX3) > 0
 			_xCampo := CriaVar(aHeader[_nCampo, 2])

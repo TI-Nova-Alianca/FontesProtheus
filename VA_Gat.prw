@@ -141,6 +141,7 @@
 //                        SuperGetMv("VA_ALMFULL") para atender filiais onde
 //                        o parametro nao existe (GLPI 13640)
 // 03/01/2024 - Robert  - Atualizados gatilhos para safra 2024.
+// 22/02/2024 - Robert  - Chamadas de ClsSQL:Qry2Array() estavam sem parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -183,7 +184,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND X7_CAMPO = '" + _sParCpo + "'"
 		_oSQL:_sQuery +=   " AND X7_SEQUENC = '" + _sParSeq + "'"
-		_aSX7 := aclone (_oSQL:Qry2Array ())
+	//	_aSX7 := aclone (_oSQL:Qry2Array ())
+		_aSX7 := aclone (_oSQL:Qry2Array (.f., .f.))
 		if Len(_aSX7) > 0  // A intencao eh encontrar somente 1 registro, mas, para garantir...
 			for _x := 1 to Len(_aSX7)
 				_sCampo  = 'M->' + alltrim (_aSX7[_x, 1])
@@ -386,7 +388,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 					_oSQL:_sQuery +=        " AND C9_PRODUTO        = '" + alltrim (GDFieldGet ("C6_PRODUTO")) +"'"
 					_oSQL:_sQuery +=        " AND C9_CLIENTE        = A1_COD "
 					_oSQL:_sQuery +=      " ORDER BY C9_PEDIDO "
-					if len (_oSQL:Qry2Array ()) > 0
+				//	if len (_oSQL:Qry2Array ()) > 0
+					if len (_oSQL:Qry2Array (.f., .f.)) > 0
 						if U_MsgYesNo ("Deseja visualizar pedido(s) com o produto "+ alltrim (GDFieldGet ("C6_PRODUTO")) + " ?", .F.)
 							_oSQL:F3Array ("Quatidade Liberada do produto '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "'")
 						endif
@@ -530,7 +533,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 		_oSQL:_sQuery +=   " AND B8_NUMLOTE = BF_NUMLOTE"
 		_oSQL:_sQuery += " ORDER BY B8_DTVALID"
 		_oSQL:Log ()
-		_aRetSQL := aclone (_oSQL:Qry2Array ())
+	//	_aRetSQL := aclone (_oSQL:Qry2Array ())
+		_aRetSQL := aclone (_oSQL:Qry2Array (.f., .f.))
 		if len (_aRetSQL) == 1
 			_xRet = _aRetSQL [1, 1]
 		elseif len (_aRetSQL) > 1
@@ -664,7 +668,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 		_oSQL:_sQuery += "   AND SF2.F2_CLIENTE  = '" + M->ZA9_CLI + "'"
 		_oSQL:_sQuery += "   AND SF2.F2_TRANSP  != ' ' "
 	
-		_aRetSQL := aclone (_oSQL:Qry2Array ())
+	//	_aRetSQL := aclone (_oSQL:Qry2Array ())
+		_aRetSQL := aclone (_oSQL:Qry2Array (.f., .f.))
 		if len (_aRetSQL) > 0
 			// so interessam 3 transportadoras
 			for _nLin = 1 to len(_aRetSQL)
@@ -712,7 +717,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			_oSQL:_sQuery +=    " AND SZE.ZE_PLACA NOT IN ('.',',','')"
 			_oSQL:_sQuery +=  " GROUP BY SZE.ZE_PLACA"
 			_oSQL:_sQuery +=  " ORDER BY COUNT (*) DESC"
-			_aF3 = aclone (_oSQL:Qry2Array ())
+		//	_aF3 = aclone (_oSQL:Qry2Array ())
+			_aF3 = aclone (_oSQL:Qry2Array (.f., .f.))
 			if len (_aF3) == 0
 				u_help ("Nao ha registro de placas de veiculos previamente utilizadas por este associado / fornecedor.")
 			else
@@ -869,7 +875,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			_oSQL:_sQuery +=   " AND STATUS      NOT IN ('C', 'D')
 			_oSQL:_sQuery += " GROUP BY CARGA, PLACA, NOME_ASSOC
 			_oSQL:_sQuery += " ORDER BY CARGA, PLACA, NOME_ASSOC
-			_aRetSQL := aclone (_oSQL:Qry2Array ())
+		//	_aRetSQL := aclone (_oSQL:Qry2Array ())
+			_aRetSQL := aclone (_oSQL:Qry2Array (.f., .f.))
 			if len (_aRetSQL) > 0
 				_xRet = _aRetSQL [_oSQL:F3Array (), 1]
 			endif
