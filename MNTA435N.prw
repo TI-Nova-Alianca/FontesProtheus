@@ -21,6 +21,7 @@
 // 13/10/2022 - Robert  - Novos parametros funcao U_ConsEst().
 // 14/07/2023 - Robert  - Valida data retroativa/futura (GLPI 13047)
 //                      - Passa a chamar tambem a funcao U_VerEStq()
+// 23/02/2024 - Robert  - Liberar reg. itens MC mediante senha (GLPI 14978)
 //
 
 #include 'protheus.ch'
@@ -50,6 +51,7 @@ User Function MNTA435N()
 	local _sAlmox    := ''
 	local _sMsg      := ''
 	local _sProduto  := ''
+	local _sMsgCC    := ''
 
 //	U_Log2 ('debug', '[' + procname () + ']ID de chamada: ' + cID)
 
@@ -102,8 +104,15 @@ User Function MNTA435N()
 							nCC      := fbuscacpo("ST9",1,xFilial("ST9") + nCodBem, "T9_CCUSTO")
 
 							if alltrim(sTipo) $ 'MC' .and. !(alltrim(nCC) $ _sCC_MC)
-								u_help ("Produtos tipo MC devem ser lançados nos centros de custo '" + _sCC_MC + "'.",, .t.)
-								_lRetMN435 = .F.
+								_sMsgCC = "Produtos tipo MC devem ser lançados nos centros de custo '" + _sCC_MC + "'."
+								
+								// Alguns usuarios podem movimentar
+								if ! U_ZZUVL ('157', __cUserID, .f.)
+									u_help (_sMsgCC + " Liberacao somente para usuarios do grupo 157.",, .t.)
+									_lRetMN435 = .F.
+								else
+									_lRetMN435 = U_MsgNoYes (_sMsgCC + " Confirma assim mesmo?")
+								endif
 							endif
 
 							// Verifica se ha inconsistencias entre as tabelas de estoque.

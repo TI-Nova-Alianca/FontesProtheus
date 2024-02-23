@@ -13,11 +13,13 @@
 // 22/10/2021 - Robert - Passa a permitir filtro adicional por nome do fornecedor (GLPI 11084)
 // 15/12/2021 - Robert - Busca A2_NOME em vez do E2_NOMFOR.
 // 24/02/2022 - Robert - Adicionados filtros por prefixo e por tipo de movimento (na conta corrente)
+// 22/02/2024 - Robert - Gravar parcela e safra no evento de alteracao (GLPI 14961)
+//                     - Chamadas de ClsSQL:Qry2Array() estavam sem parametros.
 //
 
 // --------------------------------------------------------------------------
 User Function VA_AVS (_lAuto)
-	Local cCadastro   := "Alterar data de vencimento de titulos do contas a pagar"
+	Local cCadastro   := "Alterar data de vencimento de titulos do contas a pagar ref.safra"
 	Local aSays       := {}
 	Local aButtons    := {}
 	Local nOpca       := 0
@@ -85,9 +87,9 @@ Static Function _Gera()
 	_oSQL:_sQuery +=    " AND SE2.E2_FORNECE + SE2.E2_LOJA <= '" + mv_par03 + mv_par04 + "'"
 	_oSQL:_sQuery +=    " AND SE2.E2_VENCTO  BETWEEN '" + dtos (mv_par05) + "' AND '" + dtos (mv_par06) + "'"
 	_oSQL:_sQuery +=    " AND SE2.E2_SALDO   > 0"
-	if ! empty (mv_par08)
+//	if ! empty (mv_par08)
 		_oSQL:_sQuery +=    " AND SE2.E2_VASAFRA = '" + mv_par08 + "'"
-	endif
+//	endif
 	if ! empty (mv_par09)
 		_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO IN " + FormatIn (alltrim (mv_par09), '/')
 	endif
@@ -104,7 +106,7 @@ Static Function _Gera()
 	endif
 	_oSQL:_sQuery +=  " ORDER BY A2_NOME, E2_NUM"
 	_oSQL:Log ()
-	_aTit := _oSQL:Qry2Array ()
+	_aTit := _oSQL:Qry2Array (.t., .f.)
 	if len (_aTit) == 0
 		u_help ("Nao foram encontrados titulos dentro dos parametros informados.")
 	else
@@ -173,8 +175,11 @@ Static Function _Gera()
 				_oEvento:Texto     = "Pg.safra parc.'" + se2 -> e2_parcela + "' vcto.alterado de " + dtoc (se2 -> e2_vencrea) + " para " + dtoc (mv_par07)
 				_oEvento:NFEntrada = se2 -> e2_num
 				_oEvento:SerieEntr = se2 -> e2_prefixo
+				_oEvento:ParcTit   = se2 -> e2_parcela
 				_oEvento:Fornece   = se2 -> e2_fornece
 				_oEvento:LojaFor   = se2 -> e2_loja
+				_oEvento:Safra     = se2 -> e2_vaSafra
+				_oEvento:DiasValid = 999
 				_oEvento:Grava ()
 
 				reclock ("SE2", .F.)
@@ -205,7 +210,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {05, "Vencto (atual) inicial        ", "D", 8,                     0,  "",   "      ", {},    "Data vencto inicial para filtragem de registros"})
 	aadd (_aRegsPerg, {06, "Vencto (atual) final          ", "D", 8,                     0,  "",   "      ", {},    "Data vencto final para filtragem de registros"})
 	aadd (_aRegsPerg, {07, "Nova data de vencimento       ", "D", 8,                     0,  "",   "      ", {},    "Nova data de vencto"})
-	aadd (_aRegsPerg, {08, "Safra referencia (vazio=todas)", "C", 4,                     0,  "",   "      ", {},    "Safra referencia"})
+	aadd (_aRegsPerg, {08, "Safra referencia              ", "C", 4,                     0,  "",   "      ", {},    "Safra referencia"})
 	aadd (_aRegsPerg, {09, "Prefixos sep.barra(vazio=todos", "C", 30,                    0,  "",   "      ", {},    "Prefixos para filtragem (separados por barras)"})
 	aadd (_aRegsPerg, {10, "TM cta.corrente (vazio=todos) ", "C", 2,                     0,  "",   "      ", {},    ""})
 

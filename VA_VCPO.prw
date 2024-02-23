@@ -188,6 +188,8 @@
 // 01/12/2023 - Robert  - Criada validacao para B1_RASTRO 
 // 31/12/2023 - Robert  - Criada validacao para ZA_COD.
 // 07/02/2024 - Claudia - Incluida validação de item eliminado por residuo. GLPI: 14835
+// 23/02/2024 - Robert  - Validação do campo ZZ6_SUSPEN
+//
 
 // -------------------------------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
@@ -202,7 +204,8 @@ user function VA_VCpo (_sCampo)
 	local _oAviso    := NIL
 	local _aRetSQL   := {}
 	local _x         := 0
-//	local _aApontEtq := {}
+	local _sPattern  := ''
+	local _oRegex    := NIL
 
 	// Verifica a melhor forma de obter o nome do campo a ser validado.
 	if _sCampo == NIL
@@ -1631,6 +1634,25 @@ user function VA_VCpo (_sCampo)
 					_lRet = .F.
 				endif
 			endif
+
+
+		case _sCampo == "M->ZZ6_SUSPEN"
+			// Monta pattern (padrao) de pesquisa usando a sintaxe das expressoes regulares.
+			_sPattern := '2[0-9]{3}'  // Ano: iniciar por 2 seguido de 3 algarismos
+			_sPattern += '(0[1-9]|1[012])'  // Mes: (0 seguido de [1-9] ou 1 seguido de [012])
+			_sPattern += '(0[1-9]|[12][0-9]|3[01])'  // Dia: (0 seguido de [1-9] ou [12] seguido de [0-9] ou 3 seguido de [0 ou 1])
+			_sPattern += ' '                   // Um espaco entre a data e a hora
+			_sPattern += '([01][0-9]|2[0-3])'  // Horas: de (00 a 19) ou (20 a 23)
+			_sPattern += ':'                   // : separando horas e minutos
+			_sPattern += '[0-5][0-9]'          // Minutos: de 00 a 59
+			_oRegex := tlpp.regex.Regex():new ('')
+			_oRegex:setCaseSensitive (.F.)
+			_oRegex:SetPattern (_sPattern)
+			if ! _oRegex:PartialMatch (m->zz6_suspen)
+				u_help ("Data / hora deve estar no formato AAAAMMDD HH:MM",, .t.)
+				_lRet = .F.
+			endif
+
 
 	//Controle migrado para o NaWeb --->	case _sCampo $ "M->ZZK_ASSOC/M->ZZK_LOJA"
 	//Controle migrado para o NaWeb --->		if m->zzk_ano == '2012'

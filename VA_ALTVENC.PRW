@@ -6,11 +6,16 @@
 //
 // Historico de alteracoes:
 // 
-// 19/06/2019 - Catia - Parametro para poder selecionar a natureza mas so entre a 120206 e 120201
+// 19/06/2019 - Catia   - Parametro para poder selecionar a natureza mas so entre a 120206 e 120201
 // 16/12/2019 - Claudia - Deviao a erro na R23, ajustado o if na data verificando se a mesma não está vazia
+// 22/02/2024 - Robert  - Variavel _nAlter nao declarada.
+//                      - Chamadas de ClsSQL:Qry2Array() estavam sem parametros.
+//
+
 // --------------------------------------------------------------------------
 User Function VA_ALTVENC ()
 	Local _nTit	:= 0
+	local _nAlter  := 0
 	Private cPerg    := "VA_ALTVENC"
 	
 	_ValidPerg()
@@ -32,7 +37,7 @@ User Function VA_ALTVENC ()
 		endif
 		_oSQL:_sQuery +=    " AND SE2.E2_VENCTO  BETWEEN '" + dtos (mv_par05) + "' AND '" + dtos (mv_par06) + "'"
 		_oSQL:Log ()
-		_aTit := _oSQL:Qry2Array ()
+		_aTit := _oSQL:Qry2Array (.t., .f.)
 		if len (_aTit) == 0
 			u_help ("Nao foram encontrados titulos dentro dos parametros informados.")
 		else

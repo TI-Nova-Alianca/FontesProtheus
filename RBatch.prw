@@ -175,7 +175,7 @@ User Function RBatch (_sEmp, _sFil)
 		_oSQL:_sQuery += " WHERE PROX_EXEC <= CURRENT_TIMESTAMP"
 		_oSQL:_sQuery += " ORDER BY ZZ6_PRIOR, PROX_EXEC"
 		//_oSQL:Log ()
-		_aSeq := aclone (_oSQL:Qry2Array ())
+		_aSeq := aclone (_oSQL:Qry2Array (.f., .f.))
 		U_Log2 ('info', '[' + procname () + ']Encontrei ' + cvaltochar (len (_aSeq)) + ' batches a verificar.')
 		_nSegunIni = seconds ()
 		for _nSeq = 1 to len (_aSeq)

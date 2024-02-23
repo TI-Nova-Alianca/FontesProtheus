@@ -444,7 +444,7 @@ static function _CriaSZI (_sSafra)
 	_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO = '" + se2 -> e2_loja    + "'"
 	_oSQL:_sQuery +=   " AND SZI.ZI_TM     != '39'"  // 39-entrada como 'fornecedor de uva' nao me interessa aqui.
 	_oSQL:_sQuery += ") then 1 else 0 end)"
-	_oSQL:Log ('[' + procname () + ']')
+//	_oSQL:Log ('[' + procname () + ']')
 	if _oSQL:RetQry (1, .t.) == 0
 		U_Log2 ('aviso', '[' + procname () + ']Fornecedor ' + se2 -> e2_fornece + '/' + se2 -> e2_loja + ' ' + alltrim (se2 -> e2_nomfor) + ' nao consta no SZI. Deve ser apenas fornecedor de uva. Nao preciso gerar conta corrente.')
 	else

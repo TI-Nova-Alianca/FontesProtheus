@@ -34,6 +34,7 @@
 // 24/05/2022 - Robert - Leitura de todas as entradas passa a buscar na function VA_FKARDEX_LOTE (GLPI 11980)
 // 27/05/2022 - Robert - Leitura de todas as movimentacoes passa a buscar na function VA_FKARDEX_LOTE (GLPI 11980)
 // 27/09/2023 - Robert - Voltado contorno para ler lote=OP quando item PA nao coltrola lotes pelo Protheus (GLPI 14299)
+// 23/02/2024 - Robert - Chamadas de ClsSQL:Qry2Array() estavam sem parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -413,7 +414,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 				_oSQL:_sQuery +=   " AND ITEM_NOTA  = '" + _aSD1 [_nSD1, 9] + "'"
 				_oSQL:_sQuery +=   " AND PRODUTO    = '" + _sProduto + "'"
 				//_oSQL:Log (_sStrLog)
-				_aCarga = aclone (_oSQL:Qry2Array ())
+				_aCarga = aclone (_oSQL:Qry2Array (.f., .f.))
 				if len (_aCarga) == 1  // Nao deveria encontrar mais de um registro
 					_sDescri += 'Carga: ' + _aCarga [1, 1] + '  Grau: ' + _aCarga [1, 4] + _sQuebra
 					_sDescri += 'NF produtor: ' + _aCarga [1, 5] + _sQuebra

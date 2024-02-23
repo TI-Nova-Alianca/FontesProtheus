@@ -1253,11 +1253,13 @@ static function _TrSZIMat ()
 		_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
 		_oSQL:_sQuery +=    " AND SE2.E2_FILIAL != '01'"  // Nao adianta olhar na matriz
+		_oSQL:_sQuery +=    " AND SE2.E2_VASAFRA = '" + _sSafrComp + "'"
 		
 		// Nao quero pegar as de hoje para evitar transferir enquanto tem alguem gerando contranota, ou o outro batch gerando SZI.
 		// Alem disso, deixo um tempo para o pessoal cancelar alguma nota recente se precisarem.
 		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO <= '" + dtos (date () - 3) + "'"
 		
+		_oSQL:_sQuery +=    " AND SZI.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL  = SE2.E2_FILIAL"
 		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC   = SE2.E2_FORNECE"
 		_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO = SE2.E2_LOJA"
@@ -1268,7 +1270,7 @@ static function _TrSZIMat ()
 		_oSQL:_sQuery +=    " AND SZI.ZI_SALDO   > 0"
 		_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
 		_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
-		_oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
+		_oSQL:_sQuery +=                 " WHERE V.SAFRA       = SE2.E2_VASAFRA"
 		_oSQL:_sQuery +=                   " AND V.FILIAL      = SE2.E2_FILIAL"
 		_oSQL:_sQuery +=                   " AND V.ASSOCIADO   = SE2.E2_FORNECE"
 		_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC  = SE2.E2_LOJA"
