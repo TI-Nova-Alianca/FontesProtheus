@@ -105,6 +105,7 @@
 //                     - Nao validava codigo e loja de fornecedor (nao do associado) no metodo PodeIncl() - GLPI 14182.
 // 15/12/2023 - Robert - Portado de .prw para .tlpp e passa a herdar a ClsBase (GLPI 14548)
 // 08/01/2024 - Robert - Melhorada query que valida a baixa original em caso de transf. entre filiais TM=13.
+// 25/02/2024 - Robert - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ------------------------------------------------------------------------------------
@@ -2271,7 +2272,7 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	local _aBanco    := {}
 	Private lMsErroAuto := .F.
 	
-	u_log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())
+//	u_log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())
 	
 	if alltrim (::OQueGera ()) $ "PA/DP+SE5_R"
 		_Super:SomaMsg ("Transferencia de saldo que gerou movimento bancario nao permitida, pois nao tenho o mesmo bco/ag/cta na filial destino. Baixe o movimento manualmente na filial origem e digite lcto correspondente na filiai destino.")
@@ -2421,7 +2422,7 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 			_oSQL:_sQuery +=   " AND SE5.E5_TIPO    = '" + se2 -> e2_tipo    + "'"
 			_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
 		//	_oSQL:Log ()
-			_nRegSE5 = _oSQL:RetQry ()
+			_nRegSE5 = _oSQL:RetQry (1, .f.)
 		//	u_log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
 			if _nRegSE5 > 0
 				se5 -> (dbgoto (_nRegSE5))

@@ -21,6 +21,7 @@
 //                       ainda vai ter valores atrasados de 2023 para pagar. Entao optamos por
 //                       'deslocar' todas as parcelas um mes para a frente. Com isso, a primeira
 //                       parcela passa a ser no mes de abril (GLPI 14961)
+// 25/02/2024 - Robert - Estava jogando a 9a. parcela (I) para jan/24 pois voltava a janeiro sem incrementar o ano (GLPI 14961)
 //
 
 // ------------------------------------------------------------------------------------
@@ -330,6 +331,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 				elseif _nParcel == 8
 					_sMesVcSaf = '12'
 				elseif _nParcel == 9
+					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
 					_sMesVcSaf = '01'
 				elseif _nParcel == 10
 					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)

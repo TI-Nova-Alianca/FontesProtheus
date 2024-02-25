@@ -34,10 +34,11 @@
 //                     - Gravacao com controle de transacao (dados adicionais e atualizacao do SZI)
 // 03/08/2023 - Robert - Nao tenta gravar cta corrente se nao for um associado ou ex-associado.
 // 09/08/2023 - Robert - Busca natureza direto no SA2
+// 25/02/2024 - Robert - Migrado da funcao processa() para MsNewProcess() que me permitiu habilitar o botao de cancelamento.
 //
 
-#include "rwmake.ch"
-#include "tbiconn.ch"
+//#include "rwmake.ch"
+//#include "tbiconn.ch"
 
 // --------------------------------------------------------------------------
 user function FTSAFRA (_lAuto)
@@ -48,6 +49,7 @@ user function FTSAFRA (_lAuto)
 	Local lPerg      := .F.
 	local _nLock     := 0
 	local _lContinua := .T.
+	local _oProcess  := NIL
 	private cPerg    := "FTSAFRA"
 	private _sEvtFat := 'SE2005'
 
@@ -83,10 +85,13 @@ user function FTSAFRA (_lAuto)
 		_ValidPerg()
 		Pergunte(cPerg,.F.)
 
+		_oProcess := MsNewProcess():New({|_lCancProc| _Gera (_lAuto, @_oProcess, @_lCancProc)},"Aguarde","Processando",.T.)
+
 		if _lAuto
-			Processa( { |lEnd| _Gera (_lAuto) } )
+	//		Processa( { |lEnd| _Gera (_lAuto) } )
+			_oProcess:Activate()
 		else
-		PRIVATE INCLUI := .F.
+			PRIVATE INCLUI := .F.
 			AADD(aSays,cCadastro)
 			AADD(aSays,"")
 			AADD(aSays,"")
@@ -96,7 +101,8 @@ user function FTSAFRA (_lAuto)
 			AADD(aButtons, { 2, .T.,{|| FechaBatch() }} )
 			FormBatch( cCadastro, aSays, aButtons)
 			If nOpca == 1
-				Processa( { |lEnd| _Gera (_lAuto) } )
+		//		Processa( { |lEnd| _Gera (_lAuto) } )
+				_oProcess:Activate()
 			Endif
 		endif
 	endif
@@ -114,7 +120,7 @@ return _lRet
 
 
 // --------------------------------------------------------------------------
-static function _Gera (_lAuto)
+static function _Gera (_lAuto, _oProcess, _lCancProc)
 	local _sQuery     := ""
 	local _sMsgErro   := ""
 	Local aFatPag     := {}
@@ -194,18 +200,6 @@ static function _Gera (_lAuto)
 		_sWhere += "    AND E2_SALDO   > 0"
 		_sWhere += "    AND E2_TIPO IN " + FormatIn (alltrim (mv_par11), '/')
 		_sWhere += "    AND E2_VAFRSAF " + iif (_lFrtSaf, "='S'", "!='S'")
-	//	_sWhere += "    AND E2_FATURA != 'NOTFAT'"  // O sistema gera NOTFAT nesse campo para que faturas nao possam mais gerar novas faturas.
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "    AND EXISTS (SELECT 1" 
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                  FROM " + RetSQLName ("SZI") + " AS SZI"
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                 WHERE SZI.D_E_L_E_T_ = ''"
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                   AND SZI.ZI_FILIAL  = E2_FILIAL"
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                   AND SZI.ZI_ASSOC   = E2_FORNECE"
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                   AND SZI.ZI_LOJASSO = E2_LOJA"
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                   AND SZI.ZI_DOC     = E2_NUM"
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                   AND SZI.ZI_SERIE   = E2_PREFIXO"
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                   AND SZI.ZI_PARCELA = E2_PARCELA"
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                   AND SZI.ZI_TM      = '13'"
-		// Agora posso filtrar pelo E2_VASAFRA e tratar, junto, os nao associados. --> _sWhere += "                )"
 	endif
 
 	// Verifica se o usuario quer agrupar faturas nao agrupaveis (um engano comum)
@@ -266,7 +260,8 @@ static function _Gera (_lAuto)
 	endif
 
 	if _lContinua
-		procregua (len(aDados))
+		_oProcess:SetRegua1 (len(aDados))
+		_oProcess:SetRegua2 (len(aDados))
 		_nTotGer = 0
 		_nQtFat = 0
 		for i=1 to len(aDados)
@@ -276,8 +271,19 @@ static function _Gera (_lAuto)
 			_wnumero  = soma1 (_wnumero)
 			aFatPag     := {}
 			aTit        := {}
-			incproc ("Associado " + _wfornece + " (" + cvaltochar (i) + " de " + cvaltochar (len(aDados)) + ")")
+
+			_oProcess:IncRegua1 ()
+			_oProcess:IncRegua2 ("Assoc. " + _wfornece + " (" + cvaltochar (i) + " de " + cvaltochar (len(aDados)) + ")")
 		
+			// Testa se o usuario clicou no botao cancelar.
+			if _lCancProc
+				if U_MsgNoYes ("Deseja cancelar o processo?")
+					exit
+				else
+					_lCancProc = .F.
+				endif
+			endif
+
 			// busca titulos do fornecedor para serem agrupados na fatura.
 			_sQuery := ""
 			_sQuery += " SELECT E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, '' "
@@ -294,7 +300,6 @@ static function _Gera (_lAuto)
 			Aadd(aFatPag, _sPrefFat)         //-- Prefixo
 			Aadd(aFatPag, "FAT")             //-- Tipo
 			Aadd(aFatPag, _wnumero)          //-- Numero da Fatura (se o numero estiver em branco obtem pelo FINA290)
-		//	Aadd(aFatPag, "120201    ")      //-- Natureza
 			Aadd(aFatPag, fBuscaCpo ("SA2", 1, xfilial ("SA2") + _wfornece + _wloja, "A2_NATUREZ"))
 			Aadd(aFatPag, _dEmisIni)         //-- Data emissao inicial
 			Aadd(aFatPag, _dEmisFim)         //-- Data emissao final
@@ -371,7 +376,7 @@ static function _Gera (_lAuto)
 		next
 
 		// Grava evento para posterior necessidade de rastreamento
-		_sTxtEvt += "Processo finalizado." + chr (13) + chr (10)
+		_sTxtEvt += "Processo " + iif (_lCancProc, 'CANCELADO', 'concluido') + "." + chr (13) + chr (10)
 		_sTxtEvt += "Geradas " + cvaltochar (_nQtFat) + " faturas, no valor de $ " + cvaltochar (_nTotGer) + chr (13) + chr (10)
 		_oEvento := ClsEvent():new ()
 		_oEvento:CodEven    = _sEvtFat
@@ -381,9 +386,8 @@ static function _Gera (_lAuto)
 	endif
 	_sPrefLog = ''
 
-	u_help ("Processo concluido. Foram geradas " + cvaltochar (_nQtFat) + " faturas, no valor de $ " + cvaltochar (_nTotGer))
+	u_help ("Processo " + iif (_lCancProc, 'CANCELADO', 'concluido') + ". Foram geradas " + cvaltochar (_nQtFat) + " faturas, no valor de $ " + cvaltochar (_nTotGer))
 return
-
 
 
 // --------------------------------------------------------------------------
@@ -413,7 +417,7 @@ static function _ZeraSZI (_sFornece, _sLoja, _aTit)
 		_oSQL:_sQuery += " AND SE2.E2_NUM     = '" + _aTit [_nTit, 2] + "'"
 		_oSQL:_sQuery += " AND SE2.E2_PARCELA = '" + _aTit [_nTit, 3] + "'"
 		_oSQL:_sQuery += " AND SE2.E2_TIPO    = '" + _aTit [_nTit, 4] + "'"
-		_nRegSZI = _oSQL:RetQry ()
+		_nRegSZI = _oSQL:RetQry (1, .F.)
 		if _nRegSZI > 0
 			szi -> (dbgoto (_nRegSZI))
 

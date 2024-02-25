@@ -61,6 +61,7 @@
 // 19/05/2022 - Robert  - LogTrb() nao fazia dbgotop() quando exportacao completa (GLPI 12080)
 // 20/07/2022 - Robert  - LogPCham() passa a receber parametro indicando se grava log ou apenas retorna a pilha.
 // 15/03/2023 - Robert  - Permite escolher se quer ou nao exportar atributos ou metodos de um objeto.
+// 25/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -338,7 +339,7 @@ user function LogSX1 (_sPerg)
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sPerg) +"'"
 //	_oSQL:Log ()
-	_aSX1  = aclone (_oSQL:Qry2Array ())	
+	_aSX1  = aclone (_oSQL:Qry2Array (.f., .f.))
 //	U_Log2 ('debug', _aSX1)
 	For _x:= 1 to Len(_aSX1)
 		_sX1_GRUPO	 := _aSX1[_x, 1]

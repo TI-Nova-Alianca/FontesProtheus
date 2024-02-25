@@ -15,22 +15,34 @@
 // 24/02/2022 - Robert - Adicionados filtros por prefixo e por tipo de movimento (na conta corrente)
 // 22/02/2024 - Robert - Gravar parcela e safra no evento de alteracao (GLPI 14961)
 //                     - Chamadas de ClsSQL:Qry2Array() estavam sem parametros.
+// 25/02/2024 - Robert - Novos parametro para selecionar E2_PARCELA (GLPI 14961) e observacoes para log de eventos.
+//                     - Migrado da funcao processa() para MsNewProcess() que me permitiu habilitar o botao de cancelamento.
+//                     - Passa a ter controle de semaforo para acesso exclusivo.
 //
 
 // --------------------------------------------------------------------------
 User Function VA_AVS (_lAuto)
-	Local cCadastro   := "Alterar data de vencimento de titulos do contas a pagar ref.safra"
-	Local aSays       := {}
-	Local aButtons    := {}
-	Local nOpca       := 0
-	Local lPerg       := .F.
-	Private cPerg     := "VA_AVS"
+	Local cCadastro     := "Alterar data de vencimento de titulos do contas a pagar ref.safra"
+	Local aSays         := {}
+	Local aButtons      := {}
+	Local nOpca         := 0
+	Local lPerg         := .F.
+	local _nLock        := 0
+	local _oProcess     := NIL
+	Private cPerg       := "VA_AVS"
+
+	_nLock := U_Semaforo (procname (), .t.)
+	if _nLock == 0
+		return
+	endif
 
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
 
+	_oProcess := MsNewProcess():New({|_lCancProc| _Gera (@_oProcess, @_lCancProc)},"Aguarde","Processando",.T.)
+
 	if _lAuto != NIL .and. _lAuto
-		Processa( { |lEnd| _Gera() } )
+		_oProcess:Activate()
 	else
 		AADD(aSays, "Este programa tem como objetivo")
 		AADD(aSays, cCadastro)
@@ -42,11 +54,13 @@ User Function VA_AVS (_lAuto)
 		FormBatch( cCadastro, aSays, aButtons )
 		
 		If nOpca == 1
-			Processa( { |lEnd| _Gera() } )
+			_oProcess:Activate()
 		Endif
 	endif
-return
 
+	// Libera semaforo
+	U_Semaforo (_nLock)
+return
 
 
 // --------------------------------------------------------------------------
@@ -55,21 +69,21 @@ Static Function _TudoOk()
 Return _lRet
 
 
-
 // --------------------------------------------------------------------------
-Static Function _Gera()
-	local _oEvento := NIL
-	local _nAlter  := 0
-	local _oSQL    := NIL
-	local _aTit    := {}
-	local _nTit    := 0
-	local _aTitAux := {}
-	local _aCols   := {}
-	local _aSelFor := {}
-	local _nSelFor := 0
+static function _Gera (_oProcess, _lCancProc)
+	local _oEvento  := NIL
+	local _nAlter   := 0
+	local _oSQL     := NIL
+	local _aTit     := {}
+	local _nTit     := 0
+	local _aTitAux  := {}
+	local _aCols    := {}
+	local _aSelFor  := {}
+	local _nSelFor  := 0
+	local _nValPrev := 0
 
-	procregua (10)
-	incproc ('Lendo dados...')
+	_oProcess:SetRegua1 (10)
+	_oProcess:IncRegua1 ('Lendo dados...')
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -78,7 +92,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
 	_oSQL:_sQuery +=              RetSQLName ("SA2") + " SA2 "
 	_oSQL:_sQuery +=  " WHERE SA2.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND SA2.A2_FILIAL  = '" + xfilial ("SA2")   + "'"
+	_oSQL:_sQuery +=    " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
 	_oSQL:_sQuery +=    " AND SA2.A2_COD     = E2_FORNECE"
 	_oSQL:_sQuery +=    " AND SA2.A2_LOJA    = E2_LOJA"
 	_oSQL:_sQuery +=    " AND SE2.D_E_L_E_T_ = ''"
@@ -87,9 +101,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=    " AND SE2.E2_FORNECE + SE2.E2_LOJA <= '" + mv_par03 + mv_par04 + "'"
 	_oSQL:_sQuery +=    " AND SE2.E2_VENCTO  BETWEEN '" + dtos (mv_par05) + "' AND '" + dtos (mv_par06) + "'"
 	_oSQL:_sQuery +=    " AND SE2.E2_SALDO   > 0"
-//	if ! empty (mv_par08)
-		_oSQL:_sQuery +=    " AND SE2.E2_VASAFRA = '" + mv_par08 + "'"
-//	endif
+	_oSQL:_sQuery +=    " AND SE2.E2_VASAFRA = '" + mv_par08 + "'"
 	if ! empty (mv_par09)
 		_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO IN " + FormatIn (alltrim (mv_par09), '/')
 	endif
@@ -103,6 +115,9 @@ Static Function _Gera()
 		_oSQL:_sQuery +=                   " AND SZI.ZI_SERIE   = SE2.E2_PREFIXO"
 		_oSQL:_sQuery +=                   " AND SZI.ZI_PARCELA = SE2.E2_PARCELA"
 		_oSQL:_sQuery +=                   " AND SZI.ZI_TM      = '" + mv_par10 + "')"
+	endif
+	if ! empty (mv_par11)
+		_oSQL:_sQuery +=    " AND SE2.E2_PARCELA = '" + alltrim (mv_par11) + "'"
 	endif
 	_oSQL:_sQuery +=  " ORDER BY A2_NOME, E2_NUM"
 	_oSQL:Log ()
@@ -120,10 +135,11 @@ Static Function _Gera()
 				_nSelFor = len (_aSelFor)
 			endif
 			_aSelFor [_nSelFor, 5] += _aTit [_nTit, 9]
+			_nValPrev += _aTit [_nTit, 9]
 		next
 	
 		// Usuario pode, se quiser, filtrar por nome de fornecedor
-		if u_msgyesno ("Foram encontrados " + cvaltochar (len (_aTit)) + " titulos de " + cvaltochar (len (_aSelFor)) + " fornecedores. Deseja fazer uma selecao manual por nome de fornecedor?")
+		if u_msgyesno ("Foram encontrados " + cvaltochar (len (_aTit)) + " titulos de " + cvaltochar (len (_aSelFor)) + " fornecedores, totalizando $ " + transform (_nValPrev, "@E 999,999,999.99") + " Deseja fazer uma selecao manual por nome de fornecedor?")
 			_aSelFor = asort (_aSelFor,,, {|_x, _y| _x [4] < _y [4]})
 			_aCols = {}
 			aadd (_aCols, {2,  'Fornecedor',   6, ''})
@@ -164,15 +180,32 @@ Static Function _Gera()
 		aadd (_aCols, {16, 'Historico', 150, ''})
 		U_MbArray (@_aTit, 'Selecione titulos', _aCols, 2, NIL, NIL, '.T.')
 		u_log (_aTit)
+
+		_oProcess:SetRegua2 (len (_aTit))
 		procregua (len (_aTit))
 		for _nTit = 1 to len (_aTit)
 			if _aTit [_nTit, 2]
-				incproc (_aTit [_nTit, 6])
+				_oProcess:IncRegua1 ('Processando...')
+				_oProcess:IncRegua2 (_aTit [_nTit, 6])
+
+				// Testa se o usuario clicou no botao cancelar.
+				if _lCancProc
+					if U_MsgNoYes ("Deseja cancelar o processo?")
+						exit
+					else
+						_lCancProc = .F.
+					endif
+				endif
+
 				se2 -> (dbgoto (_aTit [_nTit, 1]))
-//					u_logtrb ('se2')
 				_oEvento := ClsEvent():new ()
 				_oEvento:CodEven   = "SE2001"
-				_oEvento:Texto     = "Pg.safra parc.'" + se2 -> e2_parcela + "' vcto.alterado de " + dtoc (se2 -> e2_vencrea) + " para " + dtoc (mv_par07)
+				_oEvento:Texto     := "Pg.safra parc. " + se2 -> e2_parcela
+				_oEvento:Texto     += " vcto.alterado de " + dtoc (se2 -> e2_vencrea)
+				_oEvento:Texto     += " para " + dtoc (mv_par07)
+				if ! empty (mv_par12)
+					_oEvento:Texto     += " Obs.: " + alltrim (mv_par12)
+				endif
 				_oEvento:NFEntrada = se2 -> e2_num
 				_oEvento:SerieEntr = se2 -> e2_prefixo
 				_oEvento:ParcTit   = se2 -> e2_parcela
@@ -190,10 +223,8 @@ Static Function _Gera()
 			endif
 		next
 	endif
-	u_help ("Processo concluido. " + cvaltochar (_nAlter) + " titulos alterados.")
+	u_help ("Processo " + iif (_lCancProc, 'CANCELADO', 'concluido') + ". " + cvaltochar (_nAlter) + " titulos alterados.")
 return
-
-
 
 
 // --------------------------------------------------------------------------
@@ -202,17 +233,19 @@ Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 	
-	//                     PERGUNT                           TIPO TAM                    DEC VALID F3        Opcoes Help
-	aadd (_aRegsPerg, {01, "Produtor inicial              ", "C", tamsx3 ("A2_COD")[1],  0,  "",   "SA2_AS", {},    "Codigo associado inicial para filtragem de registros"})
-	aadd (_aRegsPerg, {02, "Loja produtor inicial         ", "C", tamsx3 ("A2_LOJA")[1], 0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {03, "Produtor final                ", "C", tamsx3 ("A2_COD")[1],  0,  "",   "SA2_AS", {},    "Codigo associado final para filtragem de registros"})
-	aadd (_aRegsPerg, {04, "Loja produtor final           ", "C", tamsx3 ("A2_LOJA")[1], 0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {05, "Vencto (atual) inicial        ", "D", 8,                     0,  "",   "      ", {},    "Data vencto inicial para filtragem de registros"})
-	aadd (_aRegsPerg, {06, "Vencto (atual) final          ", "D", 8,                     0,  "",   "      ", {},    "Data vencto final para filtragem de registros"})
-	aadd (_aRegsPerg, {07, "Nova data de vencimento       ", "D", 8,                     0,  "",   "      ", {},    "Nova data de vencto"})
-	aadd (_aRegsPerg, {08, "Safra referencia              ", "C", 4,                     0,  "",   "      ", {},    "Safra referencia"})
-	aadd (_aRegsPerg, {09, "Prefixos sep.barra(vazio=todos", "C", 30,                    0,  "",   "      ", {},    "Prefixos para filtragem (separados por barras)"})
-	aadd (_aRegsPerg, {10, "TM cta.corrente (vazio=todos) ", "C", 2,                     0,  "",   "      ", {},    ""})
+	//                     PERGUNT                           TIPO TAM                       DEC VALID F3        Opcoes Help
+	aadd (_aRegsPerg, {01, "Produtor inicial              ", "C", tamsx3 ("A2_COD")[1],     0,  "",   "SA2_AS", {},    "Codigo associado inicial para filtragem de registros"})
+	aadd (_aRegsPerg, {02, "Loja produtor inicial         ", "C", tamsx3 ("A2_LOJA")[1],    0,  "",   "      ", {},    ""})
+	aadd (_aRegsPerg, {03, "Produtor final                ", "C", tamsx3 ("A2_COD")[1],     0,  "",   "SA2_AS", {},    "Codigo associado final para filtragem de registros"})
+	aadd (_aRegsPerg, {04, "Loja produtor final           ", "C", tamsx3 ("A2_LOJA")[1],    0,  "",   "      ", {},    ""})
+	aadd (_aRegsPerg, {05, "Vencto (atual) inicial        ", "D", 8,                        0,  "",   "      ", {},    "Data vencto inicial para filtragem de registros"})
+	aadd (_aRegsPerg, {06, "Vencto (atual) final          ", "D", 8,                        0,  "",   "      ", {},    "Data vencto final para filtragem de registros"})
+	aadd (_aRegsPerg, {07, "Nova data de vencimento       ", "D", 8,                        0,  "",   "      ", {},    "Nova data de vencto"})
+	aadd (_aRegsPerg, {08, "Safra referencia              ", "C", 4,                        0,  "",   "      ", {},    "Safra referencia"})
+	aadd (_aRegsPerg, {09, "Prefixos sep.barra(vazio=todos", "C", 30,                       0,  "",   "      ", {},    "Prefixos para filtragem (separados por barras)"})
+	aadd (_aRegsPerg, {10, "TM cta.corrente (vazio=todos) ", "C", 2,                        0,  "",   "      ", {},    ""})
+	aadd (_aRegsPerg, {11, "Parcela a alterar(vazio=todas)", "C", tamsx3 ("E2_PARCELA")[1], 0,  "",   "      ", {},    ""})
+	aadd (_aRegsPerg, {12, "Obs.para evento de alteracao  ", "C", 60,                       0,  "",   "      ", {},    ""})
 
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return

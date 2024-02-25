@@ -180,6 +180,11 @@ METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb, _aIndices) Class ClsSQL
 	local _sIndice   := ''
 	local _lContinua := .T.
 
+	// Quero colocar esse parametro como obrigatorio.
+	if _lSetField == NIL
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+	endif
+
 	_lSetField = iif (_lSetField == NIL, .T.,    _lSetField)
 	_sAliasTrb = iif (_sAliasTrb == NIL, '_trb', _sAliasTrb)
 	_aIndices  = iif (_aIndices  == NIL, {},     _aIndices)
@@ -352,8 +357,8 @@ METHOD MudaTipo (_lTodosCampos as logical) Class ClsSQL
 
 	// Varre SX3 procurando campos de mesmo nome dos existentes na query.
 	if _lTodosCampos
-		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou verificar SX3')
-		u_logpcham ()
+//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou verificar SX3')
+//		u_logpcham ()
 		dbselectarea ("SX3")
 		_aAreaSX3 = GetArea ()
 		sx3 -> (dbsetorder (2))
@@ -428,6 +433,11 @@ METHOD Qry2Array (_lSetField as logical, _lRetNomes as logical) Class ClsSQL
 	local _nCampo    := 0
 	local _aAreaQry  := GetArea ()
 
+	// Quero colocar esse parametro como obrigatorio.
+	if _lSetField == NIL
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+	endif
+
 	_lSetField = iif (_lSetField == NIL, .T., _lSetField)
 	_lRetNomes = iif (_lRetNomes == NIL, .F., _lRetNomes)
 
@@ -435,9 +445,6 @@ METHOD Qry2Array (_lSetField as logical, _lRetNomes as logical) Class ClsSQL
 	_ExecQry (::self)
 
 	// Altera tipo de campos data cfe. dicionario de dados.
-//	if _lSetField
-//		::MudaTipo ()
-//	endif
 	::MudaTipo (_lTodosCampos = _lSetField)
 
 	_aArray = {}
@@ -545,12 +552,12 @@ METHOD Qry2Trb (_lSetField) Class ClsSQL
 
 	_ExecQry (::self)
 
-	_lSetField := iif (_lSetField == NIL, .T., _lSetField)
+	// Quero colocar esse parametro como obrigatorio.
+	if _lSetField == NIL
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+	endif
 
-	// Altera tipo de campos cfe. dicionario de dados.
-//	if _lSetField != NIL .and. _lSetField
-//		::MudaTipo ()
-//	endif
+	_lSetField := iif (_lSetField == NIL, .T., _lSetField)
 	::MudaTipo (_lTodosCampos = _lSetField)
 
 return ::_sAliasQry
@@ -577,6 +584,11 @@ METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 	local _sCSV      := ""
 	local _nPos      := 0
 
+	// Quero colocar esse parametro como obrigatorio.
+	if _lSetField == NIL
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+	endif
+
 	_lSetField := iif (_lSetField == NIL, .T., _lSetField)
 	_lFixaChar := iif (_lFixaChar == NIL, .F., _lFixaChar)
 	_lSemEspac := iif (_lSemEspac == NIL, .F., _lSemEspac)
@@ -597,9 +609,6 @@ METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 	U_Log2 ('debug', cvaltochar (::QtLinRet) + ' registros encontrados. Iniciando exportacao de dados CSV para destino ' + _sArq)
 	
 	// Altera tipo de campos data cfe. dicionario de dados.
-//	if _lSetField
-//		::MudaTipo ()
-//	endif
 	::MudaTipo (_lTodosCampos = _lSetField)
 
 	// Cria arquivo temporario onde serao gerados os dados.
@@ -715,6 +724,11 @@ METHOD RetQry (_nColuna, _lSetField) Class ClsSQL
 	
 	_nColuna := iif (_nColuna == NIL, 1, _nColuna)
 	_ExecQry (::self)
+
+	// Quero colocar esse parametro como obrigatorio.
+	if _lSetField == NIL
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+	endif
 
 	if _lSetField == NIL .or. _lSetField
 		U_TCSetFld (::_sAliasQry)

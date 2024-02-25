@@ -25,7 +25,9 @@
 //                        entao nao ha motivo para manter o campo).
 //                      - Criado tratamento para as tabelas 52 e 53.
 // 11/05/2021 - Claudia - Ajustada a chamada para tabela SX3 devido a R27. GLPI: 8825
+// 25/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 
@@ -94,17 +96,6 @@ METHOD New (_sCodTab) Class ClsTabGen
 				endif
 		endcase
 
-		// // Monta lista de campos pertencentes `a tabela informada.
-		// ::Campos = {}
-		// sx3 -> (dbsetorder (1))
-		// sx3 -> (dbseek ("ZX5", .T.))
-		// do while ! sx3 -> (eof ()) .and. sx3 -> x3_arquivo == "ZX5"
-		// 	if left (sx3 -> x3_campo, 6) == "ZX5_" + ::CodTabela
-		// 		aadd (::Campos, sx3 -> x3_campo)
-		// 	endif
-		// 	sx3 -> (dbskip ())
-		// enddo
-
 		// Monta lista de campos pertencentes a tabela informada.
 		::Campos = {}
 		_oSQL  := ClsSQL ():New ()
@@ -115,7 +106,7 @@ METHOD New (_sCodTab) Class ClsTabGen
 		_oSQL:_sQuery += " FROM SX3010 "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
 		_oSQL:_sQuery += " AND X3_ARQUIVO='ZX5' "
-		_aZX5  = aclone (_oSQL:Qry2Array ())
+		_aZX5  = aclone (_oSQL:Qry2Array (.f., .f.))
 
 		For _x:= 1 to Len(_aZX5)
 			_sX3_ARQUIVO := _aZX5[_x, 1]
@@ -153,7 +144,7 @@ METHOD ExistChav (_sChave) Class ClsTabGen
 			_oSQL:_sQuery += "    and ZX5_FILIAL = '" + iif (::ModoAcesso == 'E', xfilial ("ZX5"), '  ') + "'"
 			_oSQL:_sQuery += "    and ZX5_TABELA = '" + ::CodTabela + "'"
 			_oSQL:_sQuery +=    " AND " + _sCpoChav + " = '" + _sChave + "'"
-			if _oSQL:RetQry () == 0
+			if _oSQL:RetQry (1, .f.) == 0
 				::UltMsg = "Nao existe registro relacionado: Chave '" + _sChave + "' nao cadastrada na tabela '" + ::CodTabela + "' do arquivo ZX5."
 				_lRet = .F.
 			endif
@@ -270,7 +261,7 @@ METHOD PodeExcl (_sChave) Class ClsTabGen
 			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND B1_FILIAL  = '" + xfilial ("SB1") + "'"
 			_oSQL:_sQuery +=    " AND B1_CODLIN  = '" + _sChave + "'"
-			if _oSQL:RetQry () > 0
+			if _oSQL:RetQry (1, .f.) > 0
 				u_help ("Registro encontra-se amarrado ao cadastro de produtos e nao pode ser excluido.")
 				_lRet = .F.
 			endif
@@ -282,7 +273,7 @@ METHOD PodeExcl (_sChave) Class ClsTabGen
 			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND N1_FILIAL  = '" + xfilial ("SN1") + "'"
 			_oSQL:_sQuery +=    " AND N1_VAZX541 = '" + _sChave + "'"
-			if _oSQL:RetQry () > 0
+			if _oSQL:RetQry (1, .f.) > 0
 				u_help ("Registro encontra-se amarrado ao cadastro de Ativos / Maquinas e nao pode ser excluido.")
 				_lRet = .F.
 			endif

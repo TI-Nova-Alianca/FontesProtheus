@@ -123,6 +123,7 @@
 //                      - Iniciada versao 3 do calculo de correcao monetaria.
 // 09/01/2024 - Robert  - Ajustes versao 3 do calculo de correcao monetaria.
 // 06/02/2024 - Robert  - Metodo SldQuotCap - ignorar saida indevida assoc 002848 (GLPI 14843)
+// 25/02/2024 - Robert  - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -413,7 +414,7 @@ METHOD AtuSaldo (_dDataRec) Class ClsAssoc
 		_oSQL:_sQuery +=  " WHERE SZI.ZI_ASSOC   = '" + ::Codigo + "' "
 		_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO = '" + ::Loja + "' "
 		_oSQL:_sQuery +=    " AND SZI.D_E_L_E_T_ = '' "
-     	_dPrimSZI = stod (_oSQL:RetQry ())
+     	_dPrimSZI = stod (_oSQL:RetQry (1, .f.))
 		if empty (_dPrimSZI)
 			u_log ('Sem datas no SZI. Abortando processo.',, .t.)
 			_lContinua = .F.
