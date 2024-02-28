@@ -15,7 +15,7 @@
 // 15/10/2019 - Andre   - Ajustado fonte para inserir quantidade de peças por etiquetas.
 // 18/02/2021 - Claudia - Incluida msg quando n existe endereçamento do produto. GLPI: 9271
 // 10/06/2021 - Claudia - Incluido loop para impressão. GLPI: 10186
-//
+// 28/02/2024 - Sandra  - Incluso campo unidade medidas. GLPI: 14641
 // ------------------------------------------------------------------------------------------------
 #INCLUDE "rwmake.ch"
 #Include "PROTHEUS.CH"
@@ -48,7 +48,7 @@ User Function VA_ETQPRODF()
 		_QtdUsada := 0
 		_QtdAUsar := (mv_par07)
 		
-		_sQuery := " SELECT DISTINCT B1_COD AS NOSSO_COD, B1_DESC AS NOSSA_DESC, SA5.A5_CODPRF AS COD_DO_FORNECEDOR, SBF.BF_LOCALIZ AS LOCALIZACAO, SBF.BF_NUMSERI AS SERIAL "
+		_sQuery := " SELECT DISTINCT B1_COD AS NOSSO_COD, B1_DESC AS NOSSA_DESC, B1_UM AS UNIDADE, SA5.A5_CODPRF AS COD_DO_FORNECEDOR, SBF.BF_LOCALIZ AS LOCALIZACAO, SBF.BF_NUMSERI AS SERIAL "
 		_sQuery += " FROM " + RetSQLName ("SB1") + " SB1, "
 		_sQuery +=			  RetSQLName ("SA5") + " SA5, "
 		_sQuery +=			  RetSQLName ("SBF") + " SBF "
@@ -82,6 +82,7 @@ User Function VA_ETQPRODF()
 						_sCod1    := '' + (_sAliasQ) -> NOSSO_COD
 						_sDescri1 := '' + substr (alltrim ((_sAliasQ) -> NOSSA_DESC),1,40)
 						_sDescri2 := '' + substr (alltrim ((_sAliasQ) -> NOSSA_DESC),41,70)
+						_sUM      := '' + substr (alltrim ((_sAliasQ) -> UNIDADE),1,2)
 						_sCod2    := '' + (_sAliasQ) -> COD_DO_FORNECEDOR
 						_sLocaliz := '' + (_sAliasQ) -> LOCALIZACAO
 						_sSerial  := '' + (_sAliasQ) -> SERIAL 
@@ -109,7 +110,7 @@ User Function VA_ETQPRODF()
 							fwrite (_nHdl, '141100000600030' + _sLocaliz + _Enter)
 							fwrite (_nHdl, '121100000500030' + 'Serial' + _Enter)
 							fwrite (_nHdl, '141100000300030' + _sSerial + _Enter)
-							fwrite (_nHdl, '121100000100030' + 'Qtd Pcs:' + cvaltochar (_QtdAUsar) + _Enter)
+							fwrite (_nHdl, '141100000600200' + 'Qtd Pcs:' + cvaltochar (_QtdAUsar) + ' ' +  _sUM  + _Enter)
 							fwrite (_nHdl, 'Q0001' + _Enter)
 							fwrite (_nHdl, 'E' + _Enter)
 							_QtdUsada += _QtdAUsar
