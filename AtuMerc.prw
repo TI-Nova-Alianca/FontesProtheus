@@ -17,6 +17,7 @@
 // 03/05/2022 - Claudia - Realiza envio de registro de cliente para mercanet 
 //                        quando a1_savblq <> 'N'. GLPI: 11922
 // 05/06/2022 - Robert  - Em vez de logar 'Enviando dados para Mercanet', passa a logar o SQL executado.
+// 26/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------------------------
@@ -109,7 +110,8 @@ user function AtuMerc (_sAlias, _nRecno)
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery = "select count (*) from sysobjects where name = 'VA_INTEGR_MERCANET' and type = 'U'"
-		if _oSQL:RetQry() == 0
+	//	if _oSQL:RetQry() == 0
+		if _oSQL:RetQry (1, .f.) == 0
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += "CREATE TABLE VA_INTEGR_MERCANET("
 			_oSQL:_sQuery += " ID INT NOT NULL IDENTITY(1,1) PRIMARY KEY,"

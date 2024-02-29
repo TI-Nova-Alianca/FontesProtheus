@@ -1742,7 +1742,7 @@ METHOD FechSafra () Class ClsAssoc
 
 	// Regras de pagamento (informativo)
 	if ::FSRegraPagto
-		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando regras de pagamento')
+//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Buscando regras de pagamento')
 		_sRetFechS += '<regraPagamento>'
 		if ::FSSafra == '2019' .or. ::FSSafra == '2020'
 			_sRetFechS += '<regraPagamentoItem>'

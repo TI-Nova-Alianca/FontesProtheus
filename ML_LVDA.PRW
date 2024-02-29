@@ -7,7 +7,7 @@
 // #Descricao         #ExecBlock Lancto Padrao Vendas
 // #PalavasChave      #LPAD #lancamento_padrao 
 // #TabelasPrincipais #SD2 #SF4
-// #Modulos 		  #CTB 
+// #Modulos           #CTB 
 //
 // Parametros: _nEcomm
 // 1 - Retorna valor 0 para notas e-commerce
@@ -29,88 +29,91 @@
 // 06/01/2023 - Claudia - Aplicada regra conforme GLPI: 12854	
 // 25/01/2023 - Claudia - Voltada a versão do programa. GLPI: 13087
 // 24/02/2023 - Claudia - Ajustado o lançamento padrão 610 000 (parametro 1). GLPI: 13218
+// 20/02/2024 - Robert  - Opcao 4 alterada temporariamente para recontabilizacao de 2023 onde queremos apenas IPI e ST ---> _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // Volta a ser como era em 31/12/2022
+// 28/02/2024 - RObert  - Chamadas de metodos da classe ClsSQL nao recebiam parametros.
 //
+
 // -------------------------------------------------------------------------------------------------
-#include "rwmake.ch"
+//#include "rwmake.ch"
 
 User Function ML_LVDA(_nEcomm)
-    Local _aDados := {}
-    Local _lEcomm := .F.
-    Local _sADM   := ""
-    Local _oSQL   := ClsSQL ():New ()
+	Local _aDados := {}
+	Local _lEcomm := .F.
+	Local _sADM   := ""
+	Local _oSQL   := ClsSQL ():New ()
 
-    SetPrvt("_WVAL,")
+	SetPrvt("_WVAL,")
 
-    
-    //If SD2->D2_FILIAL == '01' .or. SD2->D2_FILIAL == '16'
-    // Verifica se é nota do ecommerce
-    _oSQL:_sQuery := ""
-    _oSQL:_sQuery += " SELECT DISTINCT E1_ADM "
-    _oSQL:_sQuery += " FROM " + RetSQLName ("SE1")
-    _oSQL:_sQuery += " WHERE E1_FILIAL = '" + SD2->D2_FILIAL + "'"
-    _oSQL:_sQuery += " AND E1_NUM      = '" + SD2->D2_DOC    + "'"
-    _oSQL:_sQuery += " AND E1_PREFIXO  = '10'"
-    _oSQL:_sQuery += " AND E1_TIPO IN('CC','CD') "
-    _oSQL:_sQuery += " AND E1_ADM <> ''"
+	//If SD2->D2_FILIAL == '01' .or. SD2->D2_FILIAL == '16'
+	// Verifica se é nota do ecommerce
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DISTINCT E1_ADM "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SE1")
+	_oSQL:_sQuery += " WHERE E1_FILIAL = '" + SD2->D2_FILIAL + "'"
+	_oSQL:_sQuery += " AND E1_NUM      = '" + SD2->D2_DOC    + "'"
+	_oSQL:_sQuery += " AND E1_PREFIXO  = '10'"
+	_oSQL:_sQuery += " AND E1_TIPO IN('CC','CD') "
+	_oSQL:_sQuery += " AND E1_ADM <> ''"
 
-    _aDados := _oSQL:Qry2Array ()
+//	_aDados := _oSQL:Qry2Array ()
+	_aDados := _oSQL:Qry2Array (.f., .f.)
 
-    If Len(_aDados) > 0
-        _lEcomm := .T.
-        _sADM   := _aDados[1,1]
-    EndIf
-    //EndIf
+	If Len(_aDados) > 0
+		_lEcomm := .T.
+		_sADM   := _aDados[1,1]
+	EndIf
 
-    // Se notas ecommerce 610 029
-    If _lEcomm == .T.
+	// Se notas ecommerce 610 029
+	If _lEcomm == .T.
+		Do Case
+			Case _nEcomm == '2'      // Nota ecommerce que retorna valor
+					_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_ICMSRET + SD2->D2_VALFRE
 
-        Do Case
-            Case _nEcomm == '2'      // Nota ecommerce que retorna valor
-                 _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_ICMSRET + SD2->D2_VALFRE
-            
-            Case _nEcomm == '3'      // Retorna conta contabil
-                Do Case
-                    Case _sADM == "100" .or. _sADM == "101"
-                        _wVAL:= "101021101002"
-                    Case _sADM == "200" .or. _sADM == "201"
-                        _wVAL:= "101021101001"
-                    Case _sADM == "300" .or. _sADM == "301"
-                        _wVAL:= "101021101003"
-                    Case _sADM == "400" .or. _sADM == "401"
-                        _wVAL:= "101021101004"
-                    otherwise
-                        _wVAL:= "101021101005"
-                EndCase  
-            Case _nEcomm == '4'
-                If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16')
-                    _wVAL := 0
-                Else
-                    //_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_ICMSRET + SD2->D2_VALFRE // até 31/12/2022
-                    _wVAL := SD2->D2_TOTAL + SD2->D2_VALFRE // a partir de 01/01/2023
-                EndIf
-        EndCase
+			Case _nEcomm == '3'      // Retorna conta contabil
+				Do Case
+					Case _sADM == "100" .or. _sADM == "101"
+						_wVAL:= "101021101002"
+					Case _sADM == "200" .or. _sADM == "201"
+						_wVAL:= "101021101001"
+					Case _sADM == "300" .or. _sADM == "301"
+						_wVAL:= "101021101003"
+					Case _sADM == "400" .or. _sADM == "401"
+						_wVAL:= "101021101004"
+					otherwise
+						_wVAL:= "101021101005"
+				EndCase  
+			Case _nEcomm == '4'
+				If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16')
+					_wVAL := 0
+				Else
+					//_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_ICMSRET + SD2->D2_VALFRE // até 31/12/2022
+					_wVAL := SD2->D2_TOTAL + SD2->D2_VALFRE // a partir de 01/01/2023
+				EndIf
+		EndCase
 
-    Else // Não é notas ecommerce 
-        If _nEcomm == '1'  // 610 000 e 610 001
-            If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
-                _wVAL := 0
-            Else
-                If SD2->D2_TES=="918" // ST MG
-                    _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
-                Else
-                    _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
-                EndIf
-            EndIf
-        Else 
-            If _nEcomm == '4' // 610 000 e 610 001
-                If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
-                    _wVAL := 0
-                Else
-                    //_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // até 31/12/2022
-                    _wVAL := SD2->D2_TOTAL + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // a partir de 01/01/2023
+	Else // Não é notas ecommerce 
+		If _nEcomm == '1'  // 610 000 e 610 001
+			If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
+				_wVAL := 0
+			Else
+				If SD2->D2_TES=="918" // ST MG
+					_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
+				Else
+					_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
+				EndIf
+			EndIf
+		Else 
+			If _nEcomm == '4' // 610 000 e 610 001
+				If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
+					_wVAL := 0
+				Else
+					// desabilitado para recontabilizacao de 2023 onde queremos apenas IPI e ST ---> _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // Volta a ser como era em 31/12/2022
+					_wVAL := SD2->D2_VALIPI + sd2->d2_icmsret
 
-                EndIf
-            EndIf
-        EndIf
-    EndIf
-Return(_wVAL)
+					//_wVAL := SD2->D2_TOTAL + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // a partir de 01/01/2023
+
+				EndIf
+			EndIf
+		EndIf
+	EndIf
+Return (_wVAL)

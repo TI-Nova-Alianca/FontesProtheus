@@ -52,7 +52,9 @@
 // 29/09/2020 - Cláudia - Incluido o novo usuário do alexandre na validação de liberação de doc. GLPI: 8369
 // 22/08/2022 - Robert  - Criado inicializador de browse para o campo ZI_VENCTO (GLPI 12503)
 // 27/06/2023 - Claudia - Incluido o usuario Franciele. GLPI 13786
+// 26/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // -------------------------------------------------------------------------------------------------------
 user function VA_IniPd (_sCampo, _lBrowse)
 	local _xRet     := NIL
@@ -169,7 +171,7 @@ user function VA_IniPd (_sCampo, _lBrowse)
 			_xRet = ""  // Deixa pronto para retorno caso nao encontre nada.
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := "SELECT dbo.VA_FSTATUS_PED_VENDA ('" + sc5 -> c5_filial + "','" + sc5 -> c5_num + "')"
-			_xRet = _oSQL:RetQry ()
+			_xRet = _oSQL:RetQry (1, .f.)
 
 
 		case _sCampo == "CR_VANFORN"
@@ -414,7 +416,7 @@ user function VA_IniPd (_sCampo, _lBrowse)
 			endif
 			_xRet = soma1 (_xRet)
 
-	case _sCampo == "ZA9_CODSEG"
+		case _sCampo == "ZA9_CODSEG"
 			_xRet = fbuscacpo ("SA1", 1, xFilial ("SA1")+ m->za9_cli   , "A1_SATIV1")
 			_xRet = fbuscacpo ("SX5", 1 , xFilial("SX5")+ "T3" + _xRet , "X5_DESCRI")                                                                 
 

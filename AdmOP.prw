@@ -57,6 +57,7 @@
 // 17/04/2023 - Robert  - Ordena os botoes de 'outras acoes' alfabeticamente.
 //                      - Criada opcao de apontar diversas etiquetas da OP atomaticamente (util para terceirizacoes)
 // 24/05/2023 - Robert  - Ajuste tratamento verificacao Alianca 24 na consulta de etiquetas nao guardadas.
+// 26/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 #include "rwmake.ch"
@@ -319,7 +320,7 @@ static function _LeDados ()
 	_oSQL:_sQuery +=    " AND SD3.D3_OP       = '" + _sOP + "'"
 	//_oSQL:PerfMon = .T.  // Habilitar somente para tratar problemas de lentidao
 	//_oSQL:Log ()
-	_aRetQry  = aclone (_oSQL:Qry2Array ())
+	_aRetQry  = aclone (_oSQL:Qry2Array (.f., .f.))
 	_dPrimMov = stod (_aRetQry [1, 1])
 	_dUltMov  = stod (_aRetQry [1, 2])
 	//
@@ -332,7 +333,7 @@ static function _LeDados ()
 	_oSQL:_sQuery +=    " AND SD1.D1_OP       = '" + _sOP + "'"
 	//_oSQL:PerfMon = .T.  // Habilitar somente para tratar problemas de lentidao
 	//_oSQL:Log ()
-	_aRetQry  = aclone (_oSQL:Qry2Array ())
+	_aRetQry  = aclone (_oSQL:Qry2Array (.f., .f.))
 	_dPrimMov = iif (empty (_aRetQry [1, 1]), _dPrimMov, min (_dPrimMov, stod (_aRetQry [1, 1])))
 	_dUltMov  = max (_dUltMov,  stod (_aRetQry [1, 2]))
 
@@ -375,7 +376,7 @@ static function _LeDados ()
 	_oSQL:_sQuery +=  " GROUP BY MOVTOS.D3_COD, B1_DESC, B1_UM"
 	//_oSQL:PerfMon = .T.  // Habilitar somente para tratar problemas de lentidao
 	//_oSQL:Log ()
-	_sAliasQ = _oSQL:Qry2Trb ()
+	_sAliasQ = _oSQL:Qry2Trb (.f.)
 	_aLinVazia := aclone (U_LinVazia (aHeader))
 	(_sAliasQ) -> (dbgotop ())
 	do while !(_sAliasQ) -> (Eof())
@@ -432,7 +433,7 @@ static function _LeDados ()
 	_oSQL:_sQuery +=  " GROUP BY G1_COMP, B1_DESC, B1_UM"
 	//_oSQL:PerfMon = .T.  // Habilitar somente para tratar problemas de lentidao
 	//_oSQL:Log ()
-	_sAliasQ = _oSQL:Qry2Trb ()
+	_sAliasQ = _oSQL:Qry2Trb (.f.)
 	(_sAliasQ) -> (dbgotop ())
 	_aLinVazia := aclone (U_LinVazia (aHeader))
 	Do While !(_sAliasQ) -> (Eof())

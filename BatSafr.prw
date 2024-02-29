@@ -446,15 +446,7 @@ static function _ConfParc ()
 	_oSQL:_sQuery +=    " AND TIPO_NF IN ('C', 'V')"
 	_oSQL:_sQuery +=    " AND FILIAL = '" + cFilAnt + "'"
 	_oSQL:_sQuery +=    " AND NOT (TIPO_NF = 'V' AND DATA = '20220309')"  // COMPLEMENTOS DE FRETE GLPI 11721
-
-	// temporario
-	if 'ROBERT' $ upper (GetEnvServer ())
-		_oSQL:_sQuery +=    " AND DOC IN ('000026266')"
-	endif
-
-
-
-
+	_oSQL:_sQuery +=    " AND NOT (TIPO_NF = 'V' AND DATA = '20240304')"  // COMPLEMENTOS DA SAFRA 2023 EMITIDOS EM 2024 !!!
 	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO, DATA"
 	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"
 	_oSQL:Log ()
@@ -600,7 +592,7 @@ static function _ConfParc ()
 					else
 						_nUvaFrt = round ((_sAliasQ) -> vlr_uvas + sf1 -> f1_despesa, 2)
 					endif
-					if _nSomaSE2 != _nUvaFrt
+					if round (_nSomaSE2, 1) != round (_nUvaFrt, 1)
 						_sMsg += "Soma dos titulos no SE2 (" + cvaltochar (_nSomaSE2) + ") diferente de valor das uvas + frete (" + cvaltochar (_nUvaFrt) + ") <br><br>"
 					endif
 

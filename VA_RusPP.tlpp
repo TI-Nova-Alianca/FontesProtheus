@@ -120,7 +120,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			_lContinua = .F.
 		else
 			_nParcFrt = _nParcel
-			U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
+	//		U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
 		endif
 	endif
 

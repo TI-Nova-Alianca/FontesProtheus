@@ -123,7 +123,8 @@
 //                        chamar algumas rotinas que nao se aplicam a safras.
 // 16/01/2023 - Robert  - Criado parametro VA_RFRSAFR para reembolsar (ou nao) FUNRURAL nas contranotas de safra.
 // 22/04/2023 - Robert  - Gravacao campo E2_VAFRSAF.
-// 15/05/2023 - Robert - Alterados alguns logs de INFO para DEBUG e vice-versa.
+// 15/05/2023 - Robert  - Alterados alguns logs de INFO para DEBUG e vice-versa.
+// 26/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -204,7 +205,7 @@ User Function SF1100i ()
 		_oSQL:_sQuery +=   " AND SD1.D1_LOJA    = '" + sf1 -> f1_loja + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_DOC     = '" + sf1 -> f1_doc + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_SERIE   = '" + sf1 -> f1_serie + "'"
-		if _oSQL:RetQRY() > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			U_AtuMerc ('SF1', sf1 -> (recno ()))  // atualiza Mercanet
 		endif
 	endif
@@ -758,7 +759,8 @@ static function _DadosAdic ()
 				// Nao adianta validar a nota contra ela mesma (no caso estaria na rotina de 'classificar'.
 				_oSQL:_sQuery +=    " AND NOT (F1_DOC   = '" + sf1 -> f1_doc + "'"
 				_oSQL:_sQuery +=         " AND F1_SERIE = '" + sf1 -> f1_serie + "')"
-				if empty (_oSQL:RetQry ())
+			//	if empty (_oSQL:RetQry ())
+				if empty (_oSQL:RetQry (1, .f.))
 					exit
 				else
 					u_help ("NF/serie de produtor ja´ apresentada na filial/contranota/serie '" + _oSQL:_xRetQry + "'")
@@ -799,57 +801,6 @@ return
 static function _SomaMsg (_sVariav, _sTexto)
 	_sVariav += iif (! empty (_sVariav), "; ", "") + alltrim (_sTexto)
 return
-// 
-
-/* Em desuso
-// -----------------------------------------------------------------------------------------------------
-// Envia e-mail para responsáveis dispensadoras de suco
-Static Function _Dispenser()
-	if sf1 -> f1_especie ='SPED' .or. sf1 -> f1_especie ='NF' // não manda emails a partir de conhecimentos
-	
-		_aCols = {}
-		aadd (_aCols, {'Documento'         ,    'left'  ,  ''})
-		aadd (_aCols, {'Serie'             ,    'left'  ,  ''})
-		aadd (_aCols, {'Dt.Emissao'        ,    'left'  ,  ''})
-		aadd (_aCols, {'Dt.Entrada'        ,    'left'  ,  ''})
-		aadd (_aCols, {'Fornecedor/Cliente',    'left'  ,  ''})
-		aadd (_aCols, {'Produto'           ,    'left'  ,  ''})
-		aadd (_aCols, {'Descricao'         ,    'left'  ,  ''})
-		aadd (_aCols, {'Quantidade'        ,    'right' ,  '@E 999.99'})
-		
-		// Avisa comercial - chegada de dispensers
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT SD1.D1_DOC, SD1.D1_SERIE, SD1.D1_EMISSAO, SD1.D1_DTDIGIT"
-	    _oSQL:_sQuery += "      , CASE SD1.D1_TIPO WHEN 'N' THEN SA2.A2_NOME ELSE SA1.A1_NOME END AS CLI_FOR"
-		_oSQL:_sQuery += "      , SD1.D1_COD, SD1.D1_DESCRI, SD1.D1_QUANT" 
-		_oSQL:_sQuery += "   FROM " + RetSQLName ("SD1") + " SD1"
-	    _oSQL:_sQuery += " 		INNER JOIN SB1010 AS SB1"
-		_oSQL:_sQuery += " 			ON (SB1.D_E_L_E_T_ = ''"	
-		_oSQL:_sQuery += " 				AND SB1.B1_COD    = SD1.D1_COD"
-		_oSQL:_sQuery += " 				AND SB1.B1_CODLIN = '90')" 
-		_oSQL:_sQuery += "		LEFT JOIN SA2010 AS SA2"
-		_oSQL:_sQuery += "			ON (SA2.D_E_L_E_T_ = ''	"
-		_oSQL:_sQuery += "				AND SA2.A2_COD  = SD1.D1_FORNECE"
-		_oSQL:_sQuery += "				AND SA2.A2_LOJA = SD1.D1_LOJA)"
-		_oSQL:_sQuery += "		LEFT JOIN SA1010 AS SA1"
-		_oSQL:_sQuery += "			ON (SA1.D_E_L_E_T_ = ''	"
-		_oSQL:_sQuery += "				AND SA1.A1_COD  = SD1.D1_FORNECE"
-		_oSQL:_sQuery += "				AND SA1.A1_LOJA = SD1.D1_LOJA)"
-	    _oSQL:_sQuery += "  WHERE SD1.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery += "    AND SD1.D1_FILIAL   = '" + xfilial ("SD1")   + "'"
-		_oSQL:_sQuery += "    AND SD1.D1_DOC      = '" + sf1 -> f1_doc     + "'"
-		_oSQL:_sQuery += "    AND SD1.D1_SERIE    = '" + sf1 -> f1_serie   + "'"
-		_oSQL:_sQuery += "    AND SD1.D1_FORNECE  = '" + sf1 -> f1_fornece + "'"
-		_oSQL:_sQuery += "    AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
-		if len (_oSQL:Qry2Array (.T., .F.)) > 0
-			_sMens = _oSQL:Qry2HTM ("DISPENSERS MOVIMENTADOS - Entrada: " + dtoc(sf1 -> f1_dtdigit), _aCols, "", .F.)
-			U_ZZUNU ({'044'}, "DISPENSERS MOVIMENTADOS - Entrada: " + dtoc(sf1 -> f1_dtdigit), _sMens, .F., cEmpAnt, cFilAnt, "") // Responsavel dispensadoras
-		endif
-		
-	endif				
-return
-*/
 // 
 // -----------------------------------------------------------------------------------------------------
 // envia e-mail para responsáveis - itens controlados pela policia federal
@@ -1137,7 +1088,8 @@ Static Function _AvisaSoli ()
 	_oSQL:_sQuery +=   " AND SD1.D1_PEDIDO  != ''"
 	_oSQL:_sQuery +=   " AND SD1.D1_ITEMPC  != ''"
 	_oSQL:_sQuery += " ORDER BY C1_USER, RTRIM (C1_DESCRI)"
-	_aItens = aclone (_oSQL:Qry2Array ())
+//	_aItens = aclone (_oSQL:Qry2Array ())
+	_aItens = aclone (_oSQL:Qry2Array (.f., .f.))
 
 	_nItem = 1
 	do while _nItem <= len (_aItens)
@@ -1302,7 +1254,8 @@ static function _GeraLaudo(_sFilial, _sFornece, _sLoja, _sDoc, _sSerie, _sTipo)
 		_oSQL:_sQuery += " AND D1_SERIE    = '" + _sSerie   + "'"
 		_oSQL:_sQuery += " AND D1_FORNECE  = '" + _sFornece + "'"
 		_oSQL:_sQuery += " AND D1_LOJA     = '" + _sLoja    + "'"
-		_aDados := aclone (_oSQL:Qry2Array ())
+	//	_aDados := aclone (_oSQL:Qry2Array ())
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		For _x:= 1 to Len(_aDados)
 			_sFilOri  := _aDados[_x,1]
@@ -1328,7 +1281,8 @@ static function _GeraLaudo(_sFilial, _sFornece, _sLoja, _sDoc, _sSerie, _sTipo)
 			_oSQL:_sQuery += " 		AND ZAF.ZAF_FILIAL = '" + _sFilOri  + "'"
 			_oSQL:_sQuery += " 		AND ZAF_LOTE       = '" + _sLoteOri + "'"
 			_oSQL:_sQuery += " 		AND ZAF.ZAF_PRODUT = '" + _sProduto + "')"
-			_aLaudo := aclone (_oSQL:Qry2Array ())
+		//	_aLaudo := aclone (_oSQL:Qry2Array ())
+			_aLaudo := aclone (_oSQL:Qry2Array (.f., .f.))
 
 			If Len(_aLaudo) > 0
 				_sLaudo    := _aLaudo[1, 1]
@@ -1388,7 +1342,8 @@ Static Function _AtuZC0()
 		_oSQL:_sQuery +=   " AND SD1.D1_LOJA    = '" + sf1 -> f1_loja    + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_DOC     = '" + sf1 -> f1_doc     + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_SERIE   = '" + sf1 -> f1_serie   + "'"
-		_aNfDev := aclone (_oSQL:Qry2Array ())
+	//	_aNfDev := aclone (_oSQL:Qry2Array ())
+		_aNfDev := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		For _x:=1 to Len(_aNfDev)
 			_oSQL:= ClsSQL():New()
@@ -1407,7 +1362,8 @@ Static Function _AtuZC0()
 			_oSQL:_sQuery +=   " AND D2_DOC      = '"+ _aNfDev[_x, 2] + "' "
 			_oSQL:_sQuery +=   " AND D2_SERIE    = '"+ _aNfDev[_x, 3] + "' "
 			_oSQL:_sQuery +=   " AND D2_COD      = '"+ _aNfDev[_x, 5] + "' "
-			_aNfVen := aclone (_oSQL:Qry2Array ())
+		//	_aNfVen := aclone (_oSQL:Qry2Array ())
+			_aNfVen := aclone (_oSQL:Qry2Array (.f., .f.))
 
 			For _i:=1 to Len(_aNfVen)
 				_oCtaRapel := ClsCtaRap():New ()
