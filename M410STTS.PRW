@@ -22,7 +22,9 @@
 // 05/05/2023 - Claudia - Alterada validação de lojas, incluindo a verificação das filiais. GLPI: 13533
 // 21/09/2023 - Sandra  - Incluida a validação para liberação de credito R$ para loja. GLPI: 14260. 
 // 25/01/2024 - Claudia - Melhorias no layout dos e-mails. GLPI: 14805
+// 29/02/2024 - Robert  - Enviar e-mail bloqueio gerencial tipo S especifico de sucos - GLPI 14980
 //
+
 // --------------------------------------------------------------------------------------------------
 User Function M410STTS()
 	local _aAreaAnt := U_ML_SRArea()
@@ -92,6 +94,11 @@ static function _MailAviso()
 			
 			U_ZZUNU('006', "Pedido de venda '" + m->c5_num + "' liberado por " + alltrim(cUserName) + " abaixo da margem minima", _sMsg)
 		endif
+
+		if 'S' $ m->c5_vaBloq  // Bloqueio por preco
+			U_ZZUNU ('158', "Pedido de venda '" + m->c5_num + "' (bloq.superint.) gravado por " + alltrim(cUserName), _sMsgPBSup)
+		endif
+
 	endif
 return
 //

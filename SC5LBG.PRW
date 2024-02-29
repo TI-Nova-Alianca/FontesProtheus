@@ -29,7 +29,9 @@
 // 09/03/2021 - Claudia - Criada legenda para bloq. de bonificação. GLPI: 9070
 // 22/04/2021 - Claudia - GLPI: 9886 - Bloqueio de pedidos de bonificação
 // 11/10/2021 - Claudia - Criado parametro para bloqueio/liberação da rotina no Protheus. GLPI: 11051
+// 29/02/2024 - Robert  - Liberar bloqueio gerencial tipo S especifico de sucos - GLPI 14980
 //
+
 // ----------------------------------------------------------------------------------------------------------------
 User Function SC5LBG ()
 	local _aCores     := U_SC5LBGLG (.T.)
@@ -103,6 +105,7 @@ User Function SC5LBGL ()
 	local _lGrp004   := U_ZZUVL('004',,.F.)
 	local _lGrp081   := U_ZZUVL('081',,.F.)
 	local _lGrp082   := U_ZZUVL('082',,.F.)
+	local _lGrp158   := U_ZZUVL('158',,.F.)
 
 	procregua (10)
 
@@ -141,6 +144,15 @@ User Function SC5LBGL ()
 			_lContinua = .T.
 		else
 			u_help ("Bloqueio por bonificação. Usuario sem alcada para liberação.",,.T.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. ('S' $ sc5 -> C5_VABLOQ)
+		if _lGrp158
+			_lContinua = .T.
+		else
+			u_help ("Bloqueio especifico sucos. Usuario sem alcada para liberação.",,.T.)
 			_lContinua = .F.
 		endif
 	endif

@@ -83,7 +83,9 @@
 // 31/01/2024 - Claudia - Validação para não enviar e-mail de preço abaixo quando bloqueio por residuo. GLPI: 14838 
 // 31/01/2024 - Claudia - Envio de e-mail com preço minimo apenas para operações de venda. GLPI: 14837
 // 01/02/2024 - Claudia - Excluidos produtos tipo RE de envio de email de preço abaixo de venda. GLPI: 14812
+// 29/02/2024 - Robert  - Gerar bloqueio gerencial tipo S especifico de sucos - GLPI 14980
 //
+
 // -------------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV(_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -104,6 +106,9 @@ user function GrvLibPV(_lLiberar)
 	local _sGeraDupl := ""
 	local _lBloq     := .F.
 	local _nLinha    := 0
+	local _nPrcLitro := 0
+	local _lBloqSup  := .F.
+	local _sMsgBlSup := ''
 
 	// verifica se o pedido esta salvo antes de fazer a liberação
 	_oSQL := ClsSQL():New()
@@ -115,7 +120,7 @@ user function GrvLibPV(_lLiberar)
 	_oSQL:_sQuery += " AND C5_NUM       = '" + m->c5_num     + "'"
 	_oSQL:_sQuery += " AND C5_CLIENTE   = '" + m->c5_cliente + "'"
 	_oSQL:_sQuery += " AND C5_LOJACLI   = '" + m->c5_lojacli + "'"
-	_aPedido := aclone (_oSQL:Qry2Array ())
+	_aPedido := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	if Len(_aPedido) <= 0
 		_lLiberar := .F.
@@ -458,6 +463,74 @@ user function GrvLibPV(_lLiberar)
 				m->c5_vaBloq = iif ('B' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'B')
 			EndIf
 		EndIf
+
+		// Bloqueio a nivel de superintendencia. Situacao especifica (GLPI ?)
+		if _lLiberar
+			
+			// Jah vou preparando msg para envio, caso caia em bloqueio.
+			_sMsgBlSup := "<html>"
+			_sMsgBlSup += "<b>Pedido de venda:</b> " + m->c5_num + "<br>" 
+			_sMsgBlSup += "<b>Cliente:</b> " + m->c5_cliente + " - " + m->c5_nomecli + "<br>"
+			_sMsgBlSup += "<b>Representante:</b> " + m->c5_vend1 + " - " + fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend1, "A3_NOME") + "<br>"
+			_sMsgBlSup += "<b>Produtos:</b><br><br>"
+			
+			_lBloqSup = .F.  // Todos sao inocentes ateh prova em contrario.
+			sb1 -> (dbsetorder (1))
+			for _nLinha = 1 to len (aCols)
+				if ! GDDeleted (_nLinha) .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_ESTOQUE") == 'S'
+					if ! sb1 -> (dbseek (xfilial ("SB1") + GDFieldGet ("C6_PRODUTO"), .f.))
+						u_help ("Produto '" + GDFieldGet ("C6_PRODUTO") + "' nao localizado no cadastro!",, .t.)
+						_lLiberar = .F.
+					endif
+					_nPrcLitro = GDFieldGet ("C6_PRCVEN", _nLinha) / sb1 -> b1_litros
+					_sMsgBlSup += alltrim (sb1 -> b1_cod) + " - " + alltrim (sb1 -> b1_desc) + " a <b>R$ " + alltrim (transform (_nPrcLitro, '@E 999,999,999.99')) + " /litro</b><br>"
+					if sb1 -> b1_codlin == '06'  // sucos integrais
+						if sb1 -> b1_grpemb $ '23/24'  // cx 6x1,5/gfa 1,5
+							if _nPrcLitro < 8
+								_lBloqSup = .T.
+								exit
+							endif
+						elseif sb1 -> b1_grpemb $ '03/04/13'  // cx 6x1/cx 12x1/gfa 1000
+							if _nPrcLitro < 11.73
+								_lBloqSup = .T.
+								exit
+							endif
+						elseif sb1 -> b1_grpemb $ '42/44'  // cx12x1TP / TP 1000
+							if _nPrcLitro < 7.9  // calculei 11,73 * 67% (jah que TP = 7,90 quando vidro = 11,73)
+								_lBloqSup = .T.
+								exit
+							endif
+						elseif sb1 -> b1_grpemb $ '05/09/12/51/52'  // cx 12x500/cx 2x450 / gfa 450 / CX 12X450 / gfa 450
+							if _nPrcLitro < 14.96
+								_lBloqSup = .T.
+								exit
+							endif
+						elseif sb1 -> b1_grpemb $ '41/43'  // cx24x200TP / tp200
+							if _nPrcLitro < 11  // calculei 16,43 * 67%
+								_lBloqSup = .T.
+								exit
+							endif
+						endif
+					endif
+				endif
+			next
+
+			_sMsgBlSup += "</html>"
+			U_Log2 ('debug', '[' + procname () + ']' + _sMsgBlSup)
+
+			U_Log2 ('debug', '[' + procname () + ']_lBloqSup = ' + cvaltochar (_lBloqSup))
+			if _lBloqSup
+				U_Log2 ('aviso', '[' + procname () + ']Lembrar de excluir parametro VA_BLPVSUP')
+				if U_MsgYesNo ("Bloqueio especifico sucos: vai ficar com bloqueio tipo S para liberacao pela direcao. Confirma?")
+					m->c5_vaBloq = iif ('S' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'S')  // Tipo S = Superintendente
+		
+					// Cria variavel publica com mensagem, para posterior envio pelo P.E. M410STTS se o usuario vier a gravar o pedido.
+					public _sMsgPBSup := _sMsgBlSup
+				else
+					_lLiberar = .F.
+				endif
+			endif
+		endif
 
 		// Se alguma das linhas tinha problemas, nao libera nenhuma.
 		if ! empty (_sErro)

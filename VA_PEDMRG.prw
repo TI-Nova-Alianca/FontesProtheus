@@ -14,6 +14,7 @@
 // Historico de alteracoes:
 // 18/01/2024 - Claudia - Alterada a filial para a filial atendida. GLPI 14643
 // 26/01/2024 - Claudia - Alterada rotina de frete. GLPI: 14811
+// 29/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -276,7 +277,8 @@ Static Function _BuscaSequencial(_sFilial, _sCliente, _sLoja, _sPedido)
     _oSQL:_sQuery += " AND ZC1_CLI      = '"+ _sCliente +"' "
     _oSQL:_sQuery += " AND ZC1_LOJA     = '"+ _sLoja    +"' "
     _oSQL:_sQuery += " AND ZC1_PED      = '"+ _sPedido  +"' "
-    _aSeq := aclone(_oSQL:Qry2Array())
+//    _aSeq := aclone(_oSQL:Qry2Array())
+    _aSeq := aclone(_oSQL:Qry2Array(.f., .f.))
 
     For _x := 1 to Len(_aSeq)
         _sSeq := PADL(alltrim(str(_aSeq[_x, 1])),3,'0')
@@ -306,7 +308,8 @@ Static Function _CalcFrete(_sFilial)
         _oSQL:_sQuery += " AND GU9_FILIAL   = '" + _sFilial     + "'"
         _oSQL:_sQuery += " AND GU9_CDUF     = '" + m->c5_vaest  + "'"
         _oSQL:_sQuery += " AND GU9_SIT      = '1'"
-        _aGU9 := aclone(_oSQL:Qry2Array())
+//        _aGU9 := aclone(_oSQL:Qry2Array())
+        _aGU9 := aclone(_oSQL:Qry2Array(.f., .f.))
 
         for _x:=1 to Len(_aGU9)
             _nPerFrete := _aGU9[_x, 1]
@@ -568,7 +571,8 @@ Static Function _GravaCampos(_sFilial)
     _oSQL:_sQuery += " AND C5_NUM      = '" + m->c5_num     + "' "
     _oSQL:_sQuery += " AND C5_CLIENTE  = '" + m->c5_cliente + "' "
     _oSQL:_sQuery += " AND C5_LOJACLI  = '" + m->c5_lojacli + "' "
-    _aPed := aclone(_oSQL:Qry2Array())
+//    _aPed := aclone(_oSQL:Qry2Array())
+    _aPed := aclone(_oSQL:Qry2Array(.f., .f.))
 
     For _x := 1 to Len(_aPed)
         if _aPed[_x, 1] > 0 // ja gravado no protheus
