@@ -8,6 +8,7 @@
 // 30/10/2017 - Robert - Chama rotina de selecao de frete somente para frete tipo CIF.
 // 18/07/2018 - Robert - Parametro de 'Com tela'.
 // 01/03/2022 - Robert - Removido nome fixo do arquivo de log.
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -19,10 +20,6 @@ user function BatPFret (_sCliIni, _sCliFim, _lComTela)
 	local _nMediaCli := 0
 	local _sAliasQ   := ""
 	local _sMsg      := ""
-//	local _sArqLog2  := iif (type ("_sArqLog") == "C", _sArqLog, "")
-//	_sArqLog := U_NomeLog (.t., .f.)
-
-//	u_logIni ()
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -67,7 +64,7 @@ user function BatPFret (_sCliIni, _sCliFim, _lComTela)
 	_oSQL:_sQuery +=   " FROM C"
 	_oSQL:_sQuery += " ORDER BY D2_CLIENTE, D2_LOJA, A1_EST, A1_COD_MUN"
 	_oSQL:Log ()
-	_sAliasQ := _oSQL:Qry2Trb ()
+	_sAliasQ := _oSQL:Qry2Trb (.f.)
 	
 	sa1 -> (dbsetorder (1))
 	cc2 -> (dbsetorder (1))  // CC2_FILIAL+CC2_EST+CC2_CODMUN
@@ -129,6 +126,4 @@ user function BatPFret (_sCliIni, _sCliFim, _lComTela)
 		enddo
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
-//	u_logFim ()
-//	_sArqLog = _sArqLog2
 return

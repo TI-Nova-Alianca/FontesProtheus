@@ -31,6 +31,7 @@
 // 06/05/2021 - Robert - Filtrada somente F2_SERIE='10' para envio, pois existem outras series que nao sao de faturamento (GLPI 9984)
 //                     - Melhoradas mensagens de retorno.
 // 19/08/2021 - Robert - Ignorar NF de numero '00126.498' existente no SF1 (SQL nao converte para INT).
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -70,7 +71,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND F4_FILIAL = '" + xfilial ("SF4") + "'"  // Deixar esta opcao para poder ler os campos memo.
 		_oSQL:Log ()
-		_aDados = aclone (_oSQL:Qry2Array ())
+		_aDados = aclone (_oSQL:Qry2Array (.f., .f.))
 		u_log2 ('info', 'TES: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			sf4 -> (dbgoto (_aDados [_nLinha, 1]))
@@ -96,7 +97,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=   "                          AND DB_NOTA_SERIE = F2_SERIE COLLATE DATABASE_DEFAULT )
 		_oSQL:_sQuery += " ORDER BY R_E_C_N_O_"
 		_oSQL:Log ()
-		_aDados = aclone (_oSQL:Qry2Array ())
+		_aDados = aclone (_oSQL:Qry2Array (.f., .f.))
 		u_log2 ('info', 'NF faturamento: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SF2 -> (dbgoto (_aDados [_nLinha, 1]))
@@ -126,7 +127,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=    " AND SF2.F2_SERIE  = '10'"  // A principio somente preciso exportar a serie de faturamento normal.
 		_oSQL:_sQuery +=  " ORDER BY R_E_C_N_O_"
 		_oSQL:Log ()
-		_aDados = aclone (_oSQL:Qry2Array ())
+		_aDados = aclone (_oSQL:Qry2Array (.f., .f.))
 		u_log2 ('info', 'NF fatur. que NAO deveriam estar no Mercanet: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SF2 -> (dbgoto (_aDados [_nLinha, 1]))
@@ -168,7 +169,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=   " )"
 		_oSQL:_sQuery += " ORDER BY SF1.R_E_C_N_O_"
 		_oSQL:Log ()
-		_aDados = aclone (_oSQL:Qry2Array ())
+		_aDados = aclone (_oSQL:Qry2Array (.f., .f.))
 		u_log2 ('info', 'NF devol.: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SF1 -> (dbgoto (_aDados [_nLinha, 1]))
@@ -210,7 +211,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=    " AND DB_NOTA_NRO = SF1.F1_DOC"
 		_oSQL:_sQuery +=  " ORDER BY R_E_C_N_O_"
 		_oSQL:Log ()
-		_aDados = aclone (_oSQL:Qry2Array ())
+		_aDados = aclone (_oSQL:Qry2Array (.f., .f.))
 		u_log2 ('info', 'NF devol. que NAO deveriam estar no Mercanet: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SF1 -> (dbgoto (_aDados [_nLinha, 1]))
@@ -271,7 +272,7 @@ user function BatMercN (_nQtDias)
 		// _oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '" + dtos (date () - 180) + "'"
 		_oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '" + dtos (date () - _nQtDias) + "'"
 		_oSQL:Log ()
-		_aDados = aclone (_oSQL:Qry2Array ())
+		_aDados = aclone (_oSQL:Qry2Array (.f., .f.))
 		u_log2 ('info', 'Baixas titulos a receber: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SE5 -> (dbgoto (_aDados [_nLinha, 1]))
@@ -308,7 +309,7 @@ user function BatMercN (_nQtDias)
 		
 		_oSQL:Log ()
 		
-		_aDados = aclone (_oSQL:Qry2Array ())
+		_aDados = aclone (_oSQL:Qry2Array (.f., .f.))
 		u_log2 ('info', 'Titulos a receber: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SE1 -> (dbgoto (_aDados [_nLinha, 1]))
@@ -335,7 +336,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery += "  WHERE CR01_EMPRESA = '01'"
 		_oSQL:Log ()
 		
-		_aDados = aclone (_oSQL:Qry2Array ())
+		_aDados = aclone (_oSQL:Qry2Array (.f., .f.))
 		u_log2 ('info', 'Titulos a receber que NAO deveriam estar no Mercanet: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SE1 -> (dbgoto (_aDados [_nLinha, 1]))

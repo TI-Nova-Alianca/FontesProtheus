@@ -22,6 +22,8 @@
 // 19/08/2021 - Robert - Gravava F2_DtEntr quando transp.redespacho. O correto eh aguardar entrega final (GLPI 10578).
 // 22/10/2022 - Robert - Melhoradas mensagens evento para casos que tem redespacho (GLPI 12660)
 //                     - Nao gravava atributo :TranspReds no evento.
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+//
 
 // --------------------------------------------------------------------------
 user function BatOcor ()

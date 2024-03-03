@@ -133,6 +133,8 @@
 // 07/12/2023 - Robert  - Tratamento porta X filial para poder manter sessao aberta.
 // 23/01/2023 - Robert  - Desabilitada acao ConsultaEstruturaComCustos
 // 19/02/2024 - Robert  - Novos (e obrigatorios) atributos para o metodo _oAssoc:FechSafra()
+// 28/02/2024 - Robert  - Leitura nova tag _EtiqReferenciada para alimentar ClsTrEstq:EtqRef (GLPI 14999)
+//
 
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -945,10 +947,18 @@ static function _TrEstGrid ()
 	local _aIdGrid   := {}
 
 	// Algumas tags serao unicas, como se fosse um cabecalho de tela.
-	if empty (_sErroWS) ; _sFilOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .t., .F.), 2)  ; endif
-	if empty (_sErroWS) ; _sFilDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .t., .F.), 2)  ; endif
-	if empty (_sErroWS) ; _sOP      = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .f., .F.), 14) ; endif
-	if empty (_sErroWS) ; _sImprEtq =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .f., .F.)      ; endif
+	if empty (_sErroWS)
+		_sFilOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .t., .F.), 2)
+	endif
+	if empty (_sErroWS)
+		_sFilDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .t., .F.), 2)
+	endif
+	if empty (_sErroWS)
+		_sOP      = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .f., .F.), 14)
+	endif
+	if empty (_sErroWS)
+		_sImprEtq =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .f., .F.)
+	endif
 	if empty (_sErroWS) .and. type ("_oXML:_WSAlianca:_TransfEstqItens") != 'O'
 		_SomaErro ("Tag '_oXML:_WSAlianca:_TransfEstqItens' deve estar presente no XML.")
 	endif
@@ -975,20 +985,48 @@ static function _TrEstGrid ()
 			&('_oTrEstq' + cvaltochar (_nItem)):ImprEtq  = _sImprEtq
 			&('_oTrEstq' + cvaltochar (_nItem)):UsrIncl  = cUserName
 			&('_oTrEstq' + cvaltochar (_nItem)):DtEmis   = date ()
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ItemId",          .T., .F.)      ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoOrigem",   .T., .F.), 15) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoDestino",  .T., .F.), 15) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxOrigem",     .T., .F.), 2)  ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxDestino",    .T., .F.), 2)  ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteOrigem",      .F., .F.), 10) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteDestino",     .F., .F.), 10) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",  .F., .F.), 15) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino", .F., .F.), 15) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",  .T., .F.),",","."))      ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.)      ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Obs",             .F., .F.)      ; endif
-				_nItem ++
-			enddo
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ItemId",           .T., .F.)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoOrigem",    .T., .F.), 15)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoDestino",   .T., .F.), 15)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxOrigem",      .T., .F.), 2)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxDestino",     .T., .F.), 2)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteOrigem",       .F., .F.), 10)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteDestino",      .F., .F.), 10)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",   .F., .F.), 15)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino",  .F., .F.), 15)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",   .T., .F.),",","."))
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",           .T., .F.)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Obs",              .F., .F.)
+			endif
+			if empty (_sErroWS)
+				&('_oTrEstq' + cvaltochar (_nItem)):EtqRef    = _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EtiqReferenciada", .F., .F.)
+			endif
+
+			_nItem ++
+		enddo
 
 	elseif type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'O'  // Um item apenas no XML
 		_oTrEstq1 := ClsTrEstq ():New ()
@@ -998,18 +1036,45 @@ static function _TrEstGrid ()
 		_oTrEstq1:ImprEtq  = _sImprEtq
 		_oTrEstq1:UsrIncl  = cUserName
 		_oTrEstq1:DtEmis   = date ()
-		if empty (_sErroWS) ; _oTrEstq1:IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ItemId",          .T., .F.)      ; endif
-		if empty (_sErroWS) ; _oTrEstq1:ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoOrigem",   .T., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoDestino",  .T., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxOrigem",     .T., .F.), 2)  ; endif
-		if empty (_sErroWS) ; _oTrEstq1:AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxDestino",    .T., .F.), 2)  ; endif
-		if empty (_sErroWS) ; _oTrEstq1:LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteOrigem",      .F., .F.), 10) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteDestino",     .F., .F.), 10) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",  .F., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino", .F., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.),",","."))    ; endif
-		if empty (_sErroWS) ; _oTrEstq1:CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.)      ; endif
-		if empty (_sErroWS) ; _oTrEstq1:Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Obs",             .F., .F.)      ; endif
+		if empty (_sErroWS)
+			_oTrEstq1:IdGrid    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ItemId",           .T., .F.)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:ProdOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoOrigem",    .T., .F.), 15)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:ProdDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoDestino",   .T., .F.), 15)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:AlmOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxOrigem",      .T., .F.), 2)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:AlmDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxDestino",     .T., .F.), 2)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:LoteOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteOrigem",       .F., .F.), 10)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteDestino",      .F., .F.), 10)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",   .F., .F.), 15)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino",  .F., .F.), 15)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",   .T., .F.),",","."))
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",           .T., .F.)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Obs",              .F., .F.)
+		endif
+		if empty (_sErroWS)
+			_oTrEstq1:EtqRef = _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EtiqReferenciada", .F., .F.)
+		endif
 	endif
 
 	// Se nao consegui ler as tags do XML, nem adianta prosseguir.

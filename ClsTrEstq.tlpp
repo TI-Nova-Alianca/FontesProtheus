@@ -52,6 +52,8 @@
 // 14/12/2023 - Robert  - Passa a herdar da classe ClsBase
 //                      - Permite gerar etiquetas para o ax.02 quando produto controla lote (GLPI 14600)
 // 27/12/2023 - Robert  - Criado atributo CodRetorno.
+// 28/02/2024 - Robert  - Metodo :AlmUsaFull passa a receber parametro 'filial' (GLPI 14785)
+//                      - Criado tratamento para desfazimento de guarda de pallets na logistica (atributo :EtqReferenciada) - GLPI 14999
 //
 
 // ------------------------------------------------------------------------------------
@@ -92,7 +94,8 @@ CLASS ClsTrEstq FROM ClsBase
 	public data CodRetorno // Codigo de retorno (de erro ou de sucesso)
 	public data EndOrig    // Endereco origem (quando produto tiver controle de localizacao)
 	public data EndDest    // Endereco destino  (quando produto tiver controle de localizacao)
-	public data Etiqueta   // Numero da etiqueta (tabela ZA1), quando existir
+	public data Etiqueta   // Numero da etiqueta gerada na tabela ZA1, quando aplicavel.
+	public data EtqRef     // Numero da etiqueta referenciada (inicialmente aplicavel a operacao de desfazimento de guarda de pallet na logistica)
 	public data Executado  // Indica se jah foi executado (se gerou alguma movimentacao) S=Executado;E=Erro na execucao;X=Estornado
 	public data FWProdOrig // Indica se o produto origem eh controlado pelo FullWMS
 	public data FWProdDest // Indica se o produto destino eh controlado pelo FullWMS
@@ -120,7 +123,7 @@ CLASS ClsTrEstq FROM ClsBase
 	public  METHOD GeraEtiq ()
 	private METHOD GeraSD3 ()
 	public  METHOD Grava ()
-	private METHOD GravaErro ()
+//	private METHOD GravaErro ()
 	private METHOD LeSB1 ()
 	public  METHOD Libera ()
 	public  METHOD Negar ()
@@ -176,8 +179,8 @@ return (_sAlm $ '01/02')
 
 // --------------------------------------------------------------------------
 // Verifica se o almoxarifado eh controlado via FullWMS.
-METHOD AlmUsaFull (_sAlm) Class ClsTrEstq
-return (::FilDest == '01' .and. _sAlm $ '01/')
+METHOD AlmUsaFull (_sFilial as character, _sAlm as character) Class ClsTrEstq
+return (_sFilial == '01' .and. _sAlm == '01')
 
 
 
@@ -260,7 +263,7 @@ METHOD Exclui () Class ClsTrEstq
 
 	// Se esta sol.transf. gerou tarefa de separacao no FullWMS, verifica se
 	// a mesma jah foi excluida do Full.
-	if _lContinua .and. ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig)
+	if _lContinua .and. ::FWProdOrig .and. ::AlmUsaFull (::FilOrig, ::AlmOrig)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "select count (*)"
 		_oSQL:_sQuery +=  " from tb_wms_pedidos"
@@ -275,7 +278,7 @@ METHOD Exclui () Class ClsTrEstq
 
 	// Esta solicitacao pode ter sido gerada a partir de uma 'avaria' pelo FullWMS.
 	// Varre tabela de integracao e limpa o campo, caso encontre.
-	if _lContinua .and. ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig)
+	if _lContinua .and. ::FWProdOrig .and. ::AlmUsaFull (::FilOrig, ::AlmOrig)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "update tb_wms_movimentacoes"
 		_oSQL:_sQuery +=   " set status_protheus = ' '"
@@ -404,6 +407,7 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 	::EndOrig    = ''
 	::EndDest    = ''
 	::Etiqueta   = ''
+	::EtqRef     = ''
 	::Executado  = ''
 	::FWProdOrig = .F.
 	::FWProdDest = .F.
@@ -532,7 +536,7 @@ METHOD GeraEtiq (_lMsg as logical) Class ClsTrEstq
 				_Super:SomaMsg ('Atributo ::ImprEtq nao definido para impressao da etiqueta.')
 			endif
 
-			if ::AlmUsaFull (::AlmDest)
+			if ::AlmUsaFull (::FilDest, ::AlmDest)
 				U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Criei uma etiq. para alm.destino que usa Full. Vou enviar a etiq. para o Full.')
 				_oEtiq:EnviaFull ()
 			endif
@@ -760,6 +764,7 @@ METHOD Grava () Class ClsTrEstq
 		zag -> zag_LotDst = ::LoteDest
 		zag -> zag_QtdSol = ::QtdSolic
 		zag -> zag_CodMot = ::CodMotivo
+		zag -> zag_EtqRef = ::EtqRef
 		msunlock ()
 
 		::RegZAG = zag -> (recno ())
@@ -864,7 +869,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		//u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
 			u_log2 ('info', 'Usuario ' + _sUserName + ' tem liberacao para o almox. origem')
-			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLWMS'
+			if ::FWProdOrig .and. ::AlmUsaFull (::FilOrig, ::AlmOrig) .and. _sUserName != 'FULLWMS'
 				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdOrig) + "' tem controle via FullWMS no AX '" + ::AlmOrig + "' e nao deve ser movimentado manualmente."
 				_Super:SomaMsg (_sMsg)
@@ -880,7 +885,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 
 		if empty (::UsrAutDst) .and. alltrim (upper (_sUserName)) $ _aLib [1, 2]
 			u_log2 ('info', 'Usuario ' + _sUserName + ' tem liberacao para o almox. destino')
-			if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLWMS'
+			if ::FWProdDest .and. ::AlmUsaFull (::FilDest, ::AlmDest) .and. _sUserName != 'FULLWMS'
 				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']... mas o produto usa Full e o AX destino eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdDest) + "' tem controle via FullWMS no AX '" + ::AlmDest + "' e nao deve ser movimentado manualmente."
 				_Super:SomaMsg (_sMsg)
@@ -1044,17 +1049,50 @@ METHOD PodeIncl () Class ClsTrEstq
 		if empty (::Motivo) .and. ! empty (::CodMotivo)
 			::Motivo = alltrim (U_RetZX5 ('56', ::CodMotivo, "ZX5_56DESC"))
 		endif
-		if empty (::FilOrig) ; _Super:SomaMsg ("Filial de origem deve ser informada.")                   ; _lContinua = .F. ; endif
-		if empty (::FilDest) ; _Super:SomaMsg ("Filial destino deve ser informada.")                     ; _lContinua = .F. ; endif
-		if empty (::AlmOrig) ; _Super:SomaMsg ("Almoxarifado de origem deve ser informado.")             ; _lContinua = .F. ; endif
-		if empty (::AlmDest) ; _Super:SomaMsg ("Almoxarifado destino deve ser informado.")               ; _lContinua = .F. ; endif
-		if empty (::DtEmis)  ; _Super:SomaMsg ("Data de emissao deve ser informada.")                    ; _lContinua = .F. ; endif
-		if empty (::UsrIncl) ; _Super:SomaMsg ("Nome solicitante deve ser informado.")                   ; _lContinua = .F. ; endif
-		if empty (::Motivo)  ; _Super:SomaMsg ("Motivo da transferencia deve ser informado.")            ; _lContinua = .F. ; endif
-		if empty (::ProdOrig); _Super:SomaMsg ("Produto deve ser informado.")                            ; _lContinua = .F. ; endif
-		if empty (::QtdSolic); _Super:SomaMsg ("Quantidade solicitada deve ser informada.")              ; _lContinua = .F. ; endif
-		if ! empty (::Docto) ; _Super:SomaMsg ("Documento NAO deve ser informado na inclusao.")          ; _lContinua = .F. ; endif
-		if ! empty (::RegZAG); _Super:SomaMsg ("RECNO da tabela ZAG NAO deve ser informado na inclusao."); _lContinua = .F. ; endif
+		if empty (::FilOrig)
+			_Super:SomaMsg ("Filial de origem deve ser informada.")
+			_lContinua = .F.
+		endif
+		if empty (::FilDest)
+			_Super:SomaMsg ("Filial destino deve ser informada.")
+			_lContinua = .F.
+		endif
+		if empty (::AlmOrig)
+			_Super:SomaMsg ("Almoxarifado de origem deve ser informado.")
+			_lContinua = .F.
+		endif
+		if empty (::AlmDest)
+			_Super:SomaMsg ("Almoxarifado destino deve ser informado.")
+			_lContinua = .F.
+		endif
+		if empty (::DtEmis)
+			_Super:SomaMsg ("Data de emissao deve ser informada.")
+			_lContinua = .F.
+		endif
+		if empty (::UsrIncl)
+			_Super:SomaMsg ("Nome solicitante deve ser informado.")
+			_lContinua = .F.
+		endif
+		if empty (::Motivo)
+			_Super:SomaMsg ("Motivo da transferencia deve ser informado.")
+			_lContinua = .F.
+		endif
+		if empty (::ProdOrig)
+			_Super:SomaMsg ("Produto deve ser informado.")
+			_lContinua = .F.
+		endif
+		if empty (::QtdSolic)
+			_Super:SomaMsg ("Quantidade solicitada deve ser informada.")
+			_lContinua = .F.
+		endif
+		if ! empty (::Docto)
+			_Super:SomaMsg ("Documento NAO deve ser informado na inclusao.")
+			_lContinua = .F.
+		endif
+		if ! empty (::RegZAG)
+			_Super:SomaMsg ("RECNO da tabela ZAG NAO deve ser informado na inclusao.")
+			_lContinua = .F.
+		endif
 		if valtype (::QtdSolic) != 'N'
 			_Super:SomaMsg ("Quantidade deve ser do tipo numerico.")
 			_lContinua = .F.
@@ -1079,17 +1117,45 @@ METHOD PodeIncl () Class ClsTrEstq
 		// passando o produto com tamanho != 15
 		// Usa tamanhos fixos (nao busca no SX3) por questao de performance,
 		// jah que sao campos chave e dificilmente mudarao de tamanho.  
-		if _lContinua
-			if len (::FilOrig)  !=  2                           ; _Super:SomaMsg ("Filial origem deve ter tamanho 2.")    ; _lContinua = .F.; endif
-			if len (::FilDest)  !=  2                           ; _Super:SomaMsg ("Filial destino deve ter tamanho 2.")   ; _lContinua = .F.; endif
-			if len (::ProdOrig) != 15                           ; _Super:SomaMsg ("Produto origem deve ter tamanho 15.")  ; _lContinua = .F.; endif
-			if len (::ProdDest) != 15                           ; _Super:SomaMsg ("Produto destino deve ter tamanho 15.") ; _lContinua = .F.; endif
-			if len (::AlmOrig)  !=  2                           ; _Super:SomaMsg ("Alm.origem deve ter tamanho 2.")       ; _lContinua = .F.; endif
-			if len (::AlmDest)  !=  2                           ; _Super:SomaMsg ("Alm.destino deve ter tamanho 2.")      ; _lContinua = .F.; endif
-			if ! empty (::EndOrig)  .and. len (::EndOrig)  != 15; _Super:SomaMsg ("Endereco origem deve ter tamanho 15.") ; _lContinua = .F.; endif
-			if ! empty (::EndDest)  .and. len (::EndDest)  != 15; _Super:SomaMsg ("Endereco destino deve ter tamanho 15."); _lContinua = .F.; endif
-			if ! empty (::LoteOrig) .and. len (::LoteOrig) != 10; _Super:SomaMsg ("Lote origem deve ter tamanho 10.")     ; _lContinua = .F.; endif
-			if ! empty (::loteDest) .and. len (::LoteDest) != 10; _Super:SomaMsg ("Lote destino deve ter tamanho 10.")    ; _lContinua = .F.; endif
+		if _lContinua .and. len (::FilOrig) != 2
+			_Super:SomaMsg ("Filial origem deve ter tamanho 2.")    
+			_lContinua = .F.
+		endif
+		if _lContinua .and. len (::FilDest) != 2
+			_Super:SomaMsg ("Filial destino deve ter tamanho 2.")   
+			_lContinua = .F.
+		endif
+		if _lContinua .and. len (::ProdOrig) != 15
+			_Super:SomaMsg ("Produto origem deve ter tamanho 15.")  
+			_lContinua = .F.
+		endif
+		if _lContinua .and. len (::ProdDest) != 15
+			_Super:SomaMsg ("Produto destino deve ter tamanho 15.") 
+			_lContinua = .F.
+		endif
+		if _lContinua .and. len (::AlmOrig) != 2
+			_Super:SomaMsg ("Alm.origem deve ter tamanho 2.")
+			_lContinua = .F.
+		endif
+		if _lContinua .and. len (::AlmDest) != 2
+			_Super:SomaMsg ("Alm.destino deve ter tamanho 2.")
+			_lContinua = .F.
+		endif
+		if _lContinua .and. ! empty (::EndOrig) .and. len (::EndOrig) != 15
+			_Super:SomaMsg ("Endereco origem deve ter tamanho 15.") 
+			_lContinua = .F.
+		endif
+		if _lContinua .and. ! empty (::EndDest) .and. len (::EndDest) != 15
+			_Super:SomaMsg ("Endereco destino deve ter tamanho 15.")
+			_lContinua = .F.
+		endif
+		if _lContinua .and. ! empty (::LoteOrig) .and. len (::LoteOrig) != 10
+			_Super:SomaMsg ("Lote origem deve ter tamanho 10.")
+			_lContinua = .F.
+		endif
+		if _lContinua .and. ! empty (::loteDest) .and. len (::LoteDest) != 10
+			_Super:SomaMsg ("Lote destino deve ter tamanho 10.")
+			_lContinua = .F.
 		endif
 	endif
 
@@ -1120,21 +1186,18 @@ METHOD PodeIncl () Class ClsTrEstq
 		// e agora eu estaria com dados de SB1 desatualizados.
 		::LeSB1 ()
 
-	//	U_Log2 ('debug', '[' + procname () + ']Situacao do objeto apos ::LeSB1')
-	//	u_logObj (::Self, .t., .f.)
-
-		if ::CtrLotOrig .and. empty (::LoteOrig) .and. ! ::AlmUsaFull (::AlmOrig)
+		if ::CtrLotOrig .and. empty (::LoteOrig) .and. ! ::AlmUsaFull (::FilOrig, ::AlmOrig)
 			_Super:SomaMsg ("Produto origem controla lotes. Lote de origem deve ser informado.")
 			_lContinua = .F.
 		endif
-		if ::CtrLocOrig .and. empty (::EndOrig) .and. ! ::AlmUsaFull (::AlmOrig)
+		if ::CtrLocOrig .and. empty (::EndOrig) .and. ! ::AlmUsaFull (::FilOrig, ::AlmOrig)
 			_Super:SomaMsg ("Produto origem controla localizacao. Endereco de origem deve ser informado.")
 			_lContinua = .F.
 		endif
 		if ! empty (::LoteOrig) .and. ! ::CtrLotOrig
 			
 			// Se vai sair do FullWMS, posso especificar o lote
-			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig)
+			if ::FWProdOrig .and. ::AlmUsaFull (::FilOrig, ::AlmOrig)
 				// ok
 			else
 				_Super:SomaMsg ("Lote origem nao deve ser informado pois o produto '" + alltrim (::ProdOrig) + "' nao controla lote.")
@@ -1154,12 +1217,12 @@ METHOD PodeIncl () Class ClsTrEstq
 			_lContinua = .F.
 		endif
 		if ! empty (::LoteDest) .and. ! ::CtrLotDest
-			if ! (::FWProdDest .and. ::AlmUsaFull (::AlmDest))  // Se vai para FullWMS, tenho que informar algm lote para ele.
+			if ! (::FWProdDest .and. ::AlmUsaFull (::FilDest, ::AlmDest))  // Se vai para FullWMS, tenho que informar algum lote para ele.
 				_Super:SomaMsg ("Lote destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla lote.")
 				_lContinua = .F.
 			endif
 		endif
-		if empty (::LoteDest) .and. ::AlmUsaFull (::AlmDest)  // Se vai para FullWMS, tenho que informar algm lote para ele.
+		if empty (::LoteDest) .and. ::AlmUsaFull (::FilDest, ::AlmDest)  // Se vai para FullWMS, tenho que informar algum lote para ele.
 			_Super:SomaMsg ("Deve ser informado um lote de destino por que o FullWMS vai exigir.")
 			_lContinua = .F.
 		endif
@@ -1225,7 +1288,7 @@ METHOD PodeIncl () Class ClsTrEstq
 		endif
 	endif
 
-	if _lContinua .and. ::AlmUsaFull (::AlmOrig)
+	if _lContinua .and. ::AlmUsaFull (::FilOrig, ::AlmOrig)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT MIN (A5_VAQSOLW)"
@@ -1238,7 +1301,7 @@ METHOD PodeIncl () Class ClsTrEstq
 		_nTamLote = _oSQL:RetQry (1, .F.)
 		_nResto = ::QtdSolic % _nTamLote
 		if _nResto != 0
-			_Super:SomaMsg ("Produto e almox. de origem operam com FullWMS, e o produto tem lote minimo de "+ alltrim(str(_nTamLote)) + ". Nao sera possivel gerar uma movimentacao.")
+			_Super:SomaMsg ("Produto e almox. de origem operam com FullWMS, e o produto tem lote minimo de " + alltrim(str(_nTamLote)) + " (cfe. tabela SA5). Nao sera possivel gerar uma movimentacao.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1302,7 +1365,84 @@ METHOD PodeIncl () Class ClsTrEstq
 		endif
 	endif
 
+	// Validacoes para desfazimento de operacao de guarda de pallets na logistica/FullWMS
+	if _lContinua .and. ::AlmDest == '11' .and. ::CodMotivo != '09'
+		_Super:SomaMsg ("Transferencias para ax.11 sao permitidas somente com motivo 09 (desfazimento de guarda de pallet).")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ::CodMotivo == '09'
+		if _lContinua .and. empty (::EtqRef) .or. empty (::OP)
+			_Super:SomaMsg ("Para desfazimento de guarda de pallet, devem ser informadas OP e ETIQUETA (cuja guarda na logistica esta sendo desfeita).")
+			_lContinua = .F.
+		endif
+
+		if _lContinua
+			za1 -> (dbsetorder (1))  // ZA1_FILIAL, ZA1_CODIGO, R_E_C_N_O_, D_E_L_E_T_
+			if ! za1 -> (dbseek (::FilDest + ::EtqRef, .F.))
+				_Super:SomaMsg ("Etiqueta referenciada '" + ::EtqRef + "' nao localizada na filial '" + ::FilDest + "'.")
+				_lContinua = .F.
+			endif
+		endif
+
+		// No momento, nao temos outro motivo para desfazimento sem ser o estorno do apontamento.
+		if _lContinua .and. za1 -> za1_quant != ::Quantidade
+			_Super:SomaMsg ("Quantidade original da etiqueta referenciada = " + cvaltochar (za1 -> za1_quant) + ".")
+			_lContinua = .F.
+		endif
+
+		// No momento, nao temos outro motivo para desfazimento sem ser o estorno do apontamento.
+		if _lContinua .and. za1 -> za1_apont == 'E'
+			_Super:SomaMsg ("Etiqueta referenciada '" + ::EtqRef + "' ja encontra-se com apontamento estornado no Protheus.")
+			_lContinua = .F.
+		endif
+
+		// Se uma etiqueta encontra-se inutilizada, nao poderia sequer ter gerado apontamento de producao. Quanto mais estar guardada na logistica!
+		if _lContinua .and. za1 -> za1_apont == 'I'
+			_Super:SomaMsg ("Etiqueta referenciada '" + ::EtqRef + "' encontra-se inutilizada no Protheus.")
+			_lContinua = .F.
+		endif
+
+		if _lContinua .and. za1 -> za1_apont != 'S'
+			_Super:SomaMsg ("Etiqueta referenciada '" + ::EtqRef + "' nao gerou apontamento de producao no Protheus.")
+			_lContinua = .F.
+		endif
+
+		if _lContinua .and. za1 -> za1_op != ::OP
+			_Super:SomaMsg ("Etiqueta referenciada '" + ::EtqRef + "' nao pertence a OP '" + ::OP + "' informada.")
+			_lContinua = .F.
+		endif
+
+		// Localiza movimentos desta etiqueta no SD3 (apontamento / transferencias entre AX)
+		if _lContinua
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := " SELECT MIN (D3_EMISSAO)"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
+			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND D3_FILIAL  = '" + ::FilDest + "'"
+			_oSQL:_sQuery +=    " AND D3_VAETIQ  = '" + ::EtqRef  + "'"
+			_oSQL:_sQuery +=    " AND D3_ESTORNO = ''"
+			if _oSQL:RetQry (1, .t.) < SuperGetMv ("MV_ULMES", .f., ctod (''), ::FilDest)
+				_Super:SomaMsg ("Etiqueta referenciada foi apontada em mes ja encerrado no estoque.")
+				_lContinua = .F.
+			endif
+		endif
+
+		if _lContinua
+			sc2 -> (dbsetorder (1))  // C2_FILIAL, C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD, R_E_C_N_O_, D_E_L_E_T_
+			if ! sc2 -> (dbseek (::FilDest + ::OP, .F.))
+				_Super:SomaMsg ("OP referenciada '" + ::OP + "' nao localizada na filial '" + ::FilDest + "'.")
+				_lContinua = .F.
+			endif
+		endif
+
+		if _lContinua .and. ! empty (sc2 -> c2_datrf)
+			_Super:SomaMsg ("OP referenciada '" + ::OP + "' ja encontra-se encerrada.")
+			_lContinua = .F.
+		endif
+	endif
+
 	if ! _lContinua .and. ! empty (::UltMsg)
+		::SetCodRetorno ('6')
 		u_help (::UltMsg,, .t.)
 	endif
 
@@ -1311,6 +1451,7 @@ return _lContinua
 
 // --------------------------------------------------------------------------
 // Altera codigo (de erro ou de sucesso) para retorno
+// AINDA TEM UUUUUITOS PONTOS DESTE PROGRAMA QUE DEVERIAM CHAMAR ESTE METODO!
 METHOD SetCodRetorno (_sCod as character) Class ClsTrEstq
 	local _aCodRet := {}
 	local _nStat   := 0
@@ -1321,7 +1462,7 @@ METHOD SetCodRetorno (_sCod as character) Class ClsTrEstq
 	aadd (_aCodRet, {'1', 'Estoque insuficiente'})
 	aadd (_aCodRet, {'2', 'Outros erros'})
 	aadd (_aCodRet, {'3', 'Transferencia executada'})
-	aadd (_aCodRet, {'6', 'solicitacao nao aceita'})
+	aadd (_aCodRet, {'6', 'Solicitacao nao aceita'})
 	aadd (_aCodRet, {'C', 'Solicitacao cancelada'})
 
 	_nStat = ascan (_aCodRet, {|_aVal| _aVal [1] == _sCod})

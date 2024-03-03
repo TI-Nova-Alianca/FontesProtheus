@@ -39,7 +39,9 @@
 //                      - Incluido teste do B1_FILIAL no na query _sExistsB1 - reduziu de 627 para 33 segundos (GLPI 9797)
 // 20/06/2022 - Claudia - Incluida importação .csv na simulação. GLPI: 12219
 // 12/08/2022 - Claudia - Incluida opção de revisão ativa. GLPI:12466
+// 01/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // --------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #include "protheus.ch"
@@ -556,7 +558,8 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_= ''"
 			_oSQL:_sQuery += " AND G5_MSBLQL   = '2' ""
 			_oSQL:_sQuery += " AND G5_PRODUTO  = '" + _sProduto + "'" 
-			_aRevisao := _oSQL:Qry2Array ()
+//			_aRevisao := _oSQL:Qry2Array ()
+			_aRevisao := _oSQL:Qry2Array (.t., .f.)
 	Else
 		If alltrim(_sRevis) == 'N'
 			_oSQL := ClsSQL ():New ()
@@ -564,7 +567,8 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 			_oSQL:_sQuery += " FROM SG5010"
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
 			_oSQL:_sQuery += " AND G5_PRODUTO = '" + _sProduto + "'" 
-			_aRevisao := _oSQL:Qry2Array ()
+//			_aRevisao := _oSQL:Qry2Array ()
+			_aRevisao := _oSQL:Qry2Array (.t., .f.)
 		else
 			If !empty(_sRevis) 
 				aadd (_aRevisao, { _sProduto, "", _sRevis })
@@ -651,7 +655,8 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 		_oSQL:_sQuery +=   " AND SB1.B1_COD     = SB2.B2_COD"
 		_oSQL:_sQuery += " GROUP BY SB2.B2_COD"
 	
-		_aSB2 = aclone (_oSQL:Qry2Array ())
+//		_aSB2 = aclone (_oSQL:Qry2Array ())
+		_aSB2 = aclone (_oSQL:Qry2Array (.f., .f.))
 		
 		// Se nao existe registro de estoque deste componente, cria uma array zerada.
 		if len (_aSB2) == 0
@@ -1686,7 +1691,8 @@ Static Function _SaldosDeTerceiros(sProduto)
 	_oSQL:_sQuery += " FROM dbo.VA_VSALDOS_TERCEIROS V "
 	_oSQL:_sQuery += " WHERE B6_PRODUTO = '" + sProduto + "'" 
 	_oSQL:_sQuery += " AND  B6_TIPO = 'D' "
-	_aSaldo := _oSQL:Qry2Array ()
+//	_aSaldo := _oSQL:Qry2Array ()
+	_aSaldo := _oSQL:Qry2Array (.f., .f.)
 			
 	For _x:=1 to len(_aSaldo)
 		nDeTerceiros += _aSaldo[_x,1]
@@ -1705,7 +1711,8 @@ Static Function _SaldosEmTerceiros(sProduto)
 	_oSQL:_sQuery += " FROM dbo.VA_VSALDOS_TERCEIROS V "
 	_oSQL:_sQuery += " WHERE B6_PRODUTO = '" + sProduto + "'" 
 	_oSQL:_sQuery += " AND  B6_TIPO = 'E' "
-	_aSaldo := _oSQL:Qry2Array ()
+//	_aSaldo := _oSQL:Qry2Array ()
+	_aSaldo := _oSQL:Qry2Array (.f., .f.)
 			
 	For _x:=1 to len(_aSaldo)
 		nEmTerceiros += _aSaldo[_x,1]
