@@ -84,6 +84,7 @@
 // 31/01/2024 - Claudia - Envio de e-mail com preço minimo apenas para operações de venda. GLPI: 14837
 // 01/02/2024 - Claudia - Excluidos produtos tipo RE de envio de email de preço abaixo de venda. GLPI: 14812
 // 29/02/2024 - Robert  - Gerar bloqueio gerencial tipo S especifico de sucos - GLPI 14980
+// 04/03/2024 - Robert  - Bloqueio gerencial tipo S estava pegando TES que nao gera duplicata.
 //
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -477,7 +478,7 @@ user function GrvLibPV(_lLiberar)
 			_lBloqSup = .F.  // Todos sao inocentes ateh prova em contrario.
 			sb1 -> (dbsetorder (1))
 			for _nLinha = 1 to len (aCols)
-				if ! GDDeleted (_nLinha) .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_ESTOQUE") == 'S'
+				if ! GDDeleted (_nLinha) .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_ESTOQUE") == 'S' .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_DUPLIC") == 'S'
 					if ! sb1 -> (dbseek (xfilial ("SB1") + GDFieldGet ("C6_PRODUTO"), .f.))
 						u_help ("Produto '" + GDFieldGet ("C6_PRODUTO") + "' nao localizado no cadastro!",, .t.)
 						_lLiberar = .F.
@@ -520,7 +521,6 @@ user function GrvLibPV(_lLiberar)
 
 			U_Log2 ('debug', '[' + procname () + ']_lBloqSup = ' + cvaltochar (_lBloqSup))
 			if _lBloqSup
-				U_Log2 ('aviso', '[' + procname () + ']Lembrar de excluir parametro VA_BLPVSUP')
 				if U_MsgYesNo ("Bloqueio especifico sucos: vai ficar com bloqueio tipo S para liberacao pela direcao. Confirma?")
 					m->c5_vaBloq = iif ('S' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'S')  // Tipo S = Superintendente
 		

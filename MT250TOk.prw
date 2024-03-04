@@ -2,7 +2,14 @@
 // Autor:      Robert Koch
 // Data:       16/12/2011
 // Descricao:  P.E. 'Tudo OK' na tela de apontamento de producao.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_entrada
+// #Descricao         #Ponto de entrada que valida se permite a inclusao de apontamento de producao
+// #PalavasChave      #apontamento_OP
+// #TabelasPrincipais #SD3 #SD4 #SC2
+// #Modulos           #EST #PCP
+
 // Historico de alteracoes:
 // 24/05/2012 - Robert - Verifica inexistencia de empenhos.
 // 13/08/2014 - Robert - Consiste quantidade da etiqueta, quando informada.
@@ -40,6 +47,7 @@
 // 05/01/2023 - Robert - Abreviadas algumas mensagens, para mostrar via telnet.
 // 17/04/2023 - Robert - Mostrar ultima mensagem da etiqueta, quando nao puder apontar.
 // 31/05/2023 - Robert - Obrigava uso de etiquetas em todas as filiais (mas usamos FullWMS apenas na F01).
+// 04/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -232,7 +240,7 @@ static function _VerEmpenh ()
 		_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
 		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
 		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   > 0"
-		if _oSQL:RetQry () > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			u_help ("OP de retrabalho nao deve ter empenhos. Os materiais devem ser requisitados manualmente.",, .t.)
 			_lRet = .F.
 		endif
@@ -277,7 +285,7 @@ static function _VerEmpenh ()
 		_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
 		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
 		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   > 0"
-		if _oSQL:RetQry () == 0
+		if _oSQL:RetQry (1, .f.) == 0
 			u_Help ("Esta OP nao tem empenhos, ou ja foram zerados.",, .t.)
 			_lRet = .F.
 		endif
@@ -293,7 +301,7 @@ static function _VerEmpenh ()
 		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
 		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   > 0"
 		_oSQL:_sQuery +=   " AND SD4.D4_COD     = '" + fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_PRODUTO") + "'"
-		if _oSQL:RetQry () > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			u_Help ("Encontrei empenho do item '" + fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_PRODUTO") + "' (mesmo item a ser produzido pela OP). Remova esse empenho antes de apontar a OP para evitar recursividade.",, .t.)
 			_lRet = .F.
 		endif
@@ -321,7 +329,7 @@ static function _VerEmpenh ()
 		_oSQL:_sQuery +=                          " AND SDC.DC_PRODUTO = SD4.D4_COD"
 		_oSQL:_sQuery +=                          " AND SDC.DC_OP      = SD4.D4_OP), 0) < SD4.D4_QTDEORI)"
 		//_oSQL:Log ('[' + procname () + ']')
-		_sEmpEnd := alltrim (_oSQL:RetQry ())
+		_sEmpEnd := alltrim (_oSQL:RetQry (1, .f.))
 		if ! empty (_sEmpEnd)
 			u_Help ("Falta informar endereco dos empenhos (" + _sEmpEnd + ")",, .t.)
 			_lRet = .F.
@@ -339,7 +347,7 @@ static function _VerEmpenh ()
 		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
 		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   < 0"
 		//_oSQL:Log ('[' + procname () + ']')
-		_sEmpNeg := alltrim (_oSQL:RetQry ())
+		_sEmpNeg := alltrim (_oSQL:RetQry (1, .f.))
 		if ! empty (_sEmpNeg)
 			u_Help ("Apenas um aviso: OP tem empenhos negativos!")
 			_sMsgEmp := "A OP " + alltrim (m->d3_op)

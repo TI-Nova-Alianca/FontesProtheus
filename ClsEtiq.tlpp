@@ -61,11 +61,10 @@
 //                     - Apesar de popular o atributo ::LoteProduto na geracao de atributos, sobrepunha (desnecessariamente) no metodo ::CmdImpr().
 //                     - Tratamento temporario e especifico para 8 etiq.impressas com lote errado - GLPI 14605
 // 19/02/2024 - Robert - Implementado metodo EndGuardaFull()
+// 04/03/2024 - Robert - Nao gravava campo ZA1_FULLW=1 quando etiqueta gerada pelo ZAG com destino ao ax.01 (GLPI 15030)
 //
 
 #Include "Protheus.ch"
-//#Include "RwMake.ch"
-//#Include "TbiConn.ch"
 
 // --------------------------------------------------------------------------
 // Funcao declarada apenas para poder compilar este arquivo fonte.
@@ -539,13 +538,22 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 	// para ser guardada imediatamente (produtos envasados em terceiros, apesar
 	// da OP estar apontada, somente deverao ser recebidos pelo FullWMS depois
 	// que chegarem fisicamente do terceiro).
-	if _lContinua .and. ! empty (::OP) .and. ::AlmOrig == '11'
-		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Disponibilizando etiq na view v_wms_entrada por que alm.orig.=' + ::AlmOrig)
-		if ::IntegraFull == '2'
-			::SomaMsg ("Etiqueta ja recebida pelo FullWMS.")
-			_lContinua = .F.
+	if _lContinua
+		if ! empty (::OP) .and. ::AlmOrig == '11'
+			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Disponibilizando etiq na view v_wms_entrada por que alm.orig.=' + ::AlmOrig)
+			if ::IntegraFull == '2'
+				::SomaMsg ("Etiqueta ja recebida pelo FullWMS.")
+				_lContinua = .F.
+			endif
+			if _lContinua
+				za1 -> (dbgoto (::RegZA1))
+				reclock ("ZA1", .f.)
+				za1 -> za1_fullw = '1'  // 1=disponibilizar na v_wms_entrada;2=jah recebido (nao precisa mais ficar na view)
+				msunlock ()
+				::IntegraFull = za1 -> za1_fullw
+			endif
 		endif
-		if _lContinua
+		if ! empty (::IdZAG) .and. ::AlmDest == '01'
 			za1 -> (dbgoto (::RegZA1))
 			reclock ("ZA1", .f.)
 			za1 -> za1_fullw = '1'  // 1=disponibilizar na v_wms_entrada;2=jah recebido (nao precisa mais ficar na view)

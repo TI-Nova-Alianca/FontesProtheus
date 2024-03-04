@@ -517,17 +517,13 @@ METHOD GeraEtiq (_lMsg as logical) Class ClsTrEstq
 		_oEtiq:AlmOrig     = ::AlmOrig
 		_oEtiq:LoteProduto = alltrim (::LoteDest)
 		
-	//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_oEtiq:Codigo (antes do Grava):' + _oEtiq:Codigo)
 		if _oEtiq:Grava ()
 
 			// Faz uma releitura dos atributos da etiqueta para popular
 			// campos adicionais como por exemplo a data de validade.
-		//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_oEtiq:Codigo (antes do GeraAtrib):' + _oEtiq:Codigo)
 			_oEtiq:GeraAtrib ("ZA1")
-		//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_oEtiq:Codigo (depois do GeraAtrib):' + _oEtiq:Codigo)
 			::Etiqueta = _oEtiq:Codigo
 			_Super:SomaMsg ('Etiqueta gerada:' + ::Etiqueta)
-		//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Etiqueta gerada:' + ::Etiqueta)
 
 			// Se tem impressora informada, jah faz a impressao da etiqueta.
 			if ! empty (::ImprEtq)

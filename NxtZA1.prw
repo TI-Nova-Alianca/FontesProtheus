@@ -2,12 +2,20 @@
 // Autor......: Robert Koch
 // Data.......: 04/12/2014
 // Descricao..: Gera numero da proxima etiqueta de pallet.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #processamento
+// #Descricao         #Gera numero da proxima etiqueta de pallet.
+// #PalavasChave      #sequencial #etiqueta #proxima #gera_numeracao
+// #TabelasPrincipais #ZA1
+// #Modulos           #EST #PCP
+
 // Historico de alteracoes:
 // 19/07/2017 - Robert - Faixa de numeracao do Full so podia iniciar por 9. Agora aceita entre 1 e 9.
 // 20/07/2017 - Robert - Faixa de numeracao do Full so passa a ser entre 2 e 9.
 // 15/12/2017 - Robert - Faltava nome do campo na chamada da funcao GetSXeNum ()
 // 12/04/2023 - Robert - Implementado controle de semaforo (inclusive externo).
+// 04/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -57,7 +65,7 @@ user function NxtZA1 (_sProduto, _lSemafExt)
 			_oSQL:_sQuery +=    " AND ZA1_FILIAL = '" + xfilial ("ZA1") + "'"
 			_oSQL:_sQuery +=    " AND ZA1_CODIGO between '2000000000' and '8999999998'" // Quando atingir 8999999999 aumentar este parametro para 9999999999 para usar o restante da sequencia 9.
 			//_oSQL:Log ()
-			_sRet = _oSQL:RetQry ()
+			_sRet = _oSQL:RetQry (1, .f.)
 			if _sRet > '8999999997'
 				U_help ("A sequencia de numeracao de pallets para Fullsoft terminou. Verifique!")
 				U_AvisaTI ("A sequencia de numeracao de pallets para Fullsoft terminou. Verifique!")

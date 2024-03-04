@@ -68,6 +68,7 @@
 // 12/05/2023 - Robert - Criado botao p/impr.avulsa com cod.barras (GLPI 13561).
 // 25/08/2023 - Robert - Grava tb_wms_entrada.status_protheus = 'C-Cancelado no ERP' e nao mais 'C' (GLPI 14112)
 // 18/10/2023 - Robert - Removidas linhas comentariadas.
+// 04/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 #include "rwmake.ch"
@@ -228,7 +229,7 @@ User Function EtqPllRG ()
 		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=    " AND ZA1_OP     = '" + mv_par01 + "'"
 		_oSQL:_sQuery +=    " AND ZA1_OP    <> ''"
-		_nEtiq = _oSQL:RetQry ()
+		_nEtiq = _oSQL:RetQry (1, .f.)
 		if _nEtiq > 0
 			_lContinua = U_MsgYesNo ("Já existem " + AllTrim(cvaltochar(_nEtiq)) + " etiquetas para a OP informada. Considere exclui-las antes para evitar duplicidades. Deseja gerar assim mesmo?")
 		endif
@@ -376,7 +377,7 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 	_oSQL:_sQuery +=    " AND ZA1_LOJAF  = '" + _sLoja + "'"
 	_oSQL:_sQuery +=    " AND ZA1_APONT != 'I'"
 	_oSQL:_sQuery +=  " ORDER BY ZA1_CODIGO"
-	_aEtiq = _oSQL:Qry2Array ()
+	_aEtiq = _oSQL:Qry2Array (.f., .f.)
 
 	// Inicializa coluna de selecao com .F. ('nao selecionada').
 	for _nEtiq = 1 to len (_aEtiq)
@@ -627,7 +628,7 @@ User Function EtqPllCT (_sCodigo)
 //		_oSQL:_sQuery +=    " and status_protheus != '3'"
 //		_oSQL:_sQuery +=    " and status_protheus != 'C'"
 		_oSQL:Log ('[' + procname () + ']')
-		_aEntr_ID = _oSQL:Qry2Array ()
+		_aEntr_ID = _oSQL:Qry2Array (.f., .f.)
 		if len (_aEntr_ID) == 0
 			u_help ("Entrada nao existe na tabela de transferencias para o FullWMS (pode sem ter sido enviada para o FullWMS). Nao ha transferencia pendente que possa ser abortada.", _oSQL:_sQuery, .t.)
 			_lContinua = .F.

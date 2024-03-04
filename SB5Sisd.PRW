@@ -2,11 +2,20 @@
 // Autor......: Robert Koch
 // Data.......: 22/03/2016
 // Descricao..: Habilita alteracao da tabela SB5 somente de campos de pasta especifica.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Cadastro
+// #Descricao         #Manutencao (cadastro) de campos epecificos para integracao com SISDECLARA/SISDEVIN.
+// #PalavasChave      #sisdeclara #sisdevin #campos
+// #TabelasPrincipais #SB5
+// #Modulos           #COOP
+
 // Historico de alteracoes:
-// 07/07/2016 - Robert - Nao chamada as 'verificacoes para Sisdeclara'.
+// 07/07/2016 - Robert  - Nao chamada as 'verificacoes para Sisdeclara'.
 // 09/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 -  SX3 e SXA
+// 04/03/2024 - Robert  - Pasta dos campos passou de 'B' para 'C'.
 //
+
 // --------------------------------------------------------------------------
 User Function SB5Sisd ()  
 	private _sArqLog  := U_NomeLog ()
@@ -33,7 +42,7 @@ User Function SB5SisdA ()
 	local _aCampos := {}
 	local i        := 0
 	
-	_sPasta := 'B' // Adicionado valor SXA fixo pois não será mais permitida a leitura do SXA na release 25, apenas em telas MVC possuímos funções
+	_sPasta := 'C' // Adicionado valor SXA fixo pois não será mais permitida a leitura do SXA na release 25, apenas em telas MVC possuímos funções
 	_aCpoSX3 := FwSX3Util():GetAllFields(cString)
 		
 	For i := 1 To Len(_aCpoSX3)
