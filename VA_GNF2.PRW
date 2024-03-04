@@ -520,7 +520,8 @@ Static Function _Gera03 ()
 							if zz9 -> zz9_safra == '2023'
 								if left (dtos (date ()), 6) $ '202305/202306'
 									_aItens [_nItem, .ItensValorTotal] += (zz9 -> zz9_qtori * zz9 -> zz9_vunit) - (zz9 -> zz9_qtori * zz9 -> zz9_vunold)
-								elseif left (dtos (date ()), 6) == '202402'  // Siiiiim, estou complementando 2023 soh agora!
+								elseif left (dtos (date ()), 6) >= '202402'  // Siiiiim, estou complementando 2023 soh agora!
+									U_Log2 ('debug', '[' + procname () + ']complementando 2023 atrasado, com: ' + cvaltochar (zz9 -> zz9_qtori * zz9 -> zz9_vunit4) + ' - ' + cvaltochar (zz9 -> zz9_qtori * zz9 -> zz9_vunold))
 									_aItens [_nItem, .ItensValorTotal] += (zz9 -> zz9_qtori * zz9 -> zz9_vunit4) - (zz9 -> zz9_qtori * zz9 -> zz9_vunold)
 								endif
 							else
@@ -808,7 +809,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 
 			_aLinha = aClone (U_OrdAuto (_aLinha))
 			AADD(_aAutoSD1, _aLinha)
-		//	U_Log2 ('debug', _aLinha)
+			U_Log2 ('debug', _aLinha)
 
 			_nVlrUvas += _nVlTot
 		next
@@ -826,6 +827,8 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 			_aParPgSaf = _ParCpl23C (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcela, _sGrpPagto, _nVlrUvas)
 		elseif left (dtos (date ()), 6) == '202402'  // Siiiiim, estou complementando 2023 soh agora!
 			_aParPgSaf = _ParCpl23D (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcela, _sGrpPagto, _nVlrUvas)
+		elseif left (dtos (date ()), 6) == '202403'  // Siiiiiiiiimmmmmm, esqueci do Gustavo Dalle Molle! (GLPI 15020)
+			_aParPgSaf = _ParCpl23E (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcela, _sGrpPagto, _nVlrUvas)
 		else
 			_aParPgSaf := aclone (U_VA_RusPP (_sSafra, _sGrpPagto, _nVlrUvas, 0, dDataBase))
 			if len (_aParPgSaf) == 0
@@ -1242,6 +1245,24 @@ Static Function _ParCpl23D (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcel, _sGrp
 	// As datas jah foram definidas no SE2 durante a safra.
 	// Vou gerar os complementos com vencimento um dia antes.
 	aadd (_aParcel, {0, stod ('20240227'), 0, _nVlrUvas, 'COMPL.SAFRA 2023', 'A'})
+
+return _aParcel
+
+
+// --------------------------------------------------------------------------
+// Gera array de parcelamento especifico para complemento da safra 2023
+// cujas notas estao sendo geradas em mar/24 e, portanto, numa unica parcela.
+Static Function _ParCpl23E (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcel, _sGrpPag, _nVlrUvas)
+	local _aParcel   := {}
+
+	_nVlrUvas = round (_nVlrUvas, 2)
+
+	// Monta array no mesmo formato gerado pelo VA_RusPP() e que vai ser lido
+	// posteriormente pelo P.E. MTColSE2.
+	// Eh importante manter a integridade do formato dessa array.
+	// As datas jah foram definidas no SE2 durante a safra.
+	// Vou gerar os complementos com vencimento um dia antes.
+	aadd (_aParcel, {0, stod ('20240328'), 0, _nVlrUvas, 'COMPL.SAFRA 2023', 'A'})
 
 return _aParcel
 

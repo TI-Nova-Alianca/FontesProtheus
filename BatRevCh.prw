@@ -37,6 +37,7 @@
 //                      - Gera aviso para TI caso encontre layout sem definicao na tabela ZZ4.
 // 17/11/2023 - Robert  - Criado tratamento para codigos de retorno 217 e 613.
 // 06/12/2023 - Robert  - Grava tipo e estado junto nas mensagens de aviso.
+// 03/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -163,7 +164,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			_oSQL:_sQuery +=   " AND ZZ4_VLAYOU = '" + _sVersao + "'"
 			_oSQL:_sQuery +=   " AND ZZ4_ATIVO  = 'S'"
 			_oSQL:Log ()
-			_aRegZZ4 = aclone (_oSQL:Qry2Array ())
+			_aRegZZ4 = aclone (_oSQL:Qry2Array (.f., .f.))
 			if len (_aRegZZ4) == 0
 				_Evento ("ERRO: Sem tratamento (ou inativo) na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Query para verificacao: " + _oSQL:_sQuery, .T., .t., _sEstado, _sTipo)
 				_lWSDL_OK = .F.

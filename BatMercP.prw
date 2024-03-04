@@ -53,7 +53,9 @@
 // 04/07/2022 - Claudia - Gravação do campo de pedido de venda da bonificação.
 // 05/09/2022 - Claudia - Incluida a gravação do campo de municipio. GLPI: 12561
 // 24/11/2023 - Claudia - Incluida gravação do campo c5_filial no execauto. GLPI: 14549
+// 03/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 user function BatMercP ()
 	local _lContinua := .T.
@@ -127,7 +129,7 @@ static function _LePed ()
 		_oSQL:_sQuery += " AND ZC5_HRINI     = ''"
 		_oSQL:_sQuery += " ORDER BY ZC5_FILA, ZC5_PEDMER, ZC6_ITPMER"
 		_oSQL:Log ()
-		_sAliasQ := _oSQL:Qry2Trb ()
+		_sAliasQ := _oSQL:Qry2Trb (.f.)
 
 		if (_sAliasQ) -> (eof ())
 			_oBatch:Mensagens = "Nenhum pedido a importar."
@@ -493,7 +495,8 @@ Static Function _BuscaUsuario(_sPedMerc, _sUsuario, _sLinkSrv)
 	_oSQL:_sQuery += " 		ON USUARIO = DB_PEDC_USU_CRIA "
 	_oSQL:_sQuery += " WHERE DB_PEDC_NRO = '" + _sPedido + "'"
 	U_LOG(_oSQL:_sQuery)
-	_aUser := aclone(_oSQL:Qry2Array())
+//	_aUser := aclone(_oSQL:Qry2Array())
+	_aUser := aclone(_oSQL:Qry2Array(.f., .f.))
 
 	For _x:=1 to Len(_aUser)
 		_sUser := LEFT(_aUser[_x, 1], 20) 

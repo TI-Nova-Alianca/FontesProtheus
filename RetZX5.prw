@@ -9,6 +9,7 @@
 // 19/05/2016 - Robert - Procura sempre pelo campo <Tabela> + 'COD' por default.
 // 08/07/2019 - Robert - Criado tratamento para a tabela 02.
 // 04/01/2020 - Robert - Criado tratamento para a tabela 52.
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -82,7 +83,7 @@ User Function RetZX5 (_sTabela, _sChave, _sCampo)
 					_oSQL:_sQuery += "    and ZX5_TABELA = '" + _sTabela + "'"
 					_oSQL:_sQuery +=    " AND " + _sCpoChav + " = '" + _sChave + "'"
 					//_oSQL:Log ()
-					_xRet = _oSQL:RetQry ()
+					_xRet = _oSQL:RetQry (1, .f.)
 				endif
 			endif
 		endif

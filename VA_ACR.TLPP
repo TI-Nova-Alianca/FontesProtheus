@@ -24,6 +24,8 @@
 // 18/12/2023 - Robert - Itens sem SB9 (novos) nao eram considerados. Passa a usar LEFT JOIN.
 // 22/02/2024 - Robert - Criada coluna no browse principal para mostrar a data do custo medio (GLPI 14945)
 // 27/02/2024 - Robert - Criadas algumas colunas adicionais de custos por litro.
+// 03/03/2024 - Robert - Criado tratamento para custear VD pelo ultimo nivel (GLPI 15024)
+//                     - Criada coluna mostrando o tipo de calculo usado na estrutura
 //
 
 #include "protheus.ch"
@@ -38,10 +40,12 @@
 #XTranslate .EstrHistCustoAcum    => 8
 #XTranslate .EstrHistEhUva        => 9
 #XTranslate .EstrHistMaiorNivelVD => 10
-#XTranslate .EstrHistDtCustD      => 11
-#XTranslate .EstrHistSomaNoCusto  => 12
-#XTranslate .EstrHistUnidMedida   => 13
-#XTranslate .EstrHistQtColunas    => 13
+#XTranslate .EstrHistMenorNivelVD => 11
+#XTranslate .EstrHistDtCustD      => 12
+#XTranslate .EstrHistSomaNoCusto  => 13
+#XTranslate .EstrHistUnidMedida   => 14
+#XTranslate .EstrHistCalcCusto    => 15
+#XTranslate .EstrHistQtColunas    => 15
 
 // --------------------------------------------------------------------------
 user function VA_ACR (_lAutomat)
@@ -416,15 +420,12 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 		_aEstrHist [len (_aEstrHist), .EstrHistDescri]       = alltrim (_aEstrAux [_nComp, 6])
 		_aEstrHist [len (_aEstrHist), .EstrHistEhUva]        = _aEstrAux [_nComp, 9]
 		_aEstrHist [len (_aEstrHist), .EstrHistMaiorNivelVD] = .F.  // Vai ser revisado mais adante
+		_aEstrHist [len (_aEstrHist), .EstrHistMenorNivelVD] = .F.  // Vai ser revisado mais adante
 		_aEstrHist [len (_aEstrHist), .EstrHistSomaNoCusto]  = 'S'  // Ateh segunda ordem, todos os componentes devem ser considerados.
 		_nComp ++
 	enddo
 
-	// Identifica os VDs que tem o maior nivel, para que no grid principal,
-	// na coluna 'custo VD', seja somado somente o seu custo e nao dos
-	// filhos, pois eh comum termos itens VD dentro de outros VD. Nesses
-	// casos, eu estaria somando mais que uma vez.
-	// Sim, sim, eu sei... o certo mesmo seria um 'custo em partes' aqui!
+	// Identifica os VDs que tem o maior nivel.
 	_nComp = 2  // Posso estar analisando um VD como 'pai'
 	do while _nComp <= len (_aEstrHist)
 		if _aEstrHist [_nComp, .EstrHistTipoComp] == 'VD'
@@ -433,7 +434,7 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 			do while _nFilho < len (_aEstrHist) .and. _aEstrHist [_nFilho+1, .EstrHistNivel] > _aEstrHist [_nComp, .EstrHistNivel]
 				_aEstrHist [_nFilho+1, .EstrHistMaiorNivelVD] = .F.
 
-				// Usuario pode optar por considerar o VD como se fosse um item comprado.
+				// Usuario pode optar por considerar o nivel mais alto do VD como se fosse um item comprado.
 				// Isso por que ainda temos dificuldade em abrir o custo dos itens tipo VD.
 				if mv_par04 == 2
 					_aEstrHist [_nFilho+1, .EstrHistSomaNoCusto] = 'N'
@@ -446,10 +447,50 @@ static function _LeDados (_sProduto, _sRevisao, _aEstrHist, _nCustoME, _nCustoVD
 		_nComp ++
 	enddo
 
+	// Identifica os VDs que tem o menor nivel.
+	_nComp = 2  // Posso estar analisando um VD como 'pai'
+	do while _nComp <= len (_aEstrHist)
+		if _aEstrHist [_nComp, .EstrHistTipoComp] == 'VD'
+			_aEstrHist [_nComp, .EstrHistMenorNivelVD] = .T.
+			_nFilho = _nComp
+			do while _nFilho < len (_aEstrHist) .and. _aEstrHist [_nFilho+1, .EstrHistNivel] > _aEstrHist [_nComp, .EstrHistNivel]
+				if _aEstrHist [_nFilho+1, .EstrHistTipoComp] == 'VD'
+					_aEstrHist [_nComp, .EstrHistMenorNivelVD] = .F.
+					exit
+				endif
+				_nFilho ++
+			enddo
+			_nComp = _nFilho
+		endif
+		_nComp ++
+	enddo
+
+	// Usuario pode optar por considerar o VD como se fosse um item comprado.
+	if mv_par04 == 3
+		_nComp = 2  // Posso estar analisando um VD como 'pai'
+		do while _nComp <= len (_aEstrHist)
+			
+			// Se este item for o manor nivel de VD, entao os seus filhos
+			// nao deverao ser considerados no custo.
+			if _aEstrHist [_nComp, .EstrHistTipoComp] == 'VD' .and. _aEstrHist [_nComp, .EstrHistMenorNivelVD]
+				_nFilho = _nComp
+				do while _nFilho < len (_aEstrHist) .and. _aEstrHist [_nFilho+1, .EstrHistNivel] > _aEstrHist [_nComp, .EstrHistNivel]
+					_aEstrHist [_nFilho+1, .EstrHistSomaNoCusto] = 'N'
+					_nFilho ++
+				enddo
+				_nComp = _nFilho
+			endif
+			_nComp ++
+		enddo
+	endif
+
 	// Acumula o custo de reposicao dos niveis 'pais' somando o custo de seus filhos.
 	_AtuCust (@_aEstrHist, 1)
 //	U_Log2 ('debug', '[' + procname () + ']Custos acumulados:')
 //	U_Log2 ('debug', _aEstrHist)
+	
+	// durante debug
+	// U_acolsXLS (_aEstrHist)
 
 	// Abre os custos do item atual conforme os tipos de seus componentes.
 	for _nComp = 2 to len (_aEstrHist)  // Como o primeiro item eh o proprio pai, nao quero somar seu custo.
@@ -503,6 +544,7 @@ static function _AtuCust (_aEst, _nLinha, _nInteracao)
 				_lSomouSub = .T.
 			else
 	//			U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'o filho ' + alltrim (_aEst [_nLinAux, .EstrHistCodComp]) + ' nao deve ser somado ao custo.')
+				_aEst [_nLinAux, .EstrHistCalcCusto] = iif (mv_par08 == 1, 'std.item', 'medio item') + ' (desconsiderado)'
 			endif
 	//		U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinAux, .EstrHistNivel] * 2) + 'Acumulei para o ' + alltrim (_aEst [_nLinha, .EstrHistCodComp]) + ' o custo de ' + cvaltochar (_aEst [_nLinAux, .EstrHistCustoAcum])+ ' do filho ' + alltrim (_aEst [_nLinAux, .EstrHistCodComp]) + '. _nCusFilhos = ' + cvaltochar (_nCusFilhos))
 		else
@@ -512,11 +554,17 @@ static function _AtuCust (_aEst, _nLinha, _nInteracao)
 	enddo
 	
 	// Se nao tem filhos, fica com seu propro custo.
-	if _lSomouSub // _lTemSubNiv
+	if _lSomouSub
 		_aEst [_nLinha, .EstrHistCustoAcum] = _nCusFilhos
+		if empty (_aEst [_nLinha, .EstrHistCalcCusto])
+			_aEst [_nLinha, .EstrHistCalcCusto] = 'acumulado'
+		endif
 	//	U_Log2 ('debug', '[' + procname () + ']' + space (_aEst [_nLinha, .EstrHistNivel] * 2) + 'Gravado ' + cvaltochar (_aEst [_nLinha, .EstrHistCustoAcum]) + ' na linha ' + cvaltochar (_nLinha) + ' (cod. ' + _aEst [_nLinha, .EstrHistCodComp] + ')')
 	else
 		_aEst [_nLinha, .EstrHistCustoAcum] = _aEst [_nLinha, .EstrHistQuantAcum] * _aEst [_nLinha, .EstrHistCustoUnit]
+		if empty (_aEst [_nLinha, .EstrHistCalcCusto])
+			_aEst [_nLinha, .EstrHistCalcCusto] = iif (mv_par08 == 1, 'std.do item', 'medio do item')
+		endif
 	endif
 return
 
@@ -759,6 +807,7 @@ static function _SimEstru (_sProduto as character, _lExpTodas as logical)
 			aadd (_aHeader, {"Dt.cus.medio",     "DTCUSUNIT", "@D",                  8, 0,  "",   "",  "D", "", "V",    "",  "",     '.F.'})
 		endif
 		aadd (_aHeader, {"Cus.calculado",  "CUSTACUM",   "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
+		aadd (_aHeader, {"Calculo custo",   "CALCCUSTO",  "",                   11, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Soma no custo",  "CONSNOCUST", "",                    1, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Ult.comp",       "VULTCOMP1",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Dt.Ult.comp",    "DULTCOMP1",  "@D",                  8, 0,  "",   "",  "D", "", "V",    "",  "",     '.F.'})
@@ -800,6 +849,7 @@ static function _SimEstru (_sProduto as character, _lExpTodas as logical)
 				GDFieldPut ("CUSTACUM",   _aAux [_nCompon, .EstrHistCustoAcum],   _n, _aHeader, _aCols)
 				GDFieldPut ("REVATU",     _aAux [_nCompon, .EstrHistRevAtu],      _n, _aHeader, _aCols)
 				GDFieldPut ("CONSNOCUST", _aAux [_nCompon, .EstrHistSomaNoCusto], _n, _aHeader, _aCols)
+				GDFieldPut ("CALCCUSTO",   _aAux [_nCompon, .EstrHistCalcCusto],   _n, _aHeader, _aCols)
 
 				// Busca ultimas compras do componente.
 				_aUltCom = {}
@@ -966,16 +1016,16 @@ static function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 
-	//                     PERGUNT                           TIPO TAM DEC VALID F3       Opcoes                         Help
-	aadd (_aRegsPerg, {01, "Produto inicial a analisar    ", "C", 15, 0,  "",   "SB1 ",  {},                            ""})
-	aadd (_aRegsPerg, {02, "Produto final a analisar      ", "C", 15, 0,  "",   "SB1 ",  {},                            ""})
-	aadd (_aRegsPerg, {03, "Tipos produtos a analisar     ", "C", 60, 0,  "",   "    ",  {},                            ""})
-	aadd (_aRegsPerg, {04, "Considerar subniveis dos VD   ", "N",  1, 0,  "",   "    ",  {"Sim", "Nao"},                ""})
-	aadd (_aRegsPerg, {05, "Linha comercial inicial       ", "C",  2, 0,  "",   "ZX539", {},                            ""})
-	aadd (_aRegsPerg, {06, "Linha comercial final         ", "C",  2, 0,  "",   "ZX539", {},                            ""})
-	aadd (_aRegsPerg, {07, "Itens que entram no MRP       ", "N",  1, 0,  "",   "    ",  {"So MRP", "Todos"},           ""})
-	aadd (_aRegsPerg, {08, "Qual custo analisar           ", "N",  1, 0,  "",   "    ",  {"Standard(repos.)", "Medio"}, ""})
-	aadd (_aRegsPerg, {09, "Somente produtos que usam...  ", "C", 15, 0,  "",   "    ",  {},                            ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3       Opcoes                                Help
+	aadd (_aRegsPerg, {01, "Produto inicial a analisar    ", "C", 15, 0,  "",   "SB1 ",  {},                                   ""})
+	aadd (_aRegsPerg, {03, "Tipos produtos a analisar     ", "C", 60, 0,  "",   "    ",  {},                                   ""})
+	aadd (_aRegsPerg, {02, "Produto final a analisar      ", "C", 15, 0,  "",   "SB1 ",  {},                                   ""})
+	aadd (_aRegsPerg, {04, "Considerar ate qual nivel VD  ", "N",  1, 0,  "",   "    ",  {"Todos", "Mais alto", "Mais baixo"}, ""})
+	aadd (_aRegsPerg, {05, "Linha comercial inicial       ", "C",  2, 0,  "",   "ZX539", {},                                   ""})
+	aadd (_aRegsPerg, {06, "Linha comercial final         ", "C",  2, 0,  "",   "ZX539", {},                                   ""})
+	aadd (_aRegsPerg, {07, "Itens que entram no MRP       ", "N",  1, 0,  "",   "    ",  {"So MRP", "Todos"},                  ""})
+	aadd (_aRegsPerg, {08, "Qual custo analisar           ", "N",  1, 0,  "",   "    ",  {"Standard(repos.)", "Medio"},        ""})
+	aadd (_aRegsPerg, {09, "Somente produtos que usam...  ", "C", 15, 0,  "",   "    ",  {},                                   ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return
 

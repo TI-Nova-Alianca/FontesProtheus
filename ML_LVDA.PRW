@@ -31,11 +31,10 @@
 // 24/02/2023 - Claudia - Ajustado o lançamento padrão 610 000 (parametro 1). GLPI: 13218
 // 20/02/2024 - Robert  - Opcao 4 alterada temporariamente para recontabilizacao de 2023 onde queremos apenas IPI e ST ---> _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // Volta a ser como era em 31/12/2022
 // 28/02/2024 - RObert  - Chamadas de metodos da classe ClsSQL nao recebiam parametros.
+// 20/02/2024 - Robert  - Opcao 4 volta para contabilizacao normal (apos recontab.de 2023 feita dia 20/02/24)
 //
 
 // -------------------------------------------------------------------------------------------------
-//#include "rwmake.ch"
-
 User Function ML_LVDA(_nEcomm)
 	Local _aDados := {}
 	Local _lEcomm := .F.
@@ -44,7 +43,6 @@ User Function ML_LVDA(_nEcomm)
 
 	SetPrvt("_WVAL,")
 
-	//If SD2->D2_FILIAL == '01' .or. SD2->D2_FILIAL == '16'
 	// Verifica se é nota do ecommerce
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT DISTINCT E1_ADM "
@@ -54,8 +52,6 @@ User Function ML_LVDA(_nEcomm)
 	_oSQL:_sQuery += " AND E1_PREFIXO  = '10'"
 	_oSQL:_sQuery += " AND E1_TIPO IN('CC','CD') "
 	_oSQL:_sQuery += " AND E1_ADM <> ''"
-
-//	_aDados := _oSQL:Qry2Array ()
 	_aDados := _oSQL:Qry2Array (.f., .f.)
 
 	If Len(_aDados) > 0
@@ -86,8 +82,8 @@ User Function ML_LVDA(_nEcomm)
 				If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16')
 					_wVAL := 0
 				Else
-					//_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_ICMSRET + SD2->D2_VALFRE // até 31/12/2022
-					_wVAL := SD2->D2_TOTAL + SD2->D2_VALFRE // a partir de 01/01/2023
+					_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_ICMSRET + SD2->D2_VALFRE // até 31/12/2022
+				//	_wVAL := SD2->D2_TOTAL +                                    SD2->D2_VALFRE // a partir de 01/01/2023
 				EndIf
 		EndCase
 
@@ -99,7 +95,7 @@ User Function ML_LVDA(_nEcomm)
 				If SD2->D2_TES=="918" // ST MG
 					_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
 				Else
-					_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
+					_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0)
 				EndIf
 			EndIf
 		Else 
@@ -107,11 +103,11 @@ User Function ML_LVDA(_nEcomm)
 				If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
 					_wVAL := 0
 				Else
-					// desabilitado para recontabilizacao de 2023 onde queremos apenas IPI e ST ---> _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // Volta a ser como era em 31/12/2022
-					_wVAL := SD2->D2_VALIPI + sd2->d2_icmsret
-
-					//_wVAL := SD2->D2_TOTAL + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // a partir de 01/01/2023
-
+					if SD2->D2_TES=="918" // ST MG
+						_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI +                   SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // Volta a ser como era em 31/12/2022
+					else
+						_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // Volta a ser como era em 31/12/2022
+					endif
 				EndIf
 			EndIf
 		EndIf

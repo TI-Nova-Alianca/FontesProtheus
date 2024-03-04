@@ -15,7 +15,9 @@
 // 12/01/2022 - Robert  - Revisao da query (inclusao EXISTS SZI e teste de cod/loja base associado)
 //                      - Fixada parcela 'A' (antes gerava vazia)
 // 02/05/2022 - Claudia - Comentado o "exit".
+// 03/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 //---------------------------------------------------------------------------------------------------------------
 User function BATCOMPASSOC()
 	Local _nTitGer   := 0

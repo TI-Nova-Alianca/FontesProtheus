@@ -16,7 +16,9 @@
 // 08/04/2019 - Catia   - include TbiConn.ch 
 // 02/05/2022 - Claudia - Ajustada query para contabilidade de compras de funcionarios.
 // 30/06/2022 - Claudia - Retirada CDOC do execauto e validação de filial. GLPI: 12294
+// 03/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "Totvs.ch"
@@ -55,7 +57,8 @@ User Function BATCOMPFUN()
         _oSQL:_sQuery += " AND (SL4.L4_ADMINIS LIKE '%900%' " // FUNCIONARIOS
         _oSQL:_sQuery += " OR SL4.L4_ADMINIS LIKE '%800%') "  // ASSOCIADOS
 	    _oSQL:Log()
-		_aDados := aclone(_oSQL:Qry2Array ())
+	//	_aDados := aclone(_oSQL:Qry2Array ())
+		_aDados := aclone(_oSQL:Qry2Array (.f., .f.))
 
 		If len(_aDados) > 0
 			For _x := 1 to len(_aDados)
@@ -107,7 +110,8 @@ User Function BATCOMPFUN()
         //_oSQL:_sQuery += " AND SL1.L1_INDCTB = 'N' "
         _oSQL:_sQuery += " ORDER BY SL1.L1_EMISNF "
         _oSQL:Log()
-        _aDados := aclone(_oSQL:Qry2Array ())
+//      _aDados := aclone(_oSQL:Qry2Array ())
+        _aDados := aclone(_oSQL:Qry2Array (.t., .f.))
 
         If len(_aDados) > 0  
             For _x := 1 to len(_aDados)

@@ -54,6 +54,7 @@
 //                     - Valida saldo alm.orig.antes de tentar transferir solic.manuais.
 // 30/10/2023 - Robert - Nao tenta nova execucao se estiver com ZAG_EXEC=E
 // 19/02/2024 - Robert - Programa migrado de .prw para .tlpp
+// 28/02/2024 - Robert - Metodo ClsTrEstq:AlmUsaFull passa a receber novos parametros (GLPI 14785)
 //
 
 #Include "Protheus.ch"
@@ -280,7 +281,8 @@ static function _Entradas (_sEntrID)
 			endif
 	
 			// Verifica se pode fazer a liberacao do almox.destino (01) cfe. retorno do FullWMS.
-			if ! _oTrEstq:AlmUsaFull (_oTrEstq:AlmDest)
+		//	if ! _oTrEstq:AlmUsaFull (_oTrEstq:AlmDest)
+			if ! _oTrEstq:AlmUsaFull (_oTrEstq:FilDest, _oTrEstq:AlmDest)
 				u_log2 ('aviso', 'Alm.destino nao usa FullWMS e, portanto, nao tem tratamento aqui.')
 				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado'
 				(_sAliasQ) -> (dbskip ())
