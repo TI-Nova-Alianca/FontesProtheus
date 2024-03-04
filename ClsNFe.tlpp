@@ -435,7 +435,7 @@ METHOD GetEntid () Class ClsNFe
 	_oSQL:_sQuery +=    " AND CNPJ = '" + _sCNPJ + "'"
 	_oSQL:_sQuery +=    " AND IE = '" + _sInsc + "'"
 
-	_sRet = _oSQL:RetQry ()
+	_sRet = _oSQL:RetQry (1, .f.)
 	if empty (_sRet)
 		aadd (::Erros, "Nao foi possivel definir a ID no SPED para o CNPJ/IE atual. Operacoes com NF-e nao serao possiveis.")
 		u_help ("Nao foi possivel definir a ID no SPED para o CNPJ/IE atual. Operacoes com NF-e nao serao possiveis.",, .t.)

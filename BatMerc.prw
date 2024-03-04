@@ -52,6 +52,7 @@
 // 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
 // 08/06/2022 - Claudia - Liberação do tratamento para código matriz. GLPI: 11635
 // 08/11/2022 - Robert  - Removidas algumas linhas comentariadas.
+// 03/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ------------------------------------------------------------------------------------------------------------------------
@@ -187,7 +188,7 @@ static function _LeCli (_sLinkSrv)
 		_oSQL:_sQuery += " AND ZA1_HRINI     = ''"
 		_oSQL:_sQuery += " ORDER BY ZA1_FILA"
 		_oSQL:Log ()
-		_sAliasQ := _oSQL:Qry2Trb ()
+		_sAliasQ := _oSQL:Qry2Trb (.f.)
 
 		if (_sAliasQ) -> (eof ())
 			_oBatch:Mensagens = "Nenhum cliente a importar"
@@ -233,7 +234,7 @@ static function _LeCli (_sLinkSrv)
 				_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 				_oSQL:_sQuery += " AND US_CGC  = '" + (_sAliasQ) -> ZA1_CGC + "' "
 				_oSQL:Log ()
-				_aDados := aclone (_oSQL:Qry2Array ())
+				_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 
 				If Len(_aDados) > 0
 					For _x:=1 to Len(_aDados)

@@ -13,6 +13,7 @@
 //                     - Execucao automatica aumentada de 5 para ultimos 15 dias.
 // 13/06/2019 - Robert - Melhorados logs para depuracao de erros de conexao.
 // 07/04/2020 - Robert - Inseridor logs para tentar verificar erro no envio de 6 notas recentes.
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 #INCLUDE "APWEBSRV.CH"
@@ -100,7 +101,7 @@ user function EnvXMLWS (_lAutomat)
     // ao buscara entidade alterado para que busque a maior entidade, usando a inscricao correta
     // ver como vai ficar isso para notas antigas - talvez tenha que prever alguma coisa referente a emissao da nota fiscal
 	_sEntidade := U_RetSQL ("SELECT MAX(ID_ENT) FROM SPED001 WHERE CNPJ = '" + sm0 -> m0_cgc + "' AND D_E_L_E_T_ = ''")
-	_sAliasQ = _oSQL:Qry2Trb ()
+	_sAliasQ = _oSQL:Qry2Trb (.f.)
 
 	if (_sAliasQ) -> (eof ())
 		u_help("Nao ha nota a enviar ou notas ja foram enviadas com os parametros informados!")

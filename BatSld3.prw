@@ -16,8 +16,8 @@
 // 06/01/2020 - Robert - Melhorado retorno.
 // 05/05/2021 - Robert - Atualizada geracao de logs
 //                     - Inseridas tags para catalogo de fontes.
-
-//#include "tbiconn.ch"
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+//
 
 // --------------------------------------------------------------------------
 user function BatSld3 ()
@@ -49,7 +49,7 @@ user function BatSld3 ()
 	_oSQL:_sQuery +=            " AND INICIO.CV8_PROC   = FIM.CV8_PROC"
 	_oSQL:_sQuery +=            " AND INICIO.CV8_INFO   = '1')"
 	_oSQL:Log ()
-	if _oSQL:RetQry () == 0
+	if _oSQL:RetQry (1, .f.) == 0
 		_oBatch:Mensagens = 'Nao finalizou na filial ' + cFilAnt
 	else
 		_oBatch:Retorno = 'S'

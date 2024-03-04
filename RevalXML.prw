@@ -18,6 +18,7 @@
 //                     - Passa a revalidar somente chaves importadas nos ultimos 30 dias
 // 20/07/2022 - Robert - Passa a validar campo ZZX_DURC (novo) e nao mais ZZX_DUCC (GLPI 12336)
 // 21/07/2022 - Robert - Processa apenas a filial atual (problema com MSMM) - GLPI 12336
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 #include "rwmake.ch"
@@ -50,7 +51,7 @@ static function _Revalida_XML()
 	_oSQL:_sQuery += "    AND ZZX_DURC   !=   '" + dtos (date ()) + "'" 	//  ja revalidou no dia, nao revalida novamente
 	_oSQL:Log ('[' + procname () + ']')
 
-	_aRecnos = aclone (_oSQL:Qry2Array ())
+	_aRecnos = aclone (_oSQL:Qry2Array (.f., .f.))
 //	u_log (_aRecnos)
 	for _nRecno = 1 to len (_aRecnos)
 		zzx -> (dbgoto (_aRecnos [_nRecno, 1]))

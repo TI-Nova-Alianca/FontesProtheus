@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 01/09/2022 - Robert - Melhorias ClsAviso.
 // 02/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -----------------------------------------------------------------------------------------------------------------

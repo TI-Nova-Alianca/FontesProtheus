@@ -808,7 +808,7 @@ static function _SimEstru (_sProduto as character, _lExpTodas as logical)
 		endif
 		aadd (_aHeader, {"Cus.calculado",  "CUSTACUM",   "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Calculo custo",   "CALCCUSTO",  "",                   11, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
-		aadd (_aHeader, {"Soma no custo",  "CONSNOCUST", "",                    1, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
+	//	aadd (_aHeader, {"Soma no custo",  "CONSNOCUST", "",                    1, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Ult.comp",       "VULTCOMP1",  "@E 999,999.9999",    11, 4,  "",   "",  "N", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Dt.Ult.comp",    "DULTCOMP1",  "@D",                  8, 0,  "",   "",  "D", "", "V",    "",  "",     '.F.'})
 		aadd (_aHeader, {"Forn.Ult.comp",  "FULTCOMP1",  "",                   60, 0,  "",   "",  "C", "", "V",    "",  "",     '.F.'})
@@ -848,7 +848,7 @@ static function _SimEstru (_sProduto as character, _lExpTodas as logical)
 				GDFieldPut ("DTCUSUNIT",  _aAux [_nCompon, .EstrHistDtCustD],     _n, _aHeader, _aCols)
 				GDFieldPut ("CUSTACUM",   _aAux [_nCompon, .EstrHistCustoAcum],   _n, _aHeader, _aCols)
 				GDFieldPut ("REVATU",     _aAux [_nCompon, .EstrHistRevAtu],      _n, _aHeader, _aCols)
-				GDFieldPut ("CONSNOCUST", _aAux [_nCompon, .EstrHistSomaNoCusto], _n, _aHeader, _aCols)
+			//	GDFieldPut ("CONSNOCUST", _aAux [_nCompon, .EstrHistSomaNoCusto], _n, _aHeader, _aCols)
 				GDFieldPut ("CALCCUSTO",   _aAux [_nCompon, .EstrHistCalcCusto],   _n, _aHeader, _aCols)
 
 				// Busca ultimas compras do componente.
@@ -1018,8 +1018,8 @@ static function _ValidPerg ()
 
 	//                     PERGUNT                           TIPO TAM DEC VALID F3       Opcoes                                Help
 	aadd (_aRegsPerg, {01, "Produto inicial a analisar    ", "C", 15, 0,  "",   "SB1 ",  {},                                   ""})
-	aadd (_aRegsPerg, {03, "Tipos produtos a analisar     ", "C", 60, 0,  "",   "    ",  {},                                   ""})
 	aadd (_aRegsPerg, {02, "Produto final a analisar      ", "C", 15, 0,  "",   "SB1 ",  {},                                   ""})
+	aadd (_aRegsPerg, {03, "Tipos produtos a analisar     ", "C", 60, 0,  "",   "    ",  {},                                   ""})
 	aadd (_aRegsPerg, {04, "Considerar ate qual nivel VD  ", "N",  1, 0,  "",   "    ",  {"Todos", "Mais alto", "Mais baixo"}, ""})
 	aadd (_aRegsPerg, {05, "Linha comercial inicial       ", "C",  2, 0,  "",   "ZX539", {},                                   ""})
 	aadd (_aRegsPerg, {06, "Linha comercial final         ", "C",  2, 0,  "",   "ZX539", {},                                   ""})

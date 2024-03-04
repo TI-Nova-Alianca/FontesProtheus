@@ -7,6 +7,7 @@
 // 01/09/2022 - Robert - Melhorias ClsAviso.
 // 02/10/2022 - Robert - Removido atributo :DiasDeVida da classe ClsAviso.
 // 02/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -31,7 +32,7 @@ user function BatCust ()
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND B2_VATU1 < -1000000"
 		_oSQL:Log ()
-		_aRegSB2 = _oSQL:Qry2Array ()
+		_aRegSB2 = _oSQL:Qry2Array (.f., .f.)
 		for _nRegSB2 = 1 to len (_aRegSB2)
 			sb2 -> (dbgoto (_aRegSB2 [_nRegSB2, 1]))
 			_oAviso := ClsAviso ():New ()

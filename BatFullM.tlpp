@@ -16,6 +16,7 @@
 // 15/09/2023 - Robert - Campo tb_wms_movimentacoes.status_protheus passa a gravar descricao junto
 //                     - Passa a gerar solicitacao de transferencia com :CodMotivo=08
 // 27/12/2023 - Robert - Passa a usar atributo ClsTrEstq:CodRetorno.
+// 03/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 #Include "Protheus.ch"
@@ -58,7 +59,7 @@ User Function BatFullM ()
 	_oSQL:_sQuery +=    " and status_protheus not like '5%'"  // 5 = qtd.movimentada diferente qt.executada
 	_oSQL:_sQuery +=  " order by dthr"
 	_oSQL:Log ()
-	_sAliasQ := _oSQL:Qry2Trb ()
+	_sAliasQ := _oSQL:Qry2Trb (.f.)
 	(_sAliasQ) -> (dbgotop ())
 	do while ! (_sAliasQ) -> (eof ())
 
@@ -148,16 +149,6 @@ return _lRet
 // 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
 // 9 = 'cancelado no ERP'
 static function _AtuFull (_sDtHr, _sStatus, _sIdZAG)
-/*
-	local _oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := " update tb_wms_movimentacoes"
-	_oSQL:_sQuery +=    " set status_protheus = '" + _sStatus + "'"
-//	_oSQL:_sQuery +=      " , ZAG_DOC = '" + _sIdZAG + "'"
-	_oSQL:_sQuery +=      " , IdZAG = '" + _sIdZAG + "'"
-	_oSQL:_sQuery +=  " where dthr = '" + alltrim (_sDtHr) + "'"  // Primary key
-	_oSQL:Log ()
-	_oSQL:Exec ()
-*/
 	local _oSQL  := NIL
 	local _nStat := 0
 	local _lRet  := .F.
