@@ -26,6 +26,7 @@
 // 03/05/2021 - Claudia - Retirado os TES '732','573', '891'. GLPI: 9926
 // 03/02/2023 - Claudia - Inclusao de coluna de faturamento. GLPI: 12857
 // 08/02/2023 - Claudia - Tratamento para icms st de guias MG. GLPI: 13161
+// 29/02/2024 - Claudia - Voltada a opção de faturamento. GLPI: 15010
 //
 // ----------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -75,8 +76,9 @@ Static Function RptDetail()
     nTipo := IIF(aReturn[4]==1,15,18)
     li    := 80
     m_pag := 1
-    cabec1 := "IND  DT.EMISSAO  NOTA           CLIENTE   RAZAO SOCIAL                                         UF             TOTAL PRODUTOS     (+) VALOR IPI  (+) VALOR ST (-)VLR DESCONTOS (=)TOTAL DA NOTA  (=)TOTAL FATURAMENTO"
-    cabec2 := ""
+    //cabec1 := "IND  DT.EMISSAO  NOTA           CLIENTE   RAZAO SOCIAL                                         UF             TOTAL PRODUTOS     (+) VALOR IPI  (+) VALOR ST (-)VLR DESCONTOS (=)TOTAL DA NOTA  (=)TOTAL FATURAMENTO"
+    cabec1 := "IND  DT.EMISSAO  NOTA           CLIENTE   RAZAO SOCIAL                                         UF             TOTAL PRODUTOS     (+) VALOR IPI  (+) VALOR ST (-)VLR DESCONTOS (=)TOTAL DA NOTA  "
+	cabec2 := ""
     
     _sQuery := " "
     _sQuery += "SELECT SD2.D2_EMISSAO      AS DT_EMISSAO"
@@ -123,7 +125,7 @@ Static Function RptDetail()
     _sQuery += "   AND SD2.D2_LOJA      BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
 	_sQuery += "   AND SD2.D2_TES NOT IN ('732','573', '891')"
     if mv_par11 = 1 // opcao analitica 
-    	_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SD2.D2_DOC ,SD2.D2_SERIE, SD2.D2_TIPO, SD2.D2_CLIENTE , SD2.D2_LOJA, SD2.D2_EST, SF4.F4_CREDST"
+    	_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SD2.D2_DOC ,SD2.D2_SERIE, SD2.D2_TIPO, SD2.D2_CLIENTE , SD2.D2_LOJA, SD2.D2_EST , SF4.F4_CREDST"
  	else
  		_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SF4.F4_CREDST"
  	endif
@@ -180,9 +182,9 @@ Static Function RptDetail()
 	_sQuery += "   AND SD1.D1_FORNECE   BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
     _sQuery += "   AND SD1.D1_LOJA      BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
     if mv_par11 = 1 // opcao analitica
-    	_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SD1.D1_DOC ,SD1.D1_SERIE, SD1.D1_TIPO, SD1.D1_FORNECE , SD1.D1_LOJA, SF1.F1_EST, SF4.F4_CREDST"
+    	_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SD1.D1_DOC ,SD1.D1_SERIE, SD1.D1_TIPO, SD1.D1_FORNECE , SD1.D1_LOJA, SF1.F1_EST , SF4.F4_CREDST"
   	else
- 		_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SF4.F4_CREDST "
+ 		_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM , SF4.F4_CREDST "
  	endif
     if mv_par11 = 1 // opcao analitica
     	_sQuery += " ORDER BY DT_EMISSAO, NOTA, SERIE"
@@ -214,11 +216,11 @@ Static Function RptDetail()
 	    Endif
 	    
 	    If mv_par11 = 1
-			If (_sAliasQ) -> DT_EMISSAO >= '20230101' // GLPI: 12857
-				_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST 
-			else
-				_nVlrNf := (_sAliasQ) -> VLR_BRT 
-			EndIf
+			//If (_sAliasQ) -> DT_EMISSAO >= '20230101' // GLPI: 12857
+			//	_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST 
+			//else
+			//	_nVlrNf := (_sAliasQ) -> VLR_BRT 
+			//EndIf
 
 			If (_sAliasQ) -> MARGEM $ '1239'
 				@ li, 002 PSAY (_sAliasQ) -> MARGEM
@@ -240,15 +242,15 @@ Static Function RptDetail()
 			@ li, 143 PSAY (_sAliasQ) -> VLR_ST       Picture "@E 99,999,999.99"
 			@ li, 160 PSAY (_sAliasQ) -> VLR_DESCONTO Picture "@E 99,999,999.99"
 			@ li, 173 PSAY (_sAliasQ) -> VLR_BRT      Picture "@E 99,999,999,999.99"
-			@ li, 190 PSAY _nVlrNf                    Picture "@E 99,999,999,999.99"
+			//@ li, 190 PSAY _nVlrNf                    Picture "@E 99,999,999,999.99"
 			li ++
      	Else
 	 		// opcao sintetica
-			If (_sAliasQ) -> DT_EMISSAO >= '20230101' // GLPI: 12857
-				_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST 
-			else
-				_nVlrNf := (_sAliasQ) -> VLR_BRT
-			EndIf
+			//If (_sAliasQ) -> DT_EMISSAO >= '20230101' // GLPI: 12857
+			//	_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST 
+			//else
+			//	_nVlrNf := (_sAliasQ) -> VLR_BRT
+			//EndIf
 
 	 		// acumula totais na data e imprime o total da data
 			@ li, 005 PSAY stod((_sAliasQ) -> DT_EMISSAO)
@@ -270,7 +272,7 @@ Static Function RptDetail()
 			@ li, 143 PSAY (_sAliasQ) -> VLR_ST       Picture "@E 99,999,999.99"
 			@ li, 160 PSAY (_sAliasQ) -> VLR_DESCONTO Picture "@E 99,999,999.99"
 			@ li, 173 PSAY (_sAliasQ) -> VLR_BRT      Picture "@E 99,999,999,999.99"
-			@ li, 190 PSAY _nVlrNf                    Picture "@E 99,999,999,999.99"
+			//@ li, 190 PSAY _nVlrNf                    Picture "@E 99,999,999,999.99"
 			
 			li ++
 		EndIf
@@ -282,35 +284,35 @@ Static Function RptDetail()
 				_aTotVenda [3] += (_sAliasQ) -> VLR_ST
 				_aTotVenda [4] += (_sAliasQ) -> VLR_DESCONTO
 				_aTotVenda [5] += (_sAliasQ) -> VLR_BRT
-				_aTotVenda [6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST
+				//_aTotVenda [6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST
 			Case (_sAliasQ) -> MARGEM = '2'
 				_aTotDev [1] += (_sAliasQ) -> VLR_PROD
 				_aTotDev [2] += (_sAliasQ) -> VLR_IPI
 				_aTotDev [3] += (_sAliasQ) -> VLR_ST
 				_aTotDev [4] += (_sAliasQ) -> VLR_DESCONTO
 				_aTotDev [5] += (_sAliasQ) -> VLR_BRT  
-				_aTotDev [6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST        			
+				//_aTotDev [6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST        			
 			Case (_sAliasQ) -> MARGEM = '3'
 				_aTotBonif [1] += (_sAliasQ) -> VLR_PROD
 				_aTotBonif [2] += (_sAliasQ) -> VLR_IPI
 				_aTotBonif [3] += (_sAliasQ) -> VLR_ST
 				_aTotBonif [4] += (_sAliasQ) -> VLR_DESCONTO
 				_aTotBonif [5] += (_sAliasQ) -> VLR_BRT
-				_aTotBonif [6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
+				//_aTotBonif [6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
 			Case (_sAliasQ) -> MARGEM = '9'
 				_aTotOutras[1] += (_sAliasQ) -> VLR_PROD
 				_aTotOutras[2] += (_sAliasQ) -> VLR_IPI
 				_aTotOutras[3] += (_sAliasQ) -> VLR_ST
 				_aTotOutras[4] += (_sAliasQ) -> VLR_DESCONTO
 				_aTotOutras[5] += (_sAliasQ) -> VLR_BRT  
-				_aTotOutras[6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
+				//_aTotOutras[6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
 			Otherwise 
 				_aTotErro[1] += (_sAliasQ) -> VLR_PROD
 				_aTotErro[2] += (_sAliasQ) -> VLR_IPI
 				_aTotErro[3] += (_sAliasQ) -> VLR_ST
 				_aTotErro[4] += (_sAliasQ) -> VLR_DESCONTO
 				_aTotErro[5] += (_sAliasQ) -> VLR_BRT  
-				_aTotErro[6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
+				//_aTotErro[6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
 		EndCase
 		(_sAliasQ) -> (dbskip())
 	EndDo
@@ -330,7 +332,7 @@ Static Function RptDetail()
 		@ li, 143 PSAY _aTotVenda[3] Picture "@E 99,999,999.99"
 		@ li, 160 PSAY _aTotVenda[4] Picture "@E 99,999,999.99"
 		@ li, 173 PSAY _aTotVenda[5] Picture "@E 99,999,999,999.99"
-		@ li, 190 PSAY _aTotVenda[6] Picture "@E 99,999,999,999.99"
+		//@ li, 190 PSAY _aTotVenda[6] Picture "@E 99,999,999,999.99"
 		li ++
 		// imprime total da devolucoes
 		@ li, 005 PSAY "2 - DEVOLUÇÕES:"
@@ -339,7 +341,7 @@ Static Function RptDetail()
 		@ li, 143 PSAY _aTotDev[3] Picture "@E 99,999,999.99"
 		@ li, 160 PSAY _aTotDev[4] Picture "@E 99,999,999.99"
 		@ li, 173 PSAY _aTotDev[5] Picture "@E 99,999,999,999.99"
-		@ li, 190 PSAY _aTotDev[6] Picture "@E 99,999,999,999.99"
+		//@ li, 190 PSAY _aTotDev[6] Picture "@E 99,999,999,999.99"
 		li ++
 		// imprime total de bonificacoes
 		@ li, 005 PSAY "3 - BONIFICAÇÕES:"
@@ -348,7 +350,7 @@ Static Function RptDetail()
 		@ li, 143 PSAY _aTotBonif[3] Picture "@E 99,999,999.99"
 		@ li, 160 PSAY _aTotBonif[4] Picture "@E 99,999,999.99"
 		@ li, 173 PSAY _aTotBonif[5] Picture "@E 99,999,999,999.99"
-		@ li, 190 PSAY _aTotBonif[6] Picture "@E 99,999,999,999.99"
+		//@ li, 190 PSAY _aTotBonif[6] Picture "@E 99,999,999,999.99"
 		li ++
 		// imprime total de bonificacoes
 		@ li, 005 PSAY "9 - OUTRAS SAIDAS:"
@@ -357,7 +359,7 @@ Static Function RptDetail()
 		@ li, 143 PSAY _aTotOutras[3] Picture "@E 99,999,999.99"
 		@ li, 160 PSAY _aTotOutras[4] Picture "@E 99,999,999.99"
 		@ li, 173 PSAY _aTotOutras[5] Picture "@E 99,999,999,999.99"
-		@ li, 190 PSAY _aTotOutras[6] Picture "@E 99,999,999,999.99"
+		//@ li, 190 PSAY _aTotOutras[6] Picture "@E 99,999,999,999.99"
 		li ++
 		// imprime total de ERROS
 		If _aTotErro[1] > 0 
@@ -367,7 +369,7 @@ Static Function RptDetail()
 			@ li, 143 PSAY _aTotErro[3] Picture "@E 99,999,999.99"
 			@ li, 160 PSAY _aTotErro[4] Picture "@E 99,999,999.99"
 			@ li, 173 PSAY _aTotErro[5] Picture "@E 99,999,999,999.99"
-			@ li, 190 PSAY _aTotErro[6] Picture "@E 99,999,999,999.99"
+			//@ li, 190 PSAY _aTotErro[6] Picture "@E 99,999,999,999.99"
 			li ++
 		EndIf
 		li ++
@@ -378,7 +380,7 @@ Static Function RptDetail()
 		@ li, 143 PSAY _aTotVenda[3] - _aTotDev[3] Picture "@E 99,999,999.99"
 		@ li, 160 PSAY _aTotVenda[4] - _aTotDev[4] Picture "@E 99,999,999.99"
 		@ li, 173 PSAY _aTotVenda[5] - _aTotDev[5] Picture "@E 99,999,999,999.99"
-		@ li, 190 PSAY _aTotVenda[6] - _aTotDev[6] Picture "@E 99,999,999,999.99"
+		//@ li, 190 PSAY _aTotVenda[6] - _aTotDev[6] Picture "@E 99,999,999,999.99"
 		li ++
 	 
 	U_ImpParam (58)

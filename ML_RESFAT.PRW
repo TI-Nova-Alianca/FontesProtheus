@@ -20,6 +20,7 @@
 // 03/02/2023 - Claudia - Ajuste de valor de faturamento. GLPI: 12857
 // 08/02/2023 - Claudia - Tratamento para icms st de guias MG. GLPI: 13161
 // 02/05/2023 - Cláudia - Alterado o diretor predidente. GLPI: 13505
+// 29/02/2024 - Claudia - Voltada a opção de faturamento. GLPI: 15010
 //
 // ------------------------------------------------------------------------------------------------------------------ 
 #include "rwmake.ch"
@@ -89,7 +90,8 @@ Static Function RptDetail()
     _sQuery += " WITH C AS (SELECT SD2.D2_EMISSAO  AS DATA"
     _sQuery += "                 , ROUND(SUM(D2_PRCVEN*D2_QUANT),2)                               AS VLR_PROD"
   	_sQuery += " 	             , SUM(SD2.D2_VALBRUT)                                            AS VLR_BRT"
-	_sQuery += "                 ,SUM(SD2.D2_VALBRUT) - SUM(SD2.D2_VALIPI) - CASE WHEN SF4.F4_CREDST = '4' THEN 0 ELSE SUM(SD2.D2_ICMSRET) END AS VLR_TOTAL "
+	//_sQuery += "                 ,SUM(SD2.D2_VALBRUT) - SUM(SD2.D2_VALIPI) - CASE WHEN SF4.F4_CREDST = '4' THEN 0 ELSE SUM(SD2.D2_ICMSRET) END AS VLR_TOTAL "
+	_sQuery += "                 ,SUM(SD2.D2_VALBRUT)  										      AS VLR_TOTAL
   	_sQuery += "              FROM " + RetSQLName ("SD2") + " AS SD2 "
   	_sQuery += "	          		INNER JOIN " + RetSQLName ("SF2") + " AS SF2 "
   	_sQuery += "						ON (SF2.D_E_L_E_T_ = ''"
@@ -106,7 +108,7 @@ Static Function RptDetail()
     _sQuery += " 			WHERE SD2.D_E_L_E_T_ = ''"
     _sQuery += "   			  AND SD2.D2_FILIAL    BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
     _sQuery += "   			  AND SD2.D2_EMISSAO   BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
-	_sQuery += " 			GROUP BY SD2.D2_EMISSAO,SF4.F4_CREDST "
+	_sQuery += " 			GROUP BY SD2.D2_EMISSAO "//,SF4.F4_CREDST "
  	_sQuery += " )"
  	if mv_par05 = 1
  		_sQuery += " SELECT SUBSTRING(DATA,1,4) + SUBSTRING(DATA,5,2) AS DATA"
@@ -237,12 +239,13 @@ Static Function RptDetail()
 	::_nLinAtual += ::_nAltLin * 1					
 
 	//_sLinhaImp := "      ALCEU DALLE MOLLE                        SARA CETOLIN"
-	_sLinhaImp := "      "+ alltrim(getmv("VA_PRESIDE"))+"                        SARA CETOLIN"
+	//_sLinhaImp := "      "+ alltrim(getmv("VA_PRESIDE"))+"                        SARA CETOLIN"
+	_sLinhaImp := "      "+ alltrim(getmv("VA_PRESIDE"))+"                            " + alltrim(getmv("VA_CONTAD"))
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1					
 
 	//_sLinhaImp := "     CPF: 431.760.700-04                     CRC: 76.578 / RS"
-	_sLinhaImp := "     CPF: "+ alltrim(getmv("VA_PRESCPF"))+"                     CRC: 76.578 / RS"
+	_sLinhaImp := "     CPF: "+ alltrim(getmv("VA_PRESCPF"))+"                     "+ alltrim(getmv("VA_CRCCON")) //CRC: 76.578 / RS"
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1					
 			
