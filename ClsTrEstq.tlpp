@@ -57,10 +57,7 @@
 //
 
 // ------------------------------------------------------------------------------------
-//#include "colors.ch"
 #Include "Protheus.ch"
-//#Include "RwMake.ch"
-//#Include "TbiConn.ch"
 
 // --------------------------------------------------------------------------
 // Funcao declarada apenas para poder compilar este arquivo fonte.

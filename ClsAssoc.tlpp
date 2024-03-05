@@ -366,7 +366,7 @@ METHOD Ativo (_dDataRef) Class ClsAssoc
 		_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '27'"
 		_oSQL:_sQuery +=    " AND SZI.ZI_DATA   <= '" + dtos (_dDataRef) + "'"
 		//_oSQL:Log ()
-		_dBaixa := _oSQL:RetQry ()
+		_dBaixa := _oSQL:RetQry (1, .t.)
 		//u_log (_dBaixa)
 		if ! empty (_dBaixa)
 			_lRet = .F.
