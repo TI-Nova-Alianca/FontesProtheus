@@ -11,6 +11,7 @@
 // #Modulos   		  #FAT 
 //
 // Historico de alteracoes:
+// 04/03/2024 - Claudia - Realizado ajustes diversos, incluindo novas colunas. GLPI: 15001
 //
 // ---------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -148,6 +149,14 @@ Static Function PrintReport(oReport)
             _oSQL:_sQuery += " 		AND SC5.C5_FILIAL = SF2.F2_FILIAL "
             _oSQL:_sQuery += " 		AND SC5.C5_NOTA = SF2.F2_DOC "
             _oSQL:_sQuery += " 		AND SC5.C5_TABELA = '"+ _aDados[_x, 2] +"' "
+            _oSQL:_sQuery += "      AND SC5.C5_TIPO = 'N'
+            _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SC6") + " AS SC6 "
+            _oSQL:_sQuery += "	ON SC6.D_E_L_E_T_ = '' "
+            _oSQL:_sQuery += "		AND SC6.C6_FILIAL = SC5.C5_FILIAL "
+            _oSQL:_sQuery += "		AND SC6.C6_NUM    = SC5.C5_NUM "
+            _oSQL:_sQuery += "		AND SC6.C6_CLI    = SC5.C5_CLIENTE "
+            _oSQL:_sQuery += "		AND SC6.C6_LOJA   = SC5.C5_LOJACLI "
+            _oSQL:_sQuery += "		AND SC6.C6_VAOPER = '01' "
             _oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = '' "
             _oSQL:_sQuery += " AND F2_FILIAL = '"+ _aDados[_x, 1] +"' "
             _oSQL:_sQuery += " ORDER BY SF2.F2_EMISSAO DESC "
