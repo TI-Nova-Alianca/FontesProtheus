@@ -65,6 +65,16 @@ User Function claudia ()
 	// u_help('Envia clientes para mercanet')
 	// _enviaClientes()
 
+	//u_help("verbas")
+	//u_help(GetSXENum("ZA4","ZA4_NUM"))
+	//U_BatZA4()
+
+	//u_help("ZC2")
+	//U_ZC2()
+
+	//u_help("CTB")
+	//U_BACACTB()
+
 
 Return
 // // ------------------------------------------------------------------------------------
@@ -2545,3 +2555,210 @@ Return
 // 	aadd (_aRegsPerg, {02, "Data Final   ", "D", 8,  0,  "",   "   ", {},                   	""})
 // 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 // Return
+
+// User Function BACACTB (_lAuto)
+//     Local _x        := 0
+
+//         _oSQL:= ClsSQL ():New ()
+//         _oSQL:_sQuery := ""
+//         _oSQL:_sQuery += " SELECT DISTINCT "
+//         _oSQL:_sQuery += "	    D1_DOC "
+//         _oSQL:_sQuery += " FROM SD1010 "
+//         _oSQL:_sQuery += " WHERE D1_DTDIGIT BETWEEN '20230101' AND '20231231' "
+//         _oSQL:_sQuery += " AND (D1_VALIPI > 0 "
+//         _oSQL:_sQuery += " OR D1_ICMSRET > 0) "
+//         _oSQL:_sQuery += " AND D1_CF IN ('1201', '2201', '2410', '1410') "
+//         _oSQL:_sQuery += " AND D1_DOC NOT IN ( "
+//         _oSQL:_sQuery += "  '000003052', "
+//         _oSQL:_sQuery += "  '000019343', "
+//         _oSQL:_sQuery += "  '000020362', "
+//         _oSQL:_sQuery += "  '000020720', "
+//         _oSQL:_sQuery += "  '005509465' "
+//         _oSQL:_sQuery += ") "
+//         _aCTB := aclone(_oSQL:Qry2Array (.F., .F.))
+
+//         For _x:=1 to Len(_aCTB)
+
+//             _mv01 := 1
+//             _mv02 := stod('20230101')
+//             _mv03 := stod('20231231')
+//             _mv04 := _aCTB[_x, 1]
+//             _mv05 := _aCTB[_x, 1]
+//             _mv06 := ''
+//             _mv07 :='ZZZ'
+//             _mv08 :=''
+//             _mv09 :='ZZZ'
+//             _mv10 :=''
+//             _mv11 :='ZZZ'
+//             _mv12 := 3
+//             _mv13 := 2
+
+//             Processa( { |lEnd| _GeraCTB(_mv01,_mv02,_mv03,_mv04,_mv05,_mv06,_mv07,_mv08,_mv09,_mv10,_mv11, _mv12, _mv13) } )
+
+//             u_log('Ajustando item ', _mv04)
+//         Next
+
+// return
+	
+// // --------------------------------------------------------------------------
+// Static Function _GeraCTB(_mv01,_mv02,_mv03,_mv04,_mv05,_mv06,_mv07,_mv08,_mv09,_mv10,_mv11, _mv12, _mv13)
+// 	local _oEvento := NIL
+// 	local _sNick   := ""
+// 	local _nAlter  := 0
+// 	local _sIdFKA  := ''
+
+// 	procregua (1000)
+
+// 	do case
+// 	case _mv01 == 1
+// 		_sNick = "F1_DTDIGIT"
+// 		if U_TemNick ("SF1", _sNick)
+// 			sf1 -> (dbOrderNickName (_sNick))  // F1_FILIAL+DTOS(F1_DTDIGIT)
+// 			sf1 -> (dbseek (xfilial ("SF1") + dtos (_mv02), .T.))
+// 			do while ! sf1 -> (eof ()) .and. sf1 -> f1_filial == xfilial ("SF1") .and. sf1 -> f1_dtdigit <= _mv03
+// 				incproc (cvaltochar (sf1 -> f1_dtdigit))
+// 				if sf1 -> f1_doc >= _mv04 .and. sf1 -> f1_doc <= _mv05 .and. ! empty (sf1 -> f1_dtlanc)
+// 					if _mv13 == 2  // Executar
+// 						_oEvento := ClsEvent():new ()
+// 						_oEvento:CodEven   = "SF1010"
+// 						_oEvento:Texto     = "Alterando data contabilizacao de '" + dtoc (sf1 -> f1_dtlanc) + "' para ' / / '"
+// 						_oEvento:NFEntrada = sf1 -> f1_doc
+// 						_oEvento:SerieEntr = sf1 -> f1_serie
+// 						_oEvento:Fornece   = sf1 -> f1_fornece
+// 						_oEvento:LojaFor   = sf1 -> f1_loja
+// 						_oEvento:Grava ()
+// 						reclock ("SF1", .F.)
+// 						sf1 -> f1_dtlanc = ctod ("")
+// 						msunlock ()
+// 					endif
+// 					_nAlter ++
+// 				endif
+// 				sf1 -> (dbskip ())
+// 			enddo
+// 		else
+// 			u_help ("Indice '" + _sNick + "' nao existe.")
+// 		endif
+
+// 	case _mv01 == 2
+// 		_sNick = "F2_EMISSAO"
+// 		if U_TemNick ("SF2", _sNick)
+// 			sf2 -> (dbOrderNickName (_sNick))  // f2_FILIAL+DTOS(F2_EMISSAO)
+// 			sf2 -> (dbseek (xfilial ("SF2") + dtos (_mv02), .T.))
+// 			do while ! sf2 -> (eof ()) .and. sf2 -> f2_filial == xfilial ("SF2") .and. sf2 -> f2_emissao <= _mv03
+// 				incproc (cvaltochar (sf2 -> f2_emissao))
+// 				if sf2 -> f2_doc >= _mv04 .and. sf2 -> f2_doc <= _mv05 .and. ! empty (sf2 -> f2_dtlanc)
+// 					if _mv13 == 2  // Executar
+// 						_oEvento := ClsEvent():new ()
+// 						_oEvento:CodEven   = "SF2010"
+// 						_oEvento:Texto     = "Alterando data contabilizacao de '" + dtoc (sf2 -> f2_dtlanc) + "' para ' / / '"
+// 						_oEvento:NFSaida   = sf2 -> f2_doc
+// 						_oEvento:SerieSaid = sf2 -> f2_serie
+// 						_oEvento:Cliente   = sf2 -> f2_cliente
+// 						_oEvento:LojaCli   = sf2 -> f2_loja
+// 						_oEvento:Grava ()
+// 						reclock ("SF2", .F.)
+// 						sf2 -> f2_dtlanc = ctod ("")
+// 						msunlock ()
+// 					endif
+// 					_nAlter ++
+// 				endif
+// 				sf2 -> (dbskip ())
+// 			enddo
+// 		else
+// 			u_help ("Indice '" + _sNick + "' nao existe.")
+// 		endif
+
+// 	case _mv01 == 3
+// 		se5 -> (dbsetorder (1)) // E5_FILIAL+DTOS(E5_DATA)+E5_BANCO+E5_AGENCIA+E5_CONTA+E5_NUMCHEQ
+// 		se5 -> (dbseek (xfilial ("SE5") + dtos (_mv02), .T.))
+// 		do while ! se5 -> (eof ()) .and. se5 -> e5_filial == xfilial ("SE5") .and. se5 -> e5_data <= _mv03
+// 			incproc (cvaltochar (se5 -> e5_data))
+// 			if alltrim (se5 -> e5_la)   == "S" ;
+// 					.and. se5 -> e5_banco   >= _mv06 .and. se5 -> e5_banco   <= _mv07 ;
+// 					.and. se5 -> e5_agencia >= _mv08 .and. se5 -> e5_agencia <= _mv09 ;
+// 					.and. se5 -> e5_conta   >= _mv10 .and. se5 -> e5_conta   <= _mv11 ;
+// 					.and. se5 -> e5_numero  >= _mv04 .and. se5 -> e5_numero  <= _mv05
+// 				if (_mv12 == 1 .and. empty (se5 -> e5_arqcnab)) .or. (_mv12 == 2 .and. !empty (se5 -> e5_arqcnab))
+// 					se5 -> (dbskip ())
+// 					loop
+// 				endif
+// 				if _mv13 == 2  // Executar
+// 				//	if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+// 					if ! U_AmbTeste ()
+// 						_oEvento := ClsEvent():new ()
+// 						_oEvento:CodEven   = "SE5001"
+// 						_oEvento:Texto     = "Limpando campo E5_LA"
+// 						_oEvento:Recno     = se5 -> (recno ())
+// 						_oEvento:Alias     = 'SE5'
+// 						_oEvento:CodAlias  = se5 -> e5_prefixo + se5 -> e5_numero + se5 -> e5_parcela
+// 						_oEvento:Grava ()
+// 					endif
+// 					reclock ("SE5", .F.)
+// 					se5 -> e5_la = ""
+// 					msunlock ()
+// 				endif	
+
+// 				// Se encontrar relacionamento nas novas tabelas do financeiro, limpa tambem.
+// 				if ! empty (se5 -> e5_idorig)
+// 					// PROVAVELMENTE PRECISE FAZER A MESMA COISA NO FK1, MAS NO MOMENTO TO COM PRESSA... ROBERT, 03/08/2021 (GLPI 10644)
+// 					fk2 -> (dbsetorder (1))  // FK2_FILIAL, FK2_IDFK2, R_E_C_N_O_, D_E_L_E_T_
+// 					if fk2 -> (dbseek (xfilial ("FK2") + se5 -> e5_idorig, .F.))
+// 						if _mv13 == 2  // Executar
+// 							U_Log2 ('debug', 'Encontrei FK2')
+// 						//	if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+// 							if ! U_AmbTeste ()
+// 								_oEvento := ClsEvent():new ()
+// 								_oEvento:CodEven   = "FK2001"
+// 								_oEvento:Texto     = "Limpando campo FK2_LA"
+// 								_oEvento:Recno     = fk2 -> (recno ())
+// 								_oEvento:Alias     = 'FK2'
+// 								_oEvento:CodAlias  = fk2 -> fk2_idfk2
+// 								_oEvento:Grava ()
+// 							endif
+// 							reclock ("FK2", .f.)
+// 							fk2 -> fk2_la = ''
+// 							msunlock ()
+// 						endif
+					
+// 						fka -> (dbsetorder (3))  // FKA_FILIAL, FKA_TABORI, FKA_IDORIG, R_E_C_N_O_, D_E_L_E_T_
+// 						if fka -> (dbseek (xfilial ("FKA") + 'FK2' + fk2 -> fk2_idfk2, .F.))
+// 							U_Log2 ('debug', 'Encontrei FKA')
+// 							_sIdFKA = fka -> fka_idproc
+// 							fka -> (dbsetorder (2))  // FKA_FILIAL, FKA_IDPROC, FKA_IDORIG, FKA_TABORI, R_E_C_N_O_, D_E_L_E_T_
+// 							fka -> (dbseek (xfilial ("FKA") + _sIdFKA, .T.))
+// 							do while ! fka -> (eof ()) .and. fka -> fka_filial == xfilial ("FKA") .and. fka -> fka_idproc == _sIdFKA
+// 								if fka -> fka_tabori == 'FK5'
+// 									U_Log2 ('debug', 'Procurando FK5 com ID = ' + fka -> fka_idorig)
+// 									fk5 -> (dbsetorder (1))  // FK5_FILIAL, FK5_IDMOV, R_E_C_N_O_, D_E_L_E_T_
+// 									if fk5 -> (dbseek (xfilial ("FK5") + fka -> fka_idorig, .F.))
+// 										U_Log2 ('debug', 'Encontrei FK5')
+// 										if _mv13 == 2  // Executar
+// 										//	if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+// 											if ! U_AmbTeste ()
+// 												_oEvento := ClsEvent():new ()
+// 												_oEvento:CodEven   = "FK5001"
+// 												_oEvento:Texto     = "Limpando campo FK5_LA"
+// 												_oEvento:Recno     = fk5 -> (recno ())
+// 												_oEvento:Alias     = 'FK5'
+// 												_oEvento:CodAlias  = fk5 -> fk5_idmov
+// 												_oEvento:Grava ()
+// 											endif
+// 											reclock ("FK5", .f.)
+// 											fk5 -> fk5_la = ''
+// 											msunlock ()
+// 										endif
+// 									endif
+// 								endif
+// 								fka -> (dbskip ())
+// 							enddo
+// 						endif
+// 					endif
+// 				endif
+// 				_nAlter ++
+// 			endif
+// 			se5 -> (dbskip ())
+// 		enddo
+// 	endcase
+
+// 	u_help ("Processo concluido. " + cvaltochar (_nAlter) + " documento(s) " + iif (_mv13 == 1, "teria(m) sido ", "") + "alterado(s).")
+// return
