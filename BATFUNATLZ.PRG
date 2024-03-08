@@ -42,6 +42,7 @@
 // 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq. GLPI: 11922
 // 07/03/2023 - Claudia - Incluido e-mail de verificação. GLPI: 11901
 // 09/03/2023 - Claudia - Incluida regra para envio do e-mail apenas nas segundas-feiras.
+// 08/03/2024 - Claudia - Ajustada a integração de municipios na query de funcioanrios. GLPI: 15060
 //
 // -----------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -385,7 +386,8 @@ Static Function _Exe2Query()
 	_sQuery += " 		INNER JOIN CC2010 AS CC2"
 	_sQuery += " 			ON (CC2.D_E_L_E_T_  = ''"
 	_sQuery += " 				AND CC2.CC2_EST = FUN.UF COLLATE DATABASE_DEFAULT"
-	_sQuery += " 	    		AND CC2.CC2_MUN = UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(FUN.CIDADE,'ç','c'),'á','a'),'ã','a'),'õ','o'),'í','i'),'é','e'),'ú','u')) COLLATE DATABASE_DEFAULT ) "
+	//_sQuery += " 	    		AND CC2.CC2_MUN = UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(FUN.CIDADE,'ç','c'),'á','a'),'ã','a'),'õ','o'),'í','i'),'é','e'),'ú','u')) COLLATE DATABASE_DEFAULT ) "
+	_sQuery += "                AND CC2.CC2_MUN  LIKE '%'+ UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(FUN.CIDADE,'ç','c'),'á','a'),'ã','a'),'õ','o'),'í','i'),'ó','o'),'é','e'),'ú','u')) + '%' COLLATE DATABASE_DEFAULT ) "
 	_sQuery += " 		INNER JOIN SZB010 AS SZB"
 	_sQuery += " 			ON (SZB.D_E_L_E_T_  = ''"
 	_sQuery += " 				AND SZB.ZB_COD  = CC2.CC2_VA_SZB)"
