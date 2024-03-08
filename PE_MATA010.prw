@@ -43,6 +43,7 @@
 // 20/10/2023 - Robert  - Desabilitadas chamadas da U_PerfMon() por que nao estou usando para nada.
 // 07/12/2023 - Claudia - Obrigar informar custo ao liberar um produto. GLPI: 14602
 // 08/12/2023 - Claudia - Não realizar a cópia dos campos B1_RASTRO e B1_LOCALIZ. GLPI: 14607
+// 08/03/2023 - Claudia - Retirada validação do campo b1_locprod
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -192,11 +193,11 @@ static function _A010TOk ()
 			u_help ("Campo '" + alltrim (RetTitle ("B1_LITROS")) + "' deve ser informado para este tipo de produto.")
 			_lRet = .F.
 		endif
-	else
-		if ! empty (m->b1_locprod)
-			u_help ("Campo '" + alltrim (RetTitle ("B1_LOCPROD")) + "' nao deve ser informado para este tipo de produto.")
-			_lRet = .F.
-		endif
+	// else
+	// 	if ! empty (m->b1_locprod)
+	// 		u_help ("Campo '" + alltrim (RetTitle ("B1_LOCPROD")) + "' nao deve ser informado para este tipo de produto.")
+	// 		_lRet = .F.
+	// 	endif
 	endif
 		
 	if ! m->b1_tipo $ "PA/MR"
