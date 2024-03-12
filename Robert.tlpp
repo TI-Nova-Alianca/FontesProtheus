@@ -69,6 +69,10 @@ user function robert ()
 		_lContinua = .F.
 	endif
 
+	if _lContinua .and. U_Semaforo (procname ()) == 0
+		u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
+		_lContinua = .F.
+	endif
 	if _lContinua
 		PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 		private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
@@ -85,10 +89,6 @@ user function robert ()
 	endif
 	if _lContinua .and. ! empty (GetSrvProfString ("IXBLOG", ""))
 		u_help ("Parametro IXBLOG ativo no appserver.ini")
-		_lContinua = .F.
-	endif
-	if _lContinua .and. U_Semaforo (procname ()) == 0
-		u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua
@@ -135,6 +135,7 @@ user function robert ()
 		// _sFuncao += '_GLPI14397 ()'
 		// _sFuncao += '_GLPI14483 ()'
 		// _sFuncao += '_GLPI15020 ()'
+		_sFuncao += '_GLPI15070 ()'
 		// _sFuncao += '_ImpGPC ()'
 		// _sFuncao += '_memoria ()'
 		// _sFuncao += '_metaf ()'
@@ -168,7 +169,7 @@ user function robert ()
 		else
 			u_help ('Nada definido.')
 		endif
-
+		
 		u_log2 ('info', 'Processo finalizado em ' + ElapTime (_sHrIni, time ()))
 		U_UsoRot ('F', procname (), '')
 	endif
@@ -179,8 +180,7 @@ return
 // --------------------------------------------------------------------------
 // Ajusta saldo de lote / endereco
 static function _AjLoteEnd ()
-	// Deixo desabilitado pra me obrigar a revisar sempre --->
-	local _sFilial   := '01'
+	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sFilial   := '01'
 	local _sDocto    := 'robert'
 	local _sProduto  := '2739'
 	local _sAlmox    := '07'
@@ -2375,6 +2375,63 @@ static function _GLPI15020 ()
 return
 
 // --------------------------------------------------------------------------
+// Gera complemento safra 2023 Isabel Precoce (aumentamos uva Isabel e esquecemos da Isabel Precoce)
+static function _GLPI15070 ()
+//	LOCAL _aDados := {}
+//	local _nDado := 0
+//	// preciso antes fazer um ajusta no U_TESSAFRA.
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := " SELECT DISTINCT SAFRA, ASSOCIADO, LOJA_ASSOC"
+//	_oSQL:_sQuery += " FROM VA_VNOTAS_SAFRA"
+//	_oSQL:_sQuery += " WHERE SAFRA IN ('2021','2022','2023','2024')"
+//	_oSQL:_sQuery += " ORDER BY SAFRA, ASSOCIADO, LOJA_ASSOC"
+//	_oSQL:Log ('[' + procname () + ']')
+//	_aDados := _oSQL:Qry2Array (.f., .f.)
+//	U_Log2 ('debug', '[' + procname () + ']'+ cvaltochar (len (_aDados)))
+//	for _nDado = 1 to len (_aDados)
+//		_sTpC = U_TESSafra (_aDados [_nDado, 1], _aDados [_nDado, 2], _aDados [_nDado, 3], 'C')
+//		_sTpV = U_TESSafra (_aDados [_nDado, 1], _aDados [_nDado, 2], _aDados [_nDado, 3], 'V')
+//		U_Log2 ('debug', '[' + procname () + ']' + _aDados [_nDado, 1] + ' ' + _aDados [_nDado, 2] + '/' + _aDados [_nDado, 3] + ' compra: ' + _sTpC + '  compl: ' + _sTpV)
+//	next
+
+	U_MudaLog ('GLPI15070.log')
+	U_GravaSX1 ('VAGNF3', '01', '')     // Produtor inicial
+	U_GravaSX1 ('VAGNF3', '02', '')     // Loja produtor inicial
+	U_GravaSX1 ('VAGNF3', '03', 'z')    // Produtor final
+	U_GravaSX1 ('VAGNF3', '04', 'z')    // Loja produtor final
+	U_GravaSX1 ('VAGNF3', '05', '2023') // Safra referencia
+	U_GravaSX1 ('VAGNF3', '06', 'S')    // gerar qual Parcela
+	U_GravaSX1 ('VAGNF3', '07', '')     // DCO inicial
+	U_GravaSX1 ('VAGNF3', '08', 'z')    // DCO final
+	U_GravaSX1 ('VAGNF3', '09', '')     // Prod ini
+	U_GravaSX1 ('VAGNF3', '10', 'z')    // Prod final
+	U_GravaSX1 ('VAGNF3', '11', 0)      // Preco total (especifico safra 2016)
+	U_GravaSX1 ('VAGNF3', '12', '9940/9807/9808')     // Apenas estas variedades (separadas por /)
+	U_GravaSX1 ('VAGNF3', '13', '')     // Exceto estas variedades (separadas por /)
+	U_GravaSX1 ('VAGNF3', '14', '')     // Filial inicial
+	U_GravaSX1 ('VAGNF3', '15', 'z')    // Filial final
+	U_VA_GNF3 (.T.)
+
+//	Private cPerg   := "VAGNF2"
+//	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+//	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+//	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+//	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+//	U_GravaSX1 (cPerg, '05', _sSafraCpl) // Safra referencia
+//	U_GravaSX1 (cPerg, '06', 'O')    // Parcelas sep.barras (bco=todas)
+//	U_GravaSX1 (cPerg, '07', 'B')    // Grupo pagto
+//	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
+//	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
+//	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
+//	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
+//	U_GravaSX1 (cPerg, '12', '9969')     // Apenas estas variedades
+//	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
+//	U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
+//	u_va_gnf2 (.t.)
+
+return
+
+// --------------------------------------------------------------------------
 // Simulacoes com cargas de safra
 static function _CargSaf ()
 	local _nContador := 0
@@ -2830,8 +2887,8 @@ return
 // --------------------------------------------------------------------------
 static function _batfull ()
 	U_MudaLog ('U_BatFullW.log')
-	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
-	U_BatFullW ('E') //, 'ZA1012000617078', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+//	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+	U_BatFullW ('E', 'ZA1012000698507', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
 
 //	U_MudaLog ('U_BatFullM.log')
 //	U_BatFullM ()
@@ -9710,43 +9767,6 @@ return
 */
 
 /*
-	sx3 -> (dbsetorder (1))
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT * FROM TOP_FIELD"
-	_oSQL:_sQuery += " WHERE FIELD_TABLE LIKE 'dbo.%'"
-	_oSQL:_sQuery += " AND FIELD_TABLE LIKE '%010'"
-	_sAliasQ := _oSQL:Qry2Trb ()
-	do while ! (_sAliasQ) -> (eof ())
-		//U_Log ((_sAliasQ) -> field_name)
-		if ! sx3 -> (dbseek ((_sAliasQ) -> field_name, .f.))
-			u_log ('Campo ', (_sAliasQ) -> field_name, 'nao existe no SX3')
-		else
-			if sx3 -> x3_tipo == 'D' .and. (_sAliasQ) -> field_type != 'D'
-				u_log ('Campo ', (_sAliasQ) -> field_name, 'field_type:', (_sAliasQ) -> field_type, '   x3_tipo:', sx3 -> x3_tipo)
-			endif
-			if sx3 -> x3_tipo == 'N' .and. (_sAliasQ) -> field_type != 'P'
-				u_log ('Campo ', (_sAliasQ) -> field_name, 'field_type:', (_sAliasQ) -> field_type, '   x3_tipo:', sx3 -> x3_tipo)
-			endif
-			if sx3 -> x3_tipo == 'M' .and. (_sAliasQ) -> field_type != 'M'
-				u_log ('Campo ', (_sAliasQ) -> field_name, 'field_type:', (_sAliasQ) -> field_type, '   x3_tipo:', sx3 -> x3_tipo)
-			endif
-			if sx3 -> x3_tipo == 'L' .and. (_sAliasQ) -> field_type != 'L'
-				u_log ('Campo ', (_sAliasQ) -> field_name, 'field_type:', (_sAliasQ) -> field_type, '   x3_tipo:', sx3 -> x3_tipo)
-			endif
-			if sx3 -> x3_tAMANHO != val((_sAliasQ) -> field_prec)
-				u_log ('Campo ', (_sAliasQ) -> field_name, 'field_prec:', (_sAliasQ) -> field_prec, '   x3_tamanho:', sx3 -> x3_tamanho)
-			endif
-			
-		endif
-		(_sAliasQ) -> (dbskip ())
-	enddo
-return
-*/
-
-
-
-/*
 	// Ajusta transferencias internas que ficaram com D3_NUMSEQ repetido.
 	_dDataIni := stod ('20150112')
 	_dDataFim := stod ('20151231')
@@ -9875,73 +9895,4 @@ return
 		next
 	endif
 return
-*/
-/*
-	// Gera campo B1_VAGRWWC
-	SB1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		u_log (sb1 -> b1_cod)
-		reclock ("SB1", .f.)
-		sb1 -> b1_vagrwwc  = '000'
-		if sb1 -> b1_grpemb != '18'  // Envasados
-			do case
-				case sb1 -> b1_codlin $ '01'  // reserva/premium
-					sb1 -> b1_vagrwwc  = '100'
-				case sb1 -> b1_codlin $ '02'  // varietal
-					sb1 -> b1_vagrwwc  = '101'
-				case sb1 -> b1_codlin $ '03'  // assemblage
-					sb1 -> b1_vagrwwc  = '102'
-				case sb1 -> b1_codlin $ '07'  // mesa
-					sb1 -> b1_vagrwwc  = '111'
-				case sb1 -> b1_codlin $ '05'  // cooler
-					sb1 -> b1_vagrwwc  = '112'
-				case sb1 -> b1_codlin $ '09'  // filtrado
-					sb1 -> b1_vagrwwc  = '113'
-				case sb1 -> b1_codlin $ '13'  // especificos
-					sb1 -> b1_vagrwwc  = '114'
-				case sb1 -> b1_codlin $ '11'  // suco valor agregado
-					sb1 -> b1_vagrwwc  = '121'
-				case sb1 -> b1_codlin $ '06'  // suco tradicional
-					sb1 -> b1_vagrwwc  = '122'
-				case sb1 -> b1_codlin $ '12'  // suco institucional
-					sb1 -> b1_vagrwwc  = '123'
-				case sb1 -> b1_codlin $ '04'  // espumantes
-					do case
-						case sb1 -> b1_claspr $ '02/03'  // extra-brut/brut
-							sb1 -> b1_vagrwwc  = '131'
-						case sb1 -> b1_claspr $ '05'  // demi-sec
-							sb1 -> b1_vagrwwc  = '132'
-						case sb1 -> b1_claspr $ '06/07/10'  // suave/doce/adocado
-							sb1 -> b1_vagrwwc  = '133'
-					endcase
-			endcase
-		else  // Granel
-			do case
-				case sb1 -> b1_prod $ '43'  // fino
-					do case
-						case sb1 -> b1_vacor $ 'B/R'  // branco/rosado
-							sb1 -> b1_vagrwwc  = '201'
-						case sb1 -> b1_vacor $ 'T'  // tinto
-							sb1 -> b1_vagrwwc  = '202'
-					endcase
-				case sb1 -> b1_prod $ '01/04/05/06/17/18/20/42/44'  // mesa
-					do case
-						case sb1 -> b1_vacor $ 'B/R'  // branco/rosado
-							sb1 -> b1_vagrwwc  = '211'
-						case sb1 -> b1_vacor $ 'T'  // tinto
-							sb1 -> b1_vagrwwc  = '212'
-					endcase
-				case sb1 -> b1_prod $ '08/09/12/13'  // suco/mosto
-					do case
-						case sb1 -> b1_vacor $ 'B/R'  // branco/rosado
-							sb1 -> b1_vagrwwc  = '221'
-						case sb1 -> b1_vacor $ 'T'  // tinto
-							sb1 -> b1_vagrwwc  = '222'
-					endcase
-			endcase
-		endif
-		msunlock ()
-		sb1 -> (dbskip ())
-	enddo
-RETURN
 */

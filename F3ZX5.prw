@@ -21,11 +21,12 @@
 // 12/05/2021 - Claudia - Ajustada a chamada SX5 para R27. GLPI: 8825
 // 01/09/2021 - Robert  - Leitura do SX3 nao filtrava registros deletados.
 // 17/11/2023 - Claudia - Inicializada a variavel _sFilial com "  ", deixando caracteres vazios.
+// 12/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
+//#include "rwmake.ch"
+
 // -----------------------------------------------------------------------------------------------------------
-#include "rwmake.ch"
-
-
 User Function F3ZX5 (_sTabela, _sFiltro, _aCposOrd)
 	local _aOpcoes  := {}
 	local _nOpcao   := 0
@@ -119,7 +120,7 @@ User Function F3ZX5 (_sTabela, _sFiltro, _aCposOrd)
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SX3")
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND X3_CAMPO = '" + _aCpos[_x] + "'"
-		_aSX3 := aclone (_oSQL:Qry2Array ())
+		_aSX3 := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		For _i:=1 to Len(_aSX3)
 			aadd (_aCampos, {_x, _aSX3[_i,1], _aSX3[_i,2] * 5, alltrim (_aSX3[_i,3])})

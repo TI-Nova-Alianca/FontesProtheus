@@ -40,7 +40,9 @@
 // 19/03/2021 - Robert  - Faltava tratamento para quando nao houvesse nenhum item em estoque que pudesse 
 //                        receber o rateio (GLPI 9659).
 // 14/05/2021 - Claudia - Retirado o Len(SX1->X1_GRUPO) devido a R27. GLPI: 8825
+// 12/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ----------------------------------------------------------------------------------------------------------------
 
 #include "colors.ch"
@@ -193,7 +195,7 @@ Static Function _esxest01a ()
 			_oSQL:_sQuery += " WHERE " + Retsqlcond("CT1")
 			_oSQL:_sQuery += " AND CT1_GRUPO = '0070'"
 			_oSQL:Log ()
-			_sAliasQ = _oSQL:Qry2Trb ()
+			_sAliasQ = _oSQL:Qry2Trb (.f.)
 
 			while !(_sAliasQ)->(eof())
 				_nSaldo = MOVCUSTO((_sAliasQ)->CT1_CONTA,_aCC [_nCC, .CCCodigo], stod(_ddini),stod(_ddfim),"01", "1",3)
@@ -213,7 +215,7 @@ Static Function _esxest01a ()
 			_oSQL:_sQuery +=   " AND CT1_GRUPO = '0080'"
 			_oSQL:_sQuery +=   " AND CT1_CONTA NOT LIKE '7010110%'"
 			_oSQL:Log ()
-			_sAliasQ = _oSQL:Qry2Trb ()
+			_sAliasQ = _oSQL:Qry2Trb (.f.)
 
 			while !(_sAliasQ)->(eof())
 				_nSaldo = MOVCUSTO((_sAliasQ)->CT1_CONTA,_aCC [_nCC, .CCCodigo], stod(_ddini),stod(_ddfim),"01", "1",3)
@@ -233,7 +235,7 @@ Static Function _esxest01a ()
 			_oSQL:_sQuery += " WHERE " + Retsqlcond ("CT1")
 			_oSQL:_sQuery +=   " AND CT1_GRUPO NOT IN ('0070', '0080', '0110')"
 			_oSQL:Log ()
-			_sAliasQ = _oSQL:Qry2Trb ()
+			_sAliasQ = _oSQL:Qry2Trb (.f.)
 
 			while !(_sAliasQ)->(eof())
 				_nSaldo = MOVCUSTO((_sAliasQ)->CT1_CONTA,_aCC [_nCC, .CCCodigo], stod(_ddini),stod(_ddfim),"01", "1",3)
@@ -251,7 +253,7 @@ Static Function _esxest01a ()
 			_oSQL:_sQuery +=  " FROM " + Retsqlname("CT1") + " CT1"
 			_oSQL:_sQuery += " WHERE " + Retsqlcond("CT1")
 			_oSQL:_sQuery +=   " AND CT1_GRUPO = '0110'"
-			_sAliasQ = _oSQL:Qry2Trb ()
+			_sAliasQ = _oSQL:Qry2Trb (.f.)
 
 			while !(_sAliasQ)->(eof())
 				_nSaldo = MOVCUSTO ((_sAliasQ)->CT1_CONTA,_aCC [_nCC, .CCCodigo], stod(_ddini),stod(_ddfim),"01", "1", 3)
@@ -297,7 +299,7 @@ Static Function _esxest01a ()
 		_oSQL:_sQuery += " WHERE SALDOESTQ > 0.01"  // Evita pegar produtos com saldo muito pequeno
 		_oSQL:Log ()
 
-		_aEstq = aclone (_oSQL:Qry2Array ())
+		_aEstq = aclone (_oSQL:Qry2Array (.f., .f.))
 
 		if len (_aEstq) == 0
 			u_help ("Nao encontrei nenhum item no estoque para onde possam ser distribuidos valores.")
@@ -332,7 +334,7 @@ Static Function _esxest01a ()
 		_oSQL:_sQuery += " GROUP BY CONSUMO.FILIAL, CONSUMO.OP, CONSUMO.PROD_FINAL"
 		_oSQL:Log ()
 
-		_aOPSafra := aclone (_oSQL:Qry2Array ())
+		_aOPSafra := aclone (_oSQL:Qry2Array (.f., .f.))
 		u_log2 ('info', 'OPs de safra:')
 		u_log2 ('info', _aOPSafra)
 

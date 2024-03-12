@@ -20,6 +20,7 @@
 //                     - Passa a usar nomes de colunas na array de grupos (para facilitar entendimento)
 //                     - Melhorados logs
 // 20/07/2023 - Robert - Desconsiderar CFOP 1116 e 2949 na leitura das NF entrada (GLPI 13946)
+// 12/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // Definicao de colunas para a array de saldos por grupos
@@ -97,7 +98,7 @@ Static Function _TudoOk ()
 		_oSQL:_sQuery +=    " AND CTG_PERIOD = '" + substr (dtos (mv_par01), 5, 2) + "'"
 		_oSQL:_sQuery +=    " AND CTG_STATUS = '1'"
 		_oSQL:Log ()
-		if _oSQL:RetQry () != 1
+		if _oSQL:RetQry (1, .f.) != 1
 			u_help ("Processo nao pode ser realizado neste momento por que o periodo solicitado nao se encontra 'aberto' no calendario contabil.",, .t.)
 			_lRet = .F.
 		endif
@@ -424,7 +425,7 @@ static function _Parte1 ()
 	_oSQL:_sQuery +=                   " AND CT2_SBLOTE = '" + _sSubLote + "'"
 	_oSQL:_sQuery +=                   " AND CT2_DATA   = '" + dtos (_dDataLcto) + "'), '000001')"
 	_oSQL:Log ('[' + procname () + ']')
-	_sDocCtb = soma1 (_oSQL:RetQry ())
+	_sDocCtb = soma1 (_oSQL:RetQry (1, .f.))
 	_aAutoCT2C := {}
 	_aAutoCT2I := {}
 	aAdd (_aAutoCT2C, {'DDATALANC' , _dDataLcto , NIL})
@@ -772,7 +773,7 @@ static function _Parte2 ()
 	_oSQL:_sQuery +=                   " AND CT2_SBLOTE = '" + _sSubLote + "'"
 	_oSQL:_sQuery +=                   " AND CT2_DATA   = '" + dtos (_dDataLcto) + "'), '000001')"
 	_oSQL:Log ('[' + procname () + ']')
-	_sDocCtb = soma1 (_oSQL:RetQry ())
+	_sDocCtb = soma1 (_oSQL:RetQry (1, .f.))
 	_aAutoCT2C := {}
 	_aAutoCT2I := {}
 	aAdd (_aAutoCT2C, {'DDATALANC' , _dDataLcto , NIL})

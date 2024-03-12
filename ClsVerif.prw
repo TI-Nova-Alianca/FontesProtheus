@@ -2104,16 +2104,15 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Descricao  = "NF de saída com custo zerado ou negativo"
 		::Sugestao   = ""
 		::Query := ""
-		::Query += " SELECT"	
-		::Query += "	'NF de saída com custo zerado ou negativo' AS PROBLEMA"
-		::Query += "   ,D2_DOC AS NF"
-		::Query += "   ,D2_LOCAL AS ALMOX"
-		::Query += "   ,D2_EMISSAO AS EMISSAO"
-		::Query += "   ,D2_TES AS TES"
-		::Query += "   ,D2_COD AS PRODUTO"
-		::Query += "   ,D2_CUSTO1 AS CUSTO"
+		::Query += " SELECT 'NF de saída com custo zerado ou negativo' AS PROBLEMA"
+		::Query +=       ", D2_DOC AS NF"
+		::Query +=       ", D2_LOCAL AS ALMOX"
+		::Query +=       ", D2_EMISSAO AS EMISSAO"
+		::Query +=       ", D2_TES AS TES"
+		::Query +=       ", D2_COD AS PRODUTO"
+		::Query +=       ", D2_CUSTO1 AS CUSTO"
 		::Query += " FROM " + RetSQLName ("SD2") + " SD2"
-		::Query += "	," + RetSQLName ("SF4") + " SF4"
+		::Query +=     ", " + RetSQLName ("SF4") + " SF4"
 		::Query += " WHERE SD2.D_E_L_E_T_ = ''"
 		::Query += " AND SD2.D2_FILIAL = '" + xfilial ("SD2") + "'"
 		::Query += " AND SD2.D2_CUSTO1 <= 0"
@@ -2123,11 +2122,13 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += " AND SF4.F4_CODIGO = SD2.D2_TES"
 		::Query += " AND SF4.F4_ESTOQUE = 'S'"
 		::Query += " ORDER BY D2_COD, D2_DOC"
-		
+
+
 	case ::Numero == 45
 		::Ativa      = .T.
 		::Setores    = 'CUS'
-		::ViaBatch  = .T.
+		::Filiais    = '*'
+		::ViaBatch   = .T.
 		::Descricao  = "Inconsistencia entre tabelas e parametros"
 		::Sugestao   = ""
 		::Query := ""

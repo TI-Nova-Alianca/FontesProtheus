@@ -14,7 +14,10 @@
 // 15/03/2022 - Claudia - Criação de rotina para gravação de codigo matriz. GLPI: 11635
 // 28/04/2023 - Claudia - Incluida rotina de envio do cliente para o Mercanet. GLPI: 13495
 // 20/10/2023 - Claudia - Incluido relatorio de clientes. GLPI: 14394
+// 12/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+//                      - SELECT * trocado para SELECT A1_COD no teste de existencia de cod/loja base
 //
+
 // ------------------------------------------------------------------------------------------------------------
 #INCLUDE "PROTHEUS.CH"
 #INCLUDE "FWMVCDEF.CH"
@@ -107,12 +110,13 @@ Static Function VerifCliente(_sCodMat, _sLojMat)
 
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
-    _oSQL:_sQuery += " SELECT * FROM " + RetSQLName ("SA1") 
+   // _oSQL:_sQuery += " SELECT * FROM " + RetSQLName ("SA1") 
+    _oSQL:_sQuery += " SELECT A1_COD FROM " + RetSQLName ("SA1") 
     _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND A1_COD  = '" + _sCodMat + "' "
     _oSQL:_sQuery += " AND A1_LOJA = '" + _sLojMat + "' "
     _oSQL:Log ()
-    _aDados := aclone (_oSQL:Qry2Array ())
+    _aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 
     If Len(_aDados) > 0
     _lRet := .T.

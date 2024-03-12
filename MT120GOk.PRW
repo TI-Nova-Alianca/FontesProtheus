@@ -22,7 +22,9 @@
 // 04/05/2021 - Claudia - Incluida a gravação do solicitante no pedido. GLPI: 9814
 // 20/02/2023 - Claudia - Retirada a ligação de  item na consulta. GLPI: 11691
 // 17/03/2023 - Claudia - Gravação do nome do fornecedor. GLPI: 13308
+// 12/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // -------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 #include "colors.ch"
@@ -67,7 +69,7 @@ user function MT120GOk ()
 		_oSQL:_sQuery += " AND SC7.C7_NUM       = '" + sc7 -> c7_num     		+ "'"
 		_oSQL:_sQuery += " AND SC7.C7_FORNECE   = '" + sc7 -> c7_fornece 		+ "'" 
 		_oSQL:_sQuery += " AND SC7.C7_EMISSAO   = '" + DTOS(sc7 -> c7_emissao)  + "'" 
-		_aSolic := aclone (_oSQL:Qry2Array ())
+		_aSolic := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		if len(_aSolic) > 0
 			_sSolicitante := _aSolic[1,1]
@@ -127,7 +129,7 @@ static function _AtuSCR ()
 	_oSQL:_sQuery += " AND CR_FILIAL = '" + sc7 -> c7_filial + "'"
 	_oSQL:_sQuery += " AND CR_TIPO = 'PC'"
 	_oSQL:_sQuery += " AND SUBSTRING (CR_NUM, 1, 6) = '" + sc7 -> c7_num + "'"
-	u_log(_oSQL:RetQry())
+	u_log(_oSQL:RetQry (1, .f.))
 	
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""

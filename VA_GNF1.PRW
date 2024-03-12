@@ -418,10 +418,6 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {18, "[O]rg/[E]m con/[C]onven/[B]ord", "C", 4,             0,            "",   "   ",  {},                                            "Informar letra indicando qual(is) deve(m) ser considerada(s): [O]rganicas, [E]m conversao, [C]conencional, [B]ordadura"})
 	aadd (_aRegsPerg, {19, "Gerar qual grupo pagamento?   ", "C", 1,             0,            "",   "   ",  {},                                            ""})
 	aadd (_aRegsPerg, {20, "Forma de conducao             ", "C", 1,             0,            "",   "   ",  {"Latada", "Espaldeira", "Todas"},             ""})
-//	aadd (_aRegsPerg, {21, "TES compra associados         ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
-//	aadd (_aRegsPerg, {22, "TES compra nao associados     ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
-//	aadd (_aRegsPerg, {23, "TES complemento associados    ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
-//	aadd (_aRegsPerg, {24, "TES complemento nao associados", "C", 3,             0,            "",   "SF4",  {},                                            ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 
 return

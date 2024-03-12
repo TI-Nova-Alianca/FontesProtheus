@@ -12,7 +12,9 @@
 //
 // Historico de alteracoes:
 // 30/06/2022 - Claudia - Retirada CDOC do execauto. GLPI: 12294
+// 11/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // --------------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "Totvs.ch"
@@ -62,7 +64,8 @@ User Function BatCtbCom()
         _oSQL:_sQuery += " AND SL1.L1_INDCTB = 'S' "
         _oSQL:_sQuery += " ORDER BY SL1.L1_EMISNF "
         _oSQL:Log()
-        _aDados := aclone(_oSQL:Qry2Array ())
+//        _aDados := aclone(_oSQL:Qry2Array ())
+        _aDados := aclone(_oSQL:Qry2Array (.t., .f.))
 
         If len(_aDados) > 0  
 	        For _x := 1 to len(_aDados)
@@ -126,8 +129,8 @@ User Function BatCtbCom()
                     reclock("SL1", .F.)
                         SL1->L1_INDCTB := _sIndCtb 
                     MsUnLock()
-                EndIf        		
+                EndIf
             Next
-        EndIf	
+        EndIf
     EndIf
 Return 

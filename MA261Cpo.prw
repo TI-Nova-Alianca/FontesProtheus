@@ -19,7 +19,9 @@
 // 03/05/2018 - Robert  - Desabilitados tratamentos do ZAB (devolucoes de clientes).
 // 30/07/2018 - Robert  - Incluidos campos D3_VAETIQ e D3_VACHVEX.
 // 13/05/2021 - Claudia - Ajuste da tabela SX3 devido a R27. GLPI: 8825
+// 07/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // --------------------------------------------------------------------------
 user function MA261Cpo ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -48,7 +50,7 @@ user function MA261Cpo ()
 		_oSQL:_sQuery += " FROM SX3010"
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND X3_CAMPO     = '" + _aCampos [_nCampo] + "'"
-		_aSX3  = aclone (_oSQL:Qry2Array ())
+		_aSX3  = aclone (_oSQL:Qry2Array (.f., .f.))
 
 		for _x := 1 to len(_aSX3)
 			aadd (aHeader, {TRIM(_aSX3[_x,1]), _aSX3[_x,2], _aSX3[_x,3], _aSX3[_x,4], _aSX3[_x,5], _aSX3[_x,6], '', _aSX3[_x,7], 'SD3', ''})

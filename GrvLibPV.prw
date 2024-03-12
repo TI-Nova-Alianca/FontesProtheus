@@ -85,6 +85,8 @@
 // 01/02/2024 - Claudia - Excluidos produtos tipo RE de envio de email de preço abaixo de venda. GLPI: 14812
 // 29/02/2024 - Robert  - Gerar bloqueio gerencial tipo S especifico de sucos - GLPI 14980
 // 04/03/2024 - Robert  - Bloqueio gerencial tipo S estava pegando TES que nao gera duplicata.
+// 11/03/2024 - Robert  - Melhorada msg de bloqueio gerencial tipo S
+//                      - Nao fazia leitura da linha correta na GDFieldGet, nos testes de bloqueio gerencial tipo S
 //
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -110,6 +112,7 @@ user function GrvLibPV(_lLiberar)
 	local _nPrcLitro := 0
 	local _lBloqSup  := .F.
 	local _sMsgBlSup := ''
+	local _nPrMinLtr := 0
 
 	// verifica se o pedido esta salvo antes de fazer a liberação
 	_oSQL := ClsSQL():New()
@@ -317,6 +320,7 @@ user function GrvLibPV(_lLiberar)
 			if _nOpcao == 1
 
 				// Bloqueia o pedido.
+				// Lembrar de manter consistencia com a view GX0064_LIB_GERENC_PEDIDOS que vai ser lida pelo NaWeb!
 				m->c5_vaBloq = iif ('P' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'P')
 				U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
 
@@ -393,7 +397,8 @@ user function GrvLibPV(_lLiberar)
 					                 {"Sim", "Nao"}, ;
 					                 3, ;
 					                 "Margem minima")
-					if _nOpcao == 1							
+					if _nOpcao == 1
+						// Lembrar de manter consistencia com a view GX0064_LIB_GERENC_PEDIDOS que vai ser lida pelo NaWeb!
 						m->c5_vaBloq = iif ('M' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'M')
 						U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
 					elseif _nOpcao == 2
@@ -461,6 +466,7 @@ user function GrvLibPV(_lLiberar)
 		// se pedido é bonificação
 		If _lLiberar
 			If _lBonif // É bonificação
+				// Lembrar de manter consistencia com a view GX0064_LIB_GERENC_PEDIDOS que vai ser lida pelo NaWeb!
 				m->c5_vaBloq = iif ('B' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'B')
 			EndIf
 		EndIf
@@ -471,59 +477,64 @@ user function GrvLibPV(_lLiberar)
 			// Jah vou preparando msg para envio, caso caia em bloqueio.
 			_sMsgBlSup := "<html>"
 			_sMsgBlSup += "<b>Pedido de venda:</b> " + m->c5_num + "<br>" 
-			_sMsgBlSup += "<b>Cliente:</b> " + m->c5_cliente + " - " + m->c5_nomecli + "<br>"
-			_sMsgBlSup += "<b>Representante:</b> " + m->c5_vend1 + " - " + fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend1, "A3_NOME") + "<br>"
+			_sMsgBlSup += "<b>Cliente:</b> " + m->c5_cliente + " - " + alltrim (m->c5_nomecli) + "<br>"
+			_sMsgBlSup += "<b>Representante:</b> " + m->c5_vend1 + " - " + alltrim (fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend1, "A3_NOME")) + "<br>"
 			_sMsgBlSup += "<b>Produtos:</b><br><br>"
 			
 			_lBloqSup = .F.  // Todos sao inocentes ateh prova em contrario.
 			sb1 -> (dbsetorder (1))
 			for _nLinha = 1 to len (aCols)
+				U_Log2 ('debug', '[' + procname () + ']Verificando item ' + GDFieldGet ("C6_ITEM", _nLinha) + ' ' + GDFieldGet ("C6_PRODUTO", _nLinha))
 				if ! GDDeleted (_nLinha) .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_ESTOQUE") == 'S' .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_DUPLIC") == 'S'
-					if ! sb1 -> (dbseek (xfilial ("SB1") + GDFieldGet ("C6_PRODUTO"), .f.))
-						u_help ("Produto '" + GDFieldGet ("C6_PRODUTO") + "' nao localizado no cadastro!",, .t.)
+					if ! sb1 -> (dbseek (xfilial ("SB1") + GDFieldGet ("C6_PRODUTO", _nLinha), .f.))
+						u_help ("Produto '" + GDFieldGet ("C6_PRODUTO", _nLinha) + "' nao localizado no cadastro!",, .t.)
 						_lLiberar = .F.
-					endif
-					_nPrcLitro = GDFieldGet ("C6_PRCVEN", _nLinha) / sb1 -> b1_litros
-					_sMsgBlSup += alltrim (sb1 -> b1_cod) + " - " + alltrim (sb1 -> b1_desc) + " a <b>R$ " + alltrim (transform (_nPrcLitro, '@E 999,999,999.99')) + " /litro</b><br>"
-					if sb1 -> b1_codlin == '06'  // sucos integrais
-						if sb1 -> b1_grpemb $ '23/24'  // cx 6x1,5/gfa 1,5
-							if _nPrcLitro < 8
-								_lBloqSup = .T.
-								exit
+					else
+						_nPrcLitro = GDFieldGet ("C6_PRCVEN", _nLinha) / sb1 -> b1_litros
+						U_Log2 ('debug', '[' + procname () + ']b1_cod = ' + sb1 -> b1_cod)
+						U_Log2 ('debug', '[' + procname () + ']b1_litros = ' + cvaltochar (sb1 -> b1_cod))
+						U_Log2 ('debug', '[' + procname () + ']_nPrcLitro = ' + cvaltochar (_nPrcLitro))
+						if sb1 -> b1_codlin == '06'  // sucos integrais
+							if sb1 -> b1_grpemb $ '23/24'  // cx 6x1,5/gfa 1,5
+								_nPrMinLtr = 8
+							elseif sb1 -> b1_grpemb $ '03/04/13'  // cx 6x1/cx 12x1/gfa 1000
+								_nPrMinLtr = 11.73
+							elseif sb1 -> b1_grpemb $ '42/44'  // cx12x1TP / TP 1000
+								_nPrMinLtr = 7.9
+							elseif sb1 -> b1_grpemb $ '05/09/12/51/52/55'  // cx 12x500/cx 2x450 / gfa 450 / CX 12X450 / gfa 450
+								_nPrMinLtr = 14.96
+							elseif sb1 -> b1_grpemb $ '41/43'  // cx24x200TP / tp200 / lata
+								_nPrMinLtr = 11
+							else
+								_nPrMinLtr = 0
+								u_help ("Produto '" + sb1 -> b1_cod + "': sem definicao de preco minimo por litro de sucos (grupo de embalagem '" + sb1 -> b1_grpemb + "')",, .t.)
+								_lLiberar = .F.
 							endif
-						elseif sb1 -> b1_grpemb $ '03/04/13'  // cx 6x1/cx 12x1/gfa 1000
-							if _nPrcLitro < 11.73
+
+							// Se este item vai ser bloqueado, adiciona-o na string da mensagem
+							if _nPrcLitro < _nPrMinLtr
 								_lBloqSup = .T.
-								exit
-							endif
-						elseif sb1 -> b1_grpemb $ '42/44'  // cx12x1TP / TP 1000
-							if _nPrcLitro < 7.9  // calculei 11,73 * 67% (jah que TP = 7,90 quando vidro = 11,73)
-								_lBloqSup = .T.
-								exit
-							endif
-						elseif sb1 -> b1_grpemb $ '05/09/12/51/52'  // cx 12x500/cx 2x450 / gfa 450 / CX 12X450 / gfa 450
-							if _nPrcLitro < 14.96
-								_lBloqSup = .T.
-								exit
-							endif
-						elseif sb1 -> b1_grpemb $ '41/43'  // cx24x200TP / tp200
-							if _nPrcLitro < 11  // calculei 16,43 * 67%
-								_lBloqSup = .T.
-								exit
+								_sMsgBlSup += alltrim (sb1 -> b1_cod) + " - " + alltrim (sb1 -> b1_desc)
+								_sMsgBlSup += " a <b>R$ " + alltrim (transform (_nPrcLitro, '@E 999,999,999.9999')) + " /litro</b>"
+								_sMsgBlSup += " (abaixo do valor minimo de R$ " + alltrim (transform (_nPrMinLtr, '@E 999,999,999.9999')) + ") desta linha de produtos.<br>"
 							endif
 						endif
 					endif
+				else
+					U_Log2 ('debug', '[' + procname () + ']Linha deletada, ou TES nao gera estq/dupl.')
 				endif
 			next
 
 			_sMsgBlSup += "</html>"
-			U_Log2 ('debug', '[' + procname () + ']' + _sMsgBlSup)
-
+			U_Log2 ('debug', '[' + procname () + ']_sMsgBlSup: ' + _sMsgBlSup)
 			U_Log2 ('debug', '[' + procname () + ']_lBloqSup = ' + cvaltochar (_lBloqSup))
+
 			if _lBloqSup
 				if U_MsgYesNo ("Bloqueio especifico sucos: vai ficar com bloqueio tipo S para liberacao pela direcao. Confirma?")
+
+					// Lembrar de manter consistencia com a view GX0064_LIB_GERENC_PEDIDOS que vai ser lida pelo NaWeb!
 					m->c5_vaBloq = iif ('S' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'S')  // Tipo S = Superintendente
-		
+
 					// Cria variavel publica com mensagem, para posterior envio pelo P.E. M410STTS se o usuario vier a gravar o pedido.
 					public _sMsgPBSup := _sMsgBlSup
 				else
