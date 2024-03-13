@@ -14,7 +14,8 @@
 // 10/05/2021 - Robert - Nao tinha tratamento por tipo de nota (GLPI 9891)
 // 21/05/2021 - Robert - Incluido TES 314 para complemento pessoa juridica (GLPI 9891)
 // 07/12/2022 - Robert - Alltrim() na leitura do retorno da query no NaWeb.
-// 29/05/2023 - Robert - Nap diferencia mais PF/PJ para complemento preco, quando nao associado (TES PJ passado de 314 para 313)
+// 29/05/2023 - Robert - Nao diferencia mais PF/PJ para complemento preco, quando nao associado (TES PJ passado de 314 para 313)
+// 12/03/2024 - Robert - Teste de associado S/N passado da view GX0001_AGENDA_SAFRA para a function VA_FTIPO_FORNECEDOR_UVA para contemplar safras anteriores (GLPI 15070)
 //
 
 // --------------------------------------------------------------------------
@@ -22,7 +23,7 @@ user function TESSafra (_sSafra, _sFornece, _sLoja, _sTipoNF)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _oSQL      := NIL
-	local _aTpForUva := {}
+//	local _aTpForUva := {}
 	local _sTpForUva := ''
 	local _sRetTES   := ''
 	local _lContinua := .t.
@@ -31,18 +32,27 @@ user function TESSafra (_sSafra, _sFornece, _sLoja, _sTipoNF)
 	if _lContinua
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT distinct GX0001_TIPO_FORNECEDOR_UVA"
-		_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA V"
-		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + _sFornece + "'"
-		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + _sLoja    + "'"
-		//_oSQL:Log ('[' + procname () + ']')
-		_aTpForUva = _oSQL:RetFixo (1, "ao consultar o 'tipo de fornecedor de uva' cod. '" + _sFornece + "/" + _sLoja + "'. Verifique cadastro no NaWeb.", .T.)
-		if len (_aTpForUva) == 1
-			_sTpForUva = alltrim (_aTpForUva [1, 1])
+//		_oSQL:_sQuery += "SELECT distinct GX0001_TIPO_FORNECEDOR_UVA"
+//		_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA V"
+//		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + _sFornece + "'"
+//		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + _sLoja    + "'"
+//		//_oSQL:Log ('[' + procname () + ']')
+//		_aTpForUva = _oSQL:RetFixo (1, "ao consultar o 'tipo de fornecedor de uva' cod. '" + _sFornece + "/" + _sLoja + "'. Verifique cadastro no NaWeb.", .T.)
+//		if len (_aTpForUva) == 1
+//			_sTpForUva = alltrim (_aTpForUva [1, 1])
+//		else
+//			u_log2 ('erro', "Sem definicao para 'tipo de fornecedor de uva'.")
+//			_lContinua = .F.
+//		endif
+
+		_oSQL:_sQuery += "SELECT dbo.VA_FTIPO_FORNECEDOR_UVA ('" + _sFornece + "', '" + _sLoja + "', '" + _sSafra + "0331')" // situacao em data proxima ao final da safra
+		_sTpForUva = _oSQL:RetQry (1, .f.)
+		if left (_sTpForUva, 1) == '1'
+			_sTpForUva = 'A'  // Associado
 		else
-			u_log2 ('erro', "Sem definicao para 'tipo de fornecedor de uva'.")
-			_lContinua = .F.
+			_sTpForUva = 'N'  // Nao associado
 		endif
+
 		FreeObj (_oSQL)
 	endif
 

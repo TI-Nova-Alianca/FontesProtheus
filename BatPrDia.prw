@@ -15,7 +15,9 @@
 // 23/09/2015 - Robert  - Pode receber como parametro a data de referencia.
 // 12/04/2017 - Robert  - Incluida coluna de total de perda (para OPs de reprocesso).
 // 31/05/2021 - Claudia - Incluida função para busca do nome da filial. GLPI: 10061
+// 11/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ------------------------------------------------------------------------------------
 user function BatPrDia (_dDtRef)
 	local _aAreaAnt := U_ML_SRArea ()
@@ -83,7 +85,7 @@ Static Function _BuscaNomeFilial(cFilAnt)
 	_oSQL:_sQuery += " FROM VA_SM0 "
 	_oSQL:_sQuery += " WHERE M0_CODIGO = '01'"
 	_oSQL:_sQuery += " AND M0_CODFIL   = '" + cFilAnt + "'"
-	_aFilial := aclone (_oSQL:Qry2Array ())
+	_aFilial := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	For _x := 1 to Len(_aFilial)
 		_sNomeFil := _aFilial[_x, 1]

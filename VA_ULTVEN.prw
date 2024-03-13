@@ -14,7 +14,9 @@
 // 20/01/2022 - Claudia - Incluida a data de emissão da nota e retirada a dt.emissao 
 //                        do pedido. GLPI:11499
 // 13/11/2023 - Claudia - Incluida condição de pgto. GLPI: 14484
+// 11/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ----------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "totvs.ch"
@@ -42,8 +44,9 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
     _oSQL:_sQuery += " AND SC5.C5_CLIENTE = '"+ _sCliente+"'"
     _oSQL:_sQuery += " AND SC5.C5_LOJACLI = '"+ _sLoja   +"'"
 
-    u_log (_oSQL:_squery)
-    _aItens := aclone (_oSQL:Qry2Array ())
+//    u_log (_oSQL:_squery)
+//    _aItens := aclone (_oSQL:Qry2Array ())
+    _aItens := aclone (_oSQL:Qry2Array (.f., .f.))
 
     For _x:=1 to Len(_aItens)
 
@@ -94,7 +97,8 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
         _oSQL:_sQuery += " AND C5_LOJACLI = '" + _sLoja    + "' "
         _oSQL:_sQuery += " ORDER BY SC5.R_E_C_N_O_ DESC "
         u_log (_oSQL:_squery)
-        _aProd := aclone (_oSQL:Qry2Array ())
+//        _aProd := aclone (_oSQL:Qry2Array ())
+        _aProd := aclone (_oSQL:Qry2Array (.t., .f.))
 
         For _i:=1 to Len(_aProd)
             aadd(_aDados,{  _aProd[_i, 1]       ,; 

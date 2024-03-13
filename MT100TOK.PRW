@@ -75,6 +75,7 @@
 // 19/01/2024 - Sandra  - Habilitado variavel _ValXML. - GLPI (14565) 
 // 25/01/2024 - Robert  - Nao validar XML da especie NF3E (GLPI 14565)
 // 14/02/2024 - Robert  - Validacao A2_INSCR x _oXml:_emit:_IE:TEXT passa a desconsiderar zeros a esquerda.
+// 12/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -406,7 +407,7 @@ static function _ValChvNFe ()
 			_oSQL:_sQuery +=       " AND F1_FORNECE = '" + cA100For + "'"
 			_oSQL:_sQuery +=       " AND F1_LOJA    = '" + cLoja    + "')"
 		endif
-		if ! empty (_oSQL:RetQry ())
+		if ! empty (_oSQL:RetQry (1, .f.))
 			u_help ("Chave NF-e ja existe no banco de dados. Verifique a seguinte NF:" + chr (13) + chr (10) + _oSQL:_xRetQry)
 			_lRet = .F.
 			return _lRet
@@ -436,7 +437,7 @@ static function _ValChvNFe ()
 				_oSQL:_sQuery +=    " AND SM0.M0_CODIGO  = '" + cEmpAnt   + "'"
 				_oSQL:_sQuery +=    " AND SM0.M0_CGC     = '" + _sCGCEmit + "'"
 				_oSQL:Log ()
-				if empty (_oSQL:RetQry ())
+				if empty (_oSQL:RetQry (1, .f.))
 					u_help ("Nota fiscal nao tem chave gravada na filial de origem. Verifique se a mesma encontra-se autorizada junto a SEFAZ e se o DANFe foi impresso.")
 					_lRet = .F.
 				endif

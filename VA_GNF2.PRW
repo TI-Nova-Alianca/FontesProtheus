@@ -85,6 +85,8 @@ User Function VA_GNF2 (_lAutomat)
 		_lContinua = U_ZZUVL ('045', __cUserID, .T.)
 	endif
 
+	U_HELP ('LEMBRAR DE PASSAR A UVA ISABEL PRECOCE PARA A COLUNA DA ISABEL!!!',, .T.)
+
 	// Controle de semaforo.
 	if _lContinua
 		_nLock := U_Semaforo (procname () + cEmpAnt + cFilAnt)

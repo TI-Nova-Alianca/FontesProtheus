@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 05/04/2017 - Robert - Valida tambem se o lote do SBF eh o mesmo do ZAF.
 // 17/05/2017 - Robert - Laudo passa a referenciar apenas o lote e nao mais o endereco.
+// 11/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -32,7 +33,7 @@ user function LaudoEm (_sProduto, _sLote, _dDataRef)
 	_oSQL:_sQuery +=                     " AND MAIS_RECENTE.ZAF_ENSAIO > ZAF.ZAF_ENSAIO)"
 	_oSQL:_sQuery += " ORDER BY ZAF.ZAF_ENSAIO DESC"
 	//_oSQL:Log ()
-	_sRet = _oSQL:RetQry ()
+	_sRet = _oSQL:RetQry (1, .f.)
 	
 	U_ML_SRArea (_aAreaAnt)
 return _sRet

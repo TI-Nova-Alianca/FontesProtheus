@@ -54,6 +54,7 @@
 // 27/12/2023 - Robert  - Criado atributo CodRetorno.
 // 28/02/2024 - Robert  - Metodo :AlmUsaFull passa a receber parametro 'filial' (GLPI 14785)
 //                      - Criado tratamento para desfazimento de guarda de pallets na logistica (atributo :EtqReferenciada) - GLPI 14999
+// 08/03/2024 - Robert  - Desconsiderar mensagem "Ja existe uma movimentacao com este numero de documento" como um erro, pois basta tentar novamente.
 //
 
 // ------------------------------------------------------------------------------------
@@ -625,7 +626,6 @@ METHOD GeraSD3 () class ClsTrEstq
 			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND D3_FILIAL  = '" + xfilial ("SD3") + "'"
 			_oSQL:_sQuery +=    " AND D3_VACHVEX = '" + _sChaveEx + "'"
-//			_aRegsSD3 := aclone (_oSQL:Qry2Array (.F., .F.))
 			_aRegsSD3 := aclone (_oSQL:RetFixo (2, "ao procurar os 2 registros que deveriam ter sido gravados na tabela SD3.", .F.))
 			if len (_aRegsSD3) != 2
 				U_Log2 ('erro', '[' + procname () + ']Setando lMsErroAuto para .T. por que nao achei os 2 registros esperados no SD3. Query para conferencia: ' + _oSQL:_sQuery)
@@ -647,8 +647,13 @@ METHOD GeraSD3 () class ClsTrEstq
 				_Super:SomaMsg ('[Sem descricao do erro]')
 			endif
 			::UltMsg = "Erro interno na rotina de transferencia: " + ::UltMsg
-			::Executado = 'E'
-			::AtuZAG ("zag_exec", ::Executado)
+
+			// Esta mensagem se resolve tentando novamente, entao nao marcarei o registro como 'erro'
+			if ! "ja existe uma movimentacao com este numero de documento" $ lower (strtran (::UltMsg, '  ', ' '))
+				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Nao vou marcar como ERRO por que trata-se da putrida mensagem de que o documento jah existe...')
+				::Executado = 'E'
+				::AtuZAG ("zag_exec", ::Executado)
+			endif
 			_lContinua = .F.
 			u_log2 ('erro', ::UltMsg)
 		else

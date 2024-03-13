@@ -12,7 +12,9 @@
 // #Modulos 		  #COM         
 //
 // Historico de alteracoes:
+// 12/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // -----------------------------------------------------------------------------------------
 #Include 'Protheus.ch'
 
@@ -44,7 +46,7 @@ static function _ObsMATA094(cFilDoc,cDocto)
 	_oSQL:_sQuery += " FROM VA_TEXTOS"
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND CHAVE = '" + _sChave + "'"
-	_sTexto = alltrim (_oSQL:RetQry ())  
+	_sTexto = alltrim (_oSQL:RetQry (1, .f.))  
 
 	DEFINE MSDIALOG oDlg TITLE "Observação da Aprovação" FROM 000, 000  TO 600, 800 COLORS 0, 16777215 PIXEL
 
@@ -60,7 +62,7 @@ static function _ObsMATA094(cFilDoc,cDocto)
 		_oSQL:_sQuery += " SELECT COUNT (*)"
 		_oSQL:_sQuery += " FROM VA_TEXTOS"
 		_oSQL:_sQuery += " WHERE CHAVE = '" + _sChave + "'"
-		if _oSQL:RetQry () > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " UPDATE VA_TEXTOS"
 			_oSQL:_sQuery += " SET D_E_L_E_T_ = ' ',"

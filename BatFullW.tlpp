@@ -57,8 +57,7 @@
 // 28/02/2024 - Robert - Metodo ClsTrEstq:AlmUsaFull passa a receber novos parametros (GLPI 14785)
 //
 
-#Include "Protheus.ch"
-//#Include "TbiConn.ch"
+//#Include "Protheus.ch"
 
 // ------------------------------------------------------------------------------------
 User Function BatFullW (_sQueFazer, _sEntrID, _sSaidID)
@@ -327,7 +326,6 @@ static function _Entradas (_sEntrID)
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
-
 
 return _lRet
 

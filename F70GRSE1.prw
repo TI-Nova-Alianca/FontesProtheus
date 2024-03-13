@@ -23,11 +23,13 @@
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 // 10/02/2023 - CLaudia - Ajustada a baixa de rapel. GLPI: 13176
 // 22/05/2023 - Claudia - Ajustada duplicação da baixa de rapel. GLPI: 13613
+// 12/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ---------------------------------------------------------------------------------------------------
 User Function F70GRSE1()
 	local _aAreaAnt := U_ML_SRArea ()
-	u_logIni ()
+//	u_logIni ()
 
 	// Atualiza campos de descontos no SE5, e tambem verbas 
 	// (nos casos de clientes que cobram as verbas em forma de desconto nos titulos de nossas NF de venda).
@@ -44,7 +46,7 @@ User Function F70GRSE1()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
+//	u_logFim ()
 Return
 //
 // --------------------------------------------------------------------------
@@ -152,7 +154,7 @@ Static Function _AtuSE5 ()
 				_oSQL:_sQuery += "     AND ZA5.ZA5_FILIAL = '" + xfilial ("ZA5") + "'"
 				_oSQL:_sQuery += "     AND ZA5.ZA5_NUM    = '" + @(_wnumverba) + "'"
 				_oSQL:Log ()
-				_aDados := _oSQL:Qry2Array ()
+				_aDados := _oSQL:Qry2Array (.f., .f.)
 				_wseq := 0
 				if len(_aDados) > 0
 					_wseq = _aDados[1,1]
@@ -227,7 +229,7 @@ Static Function _AtuZA5 ()
 	_oSQL:_sQuery += "     AND ZA5.ZA5_FILIAL = '" + xfilial ("ZA5") + "'"
 	_oSQL:_sQuery += "     AND ZA5.ZA5_NUM    = '" + se1 -> e1_num + "'"
 	_oSQL:Log ()
-	_aDados := _oSQL:Qry2Array () //U_Qry2Array(_sQuery)
+	_aDados := _oSQL:Qry2Array (.f., .f.) //U_Qry2Array(_sQuery)
 	_wseq := 0
 	
 	if len(_aDados) > 0
@@ -296,7 +298,7 @@ Static Function _AtuZC0()
 		_oSQL:_sQuery += " AND E5_VARAPEL  > 0 "
 		_oSQL:_sQuery += " AND E5_DATA     = '" + dtos(ddatabase)+"'"
 		_oSQL:Log ()
-		_aRapel := aclone (_oSQL:Qry2Array ())
+		_aRapel := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		If Len(_aRapel) > 0
 			_oSQL:_sQuery := ""
@@ -311,7 +313,7 @@ Static Function _AtuZC0()
 			_oSQL:_sQuery += " AND ZC0_CODCLI = '" + se1 -> e1_cliente + "'"
 			_oSQL:_sQuery += " AND ZC0_LOJCLI = '" + se1 -> e1_loja    + "'"
 			_oSQL:_sQuery += " AND ZC0_TM     = '04' "
-			_aBaixa := aclone (_oSQL:Qry2Array ())
+			_aBaixa := aclone (_oSQL:Qry2Array (.f., .f.))
 
 			If len(_aBaixa) > 0
 				If _aBaixa[1,1] == _aRapel[1,1]
@@ -384,7 +386,7 @@ Static Function _SaldoZA5(_sVerba, _nValor)
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_   = '' "
 	_oSQL:_sQuery += " AND ZA5.ZA5_NUM    = '" + _sVerba  + "'"
 	_oSQL:Log ()
-	_aBaixado := _oSQL:Qry2Array ()
+	_aBaixado := _oSQL:Qry2Array (.f., .f.)
 
 	For _x := 1 to Len(_aBaixado)
 		_nVlrBaixa += _aBaixado[_x,1]
@@ -398,7 +400,7 @@ Static Function _SaldoZA5(_sVerba, _nValor)
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_   = '' "
 	_oSQL:_sQuery += " AND ZA4.ZA4_NUM    = '" + _sVerba  + "'"
 	_oSQL:Log ()
-	_aVerba := _oSQL:Qry2Array ()
+	_aVerba := _oSQL:Qry2Array (.f., .f.)
 
 	For _y :=1 to Len(_aVerba)
 		_nVlrVerba += _aVerba[_y,1]

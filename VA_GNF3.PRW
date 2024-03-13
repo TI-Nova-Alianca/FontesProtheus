@@ -27,6 +27,8 @@ User Function VA_GNF3 (_lAuto)
 
 	Private cPerg   := "VAGNF3"
 
+	U_HELP ('LEMBRAR DE PASSAR A UVA ISABEL PRECOCE PARA A COLUNA DA ISABEL!!!',, .T.)
+
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
@@ -1110,7 +1112,7 @@ static function _Gera2023 ()
 	endif
 	_oSQL:_sQuery += " ORDER BY FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, PRODUTO, GRAU, CLAS_FINAL, CLAS_ABD"
 	_oSQL:Log ('[' + procname () + ']')
-	_sAliasQ = _oSQL:Qry2Trb ()
+	_sAliasQ = _oSQL:Qry2Trb (.f.)
 	dbselectarea (_sAliasQ)
 	count to _nRecCount
 	dbselectarea ("ZZ9")
@@ -1151,7 +1153,11 @@ static function _Gera2023 ()
 				exit
 			endif
 			//U_Log2 ('debug', '[' + procname () + ']' + _oCarSaf:ConsCompar ())
-			_aMenorVl = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
+			//_aMenorVl = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
+			if ! _oCarSaf:BuscaVarMenorVl ()
+				u_help (_oCarSaf:UltMsg,, .t.)
+				exit
+			endif
 		endif
 		if len (_aMenorVl) > 3
 			u_help ("Este programa nao tem tratamento para cargas com mistura de mais de 3 variedades. Faltariam campos na tabela ZZ9 !!!")
@@ -1173,7 +1179,7 @@ static function _Gera2023 ()
 		// sobre misturas.
 		if len (_aMenorVl) >= 1 .and. _aMenorVl [1, 1] != (_sAliasQ) -> produto
 			_sMsgNF += 'Usar preco de ' + alltrim (_aMenorVl [1, 1]) + ';'
-			_aRetPrc = aclone (U_PrcUva23 ((_sAliasQ) -> filial, _aMenorVl [1, 1], val ((_sAliasQ) -> grau), _sClasFina, _aMenorVl [1, 3], .F., .F.))
+			_aRetPrc = aclone (U_PrcUvaS1 ((_sAliasQ) -> filial, _aMenorVl [1, 1], val ((_sAliasQ) -> grau), _sClasFina, _aMenorVl [1, 3], .F., .F.))
 		else
 			// Assume a classificacao da uva vinifera conforme o sistema de conducao.
 			_sClasFina = ''
@@ -1184,7 +1190,7 @@ static function _Gera2023 ()
 			else
 				u_help ("Sistema de conducao '" + (_sAliasQ) -> sist_conducao + "' sem tratamento (NF compra " + (_sAliasQ) -> doc + ")",, .t.)
 			endif
-			_aRetPrc = aclone (U_PrcUva23 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> sist_conducao, .F., .F.))
+			_aRetPrc = aclone (U_PrcUvaS1 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> sist_conducao, .F., .F.))
 		endif
 
 		// A funcao retorna diferentes valores, mas aqui quero apenas o valor de compra e as observacoes.
@@ -1228,11 +1234,11 @@ static function _Gera2023 ()
 		zz9 -> zz9_vunOld = (_sAliasQ) -> VUnit_efetivo
 		zz9 -> zz9_quant  = 0
 		zz9 -> zz9_qtOri  = (_sAliasQ) -> peso_liq  // Campo util para relatorios posteriores
-		zz9 -> zz9_vunit  = _aRetPrc [1]  // _nVCompl   // Valor total a complementar
+		zz9 -> zz9_vunit  = _nVCompl   // Valor total a complementar
 		zz9 -> zz9_nfcomp = iif (zz9 -> zz9_vunit <= 0, 'VLR_MENOR', '')  // Para evitar que posteriormente o programa VA_GNF2 tente gerar nota para este registro.
 		zz9 -> zz9_vunit2 = _aRetPrc [1]  // Preco unitario que foi usado para calcular o complemento
 		zz9 -> zz9_obs    = _aRetPrc [2]  // Observacoes geradas pelo prog. de calculo do preco
-		zz9 -> zz9_vunit3 = _aRetPrc [3]  // Preco unitario da tabela CONAB
+		//zz9 -> zz9_vunit3 = _aRetPrc [3]  // Preco unitario da tabela CONAB
 		zz9 -> zz9_nfori  = (_sAliasQ) -> doc
 		zz9 -> zz9_serior = (_sAliasQ) -> serie
 		zz9 -> zz9_itemor = (_sAliasQ) -> item_nota

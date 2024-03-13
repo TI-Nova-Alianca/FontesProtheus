@@ -23,6 +23,7 @@
 // 21/09/2023 - Sandra  - Incluida a validação para liberação de credito R$ para loja. GLPI: 14260. 
 // 25/01/2024 - Claudia - Melhorias no layout dos e-mails. GLPI: 14805
 // 29/02/2024 - Robert  - Enviar e-mail bloqueio gerencial tipo S especifico de sucos - GLPI 14980
+// 06/03/2024 - Robert  - Alterada msg. 'liberado' para 'gravado' no e-mail de aviso de pedido que caiu em bloqueio gerencial.
 //
 
 // --------------------------------------------------------------------------------------------------
@@ -70,12 +71,14 @@ return
 static function _MailAviso()
 	local _sMsg    := ""
 
+	// Lembrar de manter consistencia com a view GX0064_LIB_GERENC_PEDIDOS que vai ser lida pelo NaWeb!
+
 	if inclui .or. (altera .and. !Empty(sc5 -> C5_LIBEROK) .And. Empty(sc5 -> C5_BLQ))
 		if 'P' $ m->c5_vaBloq  // Bloqueio por preco
 			if type ("_sMsgPUltV") == "C"  // Variavel publica que deve ter sido criada pelo programa GrvLibPV 
 				_sMsg += chr (13) + chr (10) + _sMsgPUltV
 			endif
-			U_ZZUNU('006', "Pedido de venda '" + m->c5_num + "' liberado por " + alltrim(cUserName) + " com precos menores que a ultima venda.", _sMsg) 
+			U_ZZUNU('006', "Pedido de venda '" + m->c5_num + "' gravado por " + alltrim(cUserName) + " com precos menores que a ultima venda.", _sMsg)
 		endif
 
 		//if 'M' $ m->c5_vaBloq  // Bloqueio por margem
@@ -92,11 +95,11 @@ static function _MailAviso()
 			_sMsg += "<b>Margem:</b>" + transform (m->c5_vaMCont, "@E 999,999.99%") + "<br>"
 			_sMsg += "</html>"
 			
-			U_ZZUNU('006', "Pedido de venda '" + m->c5_num + "' liberado por " + alltrim(cUserName) + " abaixo da margem minima", _sMsg)
+			U_ZZUNU('006', "Pedido de venda '" + m->c5_num + "' gravado por " + alltrim(cUserName) + " abaixo da margem minima", _sMsg)
 		endif
 
 		if 'S' $ m->c5_vaBloq  // Bloqueio por preco
-			U_ZZUNU ('158', "Pedido de venda '" + m->c5_num + "' (bloq.superint.) gravado por " + alltrim(cUserName), _sMsgPBSup)
+			U_ZZUNU ('158', "Pedido de venda '" + m->c5_num + "' (bloq.sucos) gravado por " + alltrim(cUserName), _sMsgPBSup)
 		endif
 
 	endif
