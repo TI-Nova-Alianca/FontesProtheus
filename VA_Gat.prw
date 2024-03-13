@@ -142,6 +142,7 @@
 //                        o parametro nao existe (GLPI 13640)
 // 03/01/2024 - Robert  - Atualizados gatilhos para safra 2024.
 // 22/02/2024 - Robert  - Chamadas de ClsSQL:Qry2Array() estavam sem parametros.
+// 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -653,7 +654,7 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZA1")
 			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND ZA1_OP     = '" + m->za1_op + "'"
-			_xRet = _oSQL:RetQry () + 1
+			_xRet = _oSQL:RetQry (1, .F.) + 1
 		endif
 
 	case _sCampo == "M->ZA9_CLI" .and. _sCDomin == "ZA9_TRANSP"

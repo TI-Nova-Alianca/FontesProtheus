@@ -189,6 +189,7 @@
 // 31/12/2023 - Robert  - Criada validacao para ZA_COD.
 // 07/02/2024 - Claudia - Incluida validação de item eliminado por residuo. GLPI: 14835
 // 23/02/2024 - Robert  - Validação do campo ZZ6_SUSPEN
+// 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -439,25 +440,6 @@ user function VA_VCpo (_sCampo)
 				_lRet = .F.
 			endif
 
-	// mIGRADO PARA PE_MATA010	case _sCampo == "M->B1_CODBAR"
-	// mIGRADO PARA PE_MATA010		if ! empty (m->b1_codbar) .and. ! _SohZeros (m->b1_codbar)
-	// mIGRADO PARA PE_MATA010			_oSQL := ClsSQL():New ()
-	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery := ""
-	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
-	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
-	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ = ''"
-	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + m->b1_codbar + "'"
-	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + m->b1_cod + "'"
-	// mIGRADO PARA PE_MATA010			_oSQL:Log ()
-	// mIGRADO PARA PE_MATA010			_sMsg = _oSQL:RetQry (1, .f.)
-	// mIGRADO PARA PE_MATA010			if ! empty (_sMsg)
-	// mIGRADO PARA PE_MATA010				U_Help ("Codigo de barras ja informado para o(s) seguinte(s) produto (s): " + _sMsg,, .t.)
-	// mIGRADO PARA PE_MATA010				_lRet = .F.
-	// mIGRADO PARA PE_MATA010			endif
-	// mIGRADO PARA PE_MATA010		endif
-
-
 		case _sCampo == "M->B1_CODPAI"
 			if ! empty (M->B1_CODPAI) .and. M->B1_GRUPO != '0400'  // Uvas tem mais de um pai (organ/bordadura, etc.)
 				_sQuery := ""
@@ -473,26 +455,6 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-/* Campos nao existem mais
-		case _sCampo $ "M->B1_VACSDAL/M->B1_VACSDLV/M->B1_VACSDJC/M->B1_VACSDSP/M->B1_VACSDSA"
-			_sQuery := ""
-			_sQuery += " select count (ZX5_FILIAL)"
-			_sQuery += "   from " + RetSQLName ("ZX5")
-			_sQuery += "  where D_E_L_E_T_ = ''"
-			_sQuery += "    and ZX5_FILIAL = (SELECT CASE ZX5_MODO WHEN 'C' THEN '  ' ELSE '" + cFilAnt + "' END"
-			_sQuery +=                        " FROM " + RetSQLName ("ZX5")
-			_sQuery +=                       " WHERE D_E_L_E_T_ = ''"
-			_sQuery +=                         " AND ZX5_FILIAL = '  '"
-			_sQuery +=                         " AND ZX5_TABELA = '00'"
-			_sQuery +=                         " AND ZX5_CHAVE  = '12')"
-			_sQuery += "    and ZX5_TABELA = '12'"
-			// Campo excluido --> _sQuery += "    and ZX5_12COOP = '" + right (alltrim (_sCampo), 2) + "'"
-			_sQuery += "    and ZX5_12COD = '" + &(_sCampo) + "'"
-			if U_RetSQL (_sQuery) == 0
-				U_Help ("Codigo do Sisdeclara nao cadastrado para esta filial. Verifique tabela 12 das tabelas genericas.")
-				_lRet = .F.
-			endif
-*/
 
 		case _sCampo $ "M->B1_RASTRO" .and. m->b1_rastro = 'L'
 			_oSQL := ClsSQL ():New ()
@@ -536,7 +498,7 @@ user function VA_VCpo (_sCampo)
 			_oSQL:_sQuery += "    and ZX5_TABELA = '08'"
 			_oSQL:_sQuery += "    and ZX5_08ATIV = 'S'"
 			_oSQL:_sQuery += "    and ZX5_08MARC = '" + m->b1_varmaal + "'"
-			if _oSQL:RetQry () == 0
+			if _oSQL:RetQry (1, .F.) == 0
 				_lRet = U_MsgNoYes ("Registro nao encontrado ou inativo (tabela 08 do arquivo ZX5). Confirma assim mesmo?")
 			endif
 
@@ -572,7 +534,7 @@ user function VA_VCpo (_sCampo)
 			_oSQL:_sQuery +=    " AND C1_FILIAL  = '" + xfilial ("SC1") + "'"
 			_oSQL:_sQuery +=    " AND C1_FORNECE = '" + GDFieldGet ("C1_FORNECE") + "'"
 			_oSQL:_sQuery +=    " AND C1_VANF    = '" + m->c1_vanf + "'"
-			_sRetSQL := alltrim (_oSQL:RetQry ())
+			_sRetSQL := alltrim (_oSQL:RetQry (1, .F.))
 			if ! empty (_sRetSQL)
 				_lRet = U_MsgNoYes ("Este numero de NF ja foi informado nas seguintes solicitacoes: " + alltrim (_sRetSQL) + ". Confirma assim mesmo?")
 			endif
@@ -666,7 +628,7 @@ user function VA_VCpo (_sCampo)
 					_oSQL:_sQuery +=  " WHERE SD1.D_E_L_E_T_ != '*'"
 					_oSQL:_sQuery +=    " AND SD1.D1_FILIAL   = '" + xFilial ("SD1") + "'"
 					_oSQL:_sQuery +=    " AND SD1.D1_OP       = '" + m->c2_num + m->c2_item + m->c2_sequen + m->c2_itemgrd + "'"
-					if _oSQL:RetQry () > 0
+					if _oSQL:RetQry (1, .F.) > 0
 						u_help ("OP envolvendo servicos em / para terceiros: ja´ existe movimentacao de NF de entrada associada a esta OP.")
 						_lRet = .F.
 					endif
@@ -678,7 +640,7 @@ user function VA_VCpo (_sCampo)
 					_oSQL:_sQuery +=  " WHERE SD2.D_E_L_E_T_ != '*'"
 					_oSQL:_sQuery +=    " AND SD2.D2_FILIAL   = '" + xFilial ("SD2") + "'"
 					_oSQL:_sQuery +=    " AND SD2.D2_VAOPT    = '" + m->c2_num + m->c2_item + m->c2_sequen + m->c2_itemgrd + "'"
-					if _oSQL:RetQry () > 0
+					if _oSQL:RetQry (1, .F.) > 0
 						u_help ("OP envolvendo servicos em / para terceiros: ja´ existe movimentacao de NF de saida associada a esta OP.")
 						_lRet = .F.
 					endif
@@ -1066,7 +1028,7 @@ user function VA_VCpo (_sCampo)
 				_oSQL:_sQuery += "  AND SB1.B1_COD = '" + m->d3_cod + "'"
 				_oSQL:_sQuery += " AND SB1.B1_TIPO in ('MM','MC')  "
 				_oSQL:Log ()
-				_aSB1:= _oSQL:Qry2Array ()
+				_aSB1:= _oSQL:Qry2Array (.F., .F.)
 				
 				For _x := 1 to Len(_aSB1)
 					CriaSB2 (_aSB1[_x, 1], '02')
@@ -1776,7 +1738,7 @@ static function _ValQtLote ()
 					_oSQL:_sQuery +=                    " AND SG1.G1_REVFIM  >= '" + m->c2_varevvd + "'"
 					_oSQL:_sQuery +=               " ), 0)"
 					_Osql:lOG ()
-					_nLoteMult = _oSQL:RetQry ()
+					_nLoteMult = _oSQL:RetQry (1, .F.)
 					if _nLoteMult > 0
 						_sMsg = "Lote multiplo de producao informado no campo '" + alltrim (RetTitle ("G5_VALM")) + "' do cadastro da revisao '" + m->c2_varevvd + "' do produto '" + alltrim (m->c2_vacodvd) + "' (VD principal) = " + cvaltochar (sg5 -> g5_valm)
 						_nQtLotes = m->c2_quant / _nLoteMult
@@ -1904,7 +1866,7 @@ static function _ValDescLj (_sQual)
 		_oSQL:_sQuery +=   " AND SU5.U5_FILIAL  = '" + xfilial ("SU5") + "'"
 		_oSQL:_sQuery +=   " AND SU5.U5_CODCONT = '" + m->lq_contato + "'"
 		_oSQL:Log ()
-		_aAssoc = aclone (_oSQL:Qry2Array ())
+		_aAssoc = aclone (_oSQL:Qry2Array (.F., .F.))
 		if len (_aAssoc) > 0 .and. U_EhAssoc (_aAssoc [1, 1], _aAssoc [1, 2], date ())
 			_lRet = .T.
 		else

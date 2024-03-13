@@ -8,7 +8,9 @@
 // 11/05/2015 - Robert - Tratamento para devolucoes/cancelamentos (arquivo ZAB).
 // 10/03/2017 - Júlio  - Incluída validação para impedir a exclusão de notas com etiquetas impressas.
 // 03/05/2018 - Robert - Desabilitados tratamentos do ZAB (devolucoes de clientes).
+// 12/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ----------------------------------------------------------------
 user function A100Del ()
 	local _lRet     := .T.
@@ -47,7 +49,7 @@ static function _VerFull ()
 		_oSQL:_sQuery +=    " and codfor = '" + sf1 -> f1_fornece + sf1 -> f1_loja + "'"
 		_oSQL:_sQuery +=    " and status != '9'"
 		u_log (_oSQL:_sQuery)
-		if _oSQL:RetQry () > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			_sMsg := "Esta entrada de estoque ja foi vista pelo Fullsoft. Para estornar esta nota exclua do Fullsoft, antes, a tarefa de recebimento." + chr (13) + chr (10) + chr (13) + chr (10)
 			_sMsg += "Dados adicionais:" + chr (13) + chr (10)
 			_sMsg += "Documento: " + sf1 -> f1_doc + chr (13) + chr (10)
@@ -88,7 +90,7 @@ static function _VerEtiq ()
 		_oSQL:_sQuery += " and ZA1_APONT != 'I'"
 		_oSQL:_sQuery += " and ZA1_IMPRES = 'S'
 		u_log (_oSQL:_sQuery)
-		if _oSQL:RetQry () > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			_sMsg := "Existem etiquetas emitidas e utilizadas a partir da nota fiscal." + chr (13) + chr (10) 
 			_sMsg += "As etiquetas devem ser inutilizadas para que a nota possa ser excluida." + chr (13) + chr (10) + chr (13) + chr (10)
 			_sMsg += "Dados adicionais:" + chr (13) + chr (10)

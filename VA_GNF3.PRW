@@ -1157,29 +1157,9 @@ static function _Gera2023 ()
 			if ! _oCarSaf:BuscaVarMenorVl ()
 				u_help (_oCarSaf:UltMsg,, .t.)
 				exit
+			else
+				_aRetPrc = aclone (U_PrcUvaS1 ((_sAliasQ) -> filial, _oCarSaf:VariedadeMenorValorCodigo, val ((_sAliasQ) -> grau), _sClasFina, _oCarSaf:VariedadeMenorValorConducao, .F., .F.))
 			endif
-		endif
-		if len (_aMenorVl) > 3
-			u_help ("Este programa nao tem tratamento para cargas com mistura de mais de 3 variedades. Faltariam campos na tabela ZZ9 !!!")
-			exit
-		else
-			if len (_aMenorVl) > 1
-				_sMsgNF += "Mistura:"
-			endif
-			for _nAux = 1 to len (_aMenorVl)
-				if ! alltrim (_aMenorVl [_nAux, 1]) $ _sMsgNF
-					_sMsgNF += alltrim (_aMenorVl [_nAux, 1]) + '-' + alltrim (fBuscaCpo ("SB5", 1, xfilial ("SB5") + _aMenorVl [_nAux, 1], "B5_CEME")) + ';'
-				endif
-			next
-		endif
-
-		// Se teve mistura, preciso assumir a variedade de menor valor.
-		// Mas geralmente a 'variedade de menor valor' eh a propria variedade
-		// da contranota original, entao nem preciso ficar gravando mensagem
-		// sobre misturas.
-		if len (_aMenorVl) >= 1 .and. _aMenorVl [1, 1] != (_sAliasQ) -> produto
-			_sMsgNF += 'Usar preco de ' + alltrim (_aMenorVl [1, 1]) + ';'
-			_aRetPrc = aclone (U_PrcUvaS1 ((_sAliasQ) -> filial, _aMenorVl [1, 1], val ((_sAliasQ) -> grau), _sClasFina, _aMenorVl [1, 3], .F., .F.))
 		else
 			// Assume a classificacao da uva vinifera conforme o sistema de conducao.
 			_sClasFina = ''

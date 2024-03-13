@@ -45,10 +45,11 @@
 //                      - Removidas opcoes 'detalhado' e 'somente NF compra'
 // 29/09/2023 - Robert  - Implementado modelo4 em 132 colunas, mostrando descontos (GLPI 9561)
 // 04/12/2023 - Robert  - Ajustes titulos colunas no modelo 132 colunas
+// 12/03/2024 - Robert  - Removida opcao de "nao mostrar pagtos e compensacoes" por que calculava o saldo errado.
 //
 
 #include "protheus.ch"
-#include "tbiconn.ch"
+//#include "tbiconn.ch"
 #INCLUDE "XMLXFUN.CH"
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -2018,7 +2019,7 @@ static function _Modelo4 ()
 	if _lContinua
 		_oAssoc:FSSafra      = mv_par01
 		_oAssoc:FSPrevPagto  = .t.  // Buscar previsoes de pagamento
-		_oAssoc:FSPrPgtAbat  = (mv_par05 == 1)  // Buscar os abatimentos de cada previsao de pagamento
+		_oAssoc:FSPrPgtAbat  = .t.  // (mv_par05 == 1)  // Buscar os abatimentos de cada previsao de pagamento
 		_oAssoc:FSRegraPagto = .t.  // Buscar regras de pagamento
 		_oAssoc:FSResValEfet = .t.  // Buscar resumo com valores efetivos (premios, complementos, etc)
 		_oAssoc:FSFrete      = .t.  // Buscar fretes/aux.combustivel
@@ -2148,7 +2149,7 @@ static function _Modelo4 ()
 
 					// Aproveito que o XML jah traz tags de totais, para
 					// conferir totais que calculei aqui.
-					if mv_par05 == 1
+				//	if mv_par05 == 1
 						_nTFatXML = val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT)
 						_nTSldXML = val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT)
 
@@ -2160,7 +2161,7 @@ static function _Modelo4 ()
 							u_help ("Saldo final que calculei aqui (" + cvaltochar (_nTGFat - _nTGAbat) + ") nao bate com o que veio no XML (" + cvaltochar (_nTSldXML) + ")",, .t.)
 							_aLinImp = {}
 						endif
-					endif
+				//	endif
 				endif
 				_nFatPag ++
 			enddo
@@ -2190,11 +2191,11 @@ static function _Modelo4 ()
 				next
 
 				// Linha separando cada parcela
-				if mv_par05 == 1
+			//	if mv_par05 == 1
 					_sLinImp = replicate ('-', limite)
 					aadd (_aLinImp, _sLinImp)
 					_sLinImp = ''
-				endif
+			//	endif
 			endif
 		enddo
 
@@ -2302,7 +2303,7 @@ Static Function _ValidPerg ()
 //	aadd (_aRegsPerg, {04, "PARAMETRO EM DESUSO           ", "C", 2,  0,  "",   "   ", {},             ""})
 //	aadd (_aRegsPerg, {05, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}, ""})
 	aadd (_aRegsPerg, {04, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}, ""})
-	aadd (_aRegsPerg, {05, "Mostrar pagtos e compensacoes?", "N", 1,  0,  "",   "   ", {"Sim", "Nao"}, ""})
+//	aadd (_aRegsPerg, {05, "Mostrar pagtos e compensacoes?", "N", 1,  0,  "",   "   ", {"Sim", "Nao"}, ""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return

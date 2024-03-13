@@ -7,6 +7,7 @@
 // 26/09/2014 - Robert - Removido do P.E. OM200US; passa a ser um fonte separado.
 //                     - Caso nao receba o numero da carga como parametro, abre browse para selecao.
 // 03/10/2015 - Robert - Removido botao 'Pegar da doca'.
+// 13/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ----------------------------------------------------------------
@@ -14,11 +15,6 @@ User Function LibCarg (_sCarga)
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _nLock      := 0
 	local _lContinua  := .T.
-//	local _aSepara    := {}
-//	local _oSQL       := NIL
-//	local _sMsg       := ""
-//	local _aProd       := {}
-//	local _nProd       := 0
 	private _sWhere   := ""
 	private cString   := "DAK"
 	private cCadastro := "Liberacao de cargas para faturamento"
@@ -32,7 +28,6 @@ User Function LibCarg (_sCarga)
 		if _sCarga == NIL
 			aadd (aRotina, {"&Pesquisar"          , "AxPesqui", 0,1})
 			aadd (aRotina, {"&Visualizar"         , "AxVisual", 0,1})
-//			aadd (aRotina, {"Pegar da &doca"      , "U_CargDoca (dak->dak_cod)", 0,4})
 			aadd (aRotina, {"&Envia p/ FullWMS"   , "U_CargFull ('E')", 0,4})
 			aadd (aRotina, {"&Cancelar no FullWMS", "U_CargFull ('C')", 0,4})
 			aadd (aRotina, {"&Liberar p/ fatur"   , "U_LibCarg (dak->dak_cod)", 0,4})
@@ -119,7 +114,7 @@ static function _LibProt2 ()
 		_oSQL:_sQuery += " SELECT C9_STSERV, C9_BLWMS, C9_PRODUTO"
 		_oSQL:_sQuery += _sWhere
 		_oSQL:_sQuery += " AND B1_VAFULLW != 'S'"
-		_sAliasQ = _oSQL:Qry2Trb ()
+		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
 		do while ! (_sAliasQ) -> (eof ())
 			if (_sAliasQ) -> c9_stserv == '3' .and. (_sAliasQ)->C9_BLWMS == '05' .or. ;
@@ -149,7 +144,7 @@ static function _LibProt2 ()
 			_oSQL:_sQuery += " SELECT DISTINCT C9_PEDIDO, ''"
 			_oSQL:_sQuery += _sWhere
 			_oSQL:_sQuery += " AND B1_RASTRO = 'L'"
-			_aPedidos := aclone (_oSQL:Qry2Array ())
+			_aPedidos := aclone (_oSQL:Qry2Array (.f., .f.))
 			for _nPedido = 1 to len (_aPedidos)
 				processa ({|| _lLotesOK := U_LtPedido (_aPedidos [_nPedido, 1], "U")})
 				if _lLotesOK
@@ -178,7 +173,7 @@ static function _LibProt2 ()
 				_oSQL:_sQuery +=    " AND C9_FILIAL  = '" + xfilial ("SC9") + "'"
 				_oSQL:_sQuery +=    " AND C9_PEDIDO  = '" + _aPedidos [_nPedido, 1] + "'"
 				_oSQL:_sQuery +=    " AND C9_SEQUEN  > '01'"
-				if _oSQL:RetQry () > 0
+				if _oSQL:RetQry (1, .f.) > 0
 					u_help ("Itens repetidos no pedido " + _aPedidos [_nPedido, 1],, .t.)
 					_aPedidos [_nPedido, 2] = .F.
 				endif
@@ -202,7 +197,7 @@ static function _LibProt2 ()
 				_oSQL:_sQuery += " SELECT *"
 				_oSQL:_sQuery +=   " FROM C"
 				_oSQL:_sQuery +=   " WHERE C6_QTDVEN != QT_SC9"
-				if len (_oSQL:Qry2Array ()) > 0
+				if len (_oSQL:Qry2Array (.f., .f.)) > 0
 					u_help ("Inconsistencia entre a quantidade do pedido e a quantidade liberada no pedido " + _aPedidos [_nPedido, 1],, .t.)
 					_aPedidos [_nPedido, 2] = .F.
 				endif
@@ -241,7 +236,7 @@ static function _LibFull2 ()
 		_oSQL:_sQuery += " SELECT COUNT (*)"
 		_oSQL:_sQuery += _sWhere
 		_oSQL:_sQuery += " AND B1_VAFULLW = 'S'"
-		if _oSQL:RetQry () == 0
+		if _oSQL:RetQry (1, .f.) == 0
 			u_log2 ('info', 'Carga nao tem itens controlados pelo FullWMS.')
 			_lContinua = .F.
 		endif
@@ -254,7 +249,7 @@ static function _LibFull2 ()
 		_oSQL:_sQuery +=   " from tb_wms_pedidos"
 		_oSQL:_sQuery +=  " where nrodoc   = '" + _sNroDoc + "'"
 		_oSQL:_sQuery +=    " and status  != '6'"
-		if _oSQL:RetQry () > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			_sMsg = "Separacao ainda nao encerrada no Fullsoft"
 			if U_ZZUVL ('029', __cUserId, .F.)
 				_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
@@ -285,7 +280,7 @@ static function _LibFull2 ()
 		_oSQL:_sQuery += " SELECT *"
 		_oSQL:_sQuery +=   " FROM C"
 		_oSQL:_sQuery +=  " WHERE QT_CARGA != QT_SEPARADA"
-		_aDifer := aclone (_oSQL:Qry2Array ())
+		_aDifer := aclone (_oSQL:Qry2Array (.f., .f.))
 		if len (_aDifer) > 0
 			_aCols = {}
 			aadd (_aCols, {1, 'Produto',        60, ''})

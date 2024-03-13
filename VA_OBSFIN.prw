@@ -16,6 +16,7 @@
 // 03/02/2021 - Cláudia - Ajuste para visualização das OBS nas demais filiais. GLPI: 9263
 // 12/02/2021 - Cláudia - Alterada a estrutura para criar uma tabela temporária 
 //                        para manipulação dos dados. GLPI: 9263
+// 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // ---------------------------------------------------------------------------------------
 
@@ -203,7 +204,8 @@ User Function VAOBSVIS(_sCliente, _sLoja)
     _oSQL:_sQuery += " AND ZN_DATA      = '" + _sData    + "'"
     _oSQL:_sQuery += " AND ZN_HORA      = '" + _sHora    + "'"
     _oSQL:_sQuery += " AND ZN_CODEVEN = 'SA1004'"
-    _aSZN := aclone (_oSQL:Qry2Array ())
+//    _aSZN := aclone (_oSQL:Qry2Array ())
+    _aSZN := aclone (_oSQL:Qry2Array (.T., .F.))
 
 	For i:=1 to Len(_aSZN)
 		sData    := DTOC(_aSZN[i,1])
@@ -230,13 +232,14 @@ Static Function _VerificaOBS(_sCliente, _sLoja)
     Local _aSZN := {}
 
     _oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT * "
+//	_oSQL:_sQuery += " SELECT * "
+	_oSQL:_sQuery += " SELECT COUNT (*) "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SZN") 
     _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND ZN_CLIENTE = '" + _sCliente + "'"
     _oSQL:_sQuery += " AND ZN_LOJACLI = '" + _sLoja    + "'"
     _oSQL:_sQuery += " AND ZN_CODEVEN = 'SA1004'"
-    _aSZN := aclone (_oSQL:Qry2Array ())
+    _aSZN := aclone (_oSQL:Qry2Array (.F., .F.))
 
     If Len(_aSZN) == 0
         _oEvento := ClsEvent():new ()

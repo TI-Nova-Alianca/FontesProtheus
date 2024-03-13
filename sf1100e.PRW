@@ -46,10 +46,13 @@
 //                      - Ajustadas algumas chamadas de log e acrescentado parametro .T. em chamadas de u_help.
 // 12/01/2023 - Robert  - Grava na carga de safra um evento de cancelamento de contranota.
 // 24/04/2023 - Claudia - Retiradas as notas de formulario próprio e serie 99. GLPI: 13474
+// 12/03/2024 - Robert  - Limpar tabela SZH quando contranota de complemento de safra.
+//                      - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // -----------------------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  
-#Include "TbiConn.ch"          
+//#Include "TbiConn.ch"
 
 User Function sf1100e()
 	local _aAreaAnt := U_ML_SRArea ()
@@ -185,9 +188,26 @@ static function _NFSafra ()
 		_oSQL:_sQuery +=   " AND ZZ9_SERCOM   = '" + sf1 -> f1_serie   + "'"
 		_oSQL:_sQuery +=   " AND ZZ9_FORNEC   = '" + sf1 -> f1_fornece + "'"
 		_oSQL:_sQuery +=   " AND ZZ9_LOJA     = '" + sf1 -> f1_loja    + "'"
-
 		if ! _oSQL:Exec ()
 			u_help ("Erro ao atualizar a tabela ZZ9 (pre-notas de compra de safra). Verifique!", _oSQL:_sQuery, .t.)
+		endif
+
+		// Limpa este docto dos rateios de NF entrada (usado para relacionar
+		// as notas de complemento com as notas originais)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "UPDATE " + RetSQLName ("SZH")
+		_oSQL:_sQuery +=   " SET D_E_L_E_T_ = '*'
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''
+		_oSQL:_sQuery +=   " AND ZH_FILIAL  = '" + xfilial ("SZH") + "'"
+		_oSQL:_sQuery +=   " AND ZH_NFSAIDA = 'SAFRA" + sf1 -> f1_vasafra + "'"
+		_oSQL:_sQuery +=   " AND ZH_NFFRETE = '" + sf1 -> f1_doc     + "'"
+		_oSQL:_sQuery +=   " AND ZH_SERFRET = '" + sf1 -> f1_serie   + "'"
+		_oSQL:_sQuery +=   " AND ZH_FORNECE = '" + sf1 -> f1_fornece + "'"
+		_oSQL:_sQuery +=   " AND ZH_LOJA    = '" + sf1 -> f1_loja    + "'"
+		_oSQL:_sQuery +=   " AND ZH_TPDESP  = 'S'"  // 'S' = rateio de safra
+		if ! _oSQL:Exec ()
+			u_help ("Erro ao atualizar a tabela SZH (NF complem X NF orig. de safra). Verifique!", _oSQL:_sQuery, .t.)
 		endif
 
 	endif
@@ -215,7 +235,7 @@ static function _AtuSZI ()
 		_oSQL:_sQuery +=   " AND ZI_LOJASSO = '" + sf1 -> f1_loja + "'"
 		_oSQL:_sQuery +=   " AND ZI_DOC     = '" + sf1 -> f1_doc + "'"
 		_oSQL:_sQuery +=   " AND ZI_SERIE   = '" + sf1 -> f1_serie + "'"
-		_aRecnos := aclone (_oSQL:Qry2Array ())
+		_aRecnos := aclone (_oSQL:Qry2Array (.f., .f.))
 		for _nRecno = 1 to len (_aRecnos)
 			_oCtaCorr = ClsCtaCorr():New (_aRecnos [_nRecno, 1])
 			if ! _oCtaCorr:Exclui ()
@@ -445,31 +465,7 @@ static function _ExcCTB ()
 	endif		
 return
 
-/* Este trecho de codigo fora de uma funcao nao tem efeito. Robert, 16/12/2022
-//
-// -----------------------------------------------------
-// Exclui Notas canceladas no Protheus que devem ser excluidas no Mercanet
-if _lContinua
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT SF1.R_E_C_N_O_"
-		_oSQL:_sQuery += " FROM " + RetSQLName ("SF1") + " SF1, "
-		_oSQL:_sQuery +=            RetSQLName ("SA1") + " SA1 "								
-		// QUERO as deletadas tambem, pois o Mercanet precisa cancelar elas --> _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery += " WHERE SF1.F1_FILIAL = '" + xfilial ("SF1") + "'"
-		_oSQL:_sQuery +=   " AND SF1.F1_TIPO     = 'D'"
-		_oSQL:_sQuery +=   " AND SF1.F1_DTDIGIT >= '20150101'"  // DATA INICIAL EXPORT P/ MERCANET
-		_oSQL:_sQuery +=   " AND SA1.A1_COD  = SF1.F1_FORNECE "
-	    _oSQL:_sQuery +=   " AND SA1.A1_LOJA = SF1.F1_LOJA "
-		_oSQL:_sQuery +=   " AND (NOT EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL WHERE DB_NOTA_NRO = CAST (SF1.F1_DOC AS INT))"
-        _oSQL:_sQuery +=   " OR EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL" 
-		_oSQL:_sQuery +=   "	WHERE DB_NOTA_NRO = CAST (SF1.F1_DOC AS INT) AND DB_NOTA_REPRES != SA1.A1_VEND)
-		_oSQL:_sQuery +=   " )"
-		_oSQL:_sQuery += " ORDER BY SF1.R_E_C_N_O_"
-endif
-*/
 
-//
 // --------------------------------------------------------------------------
 // Debita rapel da NF de devolução
 Static Function _AtuZC0()
@@ -495,7 +491,7 @@ Static Function _AtuZC0()
 		_oSQL:_sQuery +=   " AND SD1.D1_LOJA    = '" + sf1 -> f1_loja    + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_DOC     = '" + sf1 -> f1_doc     + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_SERIE   = '" + sf1 -> f1_serie   + "'"
-		_aNfDev := aclone (_oSQL:Qry2Array ())
+		_aNfDev := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		For _x:=1 to Len(_aNfDev)
 			_oSQL:= ClsSQL():New()
@@ -514,7 +510,7 @@ Static Function _AtuZC0()
 			_oSQL:_sQuery +=   " AND D2_DOC      = '"+ _aNfDev[_x, 2] + "' "
 			_oSQL:_sQuery +=   " AND D2_SERIE    = '"+ _aNfDev[_x, 3] + "' "
 			_oSQL:_sQuery +=   " AND D2_COD      = '"+ _aNfDev[_x, 5] + "' "
-			_aNfVen := aclone (_oSQL:Qry2Array ())
+			_aNfVen := aclone (_oSQL:Qry2Array (.f., .f.))
 
 			For _i:=1 to Len(_aNfVen)
 				_oCtaRapel := ClsCtaRap():New ()
@@ -570,4 +566,3 @@ Static Function _AtuZC0()
 		Next
 	EndIf
 Return
-

@@ -14,10 +14,12 @@
 //                      - Inseridas tags para catalogacao de fontes
 // 09/03/2023 - Claudia - Incluido filtro de UF destino. GLPI: 13285
 // 10/03/2023 - Claudia - Incluido parametro da query para rodar o P.E. apenas uma vez. GLPI: 13300
+// 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ---------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
-#Include "TopConn.ch"
+//#Include "TopConn.ch"
 
 User Function OM200Qry ()
 	local _aAreaAnt := GetArea()
@@ -78,7 +80,7 @@ User Function OM200Qry ()
 		_oSQL:_sQuery += " WHERE DATA    = '" + dtos(date()) +"' "
 		_oSQL:_sQuery += " AND USUARIO   = '" + RetCodUsr()  +"' "
 		_oSQL:_sQuery += " AND CODEVENTO = 'OMS200' "
-		_aDados := aclone (_oSQL:Qry2Array ())
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		If Len(_aDados) > 0
 			_sRet += _aDados[1,1]
