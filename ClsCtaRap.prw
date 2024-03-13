@@ -519,7 +519,7 @@ METHOD Exclui(_nRecno, _sTM) Class ClsCtaRap
 	endif
 
 	if _lContinua
-		if !(_sTM) $ '01/10'
+		if !(_sTM) $ '01/10' .and. ! u_zzuvl('159', __cUserId, .T.) 
 			_sMsg := "Nao é possivel deletar registros não inseridos manualmente!"
 			u_help(_sMsg,, .t.)
 			_lContinua = .F.
