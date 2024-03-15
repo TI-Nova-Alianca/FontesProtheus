@@ -239,9 +239,9 @@ Static Function _VerificaOBS(_sCliente, _sLoja)
 	_oSQL:_sQuery += " AND ZN_CLIENTE = '" + _sCliente + "'"
     _oSQL:_sQuery += " AND ZN_LOJACLI = '" + _sLoja    + "'"
     _oSQL:_sQuery += " AND ZN_CODEVEN = 'SA1004'"
-    _aSZN := aclone (_oSQL:Qry2Array (.F., .F.))
+    _aSZN := _oSQL:RetQry (1, .f.) // aclone (_oSQL:Qry2Array (.F., .F.))
 
-    If Len(_aSZN) == 0
+    If _aSZN == 0  // Len(_aSZN) == 0
         _oEvento := ClsEvent():new ()
         _oEvento:CodEven   = "SA1004"
         _oEvento:DtEvento  = date()
