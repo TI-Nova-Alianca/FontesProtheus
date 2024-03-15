@@ -17,7 +17,9 @@
 // 12/02/2021 - Cláudia - Alterada a estrutura para criar uma tabela temporária 
 //                        para manipulação dos dados. GLPI: 9263
 // 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 15/03/2024 - Robert  - SELECT * alterada para SELECT COUNT (*) na funcao _VerificaObs()
 //
+
 // ---------------------------------------------------------------------------------------
 
 #include "rwmake.ch"
@@ -239,9 +241,9 @@ Static Function _VerificaOBS(_sCliente, _sLoja)
 	_oSQL:_sQuery += " AND ZN_CLIENTE = '" + _sCliente + "'"
     _oSQL:_sQuery += " AND ZN_LOJACLI = '" + _sLoja    + "'"
     _oSQL:_sQuery += " AND ZN_CODEVEN = 'SA1004'"
-    _aSZN := aclone (_oSQL:Qry2Array (.F., .F.))
+    _aSZN := _oSQL:RetQry (1, .f.) // aclone (_oSQL:Qry2Array (.F., .F.))
 
-    If Len(_aSZN) == 0
+    If _aSZN == 0  // Len(_aSZN) == 0
         _oEvento := ClsEvent():new ()
         _oEvento:CodEven   = "SA1004"
         _oEvento:DtEvento  = date()
