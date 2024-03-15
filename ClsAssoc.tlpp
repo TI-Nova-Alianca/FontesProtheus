@@ -124,6 +124,7 @@
 // 09/01/2024 - Robert  - Ajustes versao 3 do calculo de correcao monetaria.
 // 06/02/2024 - Robert  - Metodo SldQuotCap - ignorar saida indevida assoc 002848 (GLPI 14843)
 // 25/02/2024 - Robert  - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -797,7 +798,7 @@ METHOD CalcCM3 (_sMesRefCM as character, _nTaxaCC as numeric) Class ClsAssoc
 		_oSQL:_sQuery +=   " AND SZI.ZI_MESREF  = '" + substr (_sMesRefCM, 5, 2) + substr (_sMesRefCM, 1, 4) + "'"
 		_oSQL:_sQuery +=   " AND SZI.ZI_TM      = '" + _sTMCorrD + "'"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		if _oSQL:RetQry () > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			_Super:SomaMsg ("Ja' existe correcao monetaria calculada para este associado no mes de referencia " + _sMesRefCM + ".")
 			_lContinua = .F.
 		endif
@@ -2387,7 +2388,7 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 
 		_oSQL:_sQuery += " ORDER BY ZI_DATA"
 	//	_oSQL:Log ()
-		_aRetQry = _oSQL:Qry2Array ()
+		_aRetQry = _oSQL:Qry2Array (.f., .f.)
 		_aRet = afill (array (.QtCapQtColunas), 0)
 		for _nRetQry = 1 to len (_aRetQry)
 			_oCtaCorr := ClsCtaCorr():New (_aRetQry [_nRetQry, 1])

@@ -12,6 +12,7 @@
 // #Modulos   		  #FIS 
 //
 // Historico de alteracoes:
+// 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // -------------------------------------------------------------------------------------
 #INCLUDE "PROTHEUS.CH" 
@@ -49,7 +50,7 @@ User Function SPDPIS07()
     _oSQL:_sQuery += " AND D1_FORNECE   = '" + cClieFor + "' "
     _oSQL:_sQuery += " AND D1_LOJA      = '" + cLoja    + "' "
     _oSQL:_sQuery += " AND D1_COD       = '" + cProd    + "' "
-    _aSD1 := aclone (_oSQL:Qry2Array ())
+    _aSD1 := aclone (_oSQL:Qry2Array (.f., .f.))
 
     If Len(_aSD1)
         For _i := 1 to Len(_aSD1)
@@ -72,7 +73,7 @@ User Function SPDPIS07()
             _oSQL:_sQuery += " AND DE_LOJA     = '" + _sSD1Loj + "' "
             _oSQL:_sQuery += " AND DE_ITEMNF   = '" + _sSD1Inf + "' "
             _oSQL:_sQuery += " AND DE_ITEM     = '" + cItem    + "' "
-            _aSDE := aclone (_oSQL:Qry2Array ())
+            _aSDE := aclone (_oSQL:Qry2Array (.f., .f.))
 
             If Len(_aSDE) > 0
                 For _x := 1 to Len(_aSDE)

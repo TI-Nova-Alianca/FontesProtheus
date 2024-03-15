@@ -30,6 +30,7 @@
 // 22/11/2022 - Claudia - Incluido envio de aviso por e-mail para troca de vendedores. GLPI: 12756
 // 19/06/2023 - Robert  - Melhorada mensagem campo A1_SAVBLQ (GLPI 13739)
 // 24/07/2023 - Claudia - Integração de cliente Protheus com CRM Simples. GLPI: 13963
+// 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -233,7 +234,7 @@ static Function _ma030tok(nOper)
 		_oSQL:_sQuery +=    " AND A1_CGC    != ''"
 		_oSQL:_sQuery +=    " AND A1_MSBLQL != '1'"
 		_oSQL:_sQuery +=    " AND A1_COD + A1_LOJA != '" + m->a1_cod + m->a1_loja + "'"
-		_oSQL:RetQry ()
+		_oSQL:RetQry (1, .f.)
 		if ! empty (_oSQL:_xRetQry)
 			u_help ("CNPJ / CPF ja cadastrado para o cliente/loja '" + _oSQL:_xRetQry + "'. Bloqueie um dos dois!")
 			_lRet = .F.
@@ -248,7 +249,7 @@ static Function _ma030tok(nOper)
 			_oSQL:_sQuery += "		US_CGC "
 			_oSQL:_sQuery += "	FROM " + RetSQLName ("SUS") 
 			_oSQL:_sQuery += "	WHERE US_CGC = '" + M->A1_CGC + "' "
-			_aSUS := aclone (_oSQL:Qry2Array ())
+			_aSUS := aclone (_oSQL:Qry2Array (.f., .f.))
 
 			If Len(_aSUS) > 0
 				u_help("CNPJ/CPF ja existe no cadastro de Prospect! Cadastro não permitido")
@@ -303,7 +304,7 @@ Static Function AtuSuper(_sVend, _sCliente, _sLoja)
 	_oSQL:_sQuery += " FROM " + RetSqlName("SA3")
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND A3_COD = '" + _sVend + "'"
-	_aSuper:= _oSQL:Qry2Array ()
+	_aSuper:= _oSQL:Qry2Array (.f., .f.)
 
 	If len(_aSuper)> 0
 		_sSuper := _aSuper[1,1]
@@ -351,7 +352,7 @@ Static Function AtuCRM()
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND ZCA_CODREP   = '" + alltrim(sa1->a1_vend)  + "' "
 	_oSQL:Log ()
-	_aResp := aclone (_oSQL:Qry2Array ())
+	_aResp := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	If len(_aResp) > 0
 		_sResp := _aResp[1,1]

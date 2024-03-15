@@ -46,7 +46,7 @@
 //
 
 // --------------------------------------------------------------------------
-user function BatSafr (_sQueFazer)
+user function BatSafr (_sQueFazer, _sSafrComp, _nDias)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _sMsg      := ""
@@ -64,79 +64,12 @@ user function BatSafr (_sQueFazer)
 	_sArqLgOld = _sArqLog
 	U_MudaLog (procname () + "_" + _sQueFazer + ".log")
 
-	// Procura cargas sem contranota.
-	if _sQueFazer == 'CargasSemContranota'
-		_aSemNota = {}
-		dbselectarea ("SZE")
-		set filter to &('ZE_FILIAL=="' + xFilial("SZE") + '".And.ze_safra=="'+cvaltochar (year (date ()))+'".and.ze_coop$"000021".and.empty(ze_nfger).and.dtos(ze_data)<"' + dtos (ddatabase) + '".and.ze_aglutin!="O".and.!ze_status$"C/D"')
-		dbgotop ()
-		do while ! eof ()
-			aadd (_aSemNota, {"Filial/carga '" + sze -> ze_filial + '/' + sze -> ze_carga + "' de " + dtoc (sze -> ze_data) + " sem contranota!", sze -> ze_nomasso})
-			dbskip ()
-		enddo
-		set filter to
-	
-		if len (_aSemNota) > 0
-			_aCols = {}
-			aadd (_aCols, {"Mensagem",        "left",  "@!"})
-			aadd (_aCols, {"Associado",       "left",  "@!"})
-			_oAUtil := ClsAUtil():New (_aSemNota)
-			_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
-			U_Log2 ('aviso', _sMsg)
-		//	U_ZZUNU ({'045', '047'}, "Inconsistencias cargas safra", _sMsg)
-			_oAviso := ClsAviso():new ()
-			_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
-			_oAviso:Titulo     = "Cargas sem contranota"
-			_oAviso:Texto      = _sMsg
-			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-			_oAviso:Origem     = procname ()
-			_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
-			_oAviso:Grava ()
-		else
-			U_Log2 ('info', 'Nenhuma inconsistencia encontrada.')
-		endif
-
-	// Verifica contranotas com cadastro viticola desatualizado
-	// Em desuso. A partir de 2021 trabalha-se com codigo SIVIBE e os cadastros de propriedades
-	// rurais (antigos cad.viticolas) estao no NaWeb
-	elseif _sQueFazer == '2'
-		U_Log2 ('aviso', 'Verificacao em desuso!')
 
 	// Verifica composicao das parcelas das notas. Em 2021 jah estamos fazendo 'compra' durante a safra.
 	// Como as primeiras notas sairam erradas, optei por fazer esta rotina de novo para identifica-las
 	// e manter monitoramento.
-	elseif _sQueFazer == 'ConferirParcelamento' .and. year (date ()) >= 2021
+	if _sQueFazer == 'ConferirParcelamento' .and. year (date ()) >= 2021
 		_ConfParc ()
-
-	// Verifica contranotas "sem carga". Isso indica possivel problema nas amarracoes entre tabelas.
-	elseif _sQueFazer == 'ContranotasSemCarga'
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT DISTINCT 'Filial:' + FILIAL + ' Assoc:' + ASSOCIADO + '-' + RTRIM (NOME_ASSOC) + ' Contranota:' + DOC"
-		_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
-		_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
-		_oSQL:_sQuery +=    " AND TIPO_NF != 'V'"
-		_oSQL:_sQuery +=    " AND (CARGA = '' OR CARGA IS NULL)"
-		u_log (_oSQL:_sQuery)
-		_aCols = {}
-		aadd (_aCols, {"Mensagem",        "left",  "@!"})
-		_oAUtil := ClsAUtil():New (_oSQL:Qry2Array ())
-		if len (_oAUtil:_aArray) > 0
-			_sMsg := "Contranotas sem carga (provavel inconsistencia entre tabelas)"
-			_sMsg += "<BR>"
-			_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
-			U_Log2 ('aviso', _smsg)
-			_oAviso := ClsAviso():new ()
-			_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
-			_oAviso:Titulo     = "Contranotas sem carga"
-			_oAviso:Texto      = _sMsg
-			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-			_oAviso:Origem     = procname ()
-			_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
-			_oAviso:Grava ()
-		else
-			U_Log2 ('info', 'Nenhuma inconsistencia encontrada.')
-		endif
 
 	// Verifica frete
 	elseif _sQueFazer == 'ConferirFrete' //'5'
@@ -160,7 +93,7 @@ user function BatSafr (_sQueFazer)
 		_TransFil ()
 	
 	elseif _sQueFazer == 'TransfSZIParaMatriz' //'8'
-		_TrSZIMat ()
+		_TrSZIMat (_sSafrComp, _nDias)
 
 	// Confere alguns cadastros basicos
 	elseif _sQueFazer == 'ConfCadastros'
@@ -1220,13 +1153,15 @@ return
 // --------------------------------------------------------------------------
 // Transfere para a matriz os registros do SZI que ainda tiverem saldo.
 // Teoricamente isso jah foi feito quando o SZI foi gerado, mas pode ter sobrado alguma coisa.
-static function _TrSZIMat ()
+static function _TrSZIMat (_sSafrComp, _nDias)
 	local _oSQL      := NIL
 	local _aRegSZI   := {}
 	local _nRegSZI   := 0
-	local _sSafrComp := strzero (year (dDataBase), 4)
+	//local _sSafrComp := strzero (year (dDataBase), 4)
 	local _oCtaCorr  := NIL
 	local _nLock     := 0
+
+	_sSafrComp = iif (_sSafrComp == NIL, strzero (year (dDataBase), 4), _sSafrComp)
 
 	_nLock := U_Semaforo (procname ())
 	if _nLock == 0
@@ -1249,7 +1184,7 @@ static function _TrSZIMat ()
 		
 		// Nao quero pegar as de hoje para evitar transferir enquanto tem alguem gerando contranota, ou o outro batch gerando SZI.
 		// Alem disso, deixo um tempo para o pessoal cancelar alguma nota recente se precisarem.
-		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO <= '" + dtos (date () - 3) + "'"
+		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO <= '" + dtos (date () - iif (_nDias == NIL, 3, _nDias)) + "'"
 		
 		_oSQL:_sQuery +=    " AND SZI.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL  = SE2.E2_FILIAL"

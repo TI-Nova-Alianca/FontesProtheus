@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 28/03/2023 - Claudia - Alterada a gravação da data base, passando por parametro. GLPI: 13355
+// 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // ----------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -113,7 +114,7 @@ Static Function _BuscaBanco ()
 
     _oSQL:Log ()
     
-    _aBco = aclone(_oSQL:Qry2Array())
+    _aBco = aclone(_oSQL:Qry2Array(.t., .f.))
     if len (_aBco) == 0
         u_help ("Nao encontrei banco", _oSQL:_sQuery, .t.)
         _lContinua := .F.

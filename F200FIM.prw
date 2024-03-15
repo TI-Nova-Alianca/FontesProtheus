@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 05/05/2021 - Claudia - Incluida msg de valore e taxas. GLPI: 9983
+// 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // ---------------------------------------------------------------------------------------------------------------
 
@@ -28,7 +29,7 @@ User Function F200FIM()
         _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
         _oSQL:_sQuery += " AND ZB5_FILIAL = '" + cFilAnt      + "'"
         _oSQL:_sQuery += " AND ZB5_DTABAS= '" + dtos(dDataBase) + "'"
-        _aTot := aclone (_oSQL:Qry2Array ())
+        _aTot := aclone (_oSQL:Qry2Array (.f., .f.))
 
         If len(_aTot) > 0
             u_help(" FILIAL:" + alltrim(cFilAnt) + " VLR.RECEBIDO:" + alltrim(str(_aTot[1,1]))+ " VLR.TAXA:" + alltrim(str(_aTot[1,2])))

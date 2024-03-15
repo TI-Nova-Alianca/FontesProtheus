@@ -8,6 +8,7 @@
 // 29/11/2016 - Robert - Layout de CT-e passa a ter nova tag <procCTe>
 // 07/03/2017 - Catia  - Validações no XML de CTEs
 // 05/01/2023 - Robert - Desabilitadas validacoes tabela ZZX (vamos comecar a usar o importador da TRS)
+// 14/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -120,7 +121,7 @@ static function _ValChvNFe ()
 		_oSQL:_sQuery +=  " WHERE F1_CHVNFE  = '" + _sChvNFe + "'"
 		_oSQL:_sQuery +=    " AND D_E_L_E_T_ = ''"
 
-		if ! empty (_oSQL:RetQry ())
+		if ! empty (_oSQL:RetQry (1, .f.))
 			u_help ("Chave CT-e ja existe no banco de dados. Verifique o CTe:" + chr (13) + chr (10) + _oSQL:_xRetQry)
 			_lRet = .F.
 			return _lRet

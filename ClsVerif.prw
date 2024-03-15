@@ -1388,48 +1388,48 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 
 	case ::Numero == 23
-		::Ativa      = .T.
-		::Setores   = 'SAF'
-		::ViaBatch  = .F.
-		::GrupoPerg = "U_VALID005"
-		::ValidPerg (_lDefault)
-		::Descricao  = 'Variacao preco convencional/bordadura/conversao/organica fora do padrao'
-		::Sugestao   = 'Revise cadastro de precos de uvas para safra'
-		::LiberZZU  = {'051'} 
-		::QuandoUsar = "Antes de gerar as pre-notas de compra."
-		::Query := ""
-		::Query += "WITH C AS ("
-		::Query += " SELECT FAM.*,"
-		::Query +=        " BORD.Z1_PRCCOM AS PRECO_BORDADURA,"
-		::Query +=        " ROUND ((BORD.Z1_PRCCOM / PRECO_BASE - 1) * 100, 0) AS VAR_BORD,"
-		::Query +=        " CONV.Z1_PRCCOM AS PRECO_CONVERSAO,"
-		::Query +=        " ROUND ((CONV.Z1_PRCCOM / PRECO_BASE - 1) * 100, 0) AS VAR_CONV,"
-		::Query +=        " ORGA.Z1_PRCCOM AS PRECO_ORGANICA,"
-		::Query +=        " ROUND ((ORGA.Z1_PRCCOM / PRECO_BASE - 1) * 100, 0) AS VAR_ORGA"
-		::Query += " FROM (SELECT Z1_TABELA, DESCR_BASE, BASE.Z1_GRAU AS GRAU, COD_BASE, COD_BORDADURA,"
-		::Query +=              " COD_EM_CONVERSAO, COD_ORGANICA, BASE.Z1_PRCCOM AS PRECO_BASE"
-		::Query +=         " FROM VA_VFAMILIAS_UVAS, SZ1010 BASE"
-		::Query +=        " WHERE BASE.D_E_L_E_T_ = ''"
-		::Query +=          " AND BASE.Z1_TABELA = '000017'"
-		::Query +=          " AND BASE.Z1_PRCCOM > 0"
-		::Query +=          " AND BASE.Z1_CODPRD = COD_BASE) AS FAM"
-		::Query +=    " LEFT JOIN SZ1010 BORD"
-		::Query +=           " ON (BORD.D_E_L_E_T_ = '' AND BORD.Z1_TABELA = FAM.Z1_TABELA AND BORD.Z1_CODPRD = FAM.COD_BORDADURA AND BORD.Z1_GRAU = FAM.GRAU)"
-		::Query +=    " LEFT JOIN SZ1010 CONV"
-		::Query +=           " ON (CONV.D_E_L_E_T_ = '' AND CONV.Z1_TABELA = FAM.Z1_TABELA AND CONV.Z1_CODPRD = FAM.COD_EM_CONVERSAO AND CONV.Z1_GRAU = FAM.GRAU)"
-		::Query +=    " LEFT JOIN SZ1010 ORGA"
-		::Query +=           " ON (ORGA.D_E_L_E_T_ = '' AND ORGA.Z1_TABELA = FAM.Z1_TABELA AND ORGA.Z1_CODPRD = FAM.COD_ORGANICA AND ORGA.Z1_GRAU = FAM.GRAU)"
-		::Query += ")"
-		::Query += " SELECT Z1_TABELA AS TABELA, DESCR_BASE AS VARIEDADE, GRAU,"
-		::Query +=        " COD_BASE, PRECO_BASE, "
-		::Query +=        " COD_BORDADURA, PRECO_BORDADURA, VAR_BORD,"
-		::Query +=        " COD_EM_CONVERSAO, PRECO_CONVERSAO, VAR_CONV,"
-		::Query +=        " COD_ORGANICA, PRECO_ORGANICA, VAR_ORGA"
-		::Query +=   " FROM C"
-		::Query +=  " WHERE (VAR_BORD IS NOT NULL AND VAR_BORD != 0)"
-		::Query +=     " OR (VAR_CONV IS NOT NULL AND VAR_CONV NOT BETWEEN 14 AND 16)"
-		::Query +=     " OR (VAR_ORGA IS NOT NULL AND VAR_ORGA NOT BETWEEN 59 AND 61)"
-		::Query +=  " ORDER BY COD_BASE, GRAU"
+		::Ativa      = .F.  // Desativada por que nao temos mais padrao (cada grupo pode ter diferentes percentuais)
+	//	::Setores   = 'SAF'
+	//	::ViaBatch  = .F.
+	//	::GrupoPerg = "U_VALID005"
+	//	::ValidPerg (_lDefault)
+	//	::Descricao  = 'Variacao preco convencional/bordadura/conversao/organica fora do padrao'
+	//	::Sugestao   = 'Revise cadastro de precos de uvas para safra'
+	//	::LiberZZU  = {'051'} 
+	//	::QuandoUsar = "Antes de gerar as pre-notas de compra."
+	//	::Query := ""
+	//	::Query += "WITH C AS ("
+	//	::Query += " SELECT FAM.*,"
+	//	::Query +=        " BORD.Z1_PRCCOM AS PRECO_BORDADURA,"
+	//	::Query +=        " ROUND ((BORD.Z1_PRCCOM / PRECO_BASE - 1) * 100, 0) AS VAR_BORD,"
+	//	::Query +=        " CONV.Z1_PRCCOM AS PRECO_CONVERSAO,"
+	//	::Query +=        " ROUND ((CONV.Z1_PRCCOM / PRECO_BASE - 1) * 100, 0) AS VAR_CONV,"
+	//	::Query +=        " ORGA.Z1_PRCCOM AS PRECO_ORGANICA,"
+	//	::Query +=        " ROUND ((ORGA.Z1_PRCCOM / PRECO_BASE - 1) * 100, 0) AS VAR_ORGA"
+	//	::Query += " FROM (SELECT Z1_TABELA, DESCR_BASE, BASE.Z1_GRAU AS GRAU, COD_BASE, COD_BORDADURA,"
+	//	::Query +=              " COD_EM_CONVERSAO, COD_ORGANICA, BASE.Z1_PRCCOM AS PRECO_BASE"
+	//	::Query +=         " FROM VA_VFAMILIAS_UVAS, SZ1010 BASE"
+	//	::Query +=        " WHERE BASE.D_E_L_E_T_ = ''"
+	//	::Query +=          " AND BASE.Z1_TABELA = '000017'"
+	//	::Query +=          " AND BASE.Z1_PRCCOM > 0"
+	//	::Query +=          " AND BASE.Z1_CODPRD = COD_BASE) AS FAM"
+	//	::Query +=    " LEFT JOIN SZ1010 BORD"
+	//	::Query +=           " ON (BORD.D_E_L_E_T_ = '' AND BORD.Z1_TABELA = FAM.Z1_TABELA AND BORD.Z1_CODPRD = FAM.COD_BORDADURA AND BORD.Z1_GRAU = FAM.GRAU)"
+	//	::Query +=    " LEFT JOIN SZ1010 CONV"
+	//	::Query +=           " ON (CONV.D_E_L_E_T_ = '' AND CONV.Z1_TABELA = FAM.Z1_TABELA AND CONV.Z1_CODPRD = FAM.COD_EM_CONVERSAO AND CONV.Z1_GRAU = FAM.GRAU)"
+	//	::Query +=    " LEFT JOIN SZ1010 ORGA"
+	//	::Query +=           " ON (ORGA.D_E_L_E_T_ = '' AND ORGA.Z1_TABELA = FAM.Z1_TABELA AND ORGA.Z1_CODPRD = FAM.COD_ORGANICA AND ORGA.Z1_GRAU = FAM.GRAU)"
+	//	::Query += ")"
+	//	::Query += " SELECT Z1_TABELA AS TABELA, DESCR_BASE AS VARIEDADE, GRAU,"
+	//	::Query +=        " COD_BASE, PRECO_BASE, "
+	//	::Query +=        " COD_BORDADURA, PRECO_BORDADURA, VAR_BORD,"
+	//	::Query +=        " COD_EM_CONVERSAO, PRECO_CONVERSAO, VAR_CONV,"
+	//	::Query +=        " COD_ORGANICA, PRECO_ORGANICA, VAR_ORGA"
+	//	::Query +=   " FROM C"
+	//	::Query +=  " WHERE (VAR_BORD IS NOT NULL AND VAR_BORD != 0)"
+	//	::Query +=     " OR (VAR_CONV IS NOT NULL AND VAR_CONV NOT BETWEEN 14 AND 16)"
+	//	::Query +=     " OR (VAR_ORGA IS NOT NULL AND VAR_ORGA NOT BETWEEN 59 AND 61)"
+	//	::Query +=  " ORDER BY COD_BASE, GRAU"
 
 	case ::Numero == 24
 		::Ativa      = .T.

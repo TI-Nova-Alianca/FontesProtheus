@@ -20,6 +20,7 @@
 // 07/05/2021 - Claudia - Ajustado retirando SX1 conforme R27. GLPI: 8825
 // 11/05/2021 - Claudia - Ajuste retirando o DbSkip. GLPI: 10008
 // 31/03/2023 - Robert  - Nao trazia a descricao atualizada da pergunta.
+// 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -------------------------------------------------------------------------------------
@@ -55,7 +56,7 @@ user function ImpParam (_nMaxLin)
 	_oSQL:_sQuery += " FROM SX1010 "
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sPerg) +"'"
-	_aSX1  = aclone (_oSQL:Qry2Array ())	
+	_aSX1  = aclone (_oSQL:Qry2Array (.f., .f.))
 
 	For _x:= 1 to Len(_aSX1)
 		_sX1_GRUPO	 := _aSX1[_x, 1]

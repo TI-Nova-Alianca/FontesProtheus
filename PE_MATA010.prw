@@ -44,6 +44,7 @@
 // 07/12/2023 - Claudia - Obrigar informar custo ao liberar um produto. GLPI: 14602
 // 08/12/2023 - Claudia - Não realizar a cópia dos campos B1_RASTRO e B1_LOCALIZ. GLPI: 14607
 // 08/03/2023 - Claudia - Retirada validação do campo b1_locprod
+// 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -307,7 +308,7 @@ static function _A010TOk ()
 			_oSQL:_sQuery += " SELECT "
 			_oSQL:_sQuery += " 		SETOR "
 			_oSQL:_sQuery += " FROM VA_FUNCIONARIO_SETOR('" + __CUSERID + "')"
-			_sDados := aclone(_oSQL:Qry2Array ())
+			_sDados := aclone(_oSQL:Qry2Array (.f., .f.))
 
 			if Len(_sDados)> 0
 				if alltrim(_sDados[1, 1]) == '2008'
@@ -476,7 +477,7 @@ static function _ValidExcl ()
 	// Verifica se o item existe no Mercanet.
 	_oSQL:_sQuery := "SELECT COUNT (*) FROM " + _sLkSrvMer + ".DB_PRODUTO where DB_PROD_CODIGO = '" + alltrim (sb1 -> b1_cod) + "'"
 	_oSQL:Log ()
-	if _oSQL:RetQry () > 0
+	if _oSQL:RetQry (1, .f.) > 0
 		u_help ('Codigo nao pode ser excluido, pois existe(m) registro(s) no sistema Mercanet.',, .t.)
 		_lRetExcl = .F.
 	endif
@@ -485,7 +486,7 @@ static function _ValidExcl ()
 	_oSQL:_sQuery := "select (select count (*) from tb_wms_entrada where coditem  = '" + alltrim (sb1 -> b1_cod) + "')
 	_oSQL:_sQuery +=     " + (select count (*) from tb_wms_lotes   where cod_item = '" + alltrim (sb1 -> b1_cod) + "')"
 	_oSQL:Log ()
-	if _oSQL:RetQry () > 0
+	if _oSQL:RetQry (1, .f.) > 0
 		u_help ('Codigo nao pode ser excluido, pois existe(m) registro(s) no sistema FullWMS.',, .t.)
 		_lRetExcl = .F.
 	endif
@@ -497,7 +498,7 @@ static function _ValidExcl ()
 	_oSQL:_sQuery +=     " + (select count (*) from " + _sLkSrvNAW + ".Rotulo          where RotuloProduto      = '" + alltrim (sb1 -> b1_cod) + "')"
 	_oSQL:_sQuery +=     " + (select count (*) from " + _sLkSrvNAW + ".Sac             where sac_codigo_produto = '" + alltrim (sb1 -> b1_cod) + "')"
 	_oSQL:Log ()
-	if _oSQL:RetQry () > 0
+	if _oSQL:RetQry (1, .f.) > 0
 		u_help ('Codigo nao pode ser excluido, pois existe(m) registro(s) no sistema NaWeb.',, .t.)
 		_lRetExcl = .F.
 	endif

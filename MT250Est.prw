@@ -23,6 +23,7 @@
 // 08/10/2021 - Robert  - Nao considerava status_protheus = 'C' na validacao da integracao com FullWMS (GLPI 10041).
 // 05/10/2022 - Robert  - Valida tabela tb_wms_entrada pelo 'codfor' e nao mais por 'nrodoc'.
 // 19/02/2024 - Robert  - Melhorada validacao campo status_protheus na leitura da tb_wms_entrada.
+// 14/03/2024 - Robert  - Melhorada validacao campos status e status_protheus na leitura da tb_wms_entrada.
 //
 
 // ----------------------------------------------------------------
@@ -50,27 +51,54 @@ static function _VerFull ()
 	local _lRet      := .T.
 	local _oSQL      := NIL
 	local _sMsg      := ""
+	local _aStatFull := {}
 	public _oEvtEstF := NIL
 
 	if _lRet
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " select count (*)"
+//		_oSQL:_sQuery += " select count (*)"
+		_oSQL:_sQuery += " select status, status_protheus"
 		_oSQL:_sQuery +=   " from tb_wms_entrada"
-//		_oSQL:_sQuery +=  " where nrodoc = '" + sd3 -> d3_doc + "'"
 		_oSQL:_sQuery +=  " where codfor = '" + sd3 -> d3_vaetiq + "'"
-//		_oSQL:_sQuery +=    " and status != '9'"
-		_oSQL:_sQuery +=    " and status_protheus not like 'C%'"
-		_oSQL:Log ('[' + procname () + ']')
-		if _oSQL:RetQry () > 0
+//		_oSQL:_sQuery +=    " and status_protheus not like 'C%'"
+//		_oSQL:Log ('[' + procname () + ']')
+//		if _oSQL:RetQry () > 0
+//			_lRet = .F.
+//			_sMsg := "Esta entrada de estoque ja foi aceita pelo FullWMS. Para estornar esta producao exclua do Fullsoft, antes, a tarefa de recebimento (ou cancele operacao de guarda da etiqueta)." + chr (13) + chr (10) + chr (13) + chr (10)
+//			_sMsg += "Dados adicionais:" + chr (13) + chr (10)
+//			_sMsg += "Documento: " + sd3 -> d3_doc + chr (13) + chr (10)
+//			_sMsg += "Etiq/pallet: " + sd3 -> d3_vaetiq
+//			u_help (_sMsg, _oSQL:_sQuery, .t.)
+//			_lRet = .F.
+//		endif
+		_aStatFull = aclone (_oSQL:Qry2Array (.f., .f.))
+		U_Log2 ('debug', _aStatFull)
+		if len (_aStatFull) > 1
 			_lRet = .F.
-			_sMsg := "Esta entrada de estoque ja foi aceita pelo FullWMS. Para estornar esta producao exclua do Fullsoft, antes, a tarefa de recebimento (ou cancele operacao de guarda da etiqueta)." + chr (13) + chr (10) + chr (13) + chr (10)
-			_sMsg += "Dados adicionais:" + chr (13) + chr (10)
-			_sMsg += "Documento: " + sd3 -> d3_doc + chr (13) + chr (10)
-			_sMsg += "Etiq/pallet: " + sd3 -> d3_vaetiq
+			_sMsg := "Encontrei a etiqueta '" + sd3 -> d3_vaetiq + "' MAIS DE UMA VEZ na tabela de integracao. Verifique!"
 			u_help (_sMsg, _oSQL:_sQuery, .t.)
 			_lRet = .F.
+		elseif len (_aStatFull) == 1
+			U_Log2 ('debug', '[' + procname () + '] >>' + _aStatFull [1, 1] + '<<')
+			U_Log2 ('debug', '[' + procname () + '] >>' + _aStatFull [1, 2] + '<<')
+			U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_aStatFull [1, 1] == '9'))
+			U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (empty (_aStatFull [1, 2])))
+			if alltrim (_aStatFull [1, 1]) == '9' .and. empty (_aStatFull [1, 2])
+				U_Log2 ('debug', '[' + procname () + ']Vou permitir o estorno por que a tarefa de recebimento foi excluida no Full e a transferencia entre AX no Protheus ainda nao foi executada.')
+			elseif left (_aStatFull [1, 2], 1) == 'C'
+				U_Log2 ('debug', '[' + procname () + ']Vou permitir o estorno por que a guarda do pallet foi abortada manualmente na tabela tb_wms_entrada.')
+			else
+				_lRet = .F.
+				_sMsg := "Esta entrada de estoque ja foi aceita pelo FullWMS. Para estornar esta producao exclua, antes, a tarefa na tela de gerenciamento de recebimentos no FullWMS (pesquise a etiqueta no campo PLACA)." + chr (13) + chr (10) + chr (13) + chr (10)
+				_sMsg += "Dados adicionais:" + chr (13) + chr (10)
+				_sMsg += "Documento: " + sd3 -> d3_doc + chr (13) + chr (10)
+				_sMsg += "Etiq/pallet: " + sd3 -> d3_vaetiq
+				u_help (_sMsg, _oSQL:_sQuery, .t.)
+				_lRet = .F.
+			endif
 		endif
+
 	endif
 	
 	if _lRet
@@ -85,7 +113,7 @@ static function _VerFull ()
 			_oSQL:_sQuery +=    " AND D3_LOCAL = '" + sd3 -> d3_local + "'"
 			_oSQL:_sQuery +=    " AND D3_COD = '" + sd3 -> d3_cod + "'"
 			_oSQL:Log ()
-			if _oSQL:RetQry () > 0
+			if _oSQL:RetQry (1, .f.) > 0
 				u_help ("Movimento de guarda (Trans. para Almoxarifado 01) do pallet ainda existe. É necessario excluir antes o movimento de guarda.", _oSQL:_sQuery, .t.)
 				_lRet = .F.
 			endif
