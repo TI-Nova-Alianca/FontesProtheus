@@ -11,6 +11,7 @@
 // #Modulos           #FAT #CTB 
 //
 // Historico de alteracoes:
+// 15/03/2024 - Claudia - Incluido grupo 159 paraexclusão de registros. GLPI: 15094
 //
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
