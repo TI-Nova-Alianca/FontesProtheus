@@ -101,6 +101,7 @@
 // 14/11/2023 - Robert  - Criada verificacao 99 (DF-e sem revalidacao de chave recente) - GLPI 14514
 // 01/01/2024 - Sandra  - Alterado case 2 o setor de usuário de ENG para PCP. GLPI 14773.
 // 16/02/2024 - Robert  - Melhorias verificacao 28 (desconsiderar OS menut, extrapolar OP fora do mes)
+// 15/03/2024 - Robert  - Verificacao 23 inativada.
 //
 
 #include "protheus.ch"
