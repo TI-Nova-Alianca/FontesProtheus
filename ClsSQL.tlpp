@@ -182,7 +182,7 @@ METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb, _aIndices) Class ClsSQL
 
 	// Quero colocar esse parametro como obrigatorio.
 	if _lSetField == NIL
-		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3) + '=>' + procname (4) + '=>' + procname (5) + '=>' + procname (6))
 	endif
 
 	_lSetField = iif (_lSetField == NIL, .T.,    _lSetField)
@@ -435,7 +435,7 @@ METHOD Qry2Array (_lSetField as logical, _lRetNomes as logical) Class ClsSQL
 
 	// Quero colocar esse parametro como obrigatorio.
 	if _lSetField == NIL
-		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3) + '=>' + procname (4) + '=>' + procname (5) + '=>' + procname (6))
 	endif
 
 	_lSetField = iif (_lSetField == NIL, .T., _lSetField)
@@ -554,7 +554,7 @@ METHOD Qry2Trb (_lSetField) Class ClsSQL
 
 	// Quero colocar esse parametro como obrigatorio.
 	if _lSetField == NIL
-		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3) + '=>' + procname (4) + '=>' + procname (5) + '=>' + procname (6))
 	endif
 
 	_lSetField := iif (_lSetField == NIL, .T., _lSetField)
@@ -586,7 +586,7 @@ METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 
 	// Quero colocar esse parametro como obrigatorio.
 	if _lSetField == NIL
-		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3) + '=>' + procname (4) + '=>' + procname (5) + '=>' + procname (6))
 	endif
 
 	_lSetField := iif (_lSetField == NIL, .T., _lSetField)
@@ -727,7 +727,7 @@ METHOD RetQry (_nColuna, _lSetField) Class ClsSQL
 
 	// Quero colocar esse parametro como obrigatorio.
 	if _lSetField == NIL
-		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3))
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Chamada sem especificar se devo mudar tipo dos campos. Pilha: ' + procname (1) + '=>' + procname (2) + '=>' + procname (3) + '=>' + procname (4) + '=>' + procname (5) + '=>' + procname (6))
 	endif
 
 	if _lSetField == NIL .or. _lSetField

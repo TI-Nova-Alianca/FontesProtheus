@@ -79,7 +79,7 @@ static function _SX6 ()
 		_oSQL:_sQuery += " FROM SX6010"
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:Log ('[' + procname () + ']')
-		_aSX6 := aclone (_oSQL:Qry2Array ())
+		_aSX6 := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		For _x:= 1 to Len(_aSX6)
 			_sX6_FIL 	:= _aSX6[_x, 1]

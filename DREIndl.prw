@@ -42,6 +42,7 @@
 // 01/08/2023 - Robert - Adicionado CC 011409 (linha Caxias) na exportacao de
 //                       dados abertos para gerar planilha dinamica.
 // 04/10/2023 - Robert - Tratamento para exportar e excluir tabela DRE_INDL_CUSTOS_OPS
+// 19/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -149,7 +150,7 @@ static function _AtuTrb ()
 	_oSQL:_sQuery := "SELECT ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO, USUARIO"
 	_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".DRE_INDL"
 	_oSQL:_sQuery += " ORDER BY DESCRICAO"
-	_aConsAtu := _oSQL:Qry2Array ()
+	_aConsAtu := _oSQL:Qry2Array (.f., .f.)
 	for _nConsAtu = 1 to len (_aConsAtu)
 		RecLock("_trbDRE",.T.)
 		_trbDRE -> idanalise = _aConsAtu [_nConsAtu, 1]
@@ -215,7 +216,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT COUNT (*) FROM " + _sLinkSrv + ".DRE_INDL WHERE DESCRICAO = '" + alltrim (_sDescri) + "'"
 		_oSQL:Log ()
-		if _oSQL:RetQry () > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			u_help ("Ja existe analise com esse nome.",, .t.)
 			_lContinua := .F.
 		endif
@@ -224,7 +225,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 	// Cria a 'capa' da analise
 	if _lContinua
 		_oSQL:_sQuery := "SELECT MAX (ID_ANALISE) + 1 FROM " + _sLinkSrv + ".DRE_INDL"
-		_nIdAnalis = _oSQL:RetQry ()
+		_nIdAnalis = _oSQL:RetQry (1, .f.)
 		u_log2 ('info', 'Criando ID = ' + cvaltochar (_nIdAnalis))
 		_oSQL:_sQuery := "INSERT INTO " + _sLinkSrv + ".DRE_INDL (ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO, USUARIO)
 		_oSQL:_sQuery += " VALUES (" + cvaltochar (_nIdAnalis)
@@ -252,7 +253,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		else
 			_oSQL:_sQuery := "SELECT COUNT (*) FROM " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
 			_oSQL:Log ()
-			_nQtItens = _oSQL:RetQry ()
+			_nQtItens = _oSQL:RetQry (1, .f.)
 			u_log2 ('info', cvaltochar (_nQtItens) + ' itens de NF lidos.')
 		endif
 	endif
@@ -276,7 +277,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		elseif _sAgrRat == 'F'
 			_oSQL:_sQuery := "SELECT DISTINCT FILIAL FROM " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
 			_oSQL:Log ()
-			_aFiliais = aclone (_oSQL:Qry2Array ())
+			_aFiliais = aclone (_oSQL:Qry2Array (.f., .f.))
 			for _nFilial = 1 to len (_aFiliais)
 				_oSQL:_sQuery := "EXEC " + _sLinkSrv + ".SP_DRE_INDL_GERA_RATEIOS " + cvaltochar (_nIdAnalis) + ", '" + _aFiliais [_nFilial, 1] + "', '" + _aFiliais [_nFilial, 1] + "'"
 				_oSQL:Log ()
@@ -395,7 +396,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 	_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".DRE_INDL"
 	_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 	_oSQL:Log ()
-	_sDescDRE = strtran (strtran (strtran (alltrim (_oSQL:RetQry ()), ' ', '_'), '.', '_'), '-', '_')
+	_sDescDRE = strtran (strtran (strtran (alltrim (_oSQL:RetQry (1, .f.)), ' ', '_'), '.', '_'), '-', '_')
 
 	_oSQL := ClsSQL ():New ()
 	do case
@@ -752,7 +753,7 @@ Static Function _ListaPrd (_nIdAn, _sQualTipo)
 		_oSQL:_sQuery += " FROM C "
 	endif
 	_oSQL:Log ()
-	_aLstPrd := aclone (_oSQL:Qry2Array ())
+	_aLstPrd := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	// Para serem consideradas vazias no metodo ReduzLin, as pocicoes da array devem conter NIL.
 	for _nLin = 1 to len (_aLstPrd)

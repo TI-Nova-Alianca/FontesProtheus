@@ -6,6 +6,9 @@
 //
 // Historico de alteracoes:
 // 08/04/2019 - Catia - Include "TbiConn.ch"
+// 19/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+//
+
 // --------------------------------------------------------------------------
 #include "rwmake.ch"     
 #include "colors.ch"
@@ -38,7 +41,7 @@ user function BatFisc ()
 	_oSQL:_sQuery +=                       " And PAI.B1_COD      = SB1.B1_CODPAI)"
 	_oSQL:_sQuery +=  " Order by B1_COD"
 	u_log (_oSQL:_sQuery)
-	if len (_oSQL:Qry2Array ()) > 0
+	if len (_oSQL:Qry2Array (.f., .f.)) > 0
 		_sMsg = 'Uvas nao convencionais sem informacao do produto "pai" (uva convencional) ou o produto informado como pai nao eh uva, ou nao eh convencional:' + _oSQL:Qry2HTM ("Uvas nao convencionais sem 'pai' (convencional)", NIL, "", .F.)
 		u_log (_sMsg)
 		_sDest := ""

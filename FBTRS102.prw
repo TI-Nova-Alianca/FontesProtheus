@@ -40,7 +40,7 @@ User Function FBTRS102(lCompleta)
 				MsgInfo('Como se trata de uma rejeição, o preenchimento do campo Justificativa é obrigatório!')
 				Return .F.
 			EndIf
-			U_Log2 ('debug', '[' + procname () + ']Vou chamar U_FBTRS106')
+//			U_Log2 ('debug', '[' + procname () + ']Vou chamar U_FBTRS106')
 			lRet := U_FBTRS106({_aRet[1], _aRet[3]}, .T., lCompleta)
 		EndIf
 	Else

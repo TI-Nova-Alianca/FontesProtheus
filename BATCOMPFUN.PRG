@@ -57,7 +57,6 @@ User Function BATCOMPFUN()
         _oSQL:_sQuery += " AND (SL4.L4_ADMINIS LIKE '%900%' " // FUNCIONARIOS
         _oSQL:_sQuery += " OR SL4.L4_ADMINIS LIKE '%800%') "  // ASSOCIADOS
 	    _oSQL:Log()
-	//	_aDados := aclone(_oSQL:Qry2Array ())
 		_aDados := aclone(_oSQL:Qry2Array (.f., .f.))
 
 		If len(_aDados) > 0
@@ -110,7 +109,6 @@ User Function BATCOMPFUN()
         //_oSQL:_sQuery += " AND SL1.L1_INDCTB = 'N' "
         _oSQL:_sQuery += " ORDER BY SL1.L1_EMISNF "
         _oSQL:Log()
-//      _aDados := aclone(_oSQL:Qry2Array ())
         _aDados := aclone(_oSQL:Qry2Array (.t., .f.))
 
         If len(_aDados) > 0  

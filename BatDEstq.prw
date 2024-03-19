@@ -19,6 +19,7 @@
 // 08/07/2020 - Robert - Habilitada Sandra como destinataria para conferencias.
 // 31/07/2023 - Robert - Incluido Heleno Facchin como destinatario.
 // 18/11/2023 - Robert - Desabilitado envio para Rodrigo Colleoni.
+// 18/03/2023 - Robert - Desabilitado envio para Jocemar Dalcorno.
 //
 
 // --------------------------------------------------------------------------
@@ -153,7 +154,7 @@ user function BatDEstq ()
 		//_sDestin += ";sandra.sugari@novaalianca.coop.br"
 		//_sDestin += ";rodrigo.colleoni@novaalianca.coop.br"
 		_sDestin += ";fernando.matana@novaalianca.coop.br"
-		_sDestin += ";jocemar.dalcorno@novaalianca.coop.br"
+		//_sDestin += ";jocemar.dalcorno@novaalianca.coop.br"
 		_sDestin += ";heleno.facchin@novaalianca.coop.br"
 		U_SendMail (_sDestin, "Disponibilidade de estoques em litros", _sMsg, {})
 	endif

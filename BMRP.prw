@@ -558,7 +558,6 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_= ''"
 			_oSQL:_sQuery += " AND G5_MSBLQL   = '2' ""
 			_oSQL:_sQuery += " AND G5_PRODUTO  = '" + _sProduto + "'" 
-//			_aRevisao := _oSQL:Qry2Array ()
 			_aRevisao := _oSQL:Qry2Array (.t., .f.)
 	Else
 		If alltrim(_sRevis) == 'N'
@@ -567,7 +566,6 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 			_oSQL:_sQuery += " FROM SG5010"
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
 			_oSQL:_sQuery += " AND G5_PRODUTO = '" + _sProduto + "'" 
-//			_aRevisao := _oSQL:Qry2Array ()
 			_aRevisao := _oSQL:Qry2Array (.t., .f.)
 		else
 			If !empty(_sRevis) 
@@ -655,7 +653,6 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 		_oSQL:_sQuery +=   " AND SB1.B1_COD     = SB2.B2_COD"
 		_oSQL:_sQuery += " GROUP BY SB2.B2_COD"
 	
-//		_aSB2 = aclone (_oSQL:Qry2Array ())
 		_aSB2 = aclone (_oSQL:Qry2Array (.f., .f.))
 		
 		// Se nao existe registro de estoque deste componente, cria uma array zerada.
@@ -1691,7 +1688,6 @@ Static Function _SaldosDeTerceiros(sProduto)
 	_oSQL:_sQuery += " FROM dbo.VA_VSALDOS_TERCEIROS V "
 	_oSQL:_sQuery += " WHERE B6_PRODUTO = '" + sProduto + "'" 
 	_oSQL:_sQuery += " AND  B6_TIPO = 'D' "
-//	_aSaldo := _oSQL:Qry2Array ()
 	_aSaldo := _oSQL:Qry2Array (.f., .f.)
 			
 	For _x:=1 to len(_aSaldo)
@@ -1711,7 +1707,6 @@ Static Function _SaldosEmTerceiros(sProduto)
 	_oSQL:_sQuery += " FROM dbo.VA_VSALDOS_TERCEIROS V "
 	_oSQL:_sQuery += " WHERE B6_PRODUTO = '" + sProduto + "'" 
 	_oSQL:_sQuery += " AND  B6_TIPO = 'E' "
-//	_aSaldo := _oSQL:Qry2Array ()
 	_aSaldo := _oSQL:Qry2Array (.f., .f.)
 			
 	For _x:=1 to len(_aSaldo)

@@ -538,7 +538,7 @@ user function ZZUVL (_sGrupoZZU, _sUser, _lComTela)  //, _sEmp, _sFil, _sTipos)
 	endif
 
 	if ! _lRet
-		U_Log2 ('aviso', '[' + procname () + ']Retornando ' + cvaltochar (_lRet) + ' para grupoZZU=' + _sGrupoZZU + ' e usr=' + _sUser)
+	//	U_Log2 ('aviso', '[' + procname () + ']Retornando ' + cvaltochar (_lRet) + ' para grupoZZU=' + _sGrupoZZU + ' e usr=' + _sUser)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

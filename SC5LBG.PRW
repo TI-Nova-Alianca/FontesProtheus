@@ -30,6 +30,8 @@
 // 22/04/2021 - Claudia - GLPI: 9886 - Bloqueio de pedidos de bonificação
 // 11/10/2021 - Claudia - Criado parametro para bloqueio/liberação da rotina no Protheus. GLPI: 11051
 // 29/02/2024 - Robert  - Liberar bloqueio gerencial tipo S especifico de sucos - GLPI 14980
+// 19/03/2024 - Robert  - Permite informar observacao na liberacao.
+//                      - Criada legenda para bloqueio tipo S.
 //
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -43,7 +45,7 @@ User Function SC5LBG ()
 		u_help("Rotina descontinuada no Protheus e disponibilizada no NaWeb! Disponivel em: Menu faturamento >> consultas >> liberação gerencial de pedidos")
 
 	Else
-		AAdd (_aCpoBrw, {"Bloqueio",   {|| iif('X'$sc5->c5_vabloq,'Lib.negada',iif('P'$sc5->c5_vabloq,'Preco ','')+iif('M'$sc5->c5_vabloq,'Margem ','')+iif('A'$sc5->c5_vabloq,'Reajuste ','')+iif('F'$sc5->c5_vabloq,'Bonif.s/fat. ',''))}, "C", 15, 0, "" } )
+		AAdd (_aCpoBrw, {"Bloqueio",   {|| iif('X'$sc5->c5_vabloq,'Lib.negada',iif('P'$sc5->c5_vabloq,'Preco ','')+iif('M'$sc5->c5_vabloq,'Margem ','')+iif('A'$sc5->c5_vabloq,'Reajuste ','')+iif('F'$sc5->c5_vabloq,'Bonif.s/fat. ','')+iif('S'$sc5->c5_vabloq,'Sucos. ',''))}, "C", 15, 0, "" } )
 		AAdd (_aCpoBrw, {"Vlr.produtos", {|| sc5 -> c5_vavlfat}, "N", 12, 2, "@E 9,999,999.99" } )
 		AAdd (_aCpoBrw, {"Marg.contr", {|| sc5 -> c5_vaMCont}, "N", 12, 2, "@E 9,999,999.99" } )
 
@@ -79,6 +81,7 @@ user function SC5LBGLG (_lRetCores)
 	aadd (_aCores, {"!'X'$sc5->c5_vabloq.and.'M'$sc5->c5_vabloq"						, 'BR_AMARELO'	, 'Bloq.por margem'			})
 	aadd (_aCores, {"!'X'$sc5->c5_vabloq.and.'A'$sc5->c5_vabloq"						, 'BR_AZUL'		, 'Bloq.%reajuste'			})
 	aadd (_aCores, {"!'X'$sc5->c5_vabloq.and.'B'$sc5->c5_vabloq"						, 'BR_BRANCO'	, 'Bloq.bonificação'		})
+	aadd (_aCores, {"!'X'$sc5->c5_vabloq.and.'S'$sc5->c5_vabloq"						, 'BR_PRETO'	, 'Bloq.sucos'				})
 	
 	if ! _lRetCores
 		for _i = 1 to len (_aCores)
@@ -106,6 +109,7 @@ User Function SC5LBGL ()
 	local _lGrp081   := U_ZZUVL('081',,.F.)
 	local _lGrp082   := U_ZZUVL('082',,.F.)
 	local _lGrp158   := U_ZZUVL('158',,.F.)
+	local _sObsLiber := ''
 
 	procregua (10)
 
@@ -158,10 +162,19 @@ User Function SC5LBGL ()
 	endif
 
 	if _lContinua
+
+		if type ("oMainWnd") == "O"  // Se tem interface com o usuario
+			_sObsLiber = space (250)
+			_sObsLiber = U_Get ('Observacoes', 'C', 250, '@!', '', _sObsLiber, .f., '.t.')
+		endif
+
 		CursorWait ()
 		_oEvento := ClsEvent():new ()
 		_oEvento:CodEven   = "SC5003"
 		_oEvento:Texto     = "Liberado bloqueio gerencial tipo '" + sc5 -> c5_vabloq + "'" + iif (('M' $ sc5 -> C5_VABLOQ .or. 'N' $ sc5 -> C5_VABLOQ), " c/margem " + alltrim (transform (sc5 -> c5_vaMCont, "@E 999,999,999.99")), "")
+		if ! empty (_sObsLiber)
+			_oEvento:Texto += chr (13) + chr (10) + " Obs.: " + alltrim (_sObsLiber)
+		endif
 		_oEvento:Cliente   = sc5 -> c5_cliente
 		_oEvento:LojaCli   = sc5 -> c5_lojacli
 		_oEvento:PedVenda  = sc5 -> c5_num

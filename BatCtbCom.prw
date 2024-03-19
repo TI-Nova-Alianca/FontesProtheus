@@ -64,7 +64,6 @@ User Function BatCtbCom()
         _oSQL:_sQuery += " AND SL1.L1_INDCTB = 'S' "
         _oSQL:_sQuery += " ORDER BY SL1.L1_EMISNF "
         _oSQL:Log()
-//        _aDados := aclone(_oSQL:Qry2Array ())
         _aDados := aclone(_oSQL:Qry2Array (.t., .f.))
 
         If len(_aDados) > 0  

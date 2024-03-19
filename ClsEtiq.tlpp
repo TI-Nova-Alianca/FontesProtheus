@@ -504,7 +504,7 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 		_oSQL:_sQuery +=  " from tb_wms_etiquetas"
 		_oSQL:_sQuery += " where id = '" + cvaltochar (::Codigo) + "'"
 		//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		if _oSQL:RetQry () > 0
+		if _oSQL:RetQry (1, .f.) > 0
 			if _lMsg
 				u_help ("Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiqueta jah existe na tabela tb_wms_etiquetas.", _oSQL:_sQuery, .t.)
 			else

@@ -56,7 +56,9 @@
 // 04/05/2022 - Robert  - Eliminada leitura do parametro VA_USRENF (atualmente grupo 050 do ZZU).
 // 11/01/2023 - Claudia - Incluída a chamada de transmissão da GNRE. GLPI: 10469 
 // 19/10/2023 - Claudia - Incluidos logs para verificar emissão de GNRE. GLPI: 14392
+// 19/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // --------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
 #include "PROTHEUS.ch"
@@ -707,7 +709,7 @@ static function _VerifGNRE(_sFilial, _sSerie, _sDoc)
 	_oSQL:_sQuery += " AND F3_FILIAL  = '" + _sFilial + "' "
 	_oSQL:_sQuery += " AND F3_NFISCAL = '" + _sDoc    + "' "
 	_oSQL:_sQuery += " AND F3_SERIE   = '" + _sSerie  + "' "
-	_aAutoriz := aclone (_oSQL:Qry2Array ())
+	_aAutoriz := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -718,7 +720,7 @@ static function _VerifGNRE(_sFilial, _sSerie, _sDoc)
 	_oSQL:_sQuery += " AND F6_FILIAL    = '" + _sFilial + "' "
 	_oSQL:_sQuery += " AND F6_DOC       = '" + _sDoc    + "' "
 	_oSQL:_sQuery += " AND F6_SERIE     = '" + _sSerie  + "' "
-	_aGNRE := aclone (_oSQL:Qry2Array ())
+	_aGNRE := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	If len(_aGNRE) > 0 // se tem GNRE
 		For _x:=1 to Len(_aAutoriz)

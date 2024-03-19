@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 05/08/2022 - Claudia - Inclusão de eventos de titulos. GLPI: 12424
+// 19/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // ---------------------------------------------------------------------------------------
 
@@ -205,7 +206,7 @@ User Function VAEVENV(_sFilial,_sNumero,_sPrefixo,_sCliente,_sLoja)
     _oSQL:_sQuery += " AND ZN_DATA    = '" + _sData    + "'"
     _oSQL:_sQuery += " AND ZN_HORA    = '" + _sHora    + "'"
 	_oSQL:_sQuery += " AND ZN_CODEVEN = 'SE1007'"
-    _aSZN := aclone (_oSQL:Qry2Array ())
+    _aSZN := aclone (_oSQL:Qry2Array (.t., .f.))
 
 	For i:=1 to Len(_aSZN)
 		sData    := DTOC(_aSZN[i,1])
@@ -241,7 +242,7 @@ Static Function _VerificaEventos(_sFilial, _sNumero, _sPrefixo, _sCliente, _sLoj
 	_oSQL:_sQuery += " AND ZN_CLIENTE = '" + _sCliente + "'"
     _oSQL:_sQuery += " AND ZN_LOJACLI = '" + _sLoja    + "'"
     _oSQL:_sQuery += " AND ZN_CODEVEN = 'SE1007'"
-    _aSZN := aclone (_oSQL:Qry2Array ())
+    _aSZN := aclone (_oSQL:Qry2Array (.f., .f.))
 
     If Len(_aSZN) == 0
         _oEvento := ClsEvent():new ()

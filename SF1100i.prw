@@ -1158,7 +1158,7 @@ static function _AvisaMnt ()
 	_oSQL:_sQuery +=   " AND SD1.D1_FORNECE  = '" + sf1 -> f1_fornece + "'"
 	_oSQL:_sQuery +=   " AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
 	_oSQL:_sQuery +=   " AND SD1.D1_ORDEM   != ''"
-	_oSQL:Log ('[' + procname () + ']')
+//	_oSQL:Log ('[' + procname () + ']')
 	_aItens := aclone (_oSQL:Qry2Array (.f., .f.))
 	_oItens = ClsAUtil():New(_aItens)
 	if len (_oItens:_aArray) > 0

@@ -45,8 +45,8 @@ User Function FBTRS101(aChaves, nTpEvento, cJustific)
 
 	Default	cJustific 	:= ""
 
-	U_Log2 ('debug', '[' + procname () + ']Chaves recebidas:')
-	U_Log2 ('debug', aChaves)
+//	U_Log2 ('debug', '[' + procname () + ']Chaves recebidas:')
+//	U_Log2 ('debug', aChaves)
 
 	AADD(aItensCb, '210200') // Confirmação da Operação
 	AADD(aItensCb, '210220') // Desconhecimento da Operação
@@ -62,7 +62,7 @@ User Function FBTRS101(aChaves, nTpEvento, cJustific)
 	oWs:_URL         := AllTrim(cURL)+"/MANIFESTACAODESTINATARIO.apw"
 		
 	If oWs:CONFIGURARPARAMETROS()
-		U_Log2 ('debug', '[' + procname () + '] oWs:CONFIGURARPARAMETROS = .t.')
+//		U_Log2 ('debug', '[' + procname () + '] oWs:CONFIGURARPARAMETROS = .t.')
 		cAmbiente := oWs:OWSCONFIGURARPARAMETROSRESULT:CAMBIENTE
 		
 		cXml+='<envEvento>'
@@ -92,16 +92,16 @@ User Function FBTRS101(aChaves, nTpEvento, cJustific)
 		cXml+='</eventos>'
 		cXml+='</envEvento>'
 
-		U_Log2 ('debug', '[' + procname () + '] cXML = ' + cXml)
+//		U_Log2 ('debug', '[' + procname () + '] cXML = ' + cXml)
 
 		If Empty(cChavesMsg)
 			Return
 		EndIf
 		cChavesMsg := ""
 		lRetOk := U_FBTRS104(cXml,cIdEnt,cUrl,@aRet)
-		U_Log2 ('debug', '[' + procname () + '] retorno do U_FBTRS104 = ' + cvaltochar (lRetOk))
-		U_Log2 ('debug', '[' + procname () + '] aRet:')
-		U_Log2 ('debug', aRet)
+//		U_Log2 ('debug', '[' + procname () + '] retorno do U_FBTRS104 = ' + cvaltochar (lRetOk))
+//		U_Log2 ('debug', '[' + procname () + '] aRet:')
+//		U_Log2 ('debug', aRet)
 
 		If lRetOk .And. Len(aRet) > 0
 
@@ -135,7 +135,7 @@ User Function FBTRS101(aChaves, nTpEvento, cJustific)
 			cMsgManif += cChavesMsg
 						
 			cRetorno := Alltrim(cMsgManif)
-			U_Log2 ('debug', '[' + procname () + '] cRetorno = ' + cRetorno)
+//			U_Log2 ('debug', '[' + procname () + '] cRetorno = ' + cRetorno)
 		EndIf
 	Else
 		Aviso("SPED", IIf(Empty(GetWscError(3)), GetWscError(1), GetWscError(3)), {"OK"}, 3)

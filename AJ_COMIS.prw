@@ -15,6 +15,7 @@
 //                      - Envia evento tambem para a controladoria.
 // 28/07/2017 - Robert  - Bloqueava quando a NF tinha diferentes % de comissao. Agora apenas pede confirmacao.
 // 05/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Pergunte em Loop 
+// 19/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // -----------------------------------------------------------------------------------------------------------------
 User Function AJ_Comis ()
@@ -94,7 +95,7 @@ Static Function _AndaLogo ()
 		endif
 		_oSQL:_sQuery += " GROUP BY SF2.F2_DOC, SF2.F2_SERIE, SF2.F2_CLIENTE, SF2.F2_LOJA, F2_VEND1, F2_VEND2"
 		u_log (_oSQL:_sQuery)
-		_aNF = aclone (_oSQL:Qry2Array ())
+		_aNF = aclone (_oSQL:Qry2Array (.F., .F.))
 		u_log (_anf)
 		if empty (_aNF)
 			u_help ("Nao foram encontradas notas fiscais. Sugestao: informar apenas o pedido ou apenas a nota.")
@@ -133,7 +134,7 @@ Static Function _AndaLogo ()
 				_oSQL:_sQuery += _sWhereSE3
 				_oSQL:_sQuery +=    " AND SE3.E3_DATA   != ''"
 				u_log (_oSQL:_sQuery)
-				_aPagas = aclone (_oSQL:Qry2Array ())
+				_aPagas = aclone (_oSQL:Qry2Array (.T., .F.))
 				if !empty (_aPagas)
 					//if ! msgnoyes ("Existe comissao ja paga para a NF '" + _aNF [_nNF, 1] + "'. Deseja continuar mesmo assim?")
 					u_help ("Existe comissao ja paga para a NF '" + _aNF [_nNF, 1] + "'. Providencie o estorno desse pagamento antes de continuar.")

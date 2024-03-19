@@ -6,12 +6,13 @@
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #Ponto entrada produto x fornecedor
 // #PalavasChave      #ponto_de_entrada #produto_X_fornecedor  #produtoXfornecedor_MVC
-// #TabelasPrincipais #SB1 
-// #Modulos 		  #todos
+// #TabelasPrincipais #SB1
+// #Modulos           #todos
 //
 // Historico de alteracoes:
 // 23/06/2023 - Claudia - Validação p/nao duplicar fornecedor para mesmo produto protheus. GLPI: 13777/13690
 // 11/07/2023 - Claudia - Chamada a função de limpeza de caracteres especiais. GLPI: 13865
+// 19/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -57,7 +58,7 @@ User Function MATA061()
                 _oSQL:_sQuery += " FROM " + RetSQLName ("SA5") 
                 _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
                 _oSQL:_sQuery += " AND A5_PRODUTO = '"+ cProd +"' "
-                _aSA5 := aclone (_oSQL:Qry2Array ())
+                _aSA5 := aclone (_oSQL:Qry2Array (.f., .f.))
 
                 _nQtdBanco := _aSA5[1,1]
                 _nQtdLinha := oObj:Length()
@@ -118,7 +119,7 @@ Static Function _MA061TOK(cCod,cProd,cFornece,cLoja)
         _oSQL:_sQuery += " AND A5_PRODUTO = '"+ cProd    +"' "
         _oSQL:_sQuery += " AND A5_FORNECE = '"+ cFornece +"' "
         _oSQL:_sQuery += " AND A5_LOJA    = '"+ cLoja    +"' "
-        _aSA5 := aclone (_oSQL:Qry2Array ())
+        _aSA5 := aclone (_oSQL:Qry2Array (.f., .f.))
 
         If Len(_aSA5) > 0
             If _aSA5[1,1] > 0

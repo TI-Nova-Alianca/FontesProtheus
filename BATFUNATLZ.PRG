@@ -43,7 +43,9 @@
 // 07/03/2023 - Claudia - Incluido e-mail de verificação. GLPI: 11901
 // 09/03/2023 - Claudia - Incluida regra para envio do e-mail apenas nas segundas-feiras.
 // 08/03/2024 - Claudia - Ajustada a integração de municipios na query de funcioanrios. GLPI: 15060
+// 19/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -410,7 +412,7 @@ Static Function  _BuscaDadosMun(_wcodmun, _west, _wTipo)
 	_oSQL:_sQuery += " AND CC2_CODMUN   = '" + _wcodmun + "'"
 	_oSQL:_sQuery += " AND CC2_EST      = '" + _west    + "'"
 	//u_log2 ('info', _oSQL:_sQuery)
-	_aMun := aclone (_oSQL:Qry2Array ())
+	_aMun := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	If len(_aMun) > 0
 		For _i:=1 to Len(_aMun)

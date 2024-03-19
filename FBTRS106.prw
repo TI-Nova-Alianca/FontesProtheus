@@ -37,8 +37,8 @@ User Function FBTRS106(aRet, lShowMsg, lCompleta)
 		If !lCompleta
 			aRet[1]++
 		EndIf
-		U_Log2 ('debug', '[' + procname () + ']Vou chamar U_FBTRS101 passando a seguinte array de chaves:')
-		U_Log2 ('debug', aChaveNfe)
+//		U_Log2 ('debug', '[' + procname () + ']Vou chamar U_FBTRS101 passando a seguinte array de chaves:')
+//		U_Log2 ('debug', aChaveNfe)
 		lRetManif := U_FBTRS101(aChaveNfe, aRet[1], aRet[2]) // Faz o manifesto
 
 	Else

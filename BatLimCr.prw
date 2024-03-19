@@ -18,7 +18,9 @@
 // 15/10/2019 - Andre   - Adicionado validação para clientes com codigo base diferentes.
 // 23/10/2019 - Robert  - Nao bloqueia operadoras de cartao (codigo com 3 posicoes).
 // 26/10/2021 - Claudia - Aumentado de 180 para 365 dias o bloqueio de clientes. GLPI: 11133
+// 19/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // --------------------------------------------------------------------------------------------------
 user function BatLimCr ()
 	local _oSQL      := NIL
@@ -29,9 +31,6 @@ user function BatLimCr ()
 	local _nQtBloq   := 0
 	local _oAssoc    := NIL
 	local _lPodeBloq := .T.
-
-	u_logDH ()
-	u_logIni ()
 
 	// Aumenta prazo do limite de credito dos clientes ativos.
 	_dNovaLC = lastday (date () + 180)
@@ -44,7 +43,7 @@ user function BatLimCr ()
 	_oSQL:_sQuery += "   AND SA1.A1_VENCLC != ''"
 	_oSQL:_sQuery += "   AND SA1.A1_VENCLC <= '" + dtos (_dNovaLC - 120) + "'"
 	_oSQL:Log ()
-	_aRegSA1 = _oSQL:Qry2Array ()
+	_aRegSA1 = _oSQL:Qry2Array (.f., .f.)
 	for _nRegSA1 = 1 to len (_aRegSA1)
 		sa1 -> (dbgoto (_aRegSA1 [_nRegSA1, 1]))
 
@@ -107,7 +106,7 @@ user function BatLimCr ()
 	// Tem pelo menos um dos campos precisando ser alterado.
 	_oSQL:_sQuery += "   AND (A1_MSBLQL != '1' OR A1_RISCO != 'E' OR A1_VENCLC != '')"
 	_oSQL:Log ()
-	_aRegSA1 = _oSQL:Qry2Array ()
+	_aRegSA1 = _oSQL:Qry2Array (.f., .f.)
 
 	for _nRegSA1 = 1 to len (_aRegSA1)
 		sa1 -> (dbgoto (_aRegSA1 [_nRegSA1, 1]))

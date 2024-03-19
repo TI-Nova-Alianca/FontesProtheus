@@ -19,6 +19,7 @@
 // 15/07/2022 - Robert - Fonte alterado da extensao .prw para .tlpp
 //                     - Criado atributo :EntidTSS (para nao precisar chamar :GetEntid() a cada pouco)
 //                     - Ajustes no metodo GetXML() que ateh entao nao era usado (GLPI 12336)
+// 18/03/2024 - Robert - Criado tratamento para leitura das tags de <rastro> (GLPI 14809)
 //
 
 // ------------------------------------------------------------------------------------
@@ -63,6 +64,7 @@ CLASS ClsNFe
 	public data ItVunCom
 	public data ItxPed
 	public data ItnItemPed
+	public data ItRastro
 	public data Loja
 	public data NomeCliFor
 	public data NomeDestin
@@ -121,6 +123,7 @@ METHOD New () Class ClsNFe
 	::ItVunCom   = {}
 	::ItXped     = {}
 	::ItnItemPed = {}
+	::ItRastro   = {}
 	::Loja       = ''
 	::NomeCliFor = ''
 	::NomeDestin = ''
@@ -504,7 +507,8 @@ return _sRet
 METHOD LeXML (_oObjPai) Class ClsNFe
 	local _nDet     := 0
 	local _nTamDoc  := TamSX3 ('ZZX_DOC')[1]
-	//local _aAreaSM0 := {}
+	local _aLotesIt := {}
+	local _nLoteIt  := 0
 
 	// u_logIni (GetClassName (::Self) + '.' + procname ())
 
@@ -575,13 +579,13 @@ METHOD LeXML (_oObjPai) Class ClsNFe
 			if XMLChildEx (::XML:_det [_nDet]:_prod, "_XPED") != NIL
 				aadd (::ItXped  ,      (::XML:_det [_nDet]:_prod:_xPed:TEXT))
 			else
-				aadd (::ItXped  , '')								
+				aadd (::ItXped  , '')
 			endif
 			
 			if XMLChildEx (::XML:_det [_nDet]:_prod, "_NITEMPED") != NIL
 				aadd (::Itnitemped  ,      (::XML:_det [_nDet]:_prod:_nitemped:TEXT))
 			else
-				aadd (::Itnitemped  , '')								
+				aadd (::Itnitemped  , '')
 			endif
 			
 			if XMLChildEx (::XML:_det [_nDet], "_IMPOSTO") != NIL
@@ -595,6 +599,33 @@ METHOD LeXML (_oObjPai) Class ClsNFe
 						::ItVlIPI [_nDet] = val (::XML:_det [_nDet]:_imposto:_IPI:_IPITrib:_vIPI:TEXT)
 					endif
 				endif
+			endif
+
+			// Verifica se tem tag de rastro
+			if XMLChildEx (::XML:_det [_nDet]:_prod, "_RASTRO") != NIL
+//				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Vou adicionar rastro')
+				_aLotesIt = {}
+
+				// Transforma o nodo de rastro em array, pois ha casos em que
+				// um mesmo item da nota pode ter mais de um lote. Assim, poderei
+				// tratar sempre da mesma forma.
+//				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']valtype = ' + valtype (::XML:_det [_nDet]:_prod:_rastro))
+				if valtype (::XML:_det [_nDet]:_prod:_rastro) != "A"
+					XmlNode2Arr (::XML:_det [_nDet]:_prod:_rastro, "_rastro")
+				endif
+//				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']valtype = ' + valtype (::XML:_det [_nDet]:_prod:_rastro))
+//				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']len do rastro = ' + cvaltochar (len (::XML:_det [_nDet]:_prod:_rastro)))
+				
+				for  _nLoteIt = 1 to len (::XML:_det [_nDet]:_prod:_rastro)
+					aadd (_aLotesIt, ::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_nLote:TEXT)
+					aadd (_aLotesIt, ::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_qLote:TEXT)
+					aadd (_aLotesIt, ::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_dFab:TEXT)
+					aadd (_aLotesIt, ::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_dVal:TEXT)
+				next
+
+				aadd (::ItRastro, aclone (_aLotesIt))
+			else
+				aadd (::ItRastro, {})
 			endif
 		next
 		
