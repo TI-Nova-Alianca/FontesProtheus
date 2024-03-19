@@ -13,7 +13,10 @@
 // Historico de alteracoes:
 // 20230719 - Claudia - Ajuste do relatório para leitura da view 
 //                      VA_VRATEIOS_CC_AUX_PARA_PRODUTIVOS. GLPI: 13935
-// 
+// 19/03/2024 - Robert - Formatar coluna de data (GLPI 15105)
+//                     - Definido nome do arquivo para exportacao.
+//
+
 // --------------------------------------------------------------------------
 User Function VA_XLS51()
 	Private cPerg   := "VAXLS51"
@@ -38,13 +41,24 @@ Static Function _Gera()
 	incproc ()
 	
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := " SELECT "
-	_oSQL:_sQuery += " 		* "
+	_oSQL:_sQuery := " SELECT TIPO_RATEIO"
+	_oSQL:_sQuery +=       ", FILIAL"
+	_oSQL:_sQuery +=       ", dbo.VA_DTOC (DT_MOVTO) AS DT_MOVTO"
+	_oSQL:_sQuery +=       ", CC_ORIGEM"
+	_oSQL:_sQuery +=       ", rtrim (DESC_CC_ORIG) as DESC_CC_ORIG"
+	_oSQL:_sQuery +=       ", CC_DESTINO"
+	_oSQL:_sQuery +=       ", rtrim (DESC_CC_DEST) as DESC_CC_DEST"
+	_oSQL:_sQuery +=       ", VALOR"
+	_oSQL:_sQuery +=       ", CT2_LOTE AS LOTE_CTB"
+	_oSQL:_sQuery +=       ", CT2_SBLOTE AS SUBLOTE_CTB"
+	_oSQL:_sQuery +=       ", CT2_DOC AS DOC_CTB"
+	_oSQL:_sQuery +=       ", CT2_LINHA AS LINHA_CTB"
 	_oSQL:_sQuery += " FROM VA_VRATEIOS_CC_AUX_PARA_PRODUTIVOS "
 	_oSQL:_sQuery += " WHERE YEAR(DT_MOVTO) BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "' "
 
 	_oSQL:Log ()
-	_oSQL:Qry2XLS (.F., .F., .T.)	
+	_oSQL:ArqDestXLS = 'VA_XLS51'
+	_oSQL:Qry2XLS (.F., .F., .T.)
 
 Return
 //
