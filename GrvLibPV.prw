@@ -512,11 +512,11 @@ user function GrvLibPV(_lLiberar)
 							endif
 
 							// Se este item vai ser bloqueado, adiciona-o na string da mensagem
-							if _nPrcLitro < _nPrMinLtr
+							if round (_nPrcLitro, 1) < round (_nPrMinLtr, 1)
 								_lBloqSup = .T.
 								_sMsgBlSup += alltrim (sb1 -> b1_cod) + " - " + alltrim (sb1 -> b1_desc)
-								_sMsgBlSup += " a <b>R$ " + alltrim (transform (_nPrcLitro, '@E 999,999,999.9999')) + " /litro</b>"
-								_sMsgBlSup += " (abaixo do valor minimo de R$ " + alltrim (transform (_nPrMinLtr, '@E 999,999,999.9999')) + ") desta linha de produtos.<br>"
+								_sMsgBlSup += " a <b>R$ " + alltrim (transform (_nPrcLitro, '@E 999,999,999.99')) + " /litro</b>"
+								_sMsgBlSup += " (abaixo do valor minimo de R$ " + alltrim (transform (_nPrMinLtr, '@E 999,999,999.99')) + ") desta linha de produtos.<br>"
 							endif
 						endif
 					endif

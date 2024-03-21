@@ -16,6 +16,8 @@
 // 05/01/2023 - Robert - Pede confirmacao para data muito antiga.
 // 17/04/2023 - Robert - Mostrar ultima mensagem da etiqueta, quando nao puder apontar.
 // 12/05/2023 - Robert - Alterados alguns logs de INFO para DEBUG
+// 19/03/2024 - Robert - Criado controle de sematoro por ThreadId() para ver se diminui travamentos.
+// 21/03/2024 - Robert - Melhoria logs (GLPI 15114)
 //
 
 #include "protheus.ch"
@@ -24,6 +26,7 @@
 user function vtEtqAp ()
 	local _lContinua   := .T.
 	local _nTamCBEmb   := TamSX3 ("C2_VABARCX")[1]
+	local _nLock       := 0
 	private _sBarEtiq  := ''
 	private _sCBEmbCol := ''
 	private _sProdEtq  := ''
@@ -36,9 +39,16 @@ user function vtEtqAp ()
 
 	U_Log2 ('debug', '[' + procname () + ']Entrou no programa.')
 
+	_nLock = U_Semaforo (cvaltochar (ThreadId ()) + procname ())
+	if _nLock == 0
+		u_help ('Bloqueio de semaforo na funcao ' + procname () + ". Parece que voce ja tem uma sessao aberta deste programa.",, .t.)
+		_lContinua = .F.
+	endif
+
 	do while _lContinua
 		
 		// Limpa variaveis para ler nova etiqueta.
+		_sPrefLog = ''  // Variavel auxiliar para geracao de arquivo de log.
 		_sBarEtiq = space (10)
 		_sCBEmbCol = space (_nTamCBEmb)  // Maior que o necessario por que tem casos de licitacoes de SP que exigem uns caracteres de controle no inicio das barras.
 		_sProdEtq = space (15)
@@ -58,6 +68,7 @@ user function vtEtqAp ()
 			terCBuffer ()
 		endif
 		if _lContinua
+			_sPrefLog = 'Etq.' + _sBarEtiq  // Variavel auxiliar para geracao de arquivo de log.
 			terSay (1, 0, "Cod.barras produto:")
 			VTSetGet (@_sCBEmbCol, "_sCBEmbCol", 1, 19, {||_ValCBProd ()})
 			vtRead ()
@@ -80,7 +91,7 @@ user function vtEtqAp ()
 		endif
 		if _lContinua
 			U_Log2 ('debug', '[' + procname () + ']Campos lidos. Vou gerar apontamento')
-			terSay (6, 0, "Aguarde... gerando apontamento")
+			terSay (6, 0, "Aguarde, gerando apontamento")
 			if _oEtiq:ApontaOP (_dDatProd, _sTnoProd)
 				U_Log2 ('debug', '[' + procname () + ']Retornou de _oEtiq:ApontaOP(). Vou dar msg para o usuario.')
 				u_help ("Etiq." + _oEtiq:Codigo + " apontada com sucesso!")
@@ -90,7 +101,14 @@ user function vtEtqAp ()
 			endif
 		endif
 		U_Log2 ('debug', '[' + procname () + ']fim do loop de apontamento')
+		_sPrefLog = ''  // Variavel auxiliar para geracao de arquivo de log.
 	enddo
+
+	// Libera semafor, caso exista.
+	if _nLock > 0
+		U_Semaforo (_nLock)
+	endif
+
 return
 
 // --------------------------------------------------------------------------
