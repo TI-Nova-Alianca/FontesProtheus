@@ -87,6 +87,7 @@
 // 04/03/2024 - Robert  - Bloqueio gerencial tipo S estava pegando TES que nao gera duplicata.
 // 11/03/2024 - Robert  - Melhorada msg de bloqueio gerencial tipo S
 //                      - Nao fazia leitura da linha correta na GDFieldGet, nos testes de bloqueio gerencial tipo S
+// 21/03/2024 - Robert  - Arredonda casas decimais antes de testar preco sucos (bloqueio gerencial tipo S)
 //
 
 // -------------------------------------------------------------------------------------------------------------------------

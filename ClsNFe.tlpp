@@ -616,11 +616,13 @@ METHOD LeXML (_oObjPai) Class ClsNFe
 //				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']valtype = ' + valtype (::XML:_det [_nDet]:_prod:_rastro))
 //				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']len do rastro = ' + cvaltochar (len (::XML:_det [_nDet]:_prod:_rastro)))
 				
-				for  _nLoteIt = 1 to len (::XML:_det [_nDet]:_prod:_rastro)
-					aadd (_aLotesIt, ::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_nLote:TEXT)
-					aadd (_aLotesIt, ::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_qLote:TEXT)
-					aadd (_aLotesIt, ::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_dFab:TEXT)
-					aadd (_aLotesIt, ::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_dVal:TEXT)
+				for _nLoteIt = 1 to len (::XML:_det [_nDet]:_prod:_rastro)
+					aadd (_aLotesIt, ;
+						{::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_nLote:TEXT ;
+						,::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_qLote:TEXT ;
+						,::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_dFab:TEXT ;
+						,::XML:_det [_nDet]:_prod:_rastro [_nLoteIt]:_dVal:TEXT ;
+						})
 				next
 
 				aadd (::ItRastro, aclone (_aLotesIt))

@@ -18,7 +18,7 @@
 // 30/01/2023 - Robert  - Melhoria gravacao eventos.
 // 08/03/2023 - Robert  - Melhorada extracao de campos e gravacao de evento.
 //                      - Acrescentado D1_CONTA = B1_CONTA
-//
+// 21/03/2024 - Robert  - Iniciada leitura do arquivo XML (ainda sem gravar dados) - GLPI 
 
 #Include "Protheus.ch"
 #Include "RwMake.ch"
@@ -45,8 +45,9 @@ User Function PETRS006()
 
 //	U_Log2 ('debug', '[' + procname () + ']_aCabec na entrada:')
 //	U_Log2 ('debug', _aCabec)
-//	U_Log2 ('debug', '[' + procname () + ']_aLinha na entrada:')
-//	U_Log2 ('debug', _aLinha)
+	U_Log2 ('debug', '[' + procname () + ']_aLinha na entrada:')
+	U_Log2 ('debug', _aLinha)
+//	u_showarray (_aTRS006)
 
 	// Acrescenta campos especificos na array do cabecalho. Como este P.E. eh
 	// chamado uma vez para cada item da nota, preciso evitar duplicidade
@@ -102,6 +103,10 @@ User Function PETRS006()
 		U_help ("Nao encontrei o campo D1_COD na array de dados para geracao do item da nota. Impossivel buscar dados adicionais.",, .t.)
 	EndIf
 
+	// Quando o item nao controla rastro, o importador nao faz a leitura de
+	// todos os respectivos campos do XML (pois nao pretente usar). Mas nos
+	// queremos preencher sempre todos os campos no SD1.
+	_LeRastro (@_aLinha)
 
 	// Grava evento temporario para rastreio de eventuais chaves perdidas
 	_oEvento := ClsEvent():new ()
@@ -133,6 +138,94 @@ User Function PETRS006()
 	U_SalvaAmb (_aAmbAnt)
 Return _aRet
 
+
+// --------------------------------------------------------------------------
+// Quando o item nao controla rastro, o importador nao faz a leitura de
+// todos os respectivos campos do XML (pois nao pretente usar). Mas nos
+// queremos preencher sempre todos os campos no SD1.
+static function	_LeRastro (_aLinha)
+	local _lTemLtFor := .T.
+	local _lTemDtFab := .T.
+	local _lTemDtVal := .T.
+	local _sXMLOri   := ''
+	local _oXMLSEF   := NIL
+	local _nItXML    := 0
+//	local _nItRastro := 0
+	local _lContinua := .T.
+	local _aLotes := {}
+	local _nLote  := 0
+
+	if ascan (_aLinha, {|_aVal|, _aVal [1] == 'D1_LOTEFOR'}) == 0
+		_lTemLtFor = .F.
+		U_Log2 ('debug', '[' + procname () + ']Nao tem lote fornecedor em _aLinha')
+	endif
+	if ascan (_aLinha, {|_aVal|, _aVal [1] == 'D1_DFABRIC'}) == 0
+		_lTemDtFab = .F.
+		U_Log2 ('debug', '[' + procname () + ']Nao tem dt fabricacao em _aLinha')
+	endif
+	if ascan (_aLinha, {|_aVal|, _aVal [1] == 'D1_DTVALID'}) == 0
+		_lTemDtVal = .F.
+		U_Log2 ('debug', '[' + procname () + ']Nao tem dt validade em _aLinha')
+	endif
+
+	if _lTemLtFor .and. _lTemDtFab .and. _lTemDtVal
+		_lContinua = .F.
+	endif
+
+	if _lContinua
+		U_LogTrb ('ZBE', .f.)
+		_sXMLOri = ''
+		if FT_FUSE (alltrim (zbe -> zbe_file)) < 0
+			u_help ("Nao foi possivel abrir o arquivo '" + alltrim (zbe -> zbe_file) + "' para extrair dados adicionais do XML.",, .t.)
+			_lContinua = .F.
+		else
+			FT_FGOTOP()
+			While !FT_FEOF()
+				_sXMLOri += FT_FREADLN ()
+				FT_FSKIP()
+			EndDo
+			FT_FUSE()  // Fecha o arquivo
+			U_Log2 ('debug', '[' + procname () + ']_sXMLOri = ' + _sXMLOri)
+			if empty (_sXMLOri)
+				u_help ("Nao foi possivel ler o arquivo '" + alltrim (zbe -> zbe_file) + "' para extrair dados adicionais do XML.",, .t.)
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	if _lContinua
+		_oXMLSEF := ClsXMLSEF ():New ()
+		_oXMLSEF:LeXML (_sXMLOri)
+		if len (_oXMLSEF:Erros) > 0
+			u_help ("Nao foi possivel interpretar o XML do arquivo '" + alltrim (zbe -> zbe_file) + "' para extrair dados adicionais do XML.", _oXMLSEF:Erros [1], .t.)
+			_lContinua = .F.
+		else
+			if valtype (_oXMLSEF:NFe) != 'O'
+				u_help ("Objeto retornado a partir da leitura do XML do arquivo '" + alltrim (zbe -> zbe_file) + "' nao representa uma 'NFe'. Nao conseguirei extrair dados adicionais.",, .t.)
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	if _lContinua
+		// Loop em todos os itens (produtos) do XML
+		for _nItXML = 1 to len (_oXMLSEF:NFe:ItRastro)
+			U_Log2 ('debug', '[' + procname () + ']Verificando se o item ' + cvaltochar (_nItXML) + ' da nota tem lotes.')
+			U_Log2 ('debug', '[' + procname () + ']Para este item, constam ' + cvaltochar (len (_oXMLSEF:NFe:ItRastro [_nItXML])) + ' lotes no XML')
+
+			// Posso ter mais de um lote no mesmo item (produto) da nota
+			_aLotes = _oXMLSEF:NFe:ItRastro [_nItXML]
+			U_Log2 ('debug', '[' + procname () + ']_aLotes do item:')
+			U_Log2 ('debug', _aLotes)
+			for _nLote = 1 to len (_aLotes)
+				U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' Lote :' + cvaltochar (_aLotes [_nLote][1]))
+				U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' Quant:' + cvaltochar (_aLotes [_nLote][2]))
+				U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' DtFab:' + cvaltochar (_aLotes [_nLote][3]))
+				U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' DtVal:' + cvaltochar (_aLotes [_nLote][4]))
+			next
+		next
+	endif
+return
 
 
 /*	Abaixo codigo que recebi como exemplo. Robert, 20/07/2022
