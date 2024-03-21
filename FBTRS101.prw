@@ -122,7 +122,7 @@ User Function FBTRS101(aChaves, nTpEvento, cJustific)
 				// Grava evento temporario para posterior rastreamento da chave da nota.
 				_oEvento := ClsEvent ():New ()
 				_oEvento:CodEven   = "ZZX002"
-				_oEvento:Texto     = "Enviado evento '" + aItensCb[nTpEvento] + cDescEvent + "' para a SEFAZ. Pilha: " + U_LogPCham ()
+				_oEvento:Texto     = "Enviado evento '" + aItensCb[nTpEvento] + cDescEvent + "' para a SEFAZ."
 				_oEvento:ChaveNFe  = aRet[nZ]
 				_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
 				_oEvento:Grava ()
