@@ -55,6 +55,7 @@
 // 28/02/2024 - Robert  - Metodo :AlmUsaFull passa a receber parametro 'filial' (GLPI 14785)
 //                      - Criado tratamento para desfazimento de guarda de pallets na logistica (atributo :EtqReferenciada) - GLPI 14999
 // 08/03/2024 - Robert  - Desconsiderar mensagem "Ja existe uma movimentacao com este numero de documento" como um erro, pois basta tentar novamente.
+// 21/03/2024 - Robert  - Nao permitia transf.para ax.11 com motivo 04 (bloqueio criado em 28/02 para desfazimento de guarda de pallet) - GLPI 15121
 //
 
 // ------------------------------------------------------------------------------------
@@ -1363,13 +1364,36 @@ METHOD PodeIncl () Class ClsTrEstq
 		endif
 	endif
 
-	// Validacoes para desfazimento de operacao de guarda de pallets na logistica/FullWMS
-	if _lContinua .and. ::AlmDest == '11' .and. ::CodMotivo != '09'
-		_Super:SomaMsg ("Transferencias para ax.11 sao permitidas somente com motivo 09 (desfazimento de guarda de pallet).")
+	if _lContinua .and. ::AlmDest == '11' .and. ! ::CodMotivo $ '04/09'
+		_Super:SomaMsg ("Transferencias para ax.11 sao permitidas somente com motivo 04 ou 09 (pallet reprocessado / desfazimento de guarda de pallet).")
 		_lContinua = .F.
 	endif
+
+
+	// Validacoes para disponibilizar pallet reprocessado para logistica
+	if _lContinua .and. ::CodMotivo == '04'
+		if empty (::OP)
+			_Super:SomaMsg ("Para disponibilizar pallet reprocessado para logistica, deve ser informada a OP.")
+			_lContinua = .F.
+		endif
+		if _lContinua
+			sc2 -> (dbsetorder (1))  // C2_FILIAL, C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD, R_E_C_N_O_, D_E_L_E_T_
+			if ! sc2 -> (dbseek (::FilDest + ::OP, .F.))
+				_Super:SomaMsg ("OP referenciada '" + ::OP + "' nao localizada na filial '" + ::FilDest + "'.")
+				_lContinua = .F.
+			endif
+		endif
+		if _lContinua .and. sc2 -> c2_produto != ::ProdDest
+			_Super:SomaMsg ("OP referenciada '" + ::OP + "' atende o produto '" + alltrim (sc2 -> c2_produto) + "' enquanto a sua solicitacao de transferencia atenderia o produto '" + alltrim (::ProdDest) + "' (deveria ser o mesmo produto).")
+			_lContinua = .F.
+		endif
+
+	endif
+
+
+	// Validacoes para desfazimento de operacao de guarda de pallets na logistica/FullWMS
 	if _lContinua .and. ::CodMotivo == '09'
-		if _lContinua .and. empty (::EtqRef) .or. empty (::OP)
+		if _lContinua .and. (empty (::EtqRef) .or. empty (::OP))
 			_Super:SomaMsg ("Para desfazimento de guarda de pallet, devem ser informadas OP e ETIQUETA (cuja guarda na logistica esta sendo desfeita).")
 			_lContinua = .F.
 		endif

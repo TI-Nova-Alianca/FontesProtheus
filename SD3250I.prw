@@ -29,6 +29,7 @@
 // 23/03/2023 - Robert  - Deixa de ler parametro VA_ALMFULP (agora fica fixo no programa).
 // 20/04/2023 - Robert  - Gravar codigo de motivo de transferencia do ax de reprocesso para 11 (disponibilizar pallet para FullMS)
 //                      - Grava evento quando nao conseguir gerar transf.estq.do ax de reprocesso.
+// 21/03/2024 - Robert  - Melhoria logs (GLPI 15121)
 //
 
 // -----------------------------------------------------------------------------------------------------------------------------------
@@ -69,7 +70,7 @@ Static Function _AtuReproc ()
 	local _oEvento  := NIL
 	
 	if fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_VAOPESP") == 'R'
-		U_Log2 ('info', '[' + procname () + ']Criando transf.estq. para disponibilizar pallet reprocessado p/ Full')
+		U_Log2 ('info', '[' + procname (1) + '.' + procname () + ']Criando transf.estq. para disponibilizar pallet reprocessado p/ Full')
 		_oTrEstq := ClsTrEstq ():New ()
 		_oTrEstq:FilOrig   := cFilAnt
 		_oTrEstq:FilDest   := cFilAnt
@@ -89,10 +90,8 @@ Static Function _AtuReproc ()
 		_oTrEstq:UsrIncl   := cUserName
 		_oTrEstq:DtEmis    := m->d3_emissao
 		_oTrEstq:Etiqueta  := alltrim(m->d3_vaetiq)
-		if _oTrEstq:Grava ()
-			u_log2 ('INFO', 'Gravou ZAG. ' + _oTrEstq:UltMsg)
-		else
-			u_log2 ('erro', 'Nao gravou ZAG. ' + _oTrEstq:UltMsg)
+		if ! _oTrEstq:Grava ()
+			u_log2 ('erro', '[' + procname (1) + '.' + procname () + ']Nao gravou ZAG. Ultima msg: ' + _oTrEstq:UltMsg)
 
 			// Grava evento para posterior rastreamento.
 			_oEvento := ClsEvent():new ()

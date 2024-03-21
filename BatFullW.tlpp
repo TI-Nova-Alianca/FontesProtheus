@@ -621,6 +621,8 @@ return _lRet
 
 
 // --------------------------------------------------------------------------------------------
+// AINDA NAO EM PRODUCAO. ACHO QUE TEREI QUE FAZER NUM BATCH, POR QUE GERALMENTE O PALLET 
+// AINDA NAO FOI MOVIMENTADO E, PORTANTO, NAO SABEREI O ENDERECO ONDE FOI GUARDADO.
 // Gera para o FulLWMS uma solicitacao de bloqueio do endereco onde esse pallet foi guardado,
 // para que fique em quarentena ateh liberacao (manual) da qualidade.
 static function _BloqEnder (_oEtiq)
