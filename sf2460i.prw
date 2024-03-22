@@ -159,6 +159,7 @@
 // 20/10/2023 - Robert  - Criado tratamento para venda de tambores a associados (GLPI 14397)
 // 20/11/2023 - Robert  - Verifica C6_QTDVEN antes de dar update no F2_PLIQUI, F2_PBRUTO, F2_VOLUME1
 // 31/01/2024 - Claudia - Ajuste no email de devoluções. GLPI: 14830
+// 21/03/2024 - Claudia - Criado parâmetro de exceção de UF. GLPI: 15112 
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -604,11 +605,13 @@ static function _Notifica ()
 	Next
 
 	If _nVfcpdif > 0 .or. _nDifal > 0 .or. _nIcmsRet > 0 
-		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
- 		U_ZZUNU ({'132'}, _sMsg, _sMsg)
+		if !(alltrim(sf2 -> f2_est) $ GetMv("VA_UFGUIA"))
+			_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
+ 			U_ZZUNU({'132'}, _sMsg, _sMsg)
+		endif
 	EndIf
 Return
-
+//
 // --------------------------------------------------------------------------
 // Verificacoes no pedido de venda.
 static function _VerPed ()
