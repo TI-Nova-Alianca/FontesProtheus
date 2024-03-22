@@ -11,7 +11,9 @@
 // #Modulos           #FAT 
 //
 // Historico de alteracoes:
+// 22/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -133,7 +135,8 @@ Static Function _MontaColunas(_sFilial, _sCliente,_sLoja,_sPedido)
     _oSQL:_sQuery += " 		,ZC1_PFIN "
     _oSQL:_sQuery += " 		,ZC1_VMAR "
     _oSQL:_sQuery += " 		,ZC1_PMAR "
-    _aCols := aclone(_oSQL:Qry2Array())
+//    _aCols := aclone(_oSQL:Qry2Array())
+    _aCols := aclone(_oSQL:Qry2Array (.t., .f.))
 
 
     For _x :=1 to Len(_aCols)

@@ -42,6 +42,7 @@
 // 26/11/2022 - Robert  - Permite mov.com inconsistencia entre tabelas (U_ConsEst) somente para grupo 119 do ZZU.
 // 26/01/2023 - Robert  - Bloqueio do MV_ALMZAG impedia, inclusive, o U_BatFullW e U_BatFullM
 // 23/03/2023 - Robert  - Deixa de ler parametro VA_ALMFULP (testes passam a ser melhorados e fixados no programa).
+// 22/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ------------------------------------------------------------------------------------
@@ -171,7 +172,7 @@ User Function MA261LIN ()
 		_oSQL:_sQuery +=    " and SBF.BF_LOCAL    = '" + _sAlmDest + "'" 
 		_oSQL:_sQuery +=    " and SBF.BF_LOCALIZ  = '" + _sEndDest + "'" 
 		_oSQL:_sQuery +=    " and SBF.BF_QUANT   != 0" 
-		_aOcup := aclone (_oSQL:Qry2Array ())
+		_aOcup := aclone (_oSQL:Qry2Array (.f., .f.))
 	endif
 	if _lRet
 		for _nOcup = 1 to len (_aOcup)

@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 31/05/2014 - Robert - Gravacao campo DAK_VAUSER
 //                     - Gravacao evento inclusao carga para cada pedido.
+// 22/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ------------------------------------------------------------------------------------
@@ -46,7 +47,7 @@ static function _GeraEvt ()
 	_oSQL:_sQuery +=  " WHERE DAI.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND DAI.DAI_FILIAL = '" + xfilial ("DAI") + "'"
 	_oSQL:_sQuery +=    " AND DAI.DAI_COD    = '" + dak -> dak_cod + "'"
-	_aPed = aclone (_oSQL:Qry2Array ())
+	_aPed = aclone (_oSQL:Qry2Array (.f., .f.))
 	for _nPed = 1 to len (_aPed)
 		_oEvento := ClsEvent():new ()
 		_oEvento:CodEven   = "DAK001"
