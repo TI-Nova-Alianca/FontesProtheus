@@ -62,6 +62,7 @@
 //                     - Tratamento temporario e especifico para 8 etiq.impressas com lote errado - GLPI 14605
 // 19/02/2024 - Robert - Implementado metodo EndGuardaFull()
 // 04/03/2024 - Robert - Nao gravava campo ZA1_FULLW=1 quando etiqueta gerada pelo ZAG com destino ao ax.01 (GLPI 15030)
+// 22/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 #Include "Protheus.ch"
@@ -932,7 +933,8 @@ METHOD Grava (_lSemafExt) Class ClsEtiq
 			_oSQL:_sQuery +=    " AND ZA1_ITEM = '"   + ::DocEntrItem + "'"
 			_oSQL:_sQuery +=    " AND ZA1_FORNEC = '" + ::DocEntrForn + "'"
 			_oSQL:_sQuery +=    " AND ZA1_LOJAF  = '" + ::DocEntrLoja + "'"
-			_nSeqEtq = _oSQL:RetQry () + 1
+	//		_nSeqEtq = _oSQL:RetQry () + 1
+			_nSeqEtq = _oSQL:RetQry (1, .f.) + 1
 		endif
 	endif
 

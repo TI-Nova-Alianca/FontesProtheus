@@ -9,6 +9,7 @@
 // 05/09/2018 - Andre   - Atualiza flag de 'e-mail enviado' no pedido de compra.
 // 25/03/2019 - Andre   - Alterada rotina de envio de e-mail.
 // 17/09/2021 - Sandra  - Alteração função  pswret e sEmailR fixado no programa e-mail compras@novaalianca.coop.br
+// 22/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 #INCLUDE "dialog.ch"
@@ -115,7 +116,8 @@ user Function envmail(caminho)
 	
 	_cFile := "ped_com_" + AllTrim(SC7->C7_NUM) //nome do arquivo padrão, deve ser alterado para não sobrescrever
     
-	_aProds = _oSQL:Qry2Array()
+//	_aProds = _oSQL:Qry2Array()
+	_aProds = _oSQL:Qry2Array(.f., .f.)
 	
 	for _nProds = 1 to len (_aProds)
 		aadd(_aProd, AllTrim(_aProds[_nProds,1]))

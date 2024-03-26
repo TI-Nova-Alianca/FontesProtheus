@@ -190,6 +190,7 @@
 // 07/02/2024 - Claudia - Incluida validação de item eliminado por residuo. GLPI: 14835
 // 23/02/2024 - Robert  - Validação do campo ZZ6_SUSPEN
 // 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 22/03/2024 - Robert  - Criada validacao para canpo B1_VAFULLW (GLPI 15127)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -207,6 +208,7 @@ user function VA_VCpo (_sCampo)
 	local _x         := 0
 	local _sPattern  := ''
 	local _oRegex    := NIL
+	local _sLinkSrv  := ''
 
 	// Verifica a melhor forma de obter o nome do campo a ser validado.
 	if _sCampo == NIL
@@ -467,6 +469,44 @@ user function VA_VCpo (_sCampo)
 			if ! empty (_oSQL:RetQry (1, .f.))
 				U_help ("Este item possui saldo em empenhos(de OP) e/ou reserva(ped.venda liberado) em " + _oSQL:_xRetQry)
 				_lRet = .f.
+			endif
+
+
+		case _sCampo $ "M->B1_VAFULLW"
+			// empty(m->b1_vafullw).or.sb1->b1_vafullw!='S'
+			_lRet = .T.
+			if altera .and. M->B1_VAFULLW != 'S' .and. sb1 -> b1_vafullw = 'S'
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " select count (*)"
+				_oSQL:_sQuery += "   from v_wms_item"
+				_oSQL:_sQuery += "  where coditem = '" + alltrim (M->B1_COD) + "'"
+				if _oSQL:RetQry (1, .F.) > 0
+					u_help ("Produto '" + alltrim (M->B1_COD) + "' consta na view de integracao v_wms_item. Campo nao pode ser voltado para N.", _oSQL:_sQuery, .t.)
+					_lRet = .F.
+				endif
+				if _lRet
+					_sLinkSrv = U_LkServer ('FULLWMS_AX01')
+					if empty (_sLinkSrv)
+						u_help ("Impossivel consultar cadastro do FullWMS. Linked server nao definido.",, .t.)
+						_lRet = .F.
+					else
+						_oSQL := ClsSQL ():New ()
+						_oSQL:_sQuery := ""
+						_oSQL:_sQuery += "select count (*)"
+						_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
+						_oSQL:_sQuery += " 'select *"
+						_oSQL:_sQuery +=    " from v_alianca_estoques"
+						_oSQL:_sQuery +=   " where empr_codemp       = 1"
+						_oSQL:_sQuery +=     " and item_cod_item_log = ''" + alltrim (m->b1_cod) + "''"
+						_oSQL:_sQuery += " ')"
+					//	_oSQL:Log ('[' + procname () + ']')
+						if _oSQL:RetQry (1, .f.) > 0
+							u_help ("Produto '" + alltrim (M->B1_COD) + "' consta no sistema FulLWMS. Campo nao pode ser voltado para N.", _oSQL:_sQuery, .t.)
+							_lRet = .F.
+						endif
+					endif
+				endif
 			endif
 
 
