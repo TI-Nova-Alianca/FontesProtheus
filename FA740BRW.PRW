@@ -30,6 +30,7 @@
 // 16/01/2023 - Claudia - Ajustada a impressão de boletos. GLPI: 13025
 // 29/03/2023 - CLáudia - Ajustada a impressão da data de vencimento da carta de anuencia. GLPI: 13364
 // 02/05/2023 - Cláudia - Alterado o diretor predidente. GLPI: 13505
+// 26/03/2024 - Claudia - Incluida a alteração da tab.SL4. GLPI: 15101
 //
 // ---------------------------------------------------------------------------------------------------------------------------------
 User Function FA740BRW()
@@ -47,8 +48,9 @@ Return(aBotao)
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Altera bandeira do cartão
 user function VA_040BAND()
+	local _aAreaAnt := U_ML_SRArea ()
+	local _x        := 0
 
-	local _aAreaAnt  := U_ML_SRArea ()
 	_lContinua = .T.
 	
 	// testar se eh cartao para alterar a bandeira
@@ -88,13 +90,50 @@ user function VA_040BAND()
 			elseif 'DEBITO' $ _wdebcred
 				_wtipo = 'CD'
 			endif	
+
+			_sNomeCli := fBuscaCpo ('SA1', 1, xfilial('SA1') + _sBandeira + '01', "A1_NOME")
 			
+			_oSQL:= ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT "
+			_oSQL:_sQuery += " 	   L1_FILIAL "
+			_oSQL:_sQuery += "    ,L1_NUM "
+			_oSQL:_sQuery += " FROM SL1010 "
+			_oSQL:_sQuery += " WHERE L1_FILIAL = '"+ se1 -> e1_filial  +"' "
+			_oSQL:_sQuery += " AND L1_DOC      = '"+ se1 -> e1_num     +"' "
+			_oSQL:Log ()
+			_aDoc := aclone(_oSQL:Qry2Array ())
+
+			For _x:=1 to len(_aDoc)
+				_oSQL:= ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT "
+				_oSQL:_sQuery += " 	   L1_FILIAL "
+				_oSQL:_sQuery += "    ,L1_NUM "
+				_oSQL:_sQuery += " UPDATE SL1010 SET L1_INSTITU= '"+ _sNomeCli+"'"
+				_oSQL:_sQuery += " WHERE L1_FILIAL = '"+ se1 -> e1_filial  +"' "
+				_oSQL:_sQuery += " AND L1_DOC      = '"+ se1 -> e1_num     +"' "
+				_oSQL:Log ()
+				_oSQL:Exec ()
+
+				_oSQL:= ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " UPDATE SL4010 SET  L4_FORMA   = '"+ _wtipo     +","
+				_oSQL:_sQuery += "                    L4_ADMINIS = '"+ _sBandeira +"," 
+				_oSQL:_sQuery += "                    L4_INSTITU = '"+ _sNomeCli  +","
+				_oSQL:_sQuery += "                    L4_NOMECLI = '"+ _sNomeCli  +"'"
+				_oSQL:_sQuery += " WHERE L4_FILIAL = '"+ _aDoc[_x, 1] +"'"
+				_oSQL:_sQuery += " AND L4_NUM      = '"+ _aDoc[_x, 2] +"'"
+				_oSQL:Log ()
+				_oSQL:Exec ()
+			Next 
+		
 			reclock ("SE1", .F.)
 				se1 -> e1_cliente = _sBandeira
 				se1 -> e1_tipo    = _wtipo
-				se1 -> e1_nomcli  = fBuscaCpo ('SA1', 1, xfilial('SA1') + _sBandeira + '01', "A1_NOME")
-			msunlock ()      
-		
+				se1 -> e1_nomcli  = _sNomeCli
+			msunlock ()
+
 			_ntexto:= 'Alterado Bandeira de Cartao de Credito - Função do Financeiro.'          
 			_oEvento := ClsEvent():new ()
 			_oEvento:CodEven   = "SE1001"
