@@ -43,6 +43,7 @@ User Function BatZA4()
     _oSQL:_sQuery += "    ,DB_TBREP_CODORIG AS ZA4_VEND "
     _oSQL:_sQuery += "    ,PRC.SITUACAO AS ETAPA "
     _oSQL:_sQuery += "    ,ZA3_IND AS ZA3_IND "
+    _oSQL:_sQuery += "    ,CONVERT(VARCHAR(2000), PRC.PRODUTOS_VERBAS ) AS ZA4_OBSPRO "
     _oSQL:_sQuery += " FROM "+ _sLinkSrv +".DB_OC_PRINCIPAL PRC "
     _oSQL:_sQuery += " LEFT JOIN "+ _sLinkSrv +".DB_OC_ITENS ITE "
     _oSQL:_sQuery += " 	ON ITE.CODIGO_OC = 37400002 "
@@ -69,8 +70,9 @@ User Function BatZA4()
     _oSQL:_sQuery += " AND NOT EXISTS (SELECT "
     _oSQL:_sQuery += " 		1 "
     _oSQL:_sQuery += " FROM " + RetSQLName ("ZA4") + " ZA4 "
-    _oSQL:_sQuery += " WHERE ZA4.ZA4_NUMMER = PRC.CODIGO) "
-    _oSQL:_sQuery += " AND PRC.DATA >= '2024-01-01' " // data que entrar em vigor
+    _oSQL:_sQuery += " WHERE ZA4.D_E_L_E_T_='' "
+	_oSQL:_sQuery += " AND ZA4.ZA4_NUMMER = PRC.CODIGO) "
+    _oSQL:_sQuery += " AND PRC.DATA >= '2024-03-14' " // data que entrar em vigor
     _oSQL:_sQuery += " AND PRC.SITUACAO = 'Aprovada' "
     u_log(_oSQL:_sQuery)
     _aVerbas := aclone(_oSQL:Qry2Array())
@@ -110,6 +112,8 @@ User Function BatZA4()
                 ZA4 -> ZA4_VEND		:= alltrim(str(_aVerbas[_x,15])) 
                 ZA4 -> ZA4_SUTL     := '0'
                 ZA4 -> ZA4_NUMMER   := _aVerbas[_x, 1]
+                ZA4 -> ZA4_OBSPRO   := alltrim(_aVerbas[_x,18])
+                ZA4 -> ZA4_STATUS   := 'I'    
             MsUnLock()
             
             _oSQL := ClsSQL():New ()
@@ -123,7 +127,34 @@ User Function BatZA4()
                 _oEvento:Texto     = "Verba não gerada. Cod.Merc.:"+_sNumMerc
                 _oEvento:CodEven   = "ZA4001"
                 _oEvento:Produto   = _sNumMerc
-                _oEvento:Grava()
+                _oEvento:Grava()    
+
+                _oAviso := ClsAviso():new ()
+                _oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
+                _oAviso:Titulo     = "Verba incluída Mercanet x Protheus"
+                _oAviso:Texto      = "Verba " + _sZA4Num + " não incluída!"
+                _oAviso:DestinZZU  = {'160'}  // grupo
+                _oAviso:Origem     = procname()
+                _oAviso:Formato    = 'H'  // [T]exto ou [H]tml
+                _oAviso:Grava ()
+            else
+            
+                // REALIZAR RATEIO QUANDO TIPO "RATEIO"
+                _sTipo := Posicione("ZA3",1, xFilial("ZA3") + _aVerbas[_x, 4], "ZA3_TIPO") // ZA3_FILIAL+ZA3_COD        
+
+                if _sTipo == 'R'   
+                    _GrvRateio(_sZA4Num, _aVerbas[_x, 2],_aVerbas[_x, 3])
+                endif         
+
+                _oAviso := ClsAviso():new ()
+                _oAviso:Tipo       = 'I'  // I=Info;A=Aviso;E=Erro
+                _oAviso:Titulo     = "Verba incluída Mercanet x Protheus"
+                _oAviso:Texto      = "Verba "+ _sZA4Num + " incluída com sucesso!"
+                _oAviso:DestinZZU  = {'160'}  // grupo
+                _oAviso:Origem     = procname()
+                _oAviso:Formato    = 'H'  // [T]exto ou [H]tml
+                _oAviso:Grava ()
+                                                                                                                      
             endif
         endif
         do while __lSX8
@@ -181,3 +212,39 @@ Static Function _GeraFina(_aVerbas, _x, _sZA4Num)
     endif
 
 Return _lRetFin
+//
+// --------------------------------------------------------------------------
+// Grava rateio
+Static Function _GrvRateio(_sZA4Num, _sCliente, _sLoja)
+    Local _aProd := {}
+    Local _x     := 0
+
+    _oSQL := ClsSQL():New ()
+    _oSQL:_sQuery := ""
+    _oSQL:_sQuery += " SELECT DISTINCT "
+    _oSQL:_sQuery += " 	    D2_COD "
+    _oSQL:_sQuery += " FROM SD2010 "
+    _oSQL:_sQuery += " WHERE D2_FILIAL = '"+ xFilial("SD1") +"' "
+    _oSQL:_sQuery += " AND D2_CLIENTE  = '"+ _sCliente +"' "
+    _oSQL:_sQuery += " AND D2_LOJA     = '"+ _sLoja    +"' "
+    _oSQL:_sQuery += " AND D2_EMISSAO BETWEEN '" + dtos(YearSub(date(), 1)) + "' AND '"+ dtos(date()) + "' "
+    _aProd := aclone(_oSQL:Qry2Array())
+
+    _nQtd := Len(_aProd)
+
+    If _nQtd > 0
+        _nPerc := round(100/_nQtd,2)
+
+        For _x := 1 to Len(_aProd)
+             RecLock ("ZC2",.T.)
+                ZC2 -> ZC2_FILIAL   := '  '       
+                ZC2 -> ZC2_VERBA    := _sZA4Num	
+                ZC2 -> ZC2_CLIENT   := _sCliente	
+                ZC2 -> ZC2_LOJA	    := _sLoja	
+                ZC2 -> ZC2_PROD	    := _aProd[_x, 1]	
+                ZC2 -> ZC2_PERC     := _nPerc  
+                ZC2 -> ZC2_TIPO     := 'R'    
+            MsUnLock()
+        Next
+    EndIf
+Return

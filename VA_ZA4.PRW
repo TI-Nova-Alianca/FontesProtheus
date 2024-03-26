@@ -55,6 +55,7 @@ User Function VA_ZA4()
 	private _sarqlog   := U_NomeLog ()
 	private _sQuery    := ""
 	private _aDados    := {}
+	Private _aCores    := {}
 	
     u_logId ()
 	
@@ -62,24 +63,57 @@ User Function VA_ZA4()
 		u_help("Não é permitido incluir verbas em filiais, apenas na matriz. Operação cancelada!")
 	Else
 		// Menu principal
-		aadd (aRotina, {"&Pesquisar"          , "AxPesqui"		, 0,1})
-		aadd (aRotina, {"&Visualizar"         , "AxVisual"		, 0,2})
-		aadd (aRotina, {"&Incluir"   		  , "U_ZA4_I()" 	, 0,3})
-		aadd (aRotina, {"&Liberar"            , "U_ZA4_L" 		, 0,4})
-		aadd (aRotina, {"&Estornar"           , "U_ZA4_EL" 		, 0,4})
-		aadd (aRotina, {"&Excluir"            , "U_ZA4_EX" 		, 0,4})
-		aadd (aRotina, {"&Alterar"            , "U_ZA4_AL"   	, 0,4})
-		aadd (aRotina, {"&Produtos"           , "U_ZA4_PROPER()", 0,4})
-		aadd (aRotina, {"&Verbas em andamento", "U_ZA4_APRMER()", 0,6})
-		aadd (aRotina, {"&Últimas importadas ", "U_ZA4_ULTMER()", 0,6})
-		aadd (aRotina, {"&Erros Importacao"   , "U_ZA4_ERRMER()", 0,6})
+		aadd(aRotina, {"&Pesquisar"          , "AxPesqui"		, 0,1})
+		aadd(aRotina, {"&Visualizar"         , "AxVisual"		, 0,2})
+		aadd(aRotina, {"&Incluir"   		  , "U_ZA4_I()" 	, 0,3})
+		aadd(aRotina, {"&Liberar"            , "U_ZA4_L" 		, 0,4})
+		aadd(aRotina, {"&Estornar"           , "U_ZA4_EL" 		, 0,4})
+		aadd(aRotina, {"&Excluir"            , "U_ZA4_EX" 		, 0,4})
+		aadd(aRotina, {"&Alterar"            , "U_ZA4_AL"   	, 0,4})
+		aadd(aRotina, {"&Produtos"           , "U_ZA4_PROPER()" , 0,4})
+		aadd(aRotina, {"&Exp.Produtos"       , "U_ZA4_PROEXP()" , 0,6})
+		aadd(aRotina, {"&Legenda"        	 , "U_ZA4_LGD(.F.)" , 0,5})
+		aadd(aRotina, {"&Verbas em andamento", "U_ZA4_APRMER()" , 0,6})
+		aadd(aRotina, {"&Últimas importadas ", "U_ZA4_ULTMER()" , 0,6})
+		aadd(aRotina, {"&Erros Importacao"   , "U_ZA4_ERRMER()" , 0,6})
+
+		AADD(_aCores,{ "ZA4_STATUS == 'I'", 'BR_VERDE'    }) // importado
+		AADD(_aCores,{ "ZA4_STATUS == 'A'", 'BR_AMARELO'  }) // alterado
+		AADD(_aCores,{ "ZA4_STATUS == 'L'", 'BR_VERMELHO' }) // liberado
 	
 		dbselectarea(cString)
 		dbSetOrder (1)
-		mBrowse(,,,,cString,,,,,2)
+		mBrowse(,,,,cString,,,,,2,_aCores)
+
 	EndIf
     U_ML_SRArea(_aAreaAnt)
 Return
+//
+// --------------------------------------------------------------------------
+// Retorna Legenda
+User function Za4_LGD(_lRetCores)
+	local aCores  := {}
+	local aCores2 := {}
+	local _i       := 0
+	
+	aadd (aCores, {"ZA4->ZA4_STATUS=='I'", 'BR_VERDE'   , 'Reg.Importados'	})
+	aadd (aCores, {"ZA4->ZA4_STATUS=='A'", 'BR_AMARELO'	, 'Reg.Alterados'	})
+	aadd (aCores, {"ZA4->ZA4_STATUS=='L'", 'BR_VERMELHO', 'Reg.Liberados'	})
+
+
+	if ! _lRetCores
+		for _i = 1 to len (aCores)
+			aadd (aCores2, {aCores [_i, 2], aCores [_i, 3]})
+		next
+		BrwLegenda (cCadastro, "Legenda", aCores2)
+	else
+		for _i = 1 to len (aCores)
+			aadd (aCores2, {aCores [_i, 1], aCores [_i, 2]})
+		next
+		return aCores
+	endif
+	
+return
 // 
 // -------------------------------------------------------------------------
 // Inclusao
@@ -135,9 +169,10 @@ User Function ZA4_L()
 
 		if _lRet
 			RecLock("ZA4",.F.)
-				za4 -> za4_ulib = alltrim(cUserName)
-				za4 -> za4_slib = '1'
-				za4 -> za4_dlib = date()
+				za4 -> za4_ulib   = alltrim(cUserName)
+				za4 -> za4_slib   = '1'
+				za4 -> za4_dlib   = date()
+				za4 -> za4_status = 'L'
 			MsUnLock()
 
 			if za4 -> za4_tlib !='5'
@@ -470,45 +505,60 @@ User Function ZA4_G_FIN()
     _lRetFin := .T.
      
     if  za4->za4_tlib == '3' .or. za4->za4_tlib == '4'
-    	// força parametro de contabilização on-line como SIM
-    	U_GravaSX1('FIN040', "01", 1)
-		// gera NCC contas a receber
-        _aAutoSE1 := {}
-        
-        aAdd(_aAutoSE1, {"E1_FILIAL"    , xfilial ("SE1") 		, Nil})
-        aAdd(_aAutoSE1, {"E1_PREFIXO"   , "CV "           		, Nil})
-        aAdd(_aAutoSE1, {"E1_NUM"       , za4->za4_num    		, Nil})
-        aAdd(_aAutoSE1, {"E1_PARCELA"   , '1'             		, Nil})
-        aAdd(_aAutoSE1, {"E1_CLIENTE"   , za4->za4_cli    		, Nil})
-        aAdd(_aAutoSE1, {"E1_LOJA"      , za4->za4_loja   		, Nil})
-        AAdd(_aAutoSE1, {"E1_TIPO"      , 'NCC'           		, Nil})
-        AAdd(_aAutoSE1, {"E1_NATUREZ"   , 'VERBAS'        		, Nil})
-        AAdd(_aAutoSE1, {"E1_EMISSAO"   , DATE()          		, Nil})
-        AAdd(_aAutoSE1, {"E1_VENCTO"    , za4->za4_vencto 		, Nil})
-        AAdd(_aAutoSE1, {"E1_VALOR"     , za4->za4_vlr    		, Nil})
-        AAdd(_aAutoSE1, {"E1_ORIGEM"    , 'VERBAS'        		, Nil})
-        AAdd(_aAutoSE1, {"E1_HIST"      , IIF(za4->za4_tlib='3'	,'BOLETO','DEPOSITO'), Nil}) 
-       
-        // Inclui titulo a receber via rotina automatica.
-        lMsHelpAuto := .T.  // se .T. direciona as mensagens de help
-        lMsErroAuto := .F.  // necessario a criacao
 
-        DbSelectArea("SE1")
-        dbsetorder (1)
+		_aDados := {}
+		_sQuery := ""
+		_sQuery += " SELECT COUNT(*) "
+		_sQuery += " FROM " +  RetSQLName ("SE1")
+		_sQuery += " WHERE D_E_L_E_T_=''"
+		_sQuery += " AND E1_NUM     = '" + za4->za4_num + "'"
+		_sQuery += " AND E1_CLIENTE = '" + za4->za4_cli + "'"
+		_sQuery += " AND E1_LOJA    = '" + za4->za4_loja+ "'"
+		_sQuery += " AND E1_TIPO    = 'NCC'"
+		_sQuery += " AND E1_ORIGEM  = 'VERBAS'"
+		_aDados := U_Qry2Array(_sQuery)
 
-        MsExecAuto({|x,y|FINA040(x,y)},_aAutoSE1,3)
+		if _aDados[1,1] == 0 
+			// força parametro de contabilização on-line como SIM
+			U_GravaSX1('FIN040', "01", 1)
+			// gera NCC contas a receber
+			_aAutoSE1 := {}
+			
+			aAdd(_aAutoSE1, {"E1_FILIAL"    , xfilial ("SE1") 		, Nil})
+			aAdd(_aAutoSE1, {"E1_PREFIXO"   , "CV "           		, Nil})
+			aAdd(_aAutoSE1, {"E1_NUM"       , za4->za4_num    		, Nil})
+			aAdd(_aAutoSE1, {"E1_PARCELA"   , '1'             		, Nil})
+			aAdd(_aAutoSE1, {"E1_CLIENTE"   , za4->za4_cli    		, Nil})
+			aAdd(_aAutoSE1, {"E1_LOJA"      , za4->za4_loja   		, Nil})
+			AAdd(_aAutoSE1, {"E1_TIPO"      , 'NCC'           		, Nil})
+			AAdd(_aAutoSE1, {"E1_NATUREZ"   , 'VERBAS'        		, Nil})
+			AAdd(_aAutoSE1, {"E1_EMISSAO"   , DATE()          		, Nil})
+			AAdd(_aAutoSE1, {"E1_VENCTO"    , za4->za4_vencto 		, Nil})
+			AAdd(_aAutoSE1, {"E1_VALOR"     , za4->za4_vlr    		, Nil})
+			AAdd(_aAutoSE1, {"E1_ORIGEM"    , 'VERBAS'        		, Nil})
+			AAdd(_aAutoSE1, {"E1_HIST"      , IIF(za4->za4_tlib='3'	,'BOLETO','DEPOSITO'), Nil}) 
+		
+			// Inclui titulo a receber via rotina automatica.
+			lMsHelpAuto := .T.  // se .T. direciona as mensagens de help
+			lMsErroAuto := .F.  // necessario a criacao
 
-        If lMsErroAuto
-           if empty(NomeAutoLog())
-              _sErro = "Nao foi possivel ler o arquivo de log de erros."
-           else
-              _sErro = memoread(NomeAutoLog())
-           endif
+			DbSelectArea("SE1")
+			dbsetorder (1)
 
-           u_help(_sErro)
-           _lRetFin = .F.
-        endif
-    endif
+			MsExecAuto({|x,y|FINA040(x,y)},_aAutoSE1,3)
+
+			If lMsErroAuto
+			if empty(NomeAutoLog())
+				_sErro = "Nao foi possivel ler o arquivo de log de erros."
+			else
+				_sErro = memoread(NomeAutoLog())
+			endif
+
+			u_help(_sErro)
+			_lRetFin = .F.
+			endif
+		endif
+	endif
     
 Return _lRetFin
 //
@@ -519,6 +569,7 @@ User Function ZA4_AL()
 	local  nReg    := m->( Recno())
 	local _aDados  := {}
 	local _aCampos := {}
+	local _sStatus := ''
  	local _nTemZA5 := 0
  	private inclui := .F.
 	private altera := .T.
@@ -575,12 +626,18 @@ User Function ZA4_AL()
 			aadd(_aCampos, "ZA4_VEND"	)
 			
 			If AxAltera('ZA4', nReg,4,nil,_aCampos)	== 1
+				if U_MsgYesNo("Deseja liberar para aprovação?")
+					_sStatus = 'A'
+				else
+					_sStatus := za4->za4_status
+				endif
 				RecLock("ZA4",.F.)
-					za4 -> za4_ulib = ''
-					za4 -> za4_slib = ''
-					za4 -> za4_dlib = CTOD('')	
-					za4 -> za4_ualt = alltrim (cUserName)
-					za4 -> za4_dalt = date()
+					za4 -> za4_ulib  = ''
+					za4 -> za4_slib  = ''
+					za4 -> za4_dlib  = CTOD('')	
+					za4 -> za4_ualt  = alltrim (cUserName)
+					za4 -> za4_dalt  = date()
+					za4 ->za4_status = _sStatus
 				MsUnLock()
 				u_help("Registro alterado com sucesso!")
 			Else
@@ -1049,71 +1106,81 @@ User function ZA4_PROPER()
 	private _aHeader    := {}
 	private _aCols      := {}
 
-	_aHeader   := aclone(U_GeraHead("ZZZ", .T., {}, {"ZZZ_18PROD", "ZZZ_18DESC","ZZZ_18PERC"}, .T.))
-    _aHead1    := aclone(_aHeader)
-	_aCols1    := {} 	
-	_aCols1 := aclone(_aCols)
-	_aLinVazia := aclone(U_LinVazia(_aHeader))
-	for _x:=1 to 50
-		aadd (_aCols1, aclone (_aLinVazia))
-	next
-	//_aCols1    := _BuscaUltImp()			    // incluir os valores das colunas
-	_aSize     := MsAdvSize()					// Define tamanho da tela.
+	if za4->za4_status == 'L'
+		u_help("Verba já liberada, não é possível realizar manutenção!")
+	else
+		_aHeader   := aclone(U_GeraHead("ZZZ", .T., {}, {"ZZZ_18PROD", "ZZZ_18DESC","ZZZ_18PERC"}, .T.))
+		_aHead1    := aclone(_aHeader)
+		_aCols1    := {} 	
+		_aCols1 := _BuscaProds()
 
-	define MSDialog _oDlg from _aSize [1], _aSize [1] to _aSize [6], _aSize [5] of oMainWnd pixel title "% de produtos de verbas"
-	
-    _oGetD1 := MsNewGetDados ():New (   40									,;		// Limite superior
-		                                5									,;      // Limite esquerdo
-		                                _oDlg:nClientHeight / 2 - 28		,;      // Limite inferior
-		                                _oDlg:nClientWidth / 2 - 10			,;      // Limite direito    
-		                                2							        ,; 		// [ nStyle ]
-		                                "AllwaysTrue ()"					                ,;  	// [ Linha OK]
-		                                "AllwaysTrue ()"						            ,;  	// [ uTudoOk ]
-		                                NIL									,; 		// [cIniCpos]
-		                                NIL									,; 		// [ aAlter ]
-		                                NIL									,; 		// [ nFreeze ]
-		                                NIL									,; 		// [ nMax ]
-		                                NIL									,; 		// [ cFieldOk ]
-		                                NIL									,;		// [ uSuperDel ]
-		                                NIL									,; 		// [ uDelOk ]
-		                                _oDlg								,; 		// [ oWnd ]
-		                                _aHead1								,; 		// [ ParHeader ]
-		                                _aCols1						 		) 		// [ aParCols ]
-    
-     // Define botoes para a barra de ferramentas
-	_bBotaoOK  = {|| processa({||_GravaZC2()}), _oDlg:End ()}
-	_bBotaoCan = {|| _oDlg:End ()}
-    
-    activate dialog _oDlg on init (EnchoiceBar(_oDlg, _bBotaoOK, _bBotaoCan,, ), _oGetD1:oBrowse:SetFocus (), "")
+		_aLinVazia := aclone(U_LinVazia(_aHeader))
+		for _x:=1 to 50
+			aadd (_aCols1, aclone (_aLinVazia))
+		next
+		//_aCols1    := _BuscaUltImp()			    // incluir os valores das colunas
+		_aSize     := MsAdvSize()					// Define tamanho da tela.
 
+		define MSDialog _oDlg from _aSize [1], _aSize [1] to _aSize [6], _aSize [5] of oMainWnd pixel title "% de produtos de verbas"
+		
+		_oGetD1 := MsNewGetDados ():New (   40									,;		// Limite superior
+											5									,;      // Limite esquerdo
+											_oDlg:nClientHeight / 2 - 28		,;      // Limite inferior
+											_oDlg:nClientWidth / 2 - 10			,;      // Limite direito    
+											GD_INSERT + GD_UPDATE + GD_DELETE   ,; 		// [ nStyle ]
+											"AllwaysTrue ()"					,;  	// [ Linha OK]
+											"AllwaysTrue ()"					,;  	// [ uTudoOk ]
+											NIL									,; 		// [cIniCpos]
+											NIL									,; 		// [ aAlter ]
+											NIL									,; 		// [ nFreeze ]
+											NIL									,; 		// [ nMax ]
+											NIL									,; 		// [ cFieldOk ]
+											NIL									,;		// [ uSuperDel ]
+											NIL									,; 		// [ uDelOk ]
+											_oDlg								,; 		// [ oWnd ]
+											_aHead1								,; 		// [ ParHeader ]
+											_aCols1						 		) 		// [ aParCols ]
+		
+		// Define botoes para a barra de ferramentas
+		_bBotaoOK  = {|| processa({||_GravaZC2()}), _oDlg:End ()}
+		_bBotaoCan = {|| _oDlg:End ()}
+		
+		activate dialog _oDlg on init (EnchoiceBar(_oDlg, _bBotaoOK, _bBotaoCan,, ), _oGetD1:oBrowse:SetFocus (), "")
+	endif
 return
 
 Static Function _GravaZC2()
-	local _aProd := {}
 	local _x     := 0
+	private aHeader  := aclone (_oGetD1:aHeader)
+	private aCols    := aclone (_oGetD1:aCols)
+	private N        := _oGetD1:nAt
 
-	_aProd   := aclone (_oGetD1:aCols)
-
-	For _x := 1 to len(_aProd)
-		if !empty(_aProd[_x, 1])
-			_sProd := _aProd[_x, 1]
-			_nPerc := _aProd[_x, 3]
+	for _x = 1 to len (aCols)
+		N := _x
+		if !empty(aCols[_x, 1])
+			_sProd := aCols[_x, 1]
+			_nPerc := aCols[_x, 3]
 
 			DbSelectArea("ZC2")
 			ZC2 ->(dbsetorder(1)) // ZC2_FILIAL + ZC2_VERBA + ZC2_CLIENT + ZC2_LOJA + ZC2_PROD  
-			if ZC2 -> (xfilial("ZC2") + ZA4->ZA4_NUM + ZA4->ZA4_CLI + ZA4->ZA4_LOJA + _sProd, .F.)
-				If reclock("ZC2", .F.)
-						ZC2->ZC2_PERC := _nPerc
-					msunlock()
-				endif	
-			Else
+
+			if DbSeek(xfilial("ZC2") + ZA4->ZA4_NUM + ZA4->ZA4_CLI + ZA4->ZA4_LOJA + _sProd, .F.)
 				reclock("ZC2", .F.)
+				If GDDeleted()
+					DBDelete()
+				else 
+					ZC2->ZC2_PERC := _nPerc
+				endif	
+				msunlock()
+			Else
+				reclock("ZC2", .T.)
 					ZC2->ZC2_FILIAL := '  '
 					ZC2->ZC2_VERBA  := ZA4->ZA4_NUM
 					ZC2->ZC2_CLIENT := ZA4->ZA4_CLI
 					ZC2->ZC2_LOJA   := ZA4->ZA4_LOJA
 					ZC2->ZC2_PROD   := _sProd
 					ZC2->ZC2_PERC   := _nPerc
+					ZC2->ZC2_TIPO   := 'P'    
 				msunlock()
 			EndIf                                                                                        
 		else
@@ -1121,4 +1188,111 @@ Static Function _GravaZC2()
 		endif
 	Next 
 
+Return
+//
+// --------------------------------------------------------------------------
+// Busca produtos incluidos
+Static Function _BuscaProds()
+    local _aDados  := {}
+    local _aDados1 := {}
+    local _x       := 1
+
+    _sLinkSrv = U_LkServer ('MERCANET')
+
+    _oSQL := ClsSQL():New ()
+    _oSQL:_sQuery := ""
+    _oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += "     ZC2_PROD "
+	_oSQL:_sQuery += "    ,SB1.B1_DESC "
+	_oSQL:_sQuery += "    ,ZC2_PERC "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("ZC2") + " ZC2 "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " SB1 "
+	_oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND ZC2.ZC2_PROD = SB1.B1_COD "
+	_oSQL:_sQuery += " WHERE ZC2.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND ZC2.ZC2_VERBA    = '" + ZA4->ZA4_NUM  + "' "
+	_oSQL:_sQuery += " AND ZC2.ZC2_CLIENT   = '" + ZA4->ZA4_CLI  + "' "
+	_oSQL:_sQuery += " AND ZC2.ZC2_LOJA     = '" + ZA4->ZA4_LOJA + "' "
+    _aDados1 := _oSQL:Qry2Array ()
+
+    For _x :=1 to Len(_aDados1)
+        aAdd(_aDados,   {   _aDados1[_x, 1] ,;
+                            _aDados1[_x, 2] ,;
+                            _aDados1[_x, 3] ,;
+                                          .F.;
+                        })
+    Next
+
+Return _aDados
+//
+// --------------------------------------------------------------------------
+// Exporta tabela de percentuais
+User Function ZA4_PROEXP()
+	local _oSQL   := NIL
+	private cPerg := "ZA4_PROEXP"
+	
+	_ValidPerg()
+	if pergunte (cPerg, .T.)
+
+		procregua (10)
+		incproc ("Gerando arquivo")
+
+		// Busca dados
+		incproc ("Buscando dados")
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += "     ZC2_VERBA "
+		_oSQL:_sQuery += "    ,ZC2_CLIENT "
+		_oSQL:_sQuery += "    ,ZC2_LOJA "
+		_oSQL:_sQuery += "    ,A1_NOME "
+		_oSQL:_sQuery += "    ,ZC2_PROD "
+		_oSQL:_sQuery += "    ,B1_DESC "
+		_oSQL:_sQuery += "    ,ZC2_PERC "
+		_oSQL:_sQuery += "    ,CASE "
+		_oSQL:_sQuery += " 			WHEN ZC2_TIPO = 'R' THEN 'RATEIO' "
+		_oSQL:_sQuery += " 			ELSE 'PRODUTO' "
+		_oSQL:_sQuery += " 	   END TIPO "
+		_oSQL:_sQuery += " FROM ZC2010 ZC2 "
+		_oSQL:_sQuery += " INNER JOIN SA1010 SA1 "
+		_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " 		AND SA1.A1_COD = ZC2.ZC2_CLIENT "
+		_oSQL:_sQuery += " 		AND SA1.A1_LOJA = ZC2.ZC2_LOJA "
+		_oSQL:_sQuery += " INNER JOIN SB1010 SB1 "
+		_oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " 		AND SB1.B1_COD = ZC2_PROD "
+		_oSQL:_sQuery += " WHERE ZC2.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND ZC2.ZC2_VERBA  BETWEEN '"+ mv_par01 +"' AND '"+ mv_par02 +"' "
+		_oSQL:_sQuery += " AND ZC2.ZC2_CLIENT BETWEEN '"+ mv_par03 +"' AND '"+ mv_par04 +"' "
+		_oSQL:_sQuery += " AND ZC2.ZC2_PROD   BETWEEN '"+ mv_par05 +"' AND '"+ mv_par06 +"' "
+		Do case
+			Case mv_par07 == 1
+				_oSQL:_sQuery += " ORDER BY ZC2_VERBA "
+			Case mv_par07 == 2
+				_oSQL:_sQuery += " ORDER BY ZC2_CLIENT "
+			Case mv_par07 == 3
+				_oSQL:_sQuery += " ORDER BY ZC2_PROD "
+		EndCase
+		
+		_oSQL:ArqDestXLS = 'ZA4_PROEXP'
+		_oSQL:Log ()
+		_oSQL:Qry2Xls (.F., .F., .F.)
+	endif
+Return
+//
+// --------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+	local _aRegsPerg := {}
+	local _aDefaults := {}
+
+	//                 Ordem Descri                  tipo tam dec valid F3     opcoes (combo)        			help
+	aadd(_aRegsPerg, {01, "Verba de                ", "C", 6,  0,  "",   "ZA4", {},                   			""})
+	aadd(_aRegsPerg, {02, "Verba até               ", "C", 6,  0,  "",   "ZA4", {},                   			""})
+	aadd(_aRegsPerg, {03, "Cliente de              ", "C", 6,  0,  "",   "SA1", {},                   			""})
+	aadd(_aRegsPerg, {04, "Cliente até             ", "C", 6,  0,  "",   "SA1", {},                   			""})
+	aadd(_aRegsPerg, {05, "Produto de              ", "C", 15, 0,  "",   "SB1", {},                   			""})
+	aadd(_aRegsPerg, {06, "Produto até             ", "C", 15, 0,  "",   "SB1", {},                   			""})
+	aadd(_aRegsPerg, {07, "Ordenação               ", "N",  1, 0,  "",   "SB1", {"Verba","Cliente","Produto"},  ""})
+	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return
