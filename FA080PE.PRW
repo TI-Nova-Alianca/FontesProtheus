@@ -1,4 +1,4 @@
-// Programa:   SE5FI080
+// Programa:   FA080PE
 // Autor:      Andre Alves
 // Data:       16/08/2019
 // Descricao:  O ponto de entrada FA080PE sera executado na saida da funcao de baixa, apos gravar todos os dados e após a contabilização.
