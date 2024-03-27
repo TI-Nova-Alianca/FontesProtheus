@@ -3488,7 +3488,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=   " AND upper (PROTHEUS_USER) NOT LIKE 'REP_%'"  	// Representantes estao sendo migrados para o Mercanet
 		::Query +=   " AND upper (PROTHEUS_USER) != 'ADMINISTRADOR'"
 		::Query +=   " AND upper (PROTHEUS_USER) != 'SUPORTE.TOTVS'"
-		::Query +=   " AND upper (PROTHEUS_USER) != 'SARA.CETOLIN'"  	// pessoa juridica
+		::Query +=   " AND upper (PROTHEUS_USER) != 'LINDONES.LEMOS'"  	// pessoa juridica
 		::Query +=   " AND upper (PROTHEUS_USER) != 'KAREN.NUNES'"  	// Menor aprendiz F03
 		::Query +=   " AND upper (PROTHEUS_USER) != 'TOBIAS.BEBBER'"  	// Estagiario agronomia
 		::Query +=   " AND upper (PROTHEUS_USER) != 'CONSAD'"
