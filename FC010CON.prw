@@ -1554,8 +1554,8 @@ Static Function _IMPTIT(_sCliente, _sLoja)
 	_oSQL:_sQuery += "    ,E1_LOJA AS LOJA"
 	_oSQL:_sQuery += "    ,E1_NOMCLI AS NOME "
 	_oSQL:_sQuery += "    ,E1_EMISSAO AS DT_EMISSAO "
-	_oSQL:_sQuery += "    ,E1_VENCTO AS DT_VENC"
-	_oSQL:_sQuery += "    ,E1_VENCREA AS DT_VENCREAL"
+	_oSQL:_sQuery += " 	  ,SUBSTRING(E1_VENCTO, 7, 2) + '/' + SUBSTRING(E1_VENCTO, 5, 2) + '/' + SUBSTRING(E1_VENCTO, 1, 4) AS DT_VENC "
+	_oSQL:_sQuery += " 	  ,SUBSTRING(E1_VENCREA, 7, 2) + '/' + SUBSTRING(E1_VENCREA, 5, 2) + '/' + SUBSTRING(E1_VENCREA, 1, 4) AS DT_VENCREAL "
 	_oSQL:_sQuery += "    ,E1_VALOR AS VALOR "
 	_oSQL:_sQuery += "    ,E1_SALDO AS SALDO "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SE1")
