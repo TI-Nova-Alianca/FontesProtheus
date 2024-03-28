@@ -39,6 +39,7 @@
 // 05/09/2023 - Robert - Melhorada msg ao usuario quando a remessa vier sem fornecedor.
 // 24/10/2023 - Robert - Passa a usar VA_VTITULOS_CPAGAR3 e nao mais VA_VTITULOS_CPAGAR2 (GLPI 9047)
 // 21/02/2024 - Robert - Gravava status invertido 05/06 apos exclusao do SE2 no campo RHCONTASPAGARHIST.STATUSREGISTRO (GLPI 14960)
+// 28/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 #include "colors.ch"
@@ -268,7 +269,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 			_oSQL:_sQuery +=    " and SE2.E2_NUM      = '" + _sDoc     + "'"
 			_oSQL:_sQuery +=    " and SE2.E2_PREFIXO  = '" + _sPrefixo + "'"
 			//_oSQL:Log ()
-			_sParcela = soma1 (_oSQL:RetQry ())
+			_sParcela = soma1 (_oSQL:RetQry (1, .f.))
 
 			// Se chegou com data de vencimento retroativa, nao adianta importar. Ajusto para data de hoje.
 			if _dVencSE2 < date ()
@@ -356,7 +357,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 				_oSQL:_sQuery +=   " FROM CTE"
 				_oSQL:_sQuery +=  " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
 				_oSQL:Log ()
-				_aFiliais = _oSQL:Qry2Array ()
+				_aFiliais = _oSQL:Qry2Array (.f., .f.)
 				
 				// Verifica se falta gerar para alguma filial.
 				_sStatReg = '03'  // Inicialmente, assume que gerou para todas, 'ateh prova em contrario'.
@@ -485,7 +486,7 @@ static function _LogMeta (_nSeq, _sMsg)
 	_oSQL:_sQuery +=                   " FROM " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG" 
 	_oSQL:_sQuery +=                  " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeq) + "), 0) "
 	_oSQL:Log ()
-	_nNroOrdem = _oSQL:RetQry ()
+	_nNroOrdem = _oSQL:RetQry (1, .f.)
 
 	_oSQL:_sQuery := "INSERT INTO " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG"
 	_oSQL:_sQuery +=        " (NROSEQUENCIAL, NROORDEM, DATAHORAALTERACAO, DESCRICAOMEMO)"

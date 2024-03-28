@@ -22,7 +22,9 @@
 // 23/02/2021 - Sandra    - Ajustado para sempre imprimir obs Expedição GLPI: 9466
 //	                      - Alterado nome do campo Mens. p/NF para OBS.Expedição  
 // 29/06/2022 - Sandra    - Ajustado para ter linhas conforme GLPI 12281.
+// 26/03/2024 - Robert    - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // --------------------------------------------------------------------------
 #include 'protheus.ch'
 
@@ -422,7 +424,7 @@ static function _Imprime ()
 						_oSQL:_sQuery +=    " AND SD2.D2_DOC     = '" + _aNotas [_nNota, 1] + "'"
 						_oSQL:_sQuery +=    " AND SD2.D2_SERIE   = '10 '"
 						//u_log (_oSQL:_sQuery)
-						_sPedido = _oSQL:RetQry ()
+						_sPedido = _oSQL:RetQry (1, .f.)
 					endif
 					if ! empty (_sPedido) .and. sc5 -> (dbseek (xfilial ("SC5") + _sPedido, .F.))
 						_sMensNota = ""
