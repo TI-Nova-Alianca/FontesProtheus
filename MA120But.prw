@@ -15,6 +15,7 @@
 // 25/02/2021 - Claudia - Observações para pedidos de serviço. GLPI: 7846
 // 14/06/2022 - Claudia - Ajustada a impressão das observações. GLPI: 12112
 // 21/11/2022 - Robert  - Passa a buscar imagem em formato PNG e nao mais JPG
+// 04/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ---------------------------------------------------------------------------------------------------------
@@ -91,7 +92,8 @@ static function _DadosAdic ()
 	_oSQL:_sQuery +=  " FROM VA_TEXTOS"
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND CHAVE = '" + _sChave + "'"
-	_sTexto = alltrim (_oSQL:RetQry ())  // Preciso do ALLTRIM por que o TopConnect retorna com 8000 caracteres cfe. configurado no SQL.
+//	_sTexto = alltrim (_oSQL:RetQry ())  // Preciso do ALLTRIM por que o TopConnect retorna com 8000 caracteres cfe. configurado no SQL.
+	_sTexto = alltrim (_oSQL:RetQry (1, .f.))  // Preciso do ALLTRIM por que o TopConnect retorna com 8000 caracteres cfe. configurado no SQL.
 
 
 	DEFINE MSDIALOG oDlg TITLE "Dados acicionais" FROM 000, 000  TO 600, 800 COLORS 0, 16777215 PIXEL
@@ -233,7 +235,8 @@ static function _ObsServico ()
 	_oSQL:_sQuery +=  " FROM VA_TEXTOS"
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND CHAVE = '" + _sChave + "'"
-	_sTexto = alltrim (_oSQL:RetQry ())  // Preciso do ALLTRIM por que o TopConnect retorna com 8000 caracteres cfe. configurado no SQL.
+//	_sTexto = alltrim (_oSQL:RetQry ())  // Preciso do ALLTRIM por que o TopConnect retorna com 8000 caracteres cfe. configurado no SQL.
+	_sTexto = alltrim (_oSQL:RetQry (1, .f.))  // Preciso do ALLTRIM por que o TopConnect retorna com 8000 caracteres cfe. configurado no SQL.
 
 	DEFINE MSDIALOG oDlg TITLE "Obsercações de Serviço" FROM 000, 000  TO 600, 800 COLORS 0, 16777215 PIXEL
 

@@ -21,6 +21,7 @@
 // 23/05/2022 - Claudia - Incluido o estorno do rapel. GLPI: 8916
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 // 01/06/2023 - Claudia - Tratamento de rapel por NCC. GLPI: 13643
+// 03/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // -----------------------------------------------------------------------------------------------------------------
 user function FA070Can ()
@@ -75,7 +76,8 @@ static function _AtuZA5 ()
 	//_oSQL:_sQuery += " 	AND ZA5_VLR      = " + cValToChar (se5 -> e5_vldesco)
 	// nao posso usar o e5_data por que no za5 eh gravado com dDataBase --> _oSQL:_sQuery += " 	AND ZA5_DTA      = '" + dtos(se5 -> e5_data) + "'"
 	_oSQL:Log ()
-	_aVerbas := aclone (_oSQL:Qry2Array ())
+//	_aVerbas := aclone (_oSQL:Qry2Array ())
+	_aVerbas := aclone (_oSQL:Qry2Array (.f., .f.))
 	u_log ('registros encontrados no ZA5:', _aVerbas)
 
 	for _nVerba = 1 to len (_aVerbas)
@@ -120,7 +122,8 @@ Static Function _AtuZC0()
 		_oSQL:_sQuery += " AND E5_SITUACA  = '' "
 		_oSQL:_sQuery += " AND E5_VARAPEL  > 0 "
 		_oSQL:Log ()
-		_aRapel := aclone (_oSQL:Qry2Array ())
+//		_aRapel := aclone (_oSQL:Qry2Array ())
+		_aRapel := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		If len(_aRapel) > 0
 			_oCtaRapel := ClsCtaRap():New ()
@@ -173,7 +176,8 @@ Static Function _AtuZC0()
 		_oSQL:_sQuery += " AND E5_SITUACA  <> 'C' "
 		_oSQL:_sQuery += " AND E5_MOTBX     = 'RAP' "
 		_oSQL:Log ()
-		_aRapel := aclone (_oSQL:Qry2Array ())
+//		_aRapel := aclone (_oSQL:Qry2Array ())
+		_aRapel := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		If Len(_aRapel) > 0
 

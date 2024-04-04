@@ -10,6 +10,7 @@
 // 23/11/2018 -        - tirado teste do bat de transferencias de filiais
 // 17/12/2018 -        - Incluida impressão de romaneio de entrada
 // 21/09/2022 - Robert - Log de impressao de romaneio.
+// 04/04/2024 - Robert - Chamar impressao de romaneio para qualquer filial.
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -27,10 +28,9 @@ user function SF1140I ()
 	// Imprime romaneio de entrada
 	if sf1 -> f1_especie !='CTR' .and. sf1 -> f1_especie !='CTE'
 		if ! isincallstack ('U_ZZXG') 
-			if ! (isincallstack ('U_TRS006IMP') .and. isincallstack ('REPALL'))  // Se foi chamado pelo bota 'reprocessa todos' do painel XML.
-				U_Log2 ('debug', '[' + procname () + ']Estou logando a pilha de chamadas para identificar de onde abre msg de impressaodo romaneio no reprocessamento do painel XML.')
-				U_LogPCham ()
-				if cEmpAnt + cFilAnt == '0101' .and. U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
+			if ! (isincallstack ('U_TRS006IMP') .and. isincallstack ('REPALL'))  // Se foi chamado pelo botao 'reprocessa todos' do painel XML.
+			//	if cEmpAnt + cFilAnt == '0101' .and. U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
+				if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
 					U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
 				endif
 			endif

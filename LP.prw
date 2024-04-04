@@ -81,6 +81,7 @@
 // 30/08/2023 - Robert  - Criado tratamento para LPAD 650/040 e 651/001 (GLPI 14099)
 // 12/09/2023 - Claudia - Incluido LPAD 520/024de taxa pagar.me. GLPI: 14141
 // 11/01/2024 - Robert  - Desabilitado envio de alguns avisos de acompanhamento.
+// 03/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -1037,7 +1038,8 @@ Static Function _BuscaZC0()
 	_oSQL:_sQuery +=   " AND D2_SERIE    = '"+ sd1 -> d1_seriori + "' "
 	_oSQL:_sQuery +=   " AND D2_COD      = '"+ sd1 -> d1_cod     + "' "
 	u_log(_oSQL:_sQuery)
-	_aNfVen := aclone (_oSQL:Qry2Array ())
+//	_aNfVen := aclone (_oSQL:Qry2Array ())
+	_aNfVen := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	For _i:=1 to Len(_aNfVen)
 		_oCtaRapel := ClsCtaRap():New ()
