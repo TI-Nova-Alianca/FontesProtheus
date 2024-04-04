@@ -4,6 +4,7 @@
 // Descricao : PE para validações especificas do aplicativo MNT NG	
 //
 // https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878
+// https://tdn.totvs.com/pages/releaseview.action?pageId=347448878
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
@@ -41,6 +42,8 @@
 // 28/06/2023 - Robert  - Nao manda mais terceiros para ninguem
 // 22/01/2024 - Robert  - Filtra centros de custo (tabela CCT) bloqueados.
 // 06/02/2024 - Robert  - Log de validacao de encerramento de OS
+// 04/04/2024 - Robert  - Criado FILTER_EQUIPMENT (bens): ST9 somente bens com O.S. aberta no STJ.
+//                      - Acrescentado no FILTER_ORDER para O.S. preventivas: somente ultimos 30 e proximos 60 dias
 //
 
 #include "PROTHEUS.ch"
@@ -59,11 +62,10 @@ User Function MNTNG()
 	Local _sIDdLocal := ''
 	local _oObjMnt   := NIL
 	local _sCodFunc  := ''
-	local _sFiltrar  := ''
+	local _sFiltrUsr := ''
 	local _oAviso    := NIL
 	private _sArqLog := 'U_MNTNG.log'  // Quero usar o mesmo arquivo de log para todos os usuarios.
 
-//	U_Log2 ('debug', '[' + procname () + ']' + __cUserId + "(" + alltrim (cUserName) + ")")
 
 	// Verifica em que momento estah sendo chamado este P.E.
 	_sIDdLocal := PARAMIXB[1]
@@ -98,14 +100,35 @@ User Function MNTNG()
 // nao consegui abrir a documentacao em https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878		U_Log2 ('info', '[' + procname () + ']Filtrando executor: _xRet = ' + _xRet)
 
 
+	// Filtro para equipamentos (bens): Vou querer somente bens que tenham O.S. em aberto
+	ElseIf _sIDdLocal == "FILTER_EQUIPMENT"
+		_xRet := ''
+		_xRet += " AND EXISTS ("
+		_xRet += " SELECT *"
+		_xRet +=   " FROM " + RetSQLName ("STJ") + " STJ"
+		_xRet +=  " WHERE STJ.D_E_L_E_T_  = ''"
+		_xRet +=    " AND STJ.TJ_FILIAL   = ST9.T9_FILIAL"
+		_xRet +=    " AND STJ.TJ_CODBEM   = ST9.T9_CODBEM"
+		_xRet +=    " AND STJ.TJ_TERMINO != 'S')"
+	
+	
 	// Filtro para ordens de servico
 	ElseIf _sIDdLocal == "FILTER_ORDER"
 		_xRet = ''
 
+		// Temos muitas O.S. atrasadas e que precisam ser revistas (ou canceladas) e, tambem,
+		// muitas O.S. preventivas, programadas para varios meses adiante. Robert, 03/04/2024.
+		// Pelo que pude verificar, TJ_PLANO 000000 = corretiva (nao validar por data prevista, pois nao tem essa informacao)
+		_xRet += " and (TJ_PLANO = '000000'"
+		_xRet +=      " OR (TJ_DTMPINI >= FORMAT (DATEADD (DAY, -30, GETDATE ()), 'yyyyMMdd')"
+		_xRet +=      " AND TJ_DTMPFIM <= FORMAT (DATEADD (DAY, 60,  GETDATE ()), 'yyyyMMdd')"
+		_xRet +=          ")"
+		_xRet +=      ")"
+
 		// Mandar somente as OS direcionadas ao manutentor atual (desde que nao seja um manutentor 'power')
-		_LeFuncion (@_sCodFunc, @_sFiltrar)
-		if _sFiltrar == 'S'
-			_xRet := ""
+		_LeFuncion (@_sCodFunc, @_sFiltrUsr)
+		if _sFiltrUsr == 'S'
+//			_xRet := ""
 			_xRet += "AND EXISTS ("
 			_xRet +=     "SELECT * FROM " + RetSQLName ("STL")
 			_xRet +=     " WHERE D_E_L_E_T_ = ''"
@@ -128,8 +151,8 @@ User Function MNTNG()
 		_xRet += "AND TQB_SOLUCA NOT IN ('E', 'C')"  // Encerradas e Canceladas nao pretendo enviar nunca
 		
 		// Mandar somente as SC distribuidas (desde que nao seja um manutentor 'power')
-		_LeFuncion (@_sCodFunc, @_sFiltrar)
-		if _sFiltrar == 'S'
+		_LeFuncion (@_sCodFunc, @_sFiltrUsr)
+		if _sFiltrUsr == 'S'
 			_xRet += "AND TQB_SOLUCA = 'D'"
 		endif
 		U_Log2 ('info', '[' + procname () + ']Filtrando sol.manut: _xRet = ' + _xRet)
@@ -137,7 +160,6 @@ User Function MNTNG()
 
 	// Filtro para terceiros
 	ElseIf _sIDdLocal == "FILTER_THIRDPART"
-	//	_xRet = " AND A2_TIPO = 'J'
 		_xRet = " AND 0=1"  // Nao queremos enviar nenhum fornecedor, poisnao usamos pelo app.
 		U_Log2 ('info', '[' + procname () + ']Filtrando terceiros: _xRet = ' + _xRet)
 
@@ -207,7 +229,7 @@ return _sRetPdCom
 // Leitura de funcionario para ver se aplica filtros.
 // Nao fiz no inicio do programa por que este P.E. eh chamado muitas vezes, a
 // partir de diversos lugares, durante a sincronizacao, e ficaria lento demais.
-static function _LeFuncion (_sCodFunc, _sFiltrar)
+static function _LeFuncion (_sCodFunc, _sFiltrUsr)
 	local _oSQL      := NIL
 	local _aRetST1   := {}
 
@@ -224,13 +246,13 @@ static function _LeFuncion (_sCodFunc, _sFiltrar)
 //	U_Log2 ('debug', _aRetST1)
 	if len (_aRetST1) == 1
 		_sCodFunc = _aRetST1 [1, 1]
-		_sFiltrar = _aRetST1 [1, 2]
+		_sFiltrUsr = _aRetST1 [1, 2]
 	else
 		_sCodFunc = ''
-		_sFiltrar = 'S'  // Na duvida, vou filtrar.
+		_sFiltrUsr = 'S'  // Na duvida, vou filtrar.
 	endif
 
-	if empty (_sCodFunc) .or. empty (_sFiltrar)
+	if empty (_sCodFunc) .or. empty (_sFiltrUsr)
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
 		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
@@ -241,5 +263,5 @@ static function _LeFuncion (_sCodFunc, _sFiltrar)
 		_oAviso:Grava ()
 	endif
 
-//	U_Log2 ('debug', '[' + procname () + ']' + __cUserId + "(" + alltrim (cUserName) + ") " + _sCodFunc + ' ' + _sFiltrar)
+//	U_Log2 ('debug', '[' + procname () + ']' + __cUserId + "(" + alltrim (cUserName) + ") " + _sCodFunc + ' ' + _sFiltrUsr)
 return
