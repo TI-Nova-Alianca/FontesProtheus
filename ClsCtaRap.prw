@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 15/03/2024 - Claudia - Incluido grupo 159 paraexclusão de registros. GLPI: 15094
+// 28/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -303,7 +304,8 @@ METHOD AtuSaldo () Class ClsCtaRap
 	_oSQL:_sQuery += " AND ZC0.ZC0_STATUS = 'A'"
 	_oSQL:_sQuery += " AND ZC0.ZC0_CODRED = '" + ZC0 -> zc0_codred + "' " 
 	_oSQL:_sQuery += " AND ZC0.ZC0_LOJRED = '" + ZC0 -> zc0_lojred + "' "
-	_aSaldo := aclone (_oSQL:Qry2Array ())
+//	_aSaldo := aclone (_oSQL:Qry2Array ())
+	_aSaldo := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	if Len(_aSaldo) > 0
 		for _x := 1 to Len(_aSaldo)
@@ -345,7 +347,8 @@ METHOD RetSaldo (_sRede, _sLojaRede) Class ClsCtaRap
 	_oSQL:_sQuery += " AND ZC0.ZC0_STATUS = 'A'"
 	_oSQL:_sQuery += " AND ZC0.ZC0_CODRED = '" + _sRede     + "' " 
 	_oSQL:_sQuery += " AND ZC0.ZC0_LOJRED = '" + _sLojaRede + "' "
-	_aSaldo := aclone (_oSQL:Qry2Array ())
+//	_aSaldo := aclone (_oSQL:Qry2Array ())
+	_aSaldo := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	if Len(_aSaldo) > 0
 		for _x := 1 to Len(_aSaldo)
@@ -368,7 +371,8 @@ METHOD RetDebCre (_sTpMov) Class ClsCtaRap
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND ZX5_TABELA = '55' "
 	_oSQL:_sQuery += " AND ZX5_CHAVE = '" + _sTpMov + "' "
-	_aDebCre := aclone (_oSQL:Qry2Array ())
+//	_aDebCre := aclone (_oSQL:Qry2Array ())
+	_aDebCre := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	if Len(_aDebCre) > 0
 		for _x := 1 to Len(_aDebCre)
@@ -395,7 +399,8 @@ METHOD FecharPeriodo (_dDtaIni, _sDataFin) Class ClsCtaRap
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND ZC0_STATUS = 'A' "
 	_oSQL:_sQuery += " AND ZC0_DATA BETWEEN '"+dtos(_dDtaIni)+"' AND '"+dtos(_sDataFin)+"' "
-	_aPeriodo := aclone (_oSQL:Qry2Array ())
+//	_aPeriodo := aclone (_oSQL:Qry2Array ())
+	_aPeriodo := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	if Len(_aPeriodo) > 0
 		for _x := 1 to Len(_aPeriodo)
@@ -468,7 +473,8 @@ METHOD AbrirPeriodo () Class ClsCtaRap
 	_oSQL:_sQuery += " 	MAX(ZC0_DTAFIM) "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("ZC0")
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-	_aPeriodo := aclone (_oSQL:Qry2Array ())
+//	_aPeriodo := aclone (_oSQL:Qry2Array ())
+	_aPeriodo := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	if Len(_aPeriodo) > 0
 		for _x := 1 to Len(_aPeriodo)

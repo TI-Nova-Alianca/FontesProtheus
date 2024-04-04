@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 04/08/2022 - Robert - Ajuste log, que mostrava nome de outra rotina.
+// 28/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -41,7 +42,8 @@ User Function BatVBatch()
     _oSQL:_sQuery += " AND CODEVENTO in ('BAT001') "
     _oSQL:_sQuery += " ORDER BY DATA, HORA "
     u_log(_oSQL:_sQuery)
-    _aDados := aclone (_oSQL:Qry2Array ()) 
+//    _aDados := aclone (_oSQL:Qry2Array ()) 
+    _aDados := aclone (_oSQL:Qry2Array (.f., .f.)) 
 
     For _x:=1 to Len(_aDados)
         _sMsg1 += "<br>EXEC "+ dtoc(stod(_aDados[_x, 1])) + " " + _aDados[_x,2] + "</br>"+ _aDados[_x,3]  + chr (13) + chr (10) 
@@ -58,7 +60,8 @@ User Function BatVBatch()
     _oSQL:_sQuery += " WHERE DATA = '" + dtos(date()) + "' "
     _oSQL:_sQuery += " AND CODEVENTO in ('BAT002') "
     _oSQL:_sQuery += " ORDER BY DATA, HORA "
-    _aDados := aclone (_oSQL:Qry2Array ()) 
+//    _aDados := aclone (_oSQL:Qry2Array ()) 
+    _aDados := aclone (_oSQL:Qry2Array (.f., .f.)) 
 
     For _x:=1 to Len(_aDados)
         _sMsg1 += "<br>ERRO " + dtoc(stod(_aDados[_x, 1])) + " " + _aDados[_x,2] + "</br>"+ _aDados[_x,3]  + chr (13) + chr (10) 

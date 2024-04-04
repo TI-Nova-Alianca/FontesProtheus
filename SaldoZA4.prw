@@ -5,6 +5,7 @@
 //
 // Historico de alteracoes:
 // 11/10/2019 - Robert - Acrescentado ISNULL para casos em que o ZA5 nao existia.
+// 28/03/2024 - Robert - Comentariadas linhas de gravacao de log.
 //
 
 // --------------------------------------------------------------------------
@@ -13,7 +14,7 @@ user function SaldoZA4 (_sVerba)
 	local _oSQL      := NIL
 	local _nRet      := 0
 
-	u_logIni ()
+//	u_logIni ()
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT ZA4_VLR - ISNULL ((SELECT SUM (ZA5_VLR)"
@@ -24,9 +25,9 @@ user function SaldoZA4 (_sVerba)
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZA4") + " ZA4 "
 	_oSQL:_sQuery +=  " WHERE ZA4.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND ZA4.ZA4_NUM    = '" + _sVerba + "'"
-	_oSQL:Log ()
+//	_oSQL:Log ()
 	_nRet = _oSQL:RetQry (1, .F.)
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
+//	u_logFim ()
 return _nRet

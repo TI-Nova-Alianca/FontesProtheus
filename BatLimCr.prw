@@ -19,6 +19,7 @@
 // 23/10/2019 - Robert  - Nao bloqueia operadoras de cartao (codigo com 3 posicoes).
 // 26/10/2021 - Claudia - Aumentado de 180 para 365 dias o bloqueio de clientes. GLPI: 11133
 // 19/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 28/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros (RetQry)
 //
 
 // --------------------------------------------------------------------------------------------------
@@ -142,7 +143,8 @@ user function BatLimCr ()
 			_oSQL:_sQuery +=    " AND DESCRITIVO LIKE '%<de>1</de>%'"
 			_oSQL:_sQuery +=    " AND DESCRITIVO LIKE '%<para>2</para>%'"
 			_oSQL:Log ()
-			if _oSQL:RetQry () > 0
+//			if _oSQL:RetQry () > 0
+			if _oSQL:RetQry (1, .f.) > 0
 				u_log ('Cliente foi desbloqueado recentemente')
 				_lPodeBloq = .F.
 			endif

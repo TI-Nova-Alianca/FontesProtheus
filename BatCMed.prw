@@ -16,6 +16,7 @@
 // 13/02/2020 - Robert  - Eliminadas filiais 05 e 06; acrescentada filial 16.
 // 22/05/2020 - Robert  - Parametro 'apagar estornos' mudado de S para N
 // 13/08/2021 - Robert  - Alterado parametro 'mov.int.valorizados' de 'depois' para 'antes'.
+// 28/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -187,7 +188,7 @@ static function _Recurs ()
 	_oSQL:_sQuery +=   " AND SC2.C2_NUM + SC2.C2_ITEM + SC2.C2_SEQUEN + SC2.C2_ITEMGRD = SD3.D3_OP"
 	_oSQL:_sQuery += " ORDER BY D3_FILIAL,D3_OP,D3_COD,D3_EMISSAO"
 	u_log (_oSQL:_sQuery)
-	_sAliasQ := _oSQL:Qry2Trb ()
+	_sAliasQ := _oSQL:Qry2Trb (.f.)
 	
 	do while ! (_sAliasQ)->(Eof())
 		RecLock('_trb', .T.)

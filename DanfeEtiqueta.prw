@@ -11,6 +11,7 @@
 // #Modulos           #FAT
 //
 // Historico de alteracoes:
+// 28/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 //--------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -808,7 +809,8 @@ static function _BuscaVolEsp(_sSerie, _sDoc,_sTipo)
 	_oSQL:_sQuery += " AND C5_FILIAL = '" + cFilAnt  + "' "
 	_oSQL:_sQuery += " AND C5_NOTA   = '" + _sDoc    + "' "
 	_oSQL:_sQuery += " AND C5_SERIE  = '" + _sSerie  + "' "
-	_aDados := aclone (_oSQL:Qry2Array ())
+//	_aDados := aclone (_oSQL:Qry2Array ())
+	_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 
     For _x := 1 to Len(_aDados)
         if _sTipo == '1'
@@ -841,7 +843,8 @@ Static Function _BuscaEndEntrega(_sSerie, _sDoc)
     _oSQL:_sQuery += " AND F2_FILIAL = '" + cFilAnt + "' "
     _oSQL:_sQuery += " AND F2_DOC    = '" + _sDoc   + "' "
     _oSQL:_sQuery += " AND F2_SERIE  = '" + _sSerie + "' "
-    _aDados := aclone (_oSQL:Qry2Array ())
+//  _aDados := aclone (_oSQL:Qry2Array ())
+    _aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 
     For _x := 1 to Len(_aDados)
         _sRet := alltrim(_aDados[_x,1])

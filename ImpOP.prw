@@ -31,6 +31,7 @@
 // 02/12/2021 - Robert - Acrescentados logs para depuracao de empenhos.
 // 06/11/2016 - Robert - Ajustado (nas OP de reprocesso) para validar G1_REVINI e G1_REVFIM com C2_REVISAO, e nao mais G1_TRT (GLPI 11310)
 // 10/10/2022 - Robert - Passa a imprimir o campo c2_vaBarCx e nao mais b1_codbar como 'cod.barras embalagem coletiva' (GLPI 11994).
+// 26/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // --------------------------------------------------------------------------
@@ -173,7 +174,7 @@ static function _AndaLogo ()
 			_oSQL:_sQuery +=    " AND SB1.B1_TIPO    NOT IN ('MO', 'BN')"
 			_oSQL:_sQuery +=  " ORDER BY G1_COMP"
 			_oSQL:Log ()
-			_aFant := aclone (_oSQL:Qry2Array ())
+			_aFant := aclone (_oSQL:Qry2Array (.f., .f.))
 			for _nFant = 1 to len (_aFant)
 				if ascan (_aCompon, {| _aVal | _aVal [1] == _aFant [_nFant, 1]}) == 0
 					aadd (_aCompon, aclone (_aFant [_nFant]))
@@ -201,7 +202,7 @@ static function _AndaLogo ()
 			_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 			_oSQL:_sQuery +=    " AND SB1.B1_COD     = SD4.D4_COD"
 			_oSQL:_sQuery +=  " ORDER BY D4_COD"
-			_aCompon := aclone (_oSQL:Qry2Array ())
+			_aCompon := aclone (_oSQL:Qry2Array (.f., .f.))
 			
 			// Adiciona produtos fantasmas da estrutura `a lista de componentes.
 			_oSQL := ClsSQL ():New ()
@@ -225,7 +226,7 @@ static function _AndaLogo ()
 			_oSQL:_sQuery +=    " AND SB1.B1_TIPO    NOT IN ('MO', 'BN')"
 			_oSQL:_sQuery +=  " ORDER BY G1_COMP"
 			_oSQL:Log ()
-			_aFant := aclone (_oSQL:Qry2Array ())
+			_aFant := aclone (_oSQL:Qry2Array (.f., .f.))
 			for _nFant = 1 to len (_aFant)
 				if ascan (_aCompon, {| _aVal | _aVal [1] == _aFant [_nFant, 1]}) == 0
 					aadd (_aCompon, aclone (_aFant [_nFant]))
@@ -345,7 +346,7 @@ static function _AndaLogo ()
 		_oSQL:_sQuery +=    " AND G2_CODIGO  = '" + sc2 -> c2_roteiro + "'"
 		_oSQL:_sQuery +=  " ORDER BY G2_OPERAC"
 		_oSQL:Log ()
-		_aOper := aclone (_oSQL:Qry2Array ())
+		_aOper := aclone (_oSQL:Qry2Array (.f., .f.))
 		//U_LOG (_aOper)
 
 		// Imprime roteiro de operacoes
@@ -395,7 +396,7 @@ static function _AndaLogo ()
 		_oSQL:_sQuery += " FROM  " + RetSQLName ("SX5") + " SX5 "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " AND X5_TABELA = '43' "
-		_aMotPer := aclone (_oSQL:Qry2Array ())
+		_aMotPer := aclone (_oSQL:Qry2Array (.f., .f.))
 //		li += _nAltLin
 		for _nMotPer = 1 to len (_aMotPer)
 			if _nMotPer == 1

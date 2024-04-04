@@ -88,6 +88,7 @@
 // 11/03/2024 - Robert  - Melhorada msg de bloqueio gerencial tipo S
 //                      - Nao fazia leitura da linha correta na GDFieldGet, nos testes de bloqueio gerencial tipo S
 // 21/03/2024 - Robert  - Arredonda casas decimais antes de testar preco sucos (bloqueio gerencial tipo S)
+// 28/03/2024 - Robert  - Nao ignorava linhas com bloqueio manual e eliminacao de residuos no bloqueio preco sucos (bloqueio gerencial tipo S)
 //
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -486,7 +487,11 @@ user function GrvLibPV(_lLiberar)
 			sb1 -> (dbsetorder (1))
 			for _nLinha = 1 to len (aCols)
 				U_Log2 ('debug', '[' + procname () + ']Verificando item ' + GDFieldGet ("C6_ITEM", _nLinha) + ' ' + GDFieldGet ("C6_PRODUTO", _nLinha))
-				if ! GDDeleted (_nLinha) .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_ESTOQUE") == 'S' .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_DUPLIC") == 'S'
+				if ! GDDeleted (_nLinha) ;
+					.and. ! alltrim (GDFieldGet ("C6_BLQ")) $ "SR";  // bloqueio manual ou por eliminacao de residuo
+					.and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_ESTOQUE") == 'S';
+					.and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_DUPLIC") == 'S'
+					
 					if ! sb1 -> (dbseek (xfilial ("SB1") + GDFieldGet ("C6_PRODUTO", _nLinha), .f.))
 						u_help ("Produto '" + GDFieldGet ("C6_PRODUTO", _nLinha) + "' nao localizado no cadastro!",, .t.)
 						_lLiberar = .F.
