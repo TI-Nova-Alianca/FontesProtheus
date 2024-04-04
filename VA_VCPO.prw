@@ -191,7 +191,7 @@
 // 23/02/2024 - Robert  - Validação do campo ZZ6_SUSPEN
 // 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 22/03/2024 - Robert  - Criada validacao para canpo B1_VAFULLW (GLPI 15127)
-//
+// 03/04/2024 - Claudia - Retirado campo C5_VADCO. GLPI: 14763
 
 // -------------------------------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
@@ -749,16 +749,16 @@ user function VA_VCpo (_sCampo)
 		case _sCampo == "M->C5_TPFRETE"
 			// desabilitado no inicio da implantacao				_lRet = _ValMNet ()
 
-		case _sCampo == "M->C5_VADCO"
-			zz8 -> (dbsetorder (1))
-			if ! zz8 -> (dbseek (xfilial ("ZZ8") + M->C5_VADCO, .F.))
-				U_Help ("DCO nao cadastrado.")
-				_lRet = .F.
-			endif
-			if _lRet .and. ! zz8 -> zz8_status == "F"
-				U_Help ("DCO nao se encontra em fase de faturamento.")
-				_lRet = .F.
-			endif
+		// case _sCampo == "M->C5_VADCO"
+		// 	zz8 -> (dbsetorder (1))
+		// 	if ! zz8 -> (dbseek (xfilial ("ZZ8") + M->C5_VADCO, .F.))
+		// 		U_Help ("DCO nao cadastrado.")
+		// 		_lRet = .F.
+		// 	endif
+		// 	if _lRet .and. ! zz8 -> zz8_status == "F"
+		// 		U_Help ("DCO nao se encontra em fase de faturamento.")
+		// 		_lRet = .F.
+		// 	endif
 
 		case _sCampo == "M->C5_VAFEMB"
 			// 20130712 - para colocar na variavel todas as filiais que sao depositos (04/14/15/...)

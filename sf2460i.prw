@@ -160,6 +160,7 @@
 // 20/11/2023 - Robert  - Verifica C6_QTDVEN antes de dar update no F2_PLIQUI, F2_PBRUTO, F2_VOLUME1
 // 31/01/2024 - Claudia - Ajuste no email de devoluções. GLPI: 14830
 // 21/03/2024 - Claudia - Criado parâmetro de exceção de UF. GLPI: 15112 
+// 03/04/2024 - Claudia - Retirado campos. GLPI: 14763
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -184,13 +185,13 @@ User Function sf2460i ()
 	
 	// Grava campos adicionais na nota fiscal
 	RecLock("SF2",.F.)
-	REPLACE SF2->F2_vaDCO   WITH SC5->C5_vaDCO
+	//REPLACE SF2->F2_vaDCO   WITH SC5->C5_vaDCO
 	REPLACE SF2->F2_vaPeRap WITH SC5->C5_vaPeRap
 	REPLACE SF2->F2_VARAPEL WITH _wtotrapel
 	REPLACE SF2->F2_vaNFFD  WITH SC5->C5_vaNFFD
 	REPLACE SF2->F2_Veicul1 WITH SC5 -> C5_VEICULO  //SC5->C5_vaVeic1
-	REPLACE SF2->F2_Veicul2 WITH SC5->C5_vaVeic2
-	REPLACE SF2->F2_Veicul3 WITH SC5->C5_vaVeic3
+	//REPLACE SF2->F2_Veicul2 WITH SC5->C5_vaVeic2
+	//REPLACE SF2->F2_Veicul3 WITH SC5->C5_vaVeic3
 	REPLACE SF2->F2_TPFRETE WITH SC5->C5_TPFRETE
 	REPLACE SF2->F2_VAFEMB  WITH SC5->C5_VAFEMB
 	REPLACE SF2->F2_VAUser  WITH cUserName

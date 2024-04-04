@@ -20,6 +20,7 @@
 // 27/05/2014 - Robert  - Incluido campo C5_VAPEMB.
 // 28/08/2019 - Andre   - Incluido campo C5_VAPDMER.
 // 23/11/2020 - Claudia - Incluida a limpeza de campos C6_TES e C6_VAOPER. GLPI: 8801
+// 03/04/2024 - Claudia - Retirado campo C5_VADCO. GLPI: 14763
 //
 // --------------------------------------------------------------------------------------
 user function MT410Cpy ()
@@ -34,7 +35,7 @@ user function MT410Cpy ()
 	m->c5_client  = CriaVar ("C5_CLIENT")
 	m->c5_lojaent = CriaVar ("C5_LOJAENT")
 	m->c5_vaUser  = CriaVar ("C5_VAUSER")
-	m->c5_vaDCO   = CriaVar ("C5_VADCO")
+	//m->c5_vaDCO   = CriaVar ("C5_VADCO")
 	m->c5_PedCli  = CriaVar ("C5_PEDCLI")
 	m->c5_VaPDMer = CriaVar ("C5_VAPDMER")
 	m->c5_vaPEmb  = ''
