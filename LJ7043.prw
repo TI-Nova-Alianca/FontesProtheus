@@ -31,6 +31,7 @@
 // 02/10/2022 - Robert  - Removido atributo :DiasDeVida da classe ClsAviso.
 // 24/07/2023 - Claudia - Liberação momentanea de funcionario afastado. GLPI: 13985
 // 13/11/2023 - Claudia - Incluido parametro "VA_LOJASSO". GLPI: 14505
+// 05/04/2024 - Claudia - Alterada consulta, verificando a situacao. GLPI: 13981
 //
 // ---------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -67,14 +68,23 @@ Static Function _VerFunc(_sCGC,_sTabela,_lRet)
 	
 	U_PerfMon ('I', 'ValidarFuncOuAssocLJ7043')  // Deixa variavel pronta para posterior medicao de tempos de execucao
 
-	_sQuery2 := " SELECT " 
-	_sQuery2 += " 	  NOME "
+	// _sQuery2 := " SELECT " 
+	// _sQuery2 += " 	  NOME "
+	// _sQuery2 += "    ,SITUACAO "
+	// _sQuery2 += "    ,CPF "
+	// _sQuery2 += " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS "
+	// _sQuery2 += " WHERE CPF = '"+ alltrim(_sCGC) +"'"
+	// _sQuery2 += " AND SITUACAO IN ('1') " // ATIVOS
+
+	_sQuery2 := " SELECT "
+	_sQuery2 += "     NOME "
 	_sQuery2 += "    ,SITUACAO "
 	_sQuery2 += "    ,CPF "
 	_sQuery2 += " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS "
 	_sQuery2 += " WHERE CPF = '"+ alltrim(_sCGC) +"'"
-	//_sQuery2 += " AND SITUACAO IN ('1','2') " // ATIVOS
-	_sQuery2 += " AND SITUACAO IN ('1') " // ATIVOS
+	_sQuery2 += " AND (SITUACAO = '1' "
+	_sQuery2 += " OR (SITUACAO = '2' "
+	_sQuery2 += " AND AFAST_PERMITE_LOJA = 'S')) "
 	_aFun 	 := U_Qry2Array(_sQuery2)  
 
 	If len(_aFun) <= 0 // verifica se eh socio jah que não eh funcionario
