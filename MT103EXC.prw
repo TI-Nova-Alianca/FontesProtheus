@@ -15,7 +15,9 @@
 // Historico de alteracoes:
 // 27/05/2022 - Claudia - Gravação de rapel. GLPI: 8916
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
+// 03/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 User Function MT103EXC()
     lRet := .T.
@@ -49,7 +51,8 @@ Static Function _AtuZC0()
 		_oSQL:_sQuery +=   " AND SD1.D1_LOJA    = '" + sf1 -> f1_loja    + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_DOC     = '" + sf1 -> f1_doc     + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_SERIE   = '" + sf1 -> f1_serie   + "'"
-		_aNfDev := aclone (_oSQL:Qry2Array ())
+//		_aNfDev := aclone (_oSQL:Qry2Array ())
+		_aNfDev := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		For _x:=1 to Len(_aNfDev)
 			_oSQL:= ClsSQL():New()
@@ -68,7 +71,8 @@ Static Function _AtuZC0()
 			_oSQL:_sQuery +=   " AND D2_DOC      = '"+ _aNfDev[_x, 2] + "' "
 			_oSQL:_sQuery +=   " AND D2_SERIE    = '"+ _aNfDev[_x, 3] + "' "
 			_oSQL:_sQuery +=   " AND D2_COD      = '"+ _aNfDev[_x, 5] + "' "
-			_aNfVen := aclone (_oSQL:Qry2Array ())
+//			_aNfVen := aclone (_oSQL:Qry2Array ())
+			_aNfVen := aclone (_oSQL:Qry2Array (.f., .f.))
 
 			For _i:=1 to Len(_aNfVen)
 					_oCtaRapel := ClsCtaRap():New ()

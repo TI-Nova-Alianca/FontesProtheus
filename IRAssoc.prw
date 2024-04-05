@@ -25,6 +25,7 @@
 // 01/03/2023 - Robert  - Revisado para ano base 2022 (nao houve pagto.de premio para esse ano).
 // 08/04/2023 - Robert  - Refeita query para ano base 2022, pois houve pagamentos parciais (GLPI 13404)
 // 03/08/2023 - Robert  - Removido param. 'nucleo' (inutil, uma vez que jah tem filtro por associado)
+// 03/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -----------------------------------------------------------------------------------------------------------
@@ -170,7 +171,7 @@ static function _Imprime ()
 	_oSQL:_sQuery +=                   " AND SZI.ZI_LOJASSO = SA2.A2_LOJA)"
 	_oSQL:_sQuery +=  " ORDER BY A2_NOME, A2_COD, A2_LOJA"
 	//_oSQL:Log ()
-	_aAssoc = aclone (_oSQL:Qry2Array())
+	_aAssoc = aclone (_oSQL:Qry2Array(.f., .f.))
 
 	procregua (len (_aAssoc))
 

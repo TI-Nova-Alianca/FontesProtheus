@@ -94,12 +94,12 @@ static function _Incluir ()
 	local _lContinua   := .T.
 	local _oSQL        := NIL
 	local _sAliasQ     := ""
-//	local _sMsgSE2     := ""
 	local _dEmis       := ctod ('')
 	local _oDUtil      := NIL
 	local _sAnoMes     := ""
 	local cPerg        := ""
 	local _aBkpSX1     := {}
+	local _oEvento     := NIL
 	private _sCTE      := ""  // Deixar private para ser vista em mais de uma function.
 	
 	procregua (10)
@@ -116,9 +116,6 @@ static function _Incluir ()
 		// Monta uma string com a query principal para ser usada em mais de um local.
 		_sCTE += "WITH CTE AS ("
 		_sCTE +=  " SELECT *"
-	//	_sCTE +=        ", MIN (VENCTO) OVER (PARTITION BY EMISSAO) AS MINVCTO"  // Menor VENCTO agrupado por EMISSAO
-	//	_sCTE +=        ", MAX (VENCTO) OVER (PARTITION BY EMISSAO) AS MAXVCTO"  // Maior VENCTO agrupado por EMISSAO
-	//	_sCTE +=  " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR2"
 		_sCTE +=  " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR3"
 		_sCTE += " )"
 
@@ -144,6 +141,12 @@ static function _Incluir ()
 		do while _lContinua .and. ! (_sAliasQ) -> (eof ())
 			u_log2 ('info', 'Iniciando inclusao seq.' + cvaltochar ((_sAliasQ) -> NroSequencial) + ' tipo ' + (_sAliasQ) -> TpItemCP + ' R$ ' + transform ((_sAliasQ) -> valor, "@E 999,999,999.99") + ' ' + (_sAliasQ) -> hist)
 
+			// Cria um evento para guardar detalhes da movimentacao.
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven    = 'SE2006'
+			_oEvento:Alias      = 'SE2'
+			_oEvento:DiasValid  = 180  // 6 meses de rastreabilidade estah mais que bom
+
 			// Prepara variavel para mais detalhamento do arquivo de log.
 			_sPrefLog := 'Incl.seq.' + cvaltochar ((_sAliasQ) -> NroSequencial)
 
@@ -152,30 +155,22 @@ static function _Incluir ()
 				((_sAliasQ) -> TpItemCP $ '22/99' .and. (_sAliasQ) -> Fornece $ '001498/001853/001496')
 				_dEmis = stod ((_sAliasQ) -> emissao)
 			else
-				//U_LOG ('Alterando data de emissao para o ultimo dia do mes anterior.')
+				_oEvento:Texto += 'Alterando data de emissao para o ultimo dia do mes anterior cfe. TipoItemContasAPagar'
+
 				_oDUtil := CLsDUtil ():New ()
 				_sAnoMes = left ((_sAliasQ) -> emissao, 6)
 				_dEmis = stod (_oDUtil:SubtrMes (_sAnoMes, 1) + '01')
 				_dEmis = lastday (_dEmis)  
 			endif
 			
-	//		// Se for titulo de IRF, pode ser gerado no Metadados em dois 'momentos' distintos.
-	//		// Preciso ler os campos VALOR_DARF_IRF_MES e VALOR_DARF_IRF_FUTURA e gerar 2 titulos.
-	//		// A bronca eh saber quando ler de um campo, e quando ler do outro outro.
-	//		// Farei um acoxambramento do tipo "antes de usar um deles, confiro se ja usei antes".
-	//		if (_sAliasQ) -> TpItemCP == '04'
-	//			if (_sAliasQ) -> vencto == (_sAliasQ) -> MinVcto  // Eh o valor de IRF 'deste mes'
-	//				U_Log2 ('debug', '[' + procname () + "]Encontrei titulo de IRF 'do mes'")
-	//				_nVlrTit = (_sAliasQ) -> DarfIrfMes
-	//			elseif (_sAliasQ) -> vencto == (_sAliasQ) -> MaxVcto  // Eh o valor de IRF 'do proximo mes'
-	//				U_Log2 ('debug', '[' + procname () + "]Encontrei titulo de IRF 'do mes futuro'")
-	//				_nVlrTit = (_sAliasQ) -> DarfIrfFut
-	//			endif
-	//		else
-				_nVlrTit = (_sAliasQ) -> valor
-	//		endif
+			_nVlrTit = (_sAliasQ) -> valor
 
-			_lContinua = _GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, (_sAliasQ) -> Natureza, _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
+			_lContinua = _GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, (_sAliasQ) -> Natureza, _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist, @_oEvento)
+
+			// Se tem dados gerados no evento, grava-o.
+			if ! empty (_oEvento:Texto) .or. ! empty (_oEvento:NFEntrada)
+				_oEvento:Grava ()
+			endif
 
 			(_sAliasQ) -> (dbskip ())
 			u_log2 ('info', '')
@@ -195,7 +190,7 @@ return
 
 
 // --------------------------------------------------------------------------
-static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2, _nValorSE2, _sHistSE2)
+static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2, _nValorSE2, _sHistSE2, _oEvento)
 	local _oSQL         := NIL
 	local _sDoc         := ''
 	local _sParcela     := ''
@@ -209,11 +204,14 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 	local _sMsgMail     := ''
 	local _lIncOK       := .T.
 	local _sMsgForn     := ''
+	local _sLojaFor     := '01'
 	private lMsErroAuto	:= .f.  // Variavel padrao para rotinas automaticas.
 	private lMsHelpAuto	:= .f.  // Variavel padrao para rotinas automaticas.
 
 	// Gera 'chave externa' para o contas a pagar.
 	_sChvEx = 'META' + cvaltochar (_nSeqMeta)
+
+	_oEvento:Chave   = _sChvEx
 
 	// Verifica se a chave externa jah existe. Se existir, provavelmente falte apenas marcar a remessa como 'ok'.
 	_oSQL := ClsSQL ():New ()
@@ -227,6 +225,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 	if _oSQL:RetQry (1, .F.) > 0
 		_sMsgSE2 += "Numero sequencial " + cvaltochar (_nSeqMeta) + ": Titulo ja gerado no financeiro. Chave externa: " + _sChvEx
 		u_help (_sMsgSE2)
+		_oEvento:Texto += _sMsgSE2 + '.'
 
 		// Deixa o SE2 posicionado para poder executar a parte de atualizacao das tabelas do Metadados, pois
 		// provavelmente soh estah passando por aqui por que na execucao anterior criou o titulo no SE2, mas
@@ -248,6 +247,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 				_sMsgForn += " " + alltrim (U_NoAcento (_sHistSE2))
 				_lIncOk = .F.
 				u_help (_sMsgForn,, .T.)
+				_oEvento:Texto += _sMsgForn
 
 				// Se estiver rodando via batch, manda aviso por e-mail.
 				if IsInCallStack ("U_BATMETAF")
@@ -259,7 +259,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		if _lIncOK
 			// Encontra a maior parcela jah existente e gera a proxima.
 			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := ""                                                                                            
+			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " select IsNull (max (E2_PARCELA), '1')"
 			_oSQL:_sQuery +=   " from " + RetSQLName ("SE2") + " SE2 "
 			_oSQL:_sQuery +=  " where SE2.D_E_L_E_T_ != '*'"
@@ -271,10 +271,17 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 			//_oSQL:Log ()
 			_sParcela = soma1 (_oSQL:RetQry (1, .f.))
 
+			_oEvento:Fornece   = _sFornece
+			_oEvento:LojaFor   = _sLojaFor
+			_oEvento:NFEntrada = _sDoc
+			_oEvento:SerieEntr = _sPrefixo
+			_oEvento:ParcTit   = _sParcela
+
 			// Se chegou com data de vencimento retroativa, nao adianta importar. Ajusto para data de hoje.
 			if _dVencSE2 < date ()
 				U_Log2 ('aviso', 'Alterando data de vencimento original (' + dtoc (_dVencSE2) + ') por que nao tem como pagar retroativo.')
 				_dVencSE2 = date ()
+				_oEvento:Texto += 'Alterando data de vencimento original (' + dtoc (_dVencSE2) + ') para hoje, por que nao tem como pagar retroativo.'
 			endif
 
 			_aAutoSE2 := {}
@@ -282,7 +289,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 			aadd (_aAutoSE2, {"E2_NUM"    , _sDoc,                            Nil})
 			aadd (_aAutoSE2, {"E2_TIPO"   , 'FOL',                            Nil})
 			aadd (_aAutoSE2, {"E2_FORNECE", _sFornece,                        Nil})
-			aadd (_aAutoSE2, {"E2_LOJA"   , '01',                             Nil})
+			aadd (_aAutoSE2, {"E2_LOJA"   , _sLojaFor,                        Nil})
 			aadd (_aAutoSE2, {"E2_NATUREZ", _sNaturez,                        Nil})
 			aadd (_aAutoSE2, {"E2_EMISSAO", _dEmisSE2,                        Nil})
 			aadd (_aAutoSE2, {"E2_EMIS1",   _dEmisSE2,                        Nil})
@@ -306,6 +313,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 				_nQtTitErr ++
 				_sMsgSE2 += "Erro FINA050:" + U_LeErro (memoread (NomeAutoLog ())) + _sErroAuto
 				u_help (_sMsgSE2,, .t.)
+				_oEvento:Texto += 'Erro na inclusao:' + _sMsgSE2
 
 				// Se estiver rodando via batch, manda aviso por e-mail.
 				if IsInCallStack ("U_BATMETAF")
@@ -316,20 +324,20 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 					U_ZZUNU ({'023'}, 'Erro integracao Metadados x Protheus', _sMsgMail, .F.)
 				endif
 
-//				if ! _lGLPI9047
-					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-					_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-					_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
-					_oSQL:Log ()
-					_lIncOK = _oSQL:Exec ()
-//				endif
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+				_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
+				_oSQL:Log ()
+				_lIncOK = _oSQL:Exec ()
 
 				// Cria registro no log do Metadados com o motivo da rejeicao.
 				_lIncOK = _LogMeta (_nSeqMeta, AllTrim (EnCodeUtf8 (_sMsgSE2)))
 			else
 				_nQtTitGer ++
 				u_log2 ('info', "ExecAuto retornou OK")
+				_oEvento:Texto += "Titulo gravado."
+				_oEvento:Recno = SE2 -> (recno ())
 
 				// Atualiza a data de emissao original por que na versao P12 o sistema nao aceita o que eu passo no ExecAuto.
 				reclock ("SE2", .F.)
@@ -371,17 +379,15 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 				next
 
 				// Muda status da sequencia no Metadados.
-//				if ! _lGLPI9047
-					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-					_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-					_oSQL:_sQuery +=       " DATAACEITACAOLIBERACAO  = cast ('" + dtos (date ()) + " " + time () + "' as datetime),"
-					_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + se2 -> e2_num + ","
-					_oSQL:_sQuery +=       " NUMEROTITULO            = " + se2 -> e2_num + ","
-					_oSQL:_sQuery +=       " SERIEDOC                = '" + se2 -> e2_prefixo + se2 -> e2_parcela + "'"
-					_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
-					_oSQL:Log ()
-					_lIncOK = _oSQL:Exec ()
-//				endif
+				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+				_oSQL:_sQuery +=       " DATAACEITACAOLIBERACAO  = cast ('" + dtos (date ()) + " " + time () + "' as datetime),"
+				_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + se2 -> e2_num + ","
+				_oSQL:_sQuery +=       " NUMEROTITULO            = " + se2 -> e2_num + ","
+				_oSQL:_sQuery +=       " SERIEDOC                = '" + se2 -> e2_prefixo + se2 -> e2_parcela + "'"
+				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
+				_oSQL:Log ()
+				_lIncOK = _oSQL:Exec ()
 			endif
 		endif
 	endif
@@ -396,6 +402,7 @@ static function _Excluir ()
 	local _sMsgSE2     := ""
 	local _aAutoSE2    := {}
 	local _sChaveSE2   := ''
+	local _oEvento     := NIL
 	private lMsErroAuto	:= .f.  // Variavel padrao para rotinas automticas.
 	private lMsHelpAuto	:= .f.  // Variavel padrao para rotinas automticas.
 	
@@ -422,6 +429,12 @@ static function _Excluir ()
 		do while _lExcOK .and. ! (_sAliasQ) -> (eof ())
 			u_log2 ('info', 'Iniciando exclusao - Seq ' + cvaltochar ((_sAliasQ) -> NroSequencial))
 			
+			// Cria um evento para guardar detalhes da movimentacao.
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven    = 'SE2007'
+			_oEvento:Alias      = 'SE2'
+			_oEvento:DiasValid  = 180  // 6 meses de rastreabilidade estah mais que bom
+
 			// Prepara variavel para mais detalhamento do arquivo de log.
 			_sPrefLog := 'Excl.seq.' + cvaltochar ((_sAliasQ) -> NroSequencial)
 
@@ -429,6 +442,15 @@ static function _Excluir ()
 			U_LOG2 ('debug', 'Pesquisando SE2 com a seguinte chave: >>' + _sChaveSE2 + '<<')
 			se2 -> (dbsetorder (1))  // E2_FILIAL+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO+E2_FORNECE+E2_LOJA
 			if se2 -> (dbseek (_sChaveSE2, .F.))
+
+				_oEvento:Recno     = SE2 -> (recno ())
+				_oEvento:Chave     = se2 -> E2_VACHVEX
+				_oEvento:NFEntrada = se2 -> e2_num
+				_oEvento:SerieEntr = se2 -> e2_prefixo
+				_oEvento:Fornece   = se2 -> e2_fornece
+				_oEvento:LojaFor   = se2 -> e2_loja
+				_oEvento:ParcTit   = se2 -> e2_parcela
+
 				lMsErroAuto	:= .f.
 				lMsHelpAuto	:= .f.
 				_sErroAuto  := ""
@@ -450,23 +472,30 @@ static function _Excluir ()
 					_sMsgSE2 = "Titulo " + strzero ((_sAliasQ) -> num, 9) + " excluido com sucesso."
 				endif
 				u_help (_sMsgSE2)
+				_oEvento:Texto += _sMsgSE2
 				_LogMeta ((_sAliasQ) -> NroSequencial, AllTrim (EnCodeUtf8 (_sMsgSE2)))
 
 				// Muda status da sequencia no Metadados.
 				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-//				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "05", "06") + "'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
 				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "06", "05") + "'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
 				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
 				_oSQL:Log ()
 				_oSQL:Exec ()
 			else
 				u_log2 ('info', "Titulo nao encontrado no SE2 (ja deve estar excluido): " + xfilial ("SE2") + substr ((_sAliasQ) -> SerieDoc, 1, 3) + U_TamFixo (cvaltochar ((_sAliasQ) -> num), 9, ' ') + substr ((_sAliasQ) -> SerieDoc, 4, 1))
+				_oEvento:Texto += "Titulo nao encontrado no SE2 (ja deve estar excluido)"
 				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
 				_oSQL:_sQuery +=   " SET STATUSREGISTRO = '06'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
 				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
 				_oSQL:Log ()
 				_oSQL:Exec ()
 			endif
+
+			// Se tem dados gerados no evento, grava-o.
+			if ! empty (_oEvento:Texto) .or. ! empty (_oEvento:NFEntrada)
+				_oEvento:Grava ()
+			endif
+
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	endif

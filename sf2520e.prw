@@ -55,7 +55,9 @@
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 // 01/11/2022 - Claudia - Incluido o tipo PX para validação de exclusão de títulos. GLPI: 12713
 // 04/12/2023 - Claudia - Alterada a busca de lcto. conta associado, para exclusão de NF's. GLPI: 14388
+// 03/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
+
 // ------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -192,7 +194,8 @@ static function _MailLog ()
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND C9_FILIAL  = '" + xfilial ("SC9") + "'"
 	_oSQL:_sQuery +=   " AND C9_NFISCAL = '" + sf2 -> f2_doc + "'"
-	_sMsg += " Carga: '" + _oSQL:RetQry () + "'" + chr (13) + chr (10) + chr (13) + chr (10)
+//	_sMsg += " Carga: '" + _oSQL:RetQry () + "'" + chr (13) + chr (10) + chr (13) + chr (10)
+	_sMsg += " Carga: '" + _oSQL:RetQry (1, .f.) + "'" + chr (13) + chr (10) + chr (13) + chr (10)
 	U_ZZUNU ({'030'}, "Cancelamento NF " + sf2 -> f2_doc, _sMsg)
 return
 //
@@ -270,7 +273,8 @@ Static Function _ExcTitCartao()
 	_oSQL:_sQuery += " AND E1_TIPO IN('CC','CD','PX') "
     _oSQL:_sQuery += " AND E1_ADM   <> '' "
 	_oSQL:_sQuery += " AND E1_BAIXA = '' "
-	_aDados := aclone (_oSQL:Qry2Array ())
+//	_aDados := aclone (_oSQL:Qry2Array ())
+	_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	if len(_aDados) > 0
 
@@ -306,7 +310,8 @@ Static Function _AtuZC0()
 		_oSQL:_sQuery += " AND ZC0_DOC    = '"+ sf2 -> f2_doc     +"' "
 		_oSQL:_sQuery += " AND ZC0_SERIE  = '"+ sf2 -> f2_serie   +"' "
 		_oSQL:Log ()
-		_aRapel := aclone (_oSQL:Qry2Array ())
+//		_aRapel := aclone (_oSQL:Qry2Array ())
+		_aRapel := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		If len(_aRapel) > 0
 			_oCtaRapel := ClsCtaRap():New ()

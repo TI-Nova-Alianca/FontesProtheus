@@ -37,6 +37,7 @@
 // 14/06/2022 - Claudia - Ajustada a impressão das observações. GLPI: 12112
 // 26/06/2022 - Sandra  - Incluso novas moedas. GLPI: 12211
 // 20/03/2023 - Claudia - Incluida nova obs. GLPI: 13324
+// 04/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 #include 'topconn.ch'
@@ -365,7 +366,8 @@ Static Function xPrintRel()
 	_oSQL:_sQuery +=  " FROM VA_TEXTOS"
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND CHAVE = 'SC7" + cEmpAnt + cFilAnt + _cNumPed + "'"
-	_sDadAdic = alltrim (_oSQL:RetQry ())
+//	_sDadAdic = alltrim (_oSQL:RetQry ())
+	_sDadAdic = alltrim (_oSQL:RetQry (1, .f.))
 
 
 	//Imprime as observacoes dos parametros. 
@@ -375,7 +377,8 @@ Static Function xPrintRel()
 	_oSQL:_sQuery += " FROM VA_TEXTOS"
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND CHAVE = 'OBS_SERVICO'
-	_sObsServico = alltrim (_oSQL:RetQry ())
+//	_sObsServico = alltrim (_oSQL:RetQry ())
+	_sObsServico = alltrim (_oSQL:RetQry (1, .f.))
 
 	If (SC7->C7_FILENT <> SC7->C7_FILIAL) .and. !Empty(SC7->C7_FILENT)
 		SM0->(dbSeek(cEmpAnt+SC7->C7_FILENT))
