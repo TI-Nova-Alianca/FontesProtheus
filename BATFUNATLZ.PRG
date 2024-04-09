@@ -44,6 +44,7 @@
 // 09/03/2023 - Claudia - Incluida regra para envio do e-mail apenas nas segundas-feiras.
 // 08/03/2024 - Claudia - Ajustada a integração de municipios na query de funcioanrios. GLPI: 15060
 // 19/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 09/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -448,7 +449,8 @@ Static Function _EmailFunCli()
 	_oSQL:_sQuery += " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS "
 	_oSQL:_sQuery += " WHERE SITUACAO = '1' "
 	_oSQL:_sQuery += " ORDER BY NOME "
-	_aFunc := aclone(_oSQL:Qry2Array())
+//	_aFunc := aclone(_oSQL:Qry2Array())
+	_aFunc := aclone(_oSQL:Qry2Array(.f., .f.))
 
 	For _x := 1 to Len(_aFunc)
 		_sCgc  := _aFunc[_x,1]
@@ -464,7 +466,8 @@ Static Function _EmailFunCli()
 		_oSQL:_sQuery += " FROM " + RetSQLName ("SA1")
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " AND A1_CGC LIKE '%"+ _sCgc +"'"
-		_aCliente := aclone(_oSQL:Qry2Array())
+//		_aCliente := aclone(_oSQL:Qry2Array())
+		_aCliente := aclone(_oSQL:Qry2Array(.f., .f.))
 
 		If Len(_aCliente) > 0
 			// Funcionario é cliente, mas nao tem e-mail

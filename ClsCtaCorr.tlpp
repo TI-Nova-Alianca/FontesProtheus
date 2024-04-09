@@ -106,6 +106,7 @@
 // 15/12/2023 - Robert - Portado de .prw para .tlpp e passa a herdar a ClsBase (GLPI 14548)
 // 08/01/2024 - Robert - Melhorada query que valida a baixa original em caso de transf. entre filiais TM=13.
 // 25/02/2024 - Robert - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 09/04/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ------------------------------------------------------------------------------------
@@ -906,7 +907,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 		_oSQL:_sQuery +=    " and SE2.E2_LOJA     = '" + _sLojaSE2  + "'"
 		_oSQL:_sQuery +=    " and SE2.E2_NUM      = '" + ::Doc   + "'"
 		_oSQL:_sQuery +=    " and SE2.E2_PREFIXO  = '" + ::Serie + "'"
-		_aRetParc = aclone (_oSQL:Qry2Array ())
+		_aRetParc = aclone (_oSQL:Qry2Array (.f., .f.))
 		if _aRetParc [1, 2] == 0  // Nao encontrou nenhuma ocorrencia da parcela desejada
 			_sParcela = ::Parcela
 		else
@@ -966,7 +967,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 			_oSQL:_sQuery +=    " AND E2_LOJA    = '" + _sLojaSE2 + "'"
 			_oSQL:_sQuery +=    " AND D_E_L_E_T_ = ''"
 			_oSQL:Log ()
-			if _oSQL:RetQry () == 0
+			if _oSQL:RetQry (1, .f.) == 0
 				_Super:SomaMsg ("Erro na rotina automatica de inclusao de contas a pagar:" + U_LeErro (memoread (NomeAutoLog ())))
 				_lContinua = .F.
 				MostraErro()

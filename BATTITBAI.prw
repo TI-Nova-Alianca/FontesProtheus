@@ -15,6 +15,7 @@
 // 20/10/2023 - Robert  - Acrescentado o codigo de tambores (2722) para baixas. GLPI:13397
 //                      - Manda aviso para TI em caso de erro na rotina automatica.
 //                      - Grava evento apos a baixa, para posterior rastreabilidade.
+// 09/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ----------------------------------------------------------------------------------------------
@@ -61,7 +62,8 @@ User Function BATTITBAI()
 	_oSQL:_sQuery +=   " AND SE1.E1_STATUS <> 'B'"
 	_oSQL:_sQuery +=   " AND SE1.E1_SALDO  <> 0"
 	_oSQL:Log ('[' + procname () + ']')
-	_aTitulo := aclone (_oSQL:Qry2Array ())
+//	_aTitulo := aclone (_oSQL:Qry2Array ())
+	_aTitulo := aclone (_oSQL:Qry2Array (.t., .f.))
 	
 	If len(_aTitulo) > 0
 		For i:=1 to len(_aTitulo)	

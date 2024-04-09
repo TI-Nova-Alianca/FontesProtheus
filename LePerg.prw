@@ -18,6 +18,7 @@
 // 19/08/2020 - Robert  - Leitura da tabela de acessos do usuario passa a testar, antes, se a tabela existe.
 //                      - Adicionadas tags para catalogo de fontes.
 // 12/05/2021 - Claudia - Ajustada a chamada SX1 para R27. GLPI: 8825
+// 09/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // --------------------------------------------------------------------------
 
@@ -59,7 +60,7 @@ user function LePerg (_sUserID, _sGrupo)
 	_oSQL:_sQuery += " FROM SX1010 "
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND X1_GRUPO     = '" + _sGrupo + "'"
-	_aSX1 := aclone (_oSQL:Qry2Array ())
+	_aSX1 := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	if Len(_aSX1) > 0
 		PswOrder(1)
@@ -80,7 +81,7 @@ user function LePerg (_sUserID, _sGrupo)
 		_oSQL:_sQuery += " AND P_PROG = '" + _sGrupo + "'"
 		_oSQL:_sQuery += " AND P_NAME IN ('" + _sUserName + "', '" + cEmpAnt + _sUserName + "', '" + _sUserID + "')"
 		_oSQL:_sQuery += " ORDER BY R_E_C_N_O_"
-		_aProfile := aclone (_oSQL:Qry2Array ())
+		_aProfile := aclone (_oSQL:Qry2Array (.f., .f.))
 
 		for _x := 1 to Len(_aProfile)
 			_sMemoProf := _aProfile[_x, 1]

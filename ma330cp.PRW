@@ -20,6 +20,8 @@
 // --------------------------------------------------------------------------
 user function ma330cp()
 	local _aRegraCP:={}
+
+	// ATENCAO: Manter compaibilidade com a stored procedure MA330CP_01
 	aAdd (_aRegraCP,"SB1->B1_TIPO $ 'MO/AP' ")
 	aAdd (_aRegraCP,"SB1->B1_TIPO == 'GF'")
 	aAdd (_aRegraCP,"SB1->B1_TIPO == 'ME'")

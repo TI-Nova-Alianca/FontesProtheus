@@ -19,10 +19,10 @@
 // 26/01/2024 - Robert - Implementado tipo de agio '1' entre graus (campo ZA_TPAGIOG)
 //                     - Melhorias na geracao do HTML
 // 14/02/2024 - Robert - Criado atributo :MascaraPrecos (campo za_QtDecPr)
+// 05/04/2024 - Robert - Imprimir campo zx5_13Crit na exportacao para HTML (eh apenas informativo)
 //
 
 #Include "Protheus.ch"
-//#include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
 // Funcao declarada apenas para poder compilar este arquivo fonte.
@@ -224,6 +224,7 @@ METHOD GeraAtrib ( ;
 		_oSQL:_sQuery += ", ZX5_13AEPR, ZX5_13AEAA, ZX5_13AEA, ZX5_13AEC, ZX5_13AED, ZX5_13AEDS"  // Acrescimos cfe classificacao espaldeira
 		_oSQL:_sQuery += ", ZX5_13ALA, ZX5_13ALC, ZX5_13ALDS"  // Acrescimos cfe classificacao latada
 		_oSQL:_sQuery += ", ZX5_13PAOB, ZX5_13PAOE, ZX5_13PAOO"  // Acrescimos cfe bordadura/em conversao/organica
+		_oSQL:_sQuery += ", ZX5_13CRIT"  // Criterio usado para precificacao (usuario pode informar o que quiser: CONAB/Mercado/Incientivo/...)
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZA") + " SZA "
 		_oSQL:_sQuery +=      " ," + RetSQLName ("ZX5") + " ZX5_13 "
 		_oSQL:_sQuery += " WHERE SZA.D_E_L_E_T_ = ''"
@@ -289,25 +290,25 @@ METHOD GeraAtrib ( ;
 			// os 2 formatos em paralelo por enquanto. Depois de ter tudo em JSON
 			// pretendo eliminar a parte em array.
 			_oGrupoTbUva = JsonObject():New()
-			_oGrupoTbUva ['Codigo']                    = (_sAlias13) -> zx5_13grup  // _aDados [_nDado, 2]
-			_oGrupoTbUva ['Descricao']                 = (_sAlias13) -> zx5_13desc  // _aDados [_nDado, 3]
-			_oGrupoTbUva ['GrauBase']                  = (_sAlias13) -> zx5_13gbas  // _aDados [_nDado, 4]
-			_oGrupoTbUva ['GrauMinimoParaAgio']        = (_sAlias13) -> zx5_13gmag  // _aDados [_nDado, 5]
-			_oGrupoTbUva ['PrecoMinimo']               = (_sAlias13) -> zx5_13pmin  // _aDados [_nDado, 6]
-			_oGrupoTbUva ['PrecoGrauBase']             = (_sAlias13) -> zx5_13pbco  // _aDados [_nDado, 7]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasPR'] = (_sAlias13) -> zx5_13aepr  // _aDados [_nDado, 8]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasAA'] = (_sAlias13) -> zx5_13aeaa  // _aDados [_nDado, 9]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasA']  = (_sAlias13) -> zx5_13aea   // _aDados [_nDado, 10]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasC']  = (_sAlias13) -> zx5_13aec   // _aDados [_nDado, 11]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasD']  = (_sAlias13) -> zx5_13aed   // _aDados [_nDado, 12]
-			_oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] = (_sAlias13) -> zx5_13aeds  // _aDados [_nDado, 13]
-			_oGrupoTbUva ['AcrescimoLatadaClasA']      = (_sAlias13) -> zx5_13ala  // _aDados [_nDado, 14]
-			_oGrupoTbUva ['AcrescimoLatadaClasC']      = (_sAlias13) -> zx5_13alc  // _aDados [_nDado, 15]  // Nao tenho campo (deveria ser ZX5_13ALC) na tabela ainda
-		//	_oGrupoTbUva ['AcrescimoLatadaClasD']      = (_sAlias13) -> zx5_13al ? // _aDados [_nDado, 15]
-			_oGrupoTbUva ['AcrescimoLatadaClasDS']     = (_sAlias13) -> zx5_13alds  // _aDados [_nDado, 15]  // Nao tenho um tratamento especifico para diferenciar D e DS (latada) quanto a precos.
-			_oGrupoTbUva ['AgioOrganicaBordadura']     = (_sAlias13) -> zx5_13paob  // _aDados [_nDado, 16]
-			_oGrupoTbUva ['AgioOrganicaEmConversao']   = (_sAlias13) -> zx5_13paoe  // _aDados [_nDado, 17]
-			_oGrupoTbUva ['AgioOrganicaOrganica']      = (_sAlias13) -> zx5_13paoo  // _aDados [_nDado, 18]
+			_oGrupoTbUva ['Codigo']                    = (_sAlias13) -> zx5_13grup
+			_oGrupoTbUva ['Descricao']                 = (_sAlias13) -> zx5_13desc
+			_oGrupoTbUva ['GrauBase']                  = (_sAlias13) -> zx5_13gbas
+			_oGrupoTbUva ['GrauMinimoParaAgio']        = (_sAlias13) -> zx5_13gmag
+			_oGrupoTbUva ['PrecoMinimo']               = (_sAlias13) -> zx5_13pmin
+			_oGrupoTbUva ['PrecoGrauBase']             = (_sAlias13) -> zx5_13pbco
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasPR'] = (_sAlias13) -> zx5_13aepr
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasAA'] = (_sAlias13) -> zx5_13aeaa
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasA']  = (_sAlias13) -> zx5_13aea
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasC']  = (_sAlias13) -> zx5_13aec
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasD']  = (_sAlias13) -> zx5_13aed
+			_oGrupoTbUva ['AcrescimoEspaldeiraClasDS'] = (_sAlias13) -> zx5_13aeds
+			_oGrupoTbUva ['AcrescimoLatadaClasA']      = (_sAlias13) -> zx5_13ala
+			_oGrupoTbUva ['AcrescimoLatadaClasC']      = (_sAlias13) -> zx5_13alc
+			_oGrupoTbUva ['AcrescimoLatadaClasDS']     = (_sAlias13) -> zx5_13alds
+			_oGrupoTbUva ['AgioOrganicaBordadura']     = (_sAlias13) -> zx5_13paob
+			_oGrupoTbUva ['AgioOrganicaEmConversao']   = (_sAlias13) -> zx5_13paoe
+			_oGrupoTbUva ['AgioOrganicaOrganica']      = (_sAlias13) -> zx5_13paoo
+			_oGrupoTbUva ['CriterioDePreco']           = (_sAlias13) -> zx5_13Crit
 			_oGrupoTbUva ['ListaDeSubgrupos']          = {}
 			_oGrupoTbUva ['ListaDeVariedades']         = {}
 			_oGrupoTbUva ['ListaDeGraus']              = {}
@@ -494,28 +495,31 @@ METHOD GeraAtrib ( ;
 			// Conforme o tipo de uva, pode haver diferentes subgrupos.
 			// Uvas comuns: 4 subcolunas (convenc/bordadura/em conv/organ)
 			_sObsSubgrupo = ''
+
 			if ::TipoUva == 'C'
-				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Convencional', 'ObsSubgrupo' : '' })
-				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Bordadura'   , 'ObsSubgrupo' : '+' + cvaltochar (_oGrupoTbUva ['AgioOrganicaBordadura']   ) + '%' })
-				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Em conversão', 'ObsSubgrupo' : '+' + cvaltochar (_oGrupoTbUva ['AgioOrganicaEmConversao'] ) + '%' })
-				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Orgânica'    , 'ObsSubgrupo' : '+' + cvaltochar (_oGrupoTbUva ['AgioOrganicaOrganica']    ) + '%' })
+				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Convencional', 'ObsSubgrupo' : ''  + _sObsSubgrupo})
+				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Bordadura'   , 'ObsSubgrupo' : '+' + cvaltochar (_oGrupoTbUva ['AgioOrganicaBordadura']   ) + '%<br>' + _sObsSubgrupo})
+				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Em conversão', 'ObsSubgrupo' : '+' + cvaltochar (_oGrupoTbUva ['AgioOrganicaEmConversao'] ) + '%<br>' + _sObsSubgrupo})
+				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : 'Orgânica'    , 'ObsSubgrupo' : '+' + cvaltochar (_oGrupoTbUva ['AgioOrganicaOrganica']    ) + '%<br>' + _sObsSubgrupo})
 
 			elseif ::TipoUva == 'F' .and. ::Conducao == 'E'
-				_sObsSubgrupo :=     'Clas.PR: ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasPR']) + '%'
+				_sObsSubgrupo +=     'Clas.PR: ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasPR']) + '%'
 				_sObsSubgrupo += '<br>Clas.AA: ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasAA']) + '%'
 				_sObsSubgrupo += '<br>Clas.A:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasA']) + '%'
 				_sObsSubgrupo += '<br>Clas.B: base'
 				_sObsSubgrupo += '<br>Clas.C:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasC']) + '%'
 				_sObsSubgrupo += '<br>Clas.D:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasD']) + '%'
 				_sObsSubgrupo += '<br>Clas.DS: ' + cvaltochar (_oGrupoTbUva ['AcrescimoEspaldeiraClasDS']) + '%'
+				_sObsSubgrupo += '<br>Crit:' + alltrim (_oGrupoTbUva ['CriterioDePreco'])
 				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : '' , 'ObsSubgrupo' : _sObsSubgrupo})
 
 			elseif ::TipoUva == 'F' .and. ::Conducao == 'L'
-				_sObsSubgrupo := 'Clas.A: +' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasA']) + '%'
+				_sObsSubgrupo +=     'Clas.A: +' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasA']) + '%'
 				_sObsSubgrupo += '<br>Clas.B: base'
 				_sObsSubgrupo += '<br>Clas.C:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasC']) + '%'
 			//	_sObsSubgrupo += '<br>Clas.D:  ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasD']) + '%'
 				_sObsSubgrupo += '<br>Clas.DS: ' + cvaltochar (_oGrupoTbUva ['AcrescimoLatadaClasDS']) + '%'
+				_sObsSubgrupo += '<br>Crit:' + alltrim (_oGrupoTbUva ['CriterioDePreco'])
 				aadd (_oGrupoTbUva ['ListaDeSubgrupos'], {'DescSubgrupo' : '' , 'ObsSubgrupo' : _sObsSubgrupo})
 			endif
 

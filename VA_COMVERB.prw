@@ -22,6 +22,7 @@
 // 13/04/2021 - Claudia - GLPI: 9824 - Retirado do 6 - VERBA EM TITULO SEM COMISSAO' 
 //                        as NCCs (serie: CV)
 // 08/11/2023 - Claudia - Incluida validação de base de cmissão zerada. GLPI: 14475
+// 09/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -460,6 +461,7 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg, _sFilial)
 	_oSQL:_sQuery += " AND ZA5_PREFIX <> 'CV'"
 	_oSQL:Log ()
 	
-	_aRet = aclone (_oSQL:Qry2Array ())
+//	_aRet = aclone (_oSQL:Qry2Array ())
+	_aRet = aclone (_oSQL:Qry2Array (.t., .f.))
 
 Return _aRet

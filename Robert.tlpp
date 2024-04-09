@@ -121,6 +121,7 @@ user function robert ()
 		// _sFuncao += '_CplSaf23C ()'
 		// _sFuncao += '_CorrMonSZI ()'
 		// _sFuncao += '_ctbANC ()'
+		// _sFuncao += '_cusPartes ()'
 		// _sFuncao += '_DesabRast ()'
 		// _sFuncao += '_elastic ()'
 		// _sFuncao += '_EstFul()'
@@ -141,6 +142,7 @@ user function robert ()
 		// _sFuncao += '_GLPI14809 ()'
 		// _sFuncao += '_GLPI15020 ()'
 		// _sFuncao += '_GLPI15070 ()'
+		// _sFuncao += '_GLPI15191 ()'
 		// _sFuncao += '_ImpGPC ()'
 		// _sFuncao += '_memoria ()'
 		// _sFuncao += '_metaf ()'
@@ -1224,8 +1226,182 @@ static function _ctbanc ()
 return
 
 // --------------------------------------------------------------------------
+// Testes custo em partes
+static function _cusPartes ()
+	local _lContinua := .T.
+	local _dDataSB9  := stod ('20240229')  // '20191231'
+
+	if _lContinua .and. ! U_AmbTeste ()
+		u_help ("Por enquanto, apenas em base de teste!",, .t.)
+		_lContinua = .F.
+	endif
+
+	// Inicializa custo em partes. Cfe o link https://centraldeatendimento.totvs.com/hc/pt-br/articles/4416690411159-Cross-Segmento-Backoffice-Linha-Protheus-SIGAEST-Configuração-do-Custo-em-Partes-sem-procedures
+	// os saldos das partes devem ser inicializados, como se fosse uma distribuicao inicial do saldo existente antes de comecar a trabalhar em partes.
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT count (*) "
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB9") + " SB9"
+		_oSQL:_sQuery += " WHERE SB9.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SB9.B9_FILIAL  = '" + xfilial ("SB9") + "'"
+		_oSQL:_sQuery +=   " AND SB9.B9_DATA    > '" + dtos (_dDataSB9) + "'"
+		_oSQL:Log ()
+		if _oSQL:RetQry (1, .f.) > 0
+			u_help ("Encontrei SB9 com data posterior. Processo abortado.",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT SB9.R_E_C_N_O_ AS REGSB9, B9_COD, B1_TIPO, B1_CODLIN, B1_DESC, B1_AGREGCU, B1_VAMARCM, B9_VINI1, B9_QINI"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB9") + " SB9,"
+		_oSQL:_sQuery +=            RetSQLName ("SB1") + " SB1 "
+		_oSQL:_sQuery += " WHERE SB9.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SB9.B9_FILIAL  = '" + xfilial ("SB9")  + "'"
+		_oSQL:_sQuery +=   " and SB9.B9_DATA    = '" + dtos (_dDataSB9) + "'"
+		_oSQL:_sQuery +=   " AND SB9.B9_VINI1   > 0"
+		//_oSQL:_sQuery +=   " AND SB9.B9_QINI    > 0"
+		_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		_oSQL:_sQuery +=   " AND SB1.B1_COD     = SB9.B9_COD"
+		_oSQL:_sQuery += " ORDER BY SB9.B9_COD"
+		_oSQL:Log ()
+		_sAliasQ := _oSQL:Qry2Trb ()
+		do while ! (_sAliasQ) -> (eof ())
+			sb9 -> (dbgoto ((_sAliasQ) -> regsb9))
+		
+			// Criterios de distrbuicao definidos pela Liane em 2020 quando
+			// fizemos um primeiro ensaio de custo em partes (GLPI 8807)
+			// Fiz algumas definicoes por minha conta tambem.
+			// REVISAR!
+			_nParte1 := _nParte2 := _nParte3 := _nParte4 := _nParte5 := _nParte6 := 0
+			do case
+				case (_sAliasQ) -> b1_tipo $ 'MO/AP'
+					_nParte1 = 100
+				case (_sAliasQ) -> b1_tipo == 'GF'
+					_nParte2 = 100
+				case (_sAliasQ) -> b1_tipo == 'ME'
+					_nParte3 = 100
+				case (_sAliasQ) -> b1_tipo == 'MP'
+					_nParte4 = 100
+				case (_sAliasQ) -> b1_tipo == 'BN'
+					_nParte5 = 100
+				case alltrim ((_sAliasQ) -> b9_cod) $ '2343/2343/2347/4057/405/4059/4416'  // garrafas pet sopradas
+					_nParte3 = 71.8
+					_nParte5 = 28.2
+				case (_sAliasQ) -> b1_codlin $ '18'  // NECTARES E BEBIDAS
+					_nParte1 = 10.97
+					_nParte2 = 13.25
+					_nParte3 = 32.9
+					_nParte4 = 42.88
+				case (_sAliasQ) -> b1_tipo == 'VD' .and. right (alltrim ((_sAliasQ) -> b9_cod), 1) == 'R'  // Retrabalho (VD)
+					_nParte1 = 4.84
+					_nParte2 = 9.65
+					_nParte4 = 83.7
+				case ! (_sAliasQ) -> b1_tipo $ 'MR/MM/BN' .and. ((_sAliasQ) -> b1_desc $ 'CONCENT' .or. (_sAliasQ) -> b1_desc $ 'POLPA' .or. (_sAliasQ) -> b1_tipo = 'PP')  // concentrado/polpa
+					_nParte1 = 4.25
+					_nParte2 = 8.5
+					_nParte4 = 73.4
+					_nParte5 = 12.76
+				case ! (_sAliasQ) -> b1_tipo $ 'II/ME/UC/MP' .and. ((_sAliasQ) -> b1_agregcu = '1' .or. (_sAliasQ) -> b1_vaMarcm = '10') // para terceiros + marcas de terceiros
+					_nParte1 = 11.42
+					_nParte2 = 10.41
+					_nParte3 = 31.52
+				case (_sAliasQ) -> b1_tipo == 'VD'  // granel
+					_nParte1 = 4.87
+					_nParte2 = 9.7
+					_nParte4 = 84.15
+				case (_sAliasQ) -> b1_codlin $ '01/13'  // especificos: 01	PREPARADOS;13	SAGU E QUENTAO
+					_nParte1 = 6.49
+					_nParte2 = 7.61
+					_nParte3 = 39.3
+					_nParte4 = 45.9
+				case (_sAliasQ) -> b1_codlin $ '04'  // ESPUMANTES
+					_nParte1 = 9.2
+					_nParte2 = 6.3
+					_nParte3 = 41
+					_nParte4 = 42
+					_nParte5 = 1
+				case (_sAliasQ) -> b1_codlin $ '09'  // FILTRADOS
+					_nParte1 = 3.83
+					_nParte2 = 4.8
+					_nParte3 = 44.23
+					_nParte4 = 33.2
+					_nParte5 = 13.44
+				case (_sAliasQ) -> b1_codlin $ '06/08/11'  // 06	SUCOS INTEGRAIS; 08	SUCOS 100%; 11	ORGANICOS
+					_nParte1 = 5.25
+					_nParte2 = 3.24
+					_nParte3 = 34.43
+					_nParte4 = 56.11
+					_nParte5 = 0.26
+				case (_sAliasQ) -> b1_codlin $ '03'  // 03	VINHOS FINOS
+					_nParte1 = 14.1
+					_nParte2 = 11.5
+					_nParte3 = 18.71
+					_nParte4 = 54.8
+					_nParte5 = 0.1
+				case (_sAliasQ) -> b1_codlin $ '07/24'  // 07	VINHOS MESA e frisante
+					_nParte1 = 13.6
+					_nParte2 = 11.1
+					_nParte3 = 29.53
+					_nParte4 = 44.81
+					_nParte5 = 0.06
+				case (_sAliasQ) -> b1_tipo == 'PA' .and. (_sAliasQ) -> b1_codlin == '21' // industrializacao
+					if 'SUCO' $ (_sAliasQ) -> b1_desc .and. 'UVA' $ (_sAliasQ) -> b1_desc
+						_nParte1 = 5.25
+						_nParte2 = 3.24
+						_nParte3 = 34.43
+						_nParte4 = 56.11
+						_nParte5 = 0.26
+					elseif 'VINHO' $ (_sAliasQ) -> b1_desc
+						_nParte1 = 13.6
+						_nParte2 = 11.1
+						_nParte3 = 29.53
+						_nParte4 = 44.81
+						_nParte5 = 0.06
+					elseif 'SUCO' $ (_sAliasQ) -> b1_desc .and. 'MACA' $ (_sAliasQ) -> b1_desc
+						_nParte1 = 10.97
+						_nParte2 = 13.25
+						_nParte3 = 32.9
+						_nParte4 = 42.88
+					else
+						// Nao inicializando nada, fica 100% para a parte outros.
+					endif
+				case (_sAliasQ) -> b1_tipo $ 'MM/RE/MR/PS/II/CL/GG/EP/II/MA/MT/UC/VA/MB/MC/SG'  // parte OUTROS
+					// Nao inicializando nada, fica 100% para a parte outros.
+				otherwise
+					u_log2 ('aviso', 'Sem classificacao: ' + (_sAliasQ) -> b9_cod + ' (' + (_sAliasQ) -> b1_tipo + ') ' + (_sAliasQ) -> b1_desc)
+					// Nao inicializando nada, fica 100% para a parte outros. Mas acho interessante gerar pelo menos um aviso.
+			endcase
+			_nParte6 = 100 - _nParte1 - _nParte2 - _nParte3 - _nParte4 - _nParte5
+			if _nParte6 < 0
+				u_log2 ('erro', 'Parte 6 nao pode ficar negativa')
+			else
+				reclock ("SB9", .F.)
+				sb9 -> b9_cp0101  = _nParte1 / 100 * (_sAliasQ) -> b9_vini1
+				sb9 -> b9_cp0201  = _nParte2 / 100 * (_sAliasQ) -> b9_vini1
+				sb9 -> b9_cp0301  = _nParte3 / 100 * (_sAliasQ) -> b9_vini1
+				sb9 -> b9_cp0401  = _nParte4 / 100 * (_sAliasQ) -> b9_vini1
+				sb9 -> b9_cp0501  = _nParte5 / 100 * (_sAliasQ) -> b9_vini1
+				sb9 -> b9_cp0601  = _nParte6 / 100 * (_sAliasQ) -> b9_vini1
+				if (_sAliasQ) -> b9_qini > 0
+					sb9 -> b9_cpm0101 = _nParte1 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+					sb9 -> b9_cpm0201 = _nParte2 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+					sb9 -> b9_cpm0301 = _nParte3 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+					sb9 -> b9_cpm0401 = _nParte4 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+					sb9 -> b9_cpm0501 = _nParte5 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+					sb9 -> b9_cpm0601 = _nParte6 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+				endif
+				msunlock ()
+			endif
+			(_sAliasQ) -> (dbskip ())
+		enddo
+	endif
+return
+
+// --------------------------------------------------------------------------
 // Desabilitar rastreabilidade (lote e/ou enderecamento) de algum item.
-// AINDA EM CONSTRUCAO!!!
+// AINDA EM CONSTRUCAO!!! (na verdade, espero nunca precisar usar)
 static function _DesabRast ()
 	local _aItens := {}
 	local _nItem  := 0
@@ -1377,7 +1553,7 @@ static function _DesabRast ()
 
 	if len (_aErros) > 0
 		//u_showarray (_aErros)
-		//help ("Impossivel desabilitar rastro / enderecamento do item '" + _aItens [_nItem] + "' pelo(s) seguinte(s) motivo(s):" + chr (13) + chr (10) + _sMsg,, .t.)
+		help ("Impossivel desabilitar rastro / enderecamento do item '" + _aItens [_nItem] + "' pelo(s) seguinte(s) motivo(s):" + chr (13) + chr (10) + _sMsg,, .t.)
 		U_Log2 ('debug', _aErros)
 	endif
 return
@@ -2431,6 +2607,7 @@ return
 // Gera complemento safra 2023 Isabel Precoce (aumentamos uva Isabel e esquecemos da Isabel Precoce)
 static function _GLPI15070 ()
 /*
+	// Gera pre-notas
 	U_MudaLog ('GLPI15070.log')
 	U_GravaSX1 ('VAGNF3', '01', '')     // Produtor inicial
 	U_GravaSX1 ('VAGNF3', '02', '')     // Loja produtor inicial
@@ -2449,6 +2626,7 @@ static function _GLPI15070 ()
 	U_GravaSX1 ('VAGNF3', '15', 'z')    // Filial final
 	U_VA_GNF3 (.T.)
 */
+	// Gera notas
 	U_GravaSX1 ('VAGNF2', '01', '')     // Produtor inicial
 	U_GravaSX1 ('VAGNF2', '02', '')     // Loja produtor inicial
 	U_GravaSX1 ('VAGNF2', '03', 'z')    // Produtor final
@@ -2464,6 +2642,106 @@ static function _GLPI15070 ()
 	U_GravaSX1 ('VAGNF2', '13', '')     // Exceto estas variedades
 	U_GravaSX1 ('VAGNF2', '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
 	u_va_gnf2 (.t.)
+return
+
+// --------------------------------------------------------------------------
+// Atualiza custo standard cfe planilha
+static function _GLPI15191 ()
+	local _aDados    := {}
+	local _nDado     := 0
+	local _nCustD    := 0
+	local _aCSV      := {}
+	local _nCSV      := 0
+	local _aFilhos   := {}
+	local _nFilho    := 0
+	local _oSQL      := NIL
+	local _nDecCustD := tamsx3 ("B1_CUSTD")[2]
+
+	_aCSV = U_LeCSV ('c:\temp\GLPI_15191.csv', ';')
+	for _nCSV = 1 to len (_aCSV)
+		_aCSV [_nCSV, 3] = round (val (strtran (strtran (_aCSV [_nCSV, 3], '"', ''), ',', '.')), _nDecCustD)
+	next
+	U_Log2 ('debug', _aCSV)
+
+	// Usuario deseja atualizar tambem o cadastro das unidades. Para isso
+	// vou procurar os filhos de cada item do arquivo CSV (que tem somente
+	// as caixas) e acrescentar esses filhos na array de dados que vai ser
+	// usada para alterar os cadastros.
+	sb1 -> (dbsetorder (1))
+	for _nCSV = 1 to len (_aCSV)
+
+		if ! sb1 -> (dbseek (xfilial ("SB1") + U_TamFixo (_aCSV [_nCSV, 1], 15, ' '), .F.))
+			U_Log2 ('erro', '[' + procname () + ']Nao encontrado no SB1: ' + _aCSV [_nCSV, 1])
+		else
+
+			// Adiciona o pai (que estava no CSV original)
+			aadd (_aDados, {_aCSV [_nCSV, 1], _aCSV [_nCSV, 2], _aCSV [_nCSV, 3]})
+
+			// Adiciona os (se existirem) filhos dele.
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT B1_COD, B1_DESC"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
+			_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+			_oSQL:_sQuery +=   " AND SB1.B1_CODPAI  = '" + _aCSV [_nCSV, 1] + "'"
+			_aFilhos := _oSQL:Qry2Array (.f., .f.)
+			for _nFilho = 1 to len (_aFilhos)
+				aadd (_aDados, {_aFilhos [_nFilho, 1], _aFilhos [_nFilho, 2], _aCSV [_nCSV, 3] / sb1 -> b1_qtdemb})
+			next
+		endif
+	next
+	U_Log2 ('debug', _aDados)
+
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	for _nDado = 1 to len (_aDados)
+		if len (_aDados [_nDado]) < 3
+			U_Log2 ('erro', '[' + procname () + ']Sem custo para ' + _aDados [_nDado, 1] + ' ' + _aDados [_nDado, 2])
+		else
+			if ! sb1 -> (dbseek (xfilial ("SB1") + U_TamFixo (_aDados [_nDado, 1], 15, ' '), .F.))
+				U_Log2 ('erro', '[' + procname () + ']Nao encontrado no SB1: ' + _aDados [_nDado, 1])
+			else
+				if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+					u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+				else
+				//	u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+
+					_nCustD = _aDados [_nDado, 3]
+					if _nCustD == 0
+						U_Log2 ('aviso', '[' + procname () + ']'+ sb1 -> b1_cod + SB1 -> B1_DESC + ' custo zerado na planilha. Nao vou alterar.')
+					else
+						if sb1 -> b1_custd != _nCustD .or. sb1 -> B1_DATREF != date ()
+
+							u_log2 ('info', 'Alterando custo ' + sb1 -> b1_cod + SB1 -> B1_DESC + ' de ' + transform (sb1 -> b1_custd, '@E 999,999.9999') + ' para ' + transform (_nCustD, '@E 999,999.9999'))
+
+							// Cria variaveis para uso na gravacao do evento de alteracao
+							regtomemory ("SB1", .F., .F.)
+							//regtomemory ("SB5", .F., .F.)
+							//m->b5_vasisde = 'S'
+							m->b1_custd  = _nCustD
+							m->B1_DATREF = date ()
+
+							// Grava evento de alteracao
+							_oEvento := ClsEvent():new ()
+							_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 15191 - ajustar B1_CUSTD', .F.)
+							reclock ("SB1", .f.)
+							sb1 -> B1_custd  = m->b1_custd
+							SB1 -> B1_DATREF = m->B1_DATREF
+							msunlock ()
+							U_AtuMerc ("SB1", sb1 -> (recno ()))
+
+							// Cai fora no primeiro, para testes.
+						//	exit
+
+						else
+							U_Log2 ('debug', '[' + procname () + ']Dados jah estavam corretos')
+						endif
+					endif
+				endif
+			endif
+		endif
+	next
 return
 
 // --------------------------------------------------------------------------
@@ -3745,11 +4023,11 @@ static function _TbUva ()
 	local _sHTML  := ''
 	local _nHdl    := 0
 	local _sArq    := ''
-	local _sCodTab := '24A'
-	local _sVarUva := 'C'
-	local _sConduc := 'L'
+	local _sCodTab := '24C'
+	local _sVarUva := 'F'
+	local _sConduc := 'E'
 	local _oTbUva := ClsTbUva ():New ()
-	_oTbUva:GeraAtrib (_sCodTab, _sVarUva, _sConduc, 'D')
+	_oTbUva:GeraAtrib (_sCodTab, _sVarUva, _sConduc, 'I')
 
 	if empty (_oTbUva:CodTabela)
 		U_Log2 ('erro', '[' + procname () + ']' + _oTbUva:UltMsg)
@@ -6280,146 +6558,6 @@ Return
 	next
 return
 */
-/*
-	// Inicializa custo em partes
-	IF ! U_MsgNoYes ("Confirma inicializacao do custo em partes?")
-		return
-	endif
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT count (*) "
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB9") + " SB9"
-	_oSQL:_sQuery += " WHERE SB9.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND SB9.B9_FILIAL  = '" + xfilial ("SB9") + "'"
-	_oSQL:_sQuery +=   " AND SB9.B9_DATA    > '20191231'"
-	_oSQL:Log ()
-	if _oSQL:RetQry () > 0
-		u_help ("Encontrei SB9 com data posterior a 31/12/2019. Processo abortado.",, .t.)
-		return
-	endif
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT SB9.R_E_C_N_O_ AS REGSB9, B9_COD, B1_TIPO, B1_CODLIN, B1_DESC, B1_AGREGCU, B1_VAMARCM, B9_VINI1, B9_QINI"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB9") + " SB9,"
-	_oSQL:_sQuery +=            RetSQLName ("SB1") + " SB1 "
-	_oSQL:_sQuery += " WHERE SB9.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND SB9.B9_FILIAL  = '" + xfilial ("SB9") + "'"
-	_oSQL:_sQuery +=   " and SB9.B9_DATA = '20191231'"
-	_oSQL:_sQuery +=   " AND SB9.B9_VINI1   > 0"
-	//_oSQL:_sQuery +=   " AND SB9.B9_QINI    > 0"
-	_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-	_oSQL:_sQuery +=   " AND SB1.B1_COD     = SB9.B9_COD"
-	_oSQL:_sQuery += " ORDER BY SB9.B9_COD"
-	_oSQL:Log ()
-	_sAliasQ := _oSQL:Qry2Trb ()
-	do while ! (_sAliasQ) -> (eof ())
-		sb9 -> (dbgoto ((_sAliasQ) -> regsb9))
-		_nParte1 := _nParte2 := _nParte3 := _nParte4 := _nParte5 := _nParte6 := 0
-		do case
-			case (_sAliasQ) -> b1_tipo $ 'MO/AP'
-				_nParte1 = 100
-			case (_sAliasQ) -> b1_tipo == 'GF'
-				_nParte2 = 100
-			case (_sAliasQ) -> b1_tipo == 'ME'
-				_nParte3 = 100
-			case (_sAliasQ) -> b1_tipo == 'MP'
-				_nParte4 = 100
-			case (_sAliasQ) -> b1_tipo == 'BN'
-				_nParte5 = 100
-			case alltrim ((_sAliasQ) -> b9_cod) $ '2343/2343/2347/4057/405/4059/4416'  // garrafas pet sopradas
-				_nParte3 = 71.8
-				_nParte5 = 28.2
-			case (_sAliasQ) -> b1_codlin $ '18'  // NECTARES E BEBIDAS
-				_nParte1 = 10.97
-				_nParte2 = 13.25
-				_nParte3 = 32.9
-				_nParte4 = 42.88
-			case (_sAliasQ) -> b1_tipo == 'VD' .and. 'R' $ (_sAliasQ) -> b9_cod  // Retrabalho (VD)
-				_nParte1 = 4.84
-				_nParte2 = 9.65
-				_nParte4 = 83.7
-			case ! (_sAliasQ) -> b1_tipo $ 'MR/MM/BN' .and. ((_sAliasQ) -> b1_desc $ 'CONCENT' .or. (_sAliasQ) -> b1_desc $ 'POLPA' .or. (_sAliasQ) -> b1_tipo = 'PP')  // concentrado/polpa
-				_nParte1 = 4.25
-				_nParte2 = 8.5
-				_nParte4 = 73.4
-				_nParte5 = 12.76
-			case ! (_sAliasQ) -> b1_tipo $ 'II/ME/UC/MP' .and. ((_sAliasQ) -> b1_agregcu = '1' .or. (_sAliasQ) -> b1_vaMarcm = '10') // para terceiros + marcas de terceiros
-				_nParte1 = 11.42
-				_nParte2 = 10.41
-				_nParte3 = 31.52
-			case (_sAliasQ) -> b1_tipo == 'VD'  // granel
-				_nParte1 = 4.87
-				_nParte2 = 9.7
-				_nParte4 = 84.15
-			case (_sAliasQ) -> b1_codlin $ '01/13'  // especificos: 01	PREPARADOS;13	SAGU E QUENTAO
-				_nParte1 = 6.49
-				_nParte2 = 7.61
-				_nParte3 = 39.3
-				_nParte4 = 45.9
-			case (_sAliasQ) -> b1_codlin $ '04'  // ESPUMANTES
-				_nParte1 = 9.2
-				_nParte2 = 6.3
-				_nParte3 = 41
-				_nParte4 = 42
-				_nParte5 = 1
-			case (_sAliasQ) -> b1_codlin $ '09'  // FILTRADOS
-				_nParte1 = 3.83
-				_nParte2 = 4.8
-				_nParte3 = 44.23
-				_nParte4 = 33.2
-				_nParte5 = 13.44
-			case (_sAliasQ) -> b1_codlin $ '06/08/11'  // 06	SUCOS INTEGRAIS; 08	SUCOS 100%; 11	ORGANICOS
-				_nParte1 = 5.25
-				_nParte2 = 3.24
-				_nParte3 = 34.43
-				_nParte4 = 56.11
-				_nParte5 = 0.26
-			case (_sAliasQ) -> b1_codlin $ '03'  // 03	VINHOS FINOS
-				_nParte1 = 14.1
-				_nParte2 = 11.5
-				_nParte3 = 18.71
-				_nParte4 = 54.8
-				_nParte5 = 0.1
-			case (_sAliasQ) -> b1_codlin $ '07'  // 07	VINHOS MESA
-				_nParte1 = 13.6
-				_nParte2 = 11.1
-				_nParte3 = 29.53
-				_nParte4 = 44.81
-				_nParte5 = 0.06
-			case (_sAliasQ) -> b1_tipo $ 'MM/RE/MR/PS/II/CL/GG/EP/II/MA/MT/UC/VA/MB'  // parte OUTROS
-				// 100% para a parte outros.
-			otherwise
-				u_log2 ('aviso', 'Sem classificacao: ' + (_sAliasQ) -> b9_cod + ' (' + (_sAliasQ) -> b1_tipo + ') ' + (_sAliasQ) -> b1_desc)
-		endcase
-		_nParte6 = 100 - _nParte1 - _nParte2 - _nParte3 - _nParte4 - _nParte5
-		if _nParte6 < 0
-			u_log2 ('erro', 'Parte 6 nao pode ficar negativa')
-		else
-			reclock ("SB9", .F.)
-			sb9 -> b9_cp0101  = _nParte1 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0201  = _nParte2 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0301  = _nParte3 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0401  = _nParte4 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0501  = _nParte5 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0601  = _nParte6 / 100 * (_sAliasQ) -> b9_vini1
-			if (_sAliasQ) -> b9_qini > 0
-				sb9 -> b9_cpm0101 = _nParte1 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0201 = _nParte2 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0301 = _nParte3 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0401 = _nParte4 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0501 = _nParte5 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0601 = _nParte6 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-			endif
-			msunlock ()
-		endif
-		(_sAliasQ) -> (dbskip ())
-	enddo
-return
-*/
-
-//	_oSQL := ClsSQL ():New ()
-//	_oSQL:_sQuery := "exec VA_SP_VERIFICA_ESTOQUES '03', null, null"
-//	u_log (_oSQL:Qry2Array ())
-//return
 /*
 	cPerg := "VA_RTSAF"
 	U_GravaSX1 (cPerg, "01", stod ('20200131'))

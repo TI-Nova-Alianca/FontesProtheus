@@ -32,14 +32,24 @@ User Function ZBEBot (_sQueFazer)
 	local _nHdl    := 0
 	local _sArqX   := ''
 	local _sCAMXML := ''
+	local _sSubDir := ''
 
 	do case
 	case _sQueFazer == upper ('VisualizarXML')
 
 		// O caminho pode variar (arquivo baixado / recebido do U_ZZX / importado pelo usuario / ...)
 		_sCAMXML = alltrim (GetMv ("006_CAMXML"))
+
+		// Conforme o status, o arquivo pode ter sido movido para diferentes pastas (ainda nao descobri todas...)
+		do case
+		case zbe -> zbe_status == '999'  // pre-nota gerada
+			_sSubDir = 'processado\'
+		case zbe -> zbe_status == '008'  // nota (ou pre-nota) ja existe
+			_sSubDir = 'excluido\'
+		endcase
+
 		if upper (left (zbe -> zbe_file, len (_sCAMXML))) == upper (_sCAMXML)  // Deve estar alguma coisa assim "\XmlNfe\109_202207013207176_XXXX.XML"
-			_sArqX = '\\192.168.1.3\siga\protheus12\protheus_data' + _sCAMXML + 'processado\' + strtran (zbe -> zbe_file, _sCAMXML, '')
+			_sArqX = '\\192.168.1.3\siga\protheus12\protheus_data' + _sCAMXML + _sSubDir + strtran (upper (zbe -> zbe_file), upper (_sCAMXML), '')
 		else
 			_sArqX = alltrim (zbe -> zbe_file)
 		endif

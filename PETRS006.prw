@@ -23,6 +23,12 @@
 #Include "Protheus.ch"
 #Include "RwMake.ch"
 
+#XTranslate .HistStatus            => 1
+#XTranslate .HistXMLOriginal       => 2
+#XTranslate .HistObjetoXML         => 3
+#XTranslate .HistUltItemProcessado => 4
+#XTranslate .HistQtColunas         => 4
+
 // -------------------------------------------------------------------------------------------------
 User Function PETRS006()
 	local _oEvento  := NIL
@@ -42,17 +48,29 @@ User Function PETRS006()
 	local _sLoja    := ''
 	local _sChvNFe  := ''
 	local _nPos     := 0
+	static _aHistCham := {}
 
 //	U_Log2 ('debug', '[' + procname () + ']_aCabec na entrada:')
 //	U_Log2 ('debug', _aCabec)
 	U_Log2 ('debug', '[' + procname () + ']_aLinha na entrada:')
 	U_Log2 ('debug', _aLinha)
+	U_Log2 ('debug', '[' + procname () + ']_aHistCham na entrada:')
+	U_Log2 ('debug', _aHistCham)
 //	u_showarray (_aTRS006)
 
 	// Acrescenta campos especificos na array do cabecalho. Como este P.E. eh
 	// chamado uma vez para cada item da nota, preciso evitar duplicidade
 	if ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) == 'F1_VAFLAG'}) == 0
 		AADD (_aCabec, {"F1_VAFLAG", 'P', Nil})  // P='nota importada pelo painel XML'
+		U_Log2 ('debug', '[' + procname () + ']Estou na primeira chamada, pois o campo F1_VAFLAG ainda nao consta em _aCabec')
+
+		// Sendo uma variavel STATIC, preciso inicializa-la na primeira chamada.
+		U_Log2 ('debug', '[' + procname () + ']Inicializando historico')
+		_aHistCham = array (.HistQtColunas)
+		_aHistCham [.HistStatus]            = ''
+		_aHistCham [.HistXMLOriginal]       = ''
+		_aHistCham [.HistObjetoXML]         = NIL
+		_aHistCham [.HistUltItemProcessado] = 0
 	endif
 
 	// Extrai alguns dados das arrays recebidas.
@@ -106,7 +124,7 @@ User Function PETRS006()
 	// Quando o item nao controla rastro, o importador nao faz a leitura de
 	// todos os respectivos campos do XML (pois nao pretente usar). Mas nos
 	// queremos preencher sempre todos os campos no SD1.
-	_LeRastro (@_aLinha)
+	_LeRastro (@_aLinha, @_aHistCham)
 
 	// Grava evento temporario para rastreio de eventuais chaves perdidas
 	_oEvento := ClsEvent():new ()
@@ -128,8 +146,8 @@ User Function PETRS006()
 
 //	U_Log2 ('debug', '[' + procname () + ']_aCabec na saida:')
 //	U_Log2 ('debug', _aCabec)
-//	U_Log2 ('debug', '[' + procname () + ']_aLinha na saida:')
-//	U_Log2 ('debug', _aLinha)
+	U_Log2 ('debug', '[' + procname () + ']_aLinha na saida:')
+	U_Log2 ('debug', _aLinha)
 
 	// Deve sempre retornar cabecalho e itens.
 	_aRet := {_aCabec,_aLinha}
@@ -143,41 +161,26 @@ Return _aRet
 // Quando o item nao controla rastro, o importador nao faz a leitura de
 // todos os respectivos campos do XML (pois nao pretente usar). Mas nos
 // queremos preencher sempre todos os campos no SD1.
-static function	_LeRastro (_aLinha)
-	local _lTemLtFor := .T.
-	local _lTemDtFab := .T.
-	local _lTemDtVal := .T.
+static function	_LeRastro (_aLinha, _aHistCham)
 	local _sXMLOri   := ''
 	local _oXMLSEF   := NIL
 	local _nItXML    := 0
-//	local _nItRastro := 0
 	local _lContinua := .T.
-	local _aLotes := {}
-	local _nLote  := 0
+	local _aLotes    := {}
+	local _nLote     := 0
+	local _nPosLtFor := 0
+	local _nPosDtFab := 0
+	local _nPosDtVal := 0
 
-	if ascan (_aLinha, {|_aVal|, _aVal [1] == 'D1_LOTEFOR'}) == 0
-		_lTemLtFor = .F.
-		U_Log2 ('debug', '[' + procname () + ']Nao tem lote fornecedor em _aLinha')
-	endif
-	if ascan (_aLinha, {|_aVal|, _aVal [1] == 'D1_DFABRIC'}) == 0
-		_lTemDtFab = .F.
-		U_Log2 ('debug', '[' + procname () + ']Nao tem dt fabricacao em _aLinha')
-	endif
-	if ascan (_aLinha, {|_aVal|, _aVal [1] == 'D1_DTVALID'}) == 0
-		_lTemDtVal = .F.
-		U_Log2 ('debug', '[' + procname () + ']Nao tem dt validade em _aLinha')
-	endif
-
-	if _lTemLtFor .and. _lTemDtFab .and. _lTemDtVal
-		_lContinua = .F.
-	endif
-
-	if _lContinua
-		U_LogTrb ('ZBE', .f.)
+	// Se jah tenho dados da execucao anterior, eh por que estou processando
+	// o segundo/terceiro/... item do XML e nao preciso mair ler o XML do arquivo
+	if empty (_aHistCham [.HistStatus])
+//		U_LogTrb ('ZBE', .f.)
 		_sXMLOri = ''
 		if FT_FUSE (alltrim (zbe -> zbe_file)) < 0
 			u_help ("Nao foi possivel abrir o arquivo '" + alltrim (zbe -> zbe_file) + "' para extrair dados adicionais do XML.",, .t.)
 			_lContinua = .F.
+			_aHistCham [.HistStatus] = "Nao foi possivel encontrar/abrir o arquivo"
 		else
 			FT_FGOTOP()
 			While !FT_FEOF()
@@ -189,42 +192,97 @@ static function	_LeRastro (_aLinha)
 			if empty (_sXMLOri)
 				u_help ("Nao foi possivel ler o arquivo '" + alltrim (zbe -> zbe_file) + "' para extrair dados adicionais do XML.",, .t.)
 				_lContinua = .F.
+				_aHistCham [.HistStatus] = "Nao foi possivel ler o arquivo"
+			else
+				_aHistCham [.HistXMLOriginal] = _sXMLOri
+				_oXMLSEF := ClsXMLSEF ():New ()
+				_oXMLSEF:LeXML (_sXMLOri)
+				if len (_oXMLSEF:Erros) > 0
+					u_help ("Nao foi possivel interpretar o XML do arquivo '" + alltrim (zbe -> zbe_file) + "' para extrair dados adicionais do XML.", _oXMLSEF:Erros [1], .t.)
+					_lContinua = .F.
+					_aHistCham [.HistStatus] = "Nao foi possivel interpretar o XML do arquivo"
+				else
+					if valtype (_oXMLSEF:NFe) != 'O'
+						u_help ("Objeto retornado a partir da leitura do XML do arquivo '" + alltrim (zbe -> zbe_file) + "' nao representa uma 'NFe'. Nao conseguirei extrair dados adicionais.",, .t.)
+						_lContinua = .F.
+						_aHistCham [.HistStatus] = "Interpretacao do XML nao retornou em formato de objeto"
+					else
+						_aHistCham [.HistStatus] = 'OK'
+						_aHistCham [.HistObjetoXML] = _oXMLSEF:NFe
+					endif
+				endif
 			endif
 		endif
-	endif
-
-	if _lContinua
+	else
+		// Jah tenho prontos da execucao anterior.
+		_sXMLOri := _aHistCham [.HistXMLOriginal]
 		_oXMLSEF := ClsXMLSEF ():New ()
-		_oXMLSEF:LeXML (_sXMLOri)
-		if len (_oXMLSEF:Erros) > 0
-			u_help ("Nao foi possivel interpretar o XML do arquivo '" + alltrim (zbe -> zbe_file) + "' para extrair dados adicionais do XML.", _oXMLSEF:Erros [1], .t.)
-			_lContinua = .F.
-		else
-			if valtype (_oXMLSEF:NFe) != 'O'
-				u_help ("Objeto retornado a partir da leitura do XML do arquivo '" + alltrim (zbe -> zbe_file) + "' nao representa uma 'NFe'. Nao conseguirei extrair dados adicionais.",, .t.)
-				_lContinua = .F.
-			endif
-		endif
+		_oXMLSEF:NFe := _aHistCham [.HistObjetoXML]
 	endif
 
-	if _lContinua
-		// Loop em todos os itens (produtos) do XML
-		for _nItXML = 1 to len (_oXMLSEF:NFe:ItRastro)
-			U_Log2 ('debug', '[' + procname () + ']Verificando se o item ' + cvaltochar (_nItXML) + ' da nota tem lotes.')
-			U_Log2 ('debug', '[' + procname () + ']Para este item, constam ' + cvaltochar (len (_oXMLSEF:NFe:ItRastro [_nItXML])) + ' lotes no XML')
+	if _aHistCham [1] == 'OK'
 
-			// Posso ter mais de um lote no mesmo item (produto) da nota
-			_aLotes = _oXMLSEF:NFe:ItRastro [_nItXML]
-			U_Log2 ('debug', '[' + procname () + ']_aLotes do item:')
-			U_Log2 ('debug', _aLotes)
-			for _nLote = 1 to len (_aLotes)
-				U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' Lote :' + cvaltochar (_aLotes [_nLote][1]))
-				U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' Quant:' + cvaltochar (_aLotes [_nLote][2]))
-				U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' DtFab:' + cvaltochar (_aLotes [_nLote][3]))
-				U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' DtVal:' + cvaltochar (_aLotes [_nLote][4]))
-			next
+		// Nao sei qual dos itens estah sendo processado (o ponto de entrada
+		// eh chamado uma vez para cada item do XML, mas nao recebo identificacao
+		// nenhuma se trata-se do 1o, 2o, 3o,.... item). Por isso, vou incrementar
+		// um contador a cada execucao.
+		_nItXML = _aHistCham [.HistUltItemProcessado] + 1
+		U_Log2 ('debug', '[' + procname () + ']Assumindo que estou processando o item ' + cvaltochar (_nItXML) + ' do XML')
+
+		// Trabalho com array por que posso ter mais de um lote no mesmo item (produto) da nota
+		_aLotes = _oXMLSEF:NFe:ItRastro [_nItXML]
+		U_Log2 ('debug', '[' + procname () + ']Para este item, constam ' + cvaltochar (len (_aLotes)) + ' lotes no XML')
+//		U_Log2 ('debug', '[' + procname () + ']_aLotes do item:')
+		U_Log2 ('debug', _aLotes)
+		for _nLote = 1 to len (_aLotes)
+			U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' Lote :' + cvaltochar (_aLotes [_nLote][1]))
+			U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' Quant:' + cvaltochar (_aLotes [_nLote][2]))
+			U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' DtFab:' + cvaltochar (_aLotes [_nLote][3]))
+			U_Log2 ('debug', '[' + procname () + '] _nLote ' + cvaltochar (_nLote) + ' DtVal:' + cvaltochar (_aLotes [_nLote][4]))
 		next
+
+		// Se encontrei dados de rastreabilidade no XML, quero usar. Senao,
+		// quero deixar os campos vazios.
+		// Este trecho NAO TEM TRATAMENTO PARA XML COM MAIS DE UM LOTE DO
+		// MESMO ITEM NO XML. ESTOU PEGANDO SEMPRE DO PRIMEIRO LOTE. Isso por
+		// que o programa do importador jah teria que abrir mais linhas.
+		_nPosLtFor = ascan (_aLinha, {|_aVal| alltrim (_aVal [1]) == 'D1_LOTEFOR'})
+		if _nPosLtFor == 0
+			AADD(_aLinha, {"D1_LOTEFOR", ctod (''), Nil})
+			_nPosLtFor = len (_aLinha)
+		endif
+		if len (_aLotes) >= 1
+			_aLinha [_nPosLtFor, 2] = _aLotes [1][1]
+		else
+			_aLinha [_nPosLtFor, 2] = ''
+		endif
+
+		_nPosDtFab = ascan (_aLinha, {|_aVal| alltrim (_aVal [1]) == 'D1_DFABRIC'})
+		if _nPosDtFab == 0
+			AADD(_aLinha, {"D1_DFABRIC", ctod (''), Nil})
+			_nPosDtFab = len (_aLinha)
+		endif
+		if len (_aLotes) >= 1
+			_aLinha [_nPosDtFab, 2] = stod (strtran (_aLotes [1][3], '-', ''))
+		else
+			_aLinha [_nPosDtFab, 2] = ctod ('')
+		endif
+
+		_nPosDtVal = ascan (_aLinha, {|_aVal| alltrim (_aVal [1]) == 'D1_DTVALID'})
+		if _nPosDtVal == 0
+			U_Log2 ('debug', '[' + procname () + ']Ainda nao tem o campo D1_DTVALID na array')
+			AADD(_aLinha, {"D1_DTVALID", ctod (''), Nil})
+			_nPosDtVal = len (_aLinha)
+		endif
+		if len (_aLotes) >= 1
+			_aLinha [_nPosDtVal, 2] = stod (strtran (_aLotes [1][4], '-', ''))
+		else
+			_aLinha [_nPosDtVal, 2] = ctod ('')
+		endif
+
 	endif
+
+	_aHistCham [.HistUltItemProcessado] ++
 return
 
 

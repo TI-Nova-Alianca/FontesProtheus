@@ -58,6 +58,7 @@
 //                      - Criada opcao de apontar diversas etiquetas da OP atomaticamente (util para terceirizacoes)
 // 24/05/2023 - Robert  - Ajuste tratamento verificacao Alianca 24 na consulta de etiquetas nao guardadas.
 // 26/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 09/04/2024 - Robert  - Botao para inclusao manual de eventos.
 //
 
 #include "rwmake.ch"
@@ -255,12 +256,12 @@ static function _Tela (_lAltera)
 				aadd (_aBotAdic, {"", {|| U_AdmOPRe ()},     "Reabre OP"})
 			endif
 		endif
-		aadd (_aBotAdic, {"", {|| U_VA_SZNC ('OP',,,,, _sOP)}, "Even&tos"})
-		aadd (_aBotAdic, {"", {|| U_AdmOPEP ()},             "&Etq nao guardadas"})
+		aadd (_aBotAdic, {"", {|| U_VA_SZNC ('OP',,,,, _sOP)},    "Eventos - consultar"})
+		aadd (_aBotAdic, {"", {|| U_AdmOPIE (_sOP)},              "Eventos - incluir"})
+		aadd (_aBotAdic, {"", {|| U_AdmOPEP ()},                  "&Etq nao guardadas"})
 		aadd (_aBotAdic, {"", {|| MaViewSB2 (sc2 -> c2_produto)}, "Estoques"})
-		aadd (_aBotAdic, {"", {|| U_AdmOPDV (_sOP)},         "&Doc vinculados"})
-		aadd (_aBotAdic, {"", {|| U_DispComp (_sOP, .F.)},   "Di&spon.compon"})
-	// migrado para NaWeb	aadd (_aBotAdic, {"", {|| U_Kardex ()},              "&Kardex Alianca"})
+		aadd (_aBotAdic, {"", {|| U_AdmOPDV (_sOP)},              "&Doc vinculados"})
+		aadd (_aBotAdic, {"", {|| U_DispComp (_sOP, .F.)},        "Di&spon.compon"})
 		aadd (_aBotAdic, {"", {|| U_MonFullW (cFilAnt, sc2 -> c2_produto, _sOP)}, "&Integracao FullWMS"})
 		aadd (_aBotAdic, {"", {|| aHeader := aclone (_oGetD1:aHeader), aCols := aclone (_oGetD1:aCols), U_aColsXLS ()}, "Exp.planilha"})
 		aadd (_aBotAdic, {"", {|| MATA226 ()},              "Saldos atuais por endereco"})
@@ -572,6 +573,31 @@ user function AdmOPEt ()
  	U_SalvaAmb (_aAmbAnt)
  	U_ML_SRArea (_aAreaAnt)
 	U_AdmOPAt (.T.)
+return
+
+
+// --------------------------------------------------------------------------
+// Inclui evento manual
+user function AdmOPIE (_sOP)
+	local _sEvtManu := ''
+	local _oEvento  := NIL
+	local _aAreaAnt := U_ML_SRArea ()
+
+	_sEvtManu = U_ShowMemo (_sEvtManu, 'Descricao do evento ou comentario')
+	if ! empty (_sEvtManu)
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven    = 'SC2004'
+		_oEvento:Texto      = _sEvtManu
+		_oEvento:OP         = _sOP
+		_oEvento:Alias      = 'SC2'
+		sc2 -> (dbsetorder (1))
+		if sc2 -> (dbseek (xfilial ("SC2") + _sOP, .F.))
+			_oEvento:Recno      = sc2 -> (recno ())
+			_oEvento:Produto    = sc2 -> c2_produto
+		endif
+		_oEvento:Grava ()
+	endif
+ 	U_ML_SRArea (_aAreaAnt)
 return
 
 

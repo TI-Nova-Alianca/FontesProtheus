@@ -1,17 +1,18 @@
-//  Programa...: BatVerbas
-//  Autor......: Cláudia Lionço
-//  Data.......: 24/07/2020
-//  Descricao..: Realiza a gravação da tabela ZB0 - Acrescimo/desconto de Verbas e bonificações
+// Programa...: BatVerbas
+// Autor......: Cláudia Lionço
+// Data.......: 24/07/2020
+// Descricao..: Realiza a gravação da tabela ZB0 - Acrescimo/desconto de Verbas e bonificações
 //				 _nTipo: 	1 = Bat executado diariamente/ 
 //							2 = Processo executado via menu do Protheus
 // 
-//  #TipoDePrograma    #Batch
-//  #PalavasChave      #verbas #comissoes #vendedores
-//  #TabelasPrincipais #ZA4 #ZA5 #SA1 #SF2 #SD2 #ZB0
-//  #Modulos 		   #FIN 
+// #TipoDePrograma    #Batch
+// #PalavasChave      #verbas #comissoes #vendedores
+// #TabelasPrincipais #ZA4 #ZA5 #SA1 #SF2 #SD2 #ZB0
+// #Modulos 		   #FIN 
 //
-//  Historico de alteracoes:
-//  08/11/2023 - Claudia - Incluido parametro de vendedor na execução manual do processo. GLPI: 14475
+// Historico de alteracoes:
+// 08/11/2023 - Claudia - Incluido parametro de vendedor na execução manual do processo. GLPI: 14475
+// 09/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 // ------------------------------------------------------------------------------------------------------
 
@@ -95,7 +96,8 @@ User function BatVerbas(_nTipo, _sFilial)
 		_oSQL:_sQuery += " AND SE3.D_E_L_E_T_ = ''
 
 		_oSQL:Log ()
-		_aVend := _oSQL:Qry2Array ()
+//		_aVend := _oSQL:Qry2Array ()
+		_aVend := _oSQL:Qry2Array (.f., .f.)
 		
 		For _i := 1 to Len(_aVend)
 			_aDados := U_VA_COMVERB(_dDtaIni, _dDtaFin, _aVend[_i,1], 3, _sFilial)

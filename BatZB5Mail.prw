@@ -47,7 +47,8 @@ User Function BatZB5Mail()
     _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
     _oSQL:_sQuery += " AND M0_CODIGO = '01'"
     _oSQL:_sQuery += " AND M0_CODFIL <> '01'"
-    _aFilial := aclone (_oSQL:Qry2Array ()) 
+//    _aFilial := aclone (_oSQL:Qry2Array ()) 
+    _aFilial := aclone (_oSQL:Qry2Array (.f., .f.))
 
     For _x:=1 to Len(_aFilial)
         _n01Vlr  := 0
@@ -67,7 +68,8 @@ User Function BatZB5Mail()
         _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
         _oSQL:_sQuery += " GROUP BY CT2_FILIAL, CT2_HIST"
         u_log (_oSQL:_sQuery)
-        _aCT201 := aclone (_oSQL:Qry2Array ()) 
+//        _aCT201 := aclone (_oSQL:Qry2Array ()) 
+        _aCT201 := aclone (_oSQL:Qry2Array (.f., .f.))
 
         // Busca registro da filial
         _oSQL:= ClsSQL ():New ()
@@ -83,7 +85,8 @@ User Function BatZB5Mail()
         _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
         _oSQL:_sQuery += " GROUP BY CT2_FILIAL, CT2_HIST"
         u_log (_oSQL:_sQuery)
-        _aCT2Fil := aclone (_oSQL:Qry2Array ()) 
+//        _aCT2Fil := aclone (_oSQL:Qry2Array ())
+        _aCT2Fil := aclone (_oSQL:Qry2Array (.f., .f.))
 
         If Len(_aCT201) > 0
             _n01Vlr  := _aCT201[1,3]
