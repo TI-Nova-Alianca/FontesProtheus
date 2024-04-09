@@ -83,17 +83,10 @@ User Function BatZA4()
 
         _oSQL := ClsSQL():New ()
         _oSQL:_sQuery := ""
-        _oSQL:_sQuery += " SELECT * FROM ZA4010 WHERE D_E_L_E_T_='' AND ZA4_NUM='" + _sZA4Num + "'"
-        _aOK := aclone(_oSQL:Qry2Array())
+        _oSQL:_sQuery += " SELECT count(*) FROM ZA4010 WHERE D_E_L_E_T_='' AND ZA4_NUM='" + _sZA4Num + "'"
+        _aOK := aclone(_oSQL:Qry2Array(.f.,.f.))
 
         if len(_aOK) > 0
-            _oEvento := ClsEvent():New ()
-            _oEvento:Alias     = "ZA4"
-            _oEvento:Texto     = "Verba não gerada devido a numeração. Cod.Protheus:"+ _sZA4Num +" Cod.Merc.:"+_sNumMerc
-            _oEvento:CodEven   = "ZA4001"
-            _oEvento:Produto   = _sNumMerc
-            _oEvento:Grava()
-        else
             RecLock ("ZA4",.T.)
                 ZA4 -> ZA4_NUM      := _sZA4Num       
                 ZA4 -> ZA4_CLI      := _aVerbas[_x, 2]		
@@ -156,6 +149,13 @@ User Function BatZA4()
                 _oAviso:Grava ()
                                                                                                                       
             endif
+        else
+            _oEvento := ClsEvent():New ()
+            _oEvento:Alias     = "ZA4"
+            _oEvento:Texto     = "Verba não gerada devido a numeração. Cod.Protheus:"+ _sZA4Num +" Cod.Merc.:"+_sNumMerc
+            _oEvento:CodEven   = "ZA4001"
+            _oEvento:Produto   = _sNumMerc
+            _oEvento:Grava()
         endif
         do while __lSX8
             ConfirmSX8 ()
