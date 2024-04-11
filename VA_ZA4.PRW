@@ -38,6 +38,7 @@
 //  03/12/2021 - Claudia - BLoqueada a rotina para incluir verbas nas filiais. GLPI:11306
 //  27/01/2022 - Claudia - Incluida validação de usuário para excluir verbas e retirada 
 //                         rotina de alteração. GLPI: 11537
+//  11/04/2024 - Claudia - Incluido status no estorno de verba. GLPI: 15225
 //
 //
 // ------------------------------------------------------------------------------------------------------------
@@ -285,6 +286,8 @@ User Function ZA4_EL()
 			za4 -> za4_dlib   = ctod("")
 			za4 -> za4_hl_cod = ''
 			za4 -> za4_hl_obs = ''
+			za4 -> za4_status = 'A'
+
         MsUnLock()
 	    
 		// manda email para o financeiro após a liberação da verba pelo comercial
