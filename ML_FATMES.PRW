@@ -27,8 +27,9 @@
 // 03/02/2023 - Claudia - Inclusao de coluna de faturamento. GLPI: 12857
 // 08/02/2023 - Claudia - Tratamento para icms st de guias MG. GLPI: 13161
 // 29/02/2024 - Claudia - Voltada a opção de faturamento. GLPI: 15010
+// 11/04/2024 - Claudia - Incluido tipo A-venda de sucatas na impressão do relatório. GLPI: 15203
 //
-// ----------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 #IFNDEF WINDOWS
 	#DEFINE PSAY SAY
@@ -205,6 +206,7 @@ Static Function RptDetail()
     _aTotDev    = {0,0,0,0,0,0}
     _aTotBonif  = {0,0,0,0,0,0}
 	_aTotOutras = {0,0,0,0,0,0}
+	_aTotSucata = {0,0,0,0,0,0}
 	_aTotErro   = {0,0,0,0,0,0}
 	
 	_wdata = ''
@@ -263,6 +265,8 @@ Static Function RptDetail()
 					w_tipo= 'Bonificação'
 				Case (_sAliasQ) -> MARGEM = '9' 
 					w_tipo= 'Outras saidas'
+				Case (_sAliasQ) -> MARGEM = 'A' 
+					w_tipo= 'Venda de sucata'
 				Otherwise 
 					w_tipo= 'Erro'
 			EndCase
@@ -306,6 +310,13 @@ Static Function RptDetail()
 				_aTotOutras[4] += (_sAliasQ) -> VLR_DESCONTO
 				_aTotOutras[5] += (_sAliasQ) -> VLR_BRT  
 				//_aTotOutras[6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
+			Case (_sAliasQ) -> MARGEM = 'A'
+				_aTotSucata[1] += (_sAliasQ) -> VLR_PROD
+				_aTotSucata[2] += (_sAliasQ) -> VLR_IPI
+				_aTotSucata[3] += (_sAliasQ) -> VLR_ST
+				_aTotSucata[4] += (_sAliasQ) -> VLR_DESCONTO
+				_aTotSucata[5] += (_sAliasQ) -> VLR_BRT  
+
 			Otherwise 
 				_aTotErro[1] += (_sAliasQ) -> VLR_PROD
 				_aTotErro[2] += (_sAliasQ) -> VLR_IPI
@@ -359,6 +370,15 @@ Static Function RptDetail()
 		@ li, 143 PSAY _aTotOutras[3] Picture "@E 99,999,999.99"
 		@ li, 160 PSAY _aTotOutras[4] Picture "@E 99,999,999.99"
 		@ li, 173 PSAY _aTotOutras[5] Picture "@E 99,999,999,999.99"
+		//@ li, 190 PSAY _aTotOutras[6] Picture "@E 99,999,999,999.99"
+		li ++
+		// imprime total de bonificacoes
+		@ li, 005 PSAY "A - VENDA SUCATAS:"
+		@ li, 108 PSAY _aTotSucata[1] Picture "@E 9,999,999,999.99"
+		@ li, 129 PSAY _aTotSucata[2] Picture "@E 99,999,999.99"
+		@ li, 143 PSAY _aTotSucata[3] Picture "@E 99,999,999.99"
+		@ li, 160 PSAY _aTotSucata[4] Picture "@E 99,999,999.99"
+		@ li, 173 PSAY _aTotSucata[5] Picture "@E 99,999,999,999.99"
 		//@ li, 190 PSAY _aTotOutras[6] Picture "@E 99,999,999,999.99"
 		li ++
 		// imprime total de ERROS
