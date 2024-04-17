@@ -23,7 +23,7 @@
 // 13/01/2020 - Claudia - Inclusão da função <ArqTrb> (exigencia release 12.1.25 do Protheus)
 // 07/12/2020 - Claudia - Inclusão de botao para visualização de observações de clientes. GLPI: 8971
 // 03/05/2023 - Claudia - Alterado o grupo de 055 para 149. GLPI: 13519
-// 17/04/2023 - Sandra - Inclusão do tipo A -  F4_MARGEM GLPI: 15282
+// 17/04/2023 - Sandra  - Inclusão do tipo A -  F4_MARGEM GLPI: 15282
 //
 // ----------------------------------------------------------------------------------------------
 #include 'totvs.ch'
