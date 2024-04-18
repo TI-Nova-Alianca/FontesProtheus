@@ -15,6 +15,7 @@
 // 22/04/2021 - Robert - Criado tratamento para safra 2020 (GLPI 9891).
 //    05/2023 - Robert - Tratamentos para complemento 2023 (maio) - GLPI 13532.
 // 16/06/2023 - Robert - Gravacao campo zz9_TpForn - GLPI 13699
+// 18/04/2014 - Robert - Criado tratamento para ajuste tabela 2024 (GLPI 15287)
 //
 
 // --------------------------------------------------------------------------
@@ -30,7 +31,7 @@ User Function VA_GNF3 (_lAuto)
 	U_HELP ('LEMBRAR DE PASSAR A UVA ISABEL PRECOCE PARA A COLUNA DA ISABEL!!!',, .T.)
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('045', __cUserID, .T.)
 		return
 	endif
 
@@ -1300,7 +1301,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {03, "Produtor final                ", "C", 6,  0,  "",   "SA2", {},             "Codigo do produtor (fornecedor) final para geracao das notas."})
 	aadd (_aRegsPerg, {04, "Loja produtor final           ", "C", 2,  0,  "",   "   ", {},             "Loja do produtor (fornecedor) final para geracao das notas."})
 	aadd (_aRegsPerg, {05, "Safra referencia              ", "C", 4,  0,  "",   "   ", {},             "Safra (ano) para a qual serao geradas as notas de compra."})
-	aadd (_aRegsPerg, {06, "Gerar em qual parcela?        ", "C", 1,  0,  "",   "   ", {},             "Numero da parcela de pagto. onde os complementos serao gerados."})
+	aadd (_aRegsPerg, {06, "Gerar em qual sequencia?      ", "C", 1,  0,  "",   "   ", {},             "Numero da sequencia (simulacao)"})
 	aadd (_aRegsPerg, {07, "DCO inicial                   ", "C", 13, 0,  "",   "ZZ8", {},             ""})
 	aadd (_aRegsPerg, {08, "DCO final                     ", "C", 13, 0,  "",   "ZZ8", {},             ""})
 	aadd (_aRegsPerg, {09, "Produto inicial               ", "C", 15, 0,  "",   "SB1", {},             ""})

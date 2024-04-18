@@ -116,6 +116,13 @@ Return
 
 
 // --------------------------------------------------------------------------
+// 'Tudo OK' do FormBatch.
+Static Function _TudoOk ()
+	local _lRet := .T.
+return _lRet
+
+
+// --------------------------------------------------------------------------
 Static Function _esxest01a ()
 	local _nSaldo    := 0
 	local _sChaveSD3 := "U_ESXEST01"
