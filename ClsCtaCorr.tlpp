@@ -107,6 +107,7 @@
 // 08/01/2024 - Robert - Melhorada query que valida a baixa original em caso de transf. entre filiais TM=13.
 // 25/02/2024 - Robert - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 09/04/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 16/04/2024 - Robert - Validacoes para gravacao de distribuicao de perdas (GLPI 15192)
 //
 
 // ------------------------------------------------------------------------------------
@@ -1609,6 +1610,14 @@ METHOD PodeIncl () Class ClsCtaCorr
 		if empty (::Doc)     ; _Super:SomaMsg ("Documento deve ser informado.")           ; _lContinua = .F. ; endif
 	endif
 
+	if _lContinua
+		zx5 -> (dbsetorder (2))  // ZX5_FILIAL, ZX5_TABELA, ZX5_10COD, R_E_C_N_O_, D_E_L_E_T_
+		if ! zx5 -> (dbseek (xfilial ("ZX5") + '10' + ::TM, .F.))
+			_Super:SomaMsg ("Tipo de movimento '" + ::TM + "' nao cadatrado!")
+			_lContinua = .F.
+		endif
+	endif
+
 	_oAssoc = ClsAssoc():New(::Assoc, ::Loja)
 	if valtype (_oAssoc) != "O"
 		_Super:SomaMsg ("Nao foi possivel instanciar classe ClsAssoc.")
@@ -1915,8 +1924,8 @@ METHOD PodeIncl () Class ClsCtaCorr
 		_lContinua = .F.
 	endif
 
-	// Distribuicao de sobras: somente uma vez por ano.
-	if _lContinua .and. ::TM == '19'
+	// Distribuicao de sobras e perdas: somente uma vez por ano.
+	if _lContinua .and. ::TM $ '19/41'  // GLPI 15192
 		if ! _oAssoc:EhSocio (::DtMovto) .and. empty (_oAssoc:DtSaida (::DtMovto))  // Ex-associado
 			_Super:SomaMsg ("Nao consta como associado (nem ex associado) nesta data.")
 			_lContinua = .F.
@@ -1937,10 +1946,10 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_sQuery +=   " AND ZI_ASSOC   = '" + ::Assoc + "'"
 			_sQUery +=   " AND ZI_LOJASSO = '" + ::Loja + "'"
 			_sQUery +=   " AND ZI_TM      = '" + ::TM + "'"
-			_sQUery +=   " AND ZI_MESREF  = '" + ::MesRef + "%'"
+			_sQUery +=   " AND ZI_MESREF  like '" + ::MesRef + "%'"
 			u_log (_squery)
 			if U_RetSQL (_sQuery) > 0
-				_Super:SomaMsg ("Associado ja tem lancamento de integralizacao de sobras neste ano.")
+				_Super:SomaMsg ("Associado ja tem lancamento de sobras/perdas neste ano.")
 				_lContinua = .F.
 			endif
 		endif
@@ -2002,7 +2011,8 @@ METHOD PodeIncl () Class ClsCtaCorr
 			endif
 		else
 	//		if ! ::TM $ '11/08/13/19'
-			if ! ::TM $ '11/08/13/19/39/40'
+	//		if ! ::TM $ '11/08/13/19/39/40'
+			if ! ::TM $ '11/08/13/19/39/40/41'
 				if ::TM == '16'
 					if ! u_msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada. Confirma a inclusao deste registro?")
 						_Super:SomaMsg ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada.")
