@@ -52,6 +52,7 @@
 // 25/01/2023 - Robert  - Passa a usar classe ClsCarSaf para atualizar tabela ZZA.
 // 24/01/2024 - Robert  - Criada opcao de exportar historico de pesos lidos da balanca.
 // 10/02/2024 - Robert  - Varieval _lLeBrix desabilitada (assume default .T.)
+// 12/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 //
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -848,7 +849,7 @@ static function _SelCarg ()
 		_oSQL:_sQuery +=    " AND SC9.C9_FILIAL  = '" + xfilial ("SC9") + "'"
 		_oSQL:_sQuery +=    " AND SC9.C9_CARGA IN (" + _sCargas + ")"
 		//_oSQL:Log ()
-		m->zzt_pesonf += _oSQL:RetQry ()
+		m->zzt_pesonf += _oSQL:RetQry (1, .f.)
 	endif
 	//
 	// Busca pelo SZO
@@ -879,7 +880,7 @@ static function _SelCarg ()
 		_oSQL:_sQuery +=    " AND SZO.ZO_FILIAL  = '" + xfilial ("SZO") + "'"
 		_oSQL:_sQuery +=    " AND SZO.ZO_NUMERO IN (" + _sCargas + ")"
 		//_oSQL:Log ()
-		m->zzt_pesonf += _oSQL:RetQry ()
+		m->zzt_pesonf += _oSQL:RetQry (1, .f.)
 	endif
 	RunTrigger (1, nil, nil,, "ZZT_PESONF")  // Executa gatilhos do campo.
 
@@ -976,7 +977,7 @@ User Function VA_ZZTCON()
             endif
         endif
         u_log (_oSQL:_squery)
-        _aDados := aclone (_oSQL:Qry2Array ())
+        _aDados := aclone (_oSQL:Qry2Array (.t., .f.))
 
         aadd (_aCols, {01, "Filial"  	   	    ,  10,  "@!"})
         aadd (_aCols, {02, "Tipo"       	    ,  15,  "@!"})

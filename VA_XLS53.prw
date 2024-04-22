@@ -71,10 +71,10 @@ Static Function _Gera()
 	_oSQL:_sQuery += " SELECT SD3.D3_FILIAL AS FILIAL"
 	_oSQL:_sQuery +=       ", SUBSTRING (SD3.D3_EMISSAO, 1, 6) AS ANO_MES"
 	_oSQL:_sQuery +=       ", SD3.D3_TM AS TIPO_MOVTO"
-	_oSQL:_sQuery +=       ", CASE SD3.D3_TM WHEN '300' THEN SD3.D3_FILIAL + '1101'"
-	_oSQL:_sQuery +=                       " WHEN '301' THEN SD3.D3_FILIAL + '1102'"
-	_oSQL:_sQuery +=                       " WHEN '302' THEN SD3.D3_FILIAL + '1201'"
-	_oSQL:_sQuery +=                       " WHEN '303' THEN SD3.D3_FILIAL + '1202'"
+	_oSQL:_sQuery +=       ", CASE SD3.D3_TM WHEN '300' THEN SD3.D3_FILIAL + '1101'"  // Recebimento uva
+	_oSQL:_sQuery +=                       " WHEN '301' THEN SD3.D3_FILIAL + '1102'"  // Processamento uva
+	_oSQL:_sQuery +=                       " WHEN '302' THEN SD3.D3_FILIAL + '1201'"  // Armazenamento asseptico
+	_oSQL:_sQuery +=                       " WHEN '303' THEN SD3.D3_FILIAL + '1202'"  // Armazenamento normal
 	_oSQL:_sQuery +=                       " WHEN '304' THEN 'PROVISAO UVA'"
 	_oSQL:_sQuery +=                       " WHEN '413' THEN 'COMPLEMENTO UVA'"
 	_oSQL:_sQuery +=                       " WHEN '414' THEN 'FUNRURAL'"
@@ -106,6 +106,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=       " AND CTT.CTT_CUSTO  = C.CC)"
 	_oSQL:_sQuery += " ORDER BY FILIAL, ANO_MES, CC, TIPO_PROD_DESTINO, PRODUTO_DESTINO"
 	_oSQL:Log ()
+	_oSQL:ArqDestXLS :=  "VA_XLS53"
 	_oSQL:Qry2Xls (.F., .F., .F.)
 return
 
