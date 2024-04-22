@@ -20,7 +20,9 @@
 //                     - Melhorias na geracao do HTML
 // 14/02/2024 - Robert - Criado atributo :MascaraPrecos (campo za_QtDecPr)
 // 05/04/2024 - Robert - Imprimir campo zx5_13Crit na exportacao para HTML (eh apenas informativo)
+// 22/04/2024 - Daiana - Incluidas colunas fixas.
 //
+
 
 #Include "Protheus.ch"
 
@@ -739,363 +741,751 @@ METHOD DistrAgios (_aGraus as array, _nGrauBase as numeric) Class ClsTbUva
 	enddo
 return _lContinua
 
-
 // --------------------------------------------------------------------------
 // Gera tabela em formato HTML
 METHOD GeraHTM () Class ClsTbUva
-	local _sHTM       := ''
-	local _nGrupo     := 0
-	local _nSubgrup   := 0
-	local _aTitGrup   := {}
-	local _aVarGrau   := {}
-	local _nVarGrau   := 0
-	local _aLinha     := {}
-	local _lAdicionou := .F.
-	local _sTag       := ''
-	local _sTagICod   := ''
-	local _sTagFCod   := ''
-	local _nGrau      := 0
-	local _sToolTip   := ''
-	local _oGrauDeGrupo := NIL
-	local _oVariedade := NIL
-	local _lTemDescSubgrupo := .F.
-	local _nQtColHora := 0
+    local _sHTM       := ''
+    local _nGrupo     := 0
+    local _nSubgrup   := 0
+    local _aTitGrup   := {}
+    local _aVarGrau   := {}
+    local _nVarGrau   := 0
+    local _aLinha     := {}
+    local _lAdicionou := .F.
+    local _sTag       := ''
+    local _sTagICod   := ''
+    local _sTagFCod   := ''
+    local _nGrau      := 0
+    local _sToolTip   := ''
+    local _oGrauDeGrupo := NIL
+    local _oVariedade := NIL
+    local _lTemDescSubgrupo := .F.
+    local _nQtColHora := 0
 
-	// Como a quantidade de celulas mescladas eh muito grande, achei melhor
-	// preparar arrays com os dados (jah eh bastante complicado) e, num
-	// passo seguinte, gerar HTML.
+    // Como a quantidade de celulas mescladas eh muito grande, achei melhor
+    // preparar arrays com os dados (jah eh bastante complicado) e, num
+    // passo seguinte, gerar HTML.
 
-	// Passo 1: preparar arrays de dados para o HTML
-	if empty (::CodTabela)
-		_Super:SomaMsg ("Codigo de tabela nao definido. Impossivel gerar HTML.")
-	else
+    // Passo 1: preparar arrays de dados para o HTML
+    if empty (::CodTabela)
+        _Super:SomaMsg ("Codigo de tabela nao definido. Impossivel gerar HTML.")
+    else
 
-		// Prepara titulos dos grupos
-		_aTitGrup = {}
-		aadd (_aTitGrup, '<th> </th>')  // Esta coluna vai ser, posteriormente, usada para o grau.
-		for _nGrupo = 1 to len (::Grupos)
-			aadd (_aTitGrup, '<th class=' + iif (_nGrupo / 2 == int (_nGrupo / 2), '"TituloGrupoClaro"', '"TituloGrupoEscuro"') + ;
-			                 ' colspan=' + cvaltochar (len (::Grupos [_nGrupo]['ListaDeSubgrupos'])) + ' align=center>' + ;
-			                 'Gr.' + alltrim (::Grupos [_nGrupo]['Codigo']) + ;
-			                 ' ' + alltrim (::Grupos [_nGrupo]['Descricao']) + ;
-			                 '</th>')
-		next
+        // Prepara titulos dos grupos
+        _aTitGrup = {}
+        aadd (_aTitGrup, '<th> </th>')  // Esta coluna vai ser, posteriormente, usada para o grau.
+        for _nGrupo = 1 to len (::Grupos)
+            aadd (_aTitGrup, '<th class=' + iif (_nGrupo / 2 == int (_nGrupo / 2), '"TituloGrupoClaro"', '"TituloGrupoEscuro"') + ;
+                             ' colspan=' + cvaltochar (len (::Grupos [_nGrupo]['ListaDeSubgrupos'])) + ' align=center>' + ;
+                             'Gr.' + alltrim (::Grupos [_nGrupo]['Codigo']) + ;
+                             ' ' + alltrim (::Grupos [_nGrupo]['Descricao']) + ;
+                             '</th>')
+        next
 
-		_aVarGrau = {}
+        _aVarGrau = {}
 
-		// Prepara uma linha com titulos dos subgrupos. Mas, antes, verifica se
-		// algum deles tem dados a mostrar, de movo a evitar gerar uma linha
-		// vazia no HTML.
-		_lTemDescSubgrupo = .F.
-		for _nGrupo = 1 to len (::Grupos)
-			for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
-				if ! empty (::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['DescSubgrupo'])
-					_lTemDescSubgrupo = .T.
-					exit
-				endif
-			next
-		next
-		if _lTemDescSubgrupo
-			//_aLinha = {'<th class="TituloGrupoClaro">Grau</th>'}
-			_aLinha = {'<th </th>'}
-			for _nGrupo = 1 to len (::Grupos)
+        // Prepara uma linha com titulos dos subgrupos. Mas, antes, verifica se
+        // algum deles tem dados a mostrar, de movo a evitar gerar uma linha
+        // vazia no HTML.
+        _lTemDescSubgrupo = .F.
+        for _nGrupo = 1 to len (::Grupos)
+            for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
+                if ! empty (::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['DescSubgrupo'])
+                    _lTemDescSubgrupo = .T.
+                    exit
+                endif
+            next
+        next
+        if _lTemDescSubgrupo
+            //_aLinha = {'<th class="TituloGrupoClaro">Grau</th>'}
+            _aLinha = {'<th </th>'}
+            for _nGrupo = 1 to len (::Grupos)
 
-				// Para facilitar a visualizacao, a cada troca de grupo, gero
-				// as colunas com fundo escuro ou com fundo claro.
-				_sTag = '<td class="TituloGrupo' + iif (_IsInt (_nGrupo/2), 'Claro', 'Escuro') + '">'
+                // Para facilitar a visualizacao, a cada troca de grupo, gero
+                // as colunas com fundo escuro ou com fundo claro.
+                _sTag = '<td class="TituloGrupo' + iif (_IsInt (_nGrupo/2), 'Claro', 'Escuro') + '">'
 
-				for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
-					aadd (_aLinha, _sTag + ::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['DescSubgrupo'] + '</th>')
-				next
-			next
-			aadd (_aVarGrau, aclone (_aLinha))
-		endif
-
-
-		// Para adicionar as linhas com as variedades, optei por fazer um loop
-		// com WHILE para rodar ateh o momento em que nao adicionar mais nenhuma
-		// linha (cada grupo tem uma quantidade diferente de variedades).
-		_nVarGrau = 1
-		do while .t.
-			_aLinha = {'<td> </td>'}  // Primeira coluna vai ser usada pelo grau
-			_lAdicionou = .F.
-
-			// Para cada grupo, verifica se ainda tem variedades a adicionar
-			for _nGrupo = 1 to len (::Grupos)
-
-				// Para facilitar a visualizacao, a cada troca de grupo, gero
-				// as colunas com fundo escuro ou com fundo claro.
-				if _IsInt (_nGrupo / 2)
-					_sTag = '<td class="ColunaClaraDescri">'
-
-					// Quero mostrar o codigo do item com uma fonte um pouco menor.
-					_sTagICod = '<span class="ColunaClaraCodigo">('
-					_sTagFCod = ')</span>'
-				else
-					_sTag = '<td class="ColunaEscuraDescri">'
-
-					// Quero mostrar o codigo do item com uma fonte um pouco menor.
-					_sTagICod = '<span class="ColunaEscuraCodigo">('
-					_sTagFCod = ')</span>'
-				endif
-
-				// Se ainda tiver variedades neste grupo para serem adicionadas
-				// ao HTM, entao devo gerar mais uma linha.
-				if _nVarGrau <= len (::Grupos [_nGrupo]['ListaDeVariedades'])
-					_oVariedade = ::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]
-
-					// Variedade base sempre vai existir, independente de tipo/conducao
-					aadd (_aLinha, _TagVariedade (_oVariedade, 'Base', _sTag, _sTagICod, _sTagFCod))
-
-					// Estas colunas existem somente para uvas comuns
-					if ::TipoUva == 'C'
-						aadd (_aLinha, _TagVariedade (_oVariedade, 'Bordadura', _sTag, _sTagICod, _sTagFCod))
-						aadd (_aLinha, _TagVariedade (_oVariedade, 'Conversao', _sTag, _sTagICod, _sTagFCod))
-						aadd (_aLinha, _TagVariedade (_oVariedade, 'Organica', _sTag, _sTagICod, _sTagFCod))
-					endif
-
-					_lAdicionou = .T.
-				else
-
-					// Preciso colocar um espaco nestas posicoes para gerar uma celula vazia no HTML depois.
-					for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
-						aadd (_aLinha, _sTag + ' </td>')
-					next
-				endif
-			next
-
-			// Se nao adicionou mais nenhuma linha na array, eh por que terminou
-			// de ler todas as variedades de todos os grupos. Posso sair do loop.
-			if ! _lAdicionou
-				exit
-			endif
-			aadd (_aVarGrau, aclone (_aLinha))
-			_nVarGrau ++
-		enddo
+                for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
+                    aadd (_aLinha, _sTag + ::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['DescSubgrupo'] + '</th>')
+                next
+            next
+            aadd (_aVarGrau, aclone (_aLinha))
+        endif
 
 
-		// Prepara uma linha com dados adicionais dos subgrupos.
-		// Geralmente sao os % de organicas (uvas comuns) ou de
-		// acrescimos cfe.classificacao (uvas finas).
-//		_aLinha = {'<td> </td>'}  // Primeira coluna vai ser usada pelo grau
-		_aLinha = {'<th class="TituloGrupoClaro">Grau</th>'}
-		for _nGrupo = 1 to len (::Grupos)
+        // Para adicionar as linhas com as variedades, optei por fazer um loop
+        // com WHILE para rodar ateh o momento em que nao adicionar mais nenhuma
+        // linha (cada grupo tem uma quantidade diferente de variedades).
+        _nVarGrau = 1
+        do while .t.
+            _aLinha = {'<td> </td>'}  // Primeira coluna vai ser usada pelo grau
+            _lAdicionou = .F.
 
-			// Para facilitar a visualizacao, a cada troca de grupo, gero
-			// as colunas com fundo escuro ou com fundo claro.
-			_sTag = '<td class="Coluna' + iif (_IsInt (_nGrupo/2), 'Clara', 'Escura') + 'Descri">'
+            // Para cada grupo, verifica se ainda tem variedades a adicionar
+            for _nGrupo = 1 to len (::Grupos)
 
-			for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
-				aadd (_aLinha, _sTag + ::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['ObsSubgrupo'] + '</td>')
-			next
-		next
-		aadd (_aVarGrau, aclone (_aLinha))
+                // Para facilitar a visualizacao, a cada troca de grupo, gero
+                // as colunas com fundo escuro ou com fundo claro.
+                if _IsInt (_nGrupo / 2)
+                    _sTag = '<td class="ColunaClaraDescri">'
 
+                    // Quero mostrar o codigo do item com uma fonte um pouco menor.
+                    _sTagICod = '<span class="ColunaClaraCodigo">('
+                    _sTagFCod = ')</span>'
+                else
+                    _sTag = '<td class="ColunaEscuraDescri">'
 
-		// Adiciona graus e respectivos precos. Como preciso montar uma matriz
-		// contendo todas as colunas (de todos os grupos), preciso passar por
-		// todos os graus e, dentro desses, cada grupo.
-		for _nGrau = 1 to len (::Grupos [1]['ListaDeGraus'])  // Pode ser o primeiro grupo, pois todos devem ser iguais
-			_aLinha = {}
-			for _nGrupo = 1 to len (::Grupos)
-				_oGrauDeGrupo = ::Grupos [_nGrupo]['ListaDeGraus'][_nGrau]
+                    // Quero mostrar o codigo do item com uma fonte um pouco menor.
+                    _sTagICod = '<span class="ColunaEscuraCodigo">('
+                    _sTagFCod = ')</span>'
+                endif
 
-				// Define tags de linha diferentes para graus inteiros e para decimais
-				if _IsInt (_oGrauDeGrupo ['Grau'])
-					_sTagLinha = 'th'  // Caracter em negrito
-				else
-					_sTagLinha = 'td'  // Caracter normal
-				endif
+                // Se ainda tiver variedades neste grupo para serem adicionadas
+                // ao HTM, entao devo gerar mais uma linha.
+                if _nVarGrau <= len (::Grupos [_nGrupo]['ListaDeVariedades'])
+                    _oVariedade = ::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]
 
-				if _nGrupo == 1
-					aadd (_aLinha, '<' + _sTagLinha + ' class="ColunaClaraDescri">' + transform (_oGrauDeGrupo ['Grau'], iif (_IsInt (_oGrauDeGrupo ['Grau']), "@E 99", "@E 99.9")) + '</' + _sTagLinha + '>')
-				endif
+                    // Variedade base sempre vai existir, independente de tipo/conducao
+                    aadd (_aLinha, _TagVariedade (_oVariedade, 'Base', _sTag, _sTagICod, _sTagFCod))
 
-				// Para facilitar a visualizacao, a cada troca de grupo, gero
-				// as colunas com fundo escuro ou com fundo claro.
-				if _oGrauDeGrupo ['Grau'] == ::Grupos [_nGrupo]['GrauBase']
-					_sTag = '<th class="PrecoGrauBase">'
-				else
-					if _nGrupo / 2 == int (_nGrupo / 2)
-						_sTag = '<th class="ColunaClaraPrecos">'
-					else
-						_sTag = '<th class="ColunaEscuraPrecos">'
-					endif
-				endif
+                    // Estas colunas existem somente para uvas comuns
+                    if ::TipoUva == 'C'
+                        aadd (_aLinha, _TagVariedade (_oVariedade, 'Bordadura', _sTag, _sTagICod, _sTagFCod))
+                        aadd (_aLinha, _TagVariedade (_oVariedade, 'Conversao', _sTag, _sTagICod, _sTagFCod))
+                        aadd (_aLinha, _TagVariedade (_oVariedade, 'Organica', _sTag, _sTagICod, _sTagFCod))
+                    endif
 
-				// Define tag para gerar 'tooltip'
-				_sToolTip := '<abbr title="'
-				_sToolTip += 'Agio a partir do grau base: ' + alltrim (transform (_oGrauDeGrupo ['AgioSobreGrauBase'], "@E 9999.99")) + '%'
-				_sToolTip += '&#013;' + alltrim (_oGrauDeGrupo ['ObsGrauDeGrupo'])
-				_sToolTip += '">'
-			//	U_Log2 ('debug', '[' + procname () + ']' + _sToolTip)
+                    _lAdicionou = .T.
+                else
 
-				// Como sempre existe codigo base de cada variedade, este sempre deverah ter preco
-				aadd (_aLinha, _sTag + _sToolTip + transform (_oGrauDeGrupo ['PrecoCodBase'], ::MascaraPrecos) + '</th>')
+                    // Preciso colocar um espaco nestas posicoes para gerar uma celula vazia no HTML depois.
+                    for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
+                        aadd (_aLinha, _sTag + ' </td>')
+                    next
+                endif
+            next
 
-				// Estas colunas existem somente para uvas comuns
-				if ::TipoUva == 'C'
-					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaBordadura'],   ::MascaraPrecos) + '</th>')
-					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'], ::MascaraPrecos) + '</th>')
-					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaOrganica'],    ::MascaraPrecos) + '</th>')
-				endif
-
-			next
-			aadd (_aVarGrau, aclone (_aLinha))
-		next
-	//	U_Log2 ('debug', '[' + procname () + ']_aVarGrau final:')
-	//	U_Log2 ('debug', _aVarGrau)
-
-	endif
-
-	// Passo 2: montagem do HTML
-	if len (_aVarGrau) == 0
-		_Super:SomaMsg ("Sem variedades para esta tabela. Impossivel gerar HTML.")
-	else
-		// dicas em https://www.w3schools.com/css/css_text_align.asp
-
-		_sHTM := '<!DOCTYPE html><html>'
-
-		// Define classes de estilos CSS para os diferentes tipo de celulas
-		_sHTM += '<style>'
-		_sHTM +=    '.TituloTabela{'
-		_sHTM +=       'color:#000000;'
-		_sHTM +=       'background:#FFFFFF;'
-		_sHTM +=       'font-family:Arial;'
-	//	_sHTM +=       'text-align:center;'
-		_sHTM +=       'text-align:left;'
-		_sHTM +=       'font-size:11.0pt;'
-		_sHTM +=       'font-weight:700;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=       'border-right:none;'  // Para nao aparecer borda entre o titulo e a hora
-		_sHTM +=       'height: 30px;'
-		_sHTM +=    '}'
-		_sHTM +=    '.HoraGeracaoTabela{'
-		_sHTM +=       'color:#000000;'
-		_sHTM +=       'background:#FFFFFF;'
-		_sHTM +=       'font-family:Arial;'
-		_sHTM +=       'text-align:right;'
-		_sHTM +=       'font-size:9.0pt;'
-		_sHTM +=       'font-weight:700;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=       'border-left:none;'  // Para nao aparecer borda entre o titulo e a hora
-		_sHTM +=    '}'
-		_sHTM +=    '.TituloGrupoClaro{'
-		_sHTM +=       'color:#000000;'
-		_sHTM +=       'background:#FFFFFF;'
-		_sHTM +=       'font-family:Arial;'
-		_sHTM +=       'text-align:center;'
-		_sHTM +=       'font-size:9.0pt;'
-		_sHTM +=       'font-weight:700;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=    '}'
-		_sHTM +=    '.TituloGrupoEscuro{'
-		_sHTM +=       'color:#000000;'
-		_sHTM +=       'background:#D6DCE4;'
-		_sHTM +=       'font-family:Arial;'
-		_sHTM +=       'text-align:center;'
-		_sHTM +=       'font-size:9.0pt;'
-		_sHTM +=       'font-weight:700;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=    '}'
-		_sHTM +=    '.ColunaClaraDescri{'
-		_sHTM +=       'background:#FFFFFF;'
-		_sHTM +=       'font-family:Tahoma;'
-		_sHTM +=       'font-size:8.0pt;'
-		_sHTM +=       'text-align:left;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=    '}'
-		_sHTM +=    '.ColunaEscuraDescri{'
-		_sHTM +=       'background:#D6DCE4;'
-		_sHTM +=       'font-family:Tahoma;'
-		_sHTM +=       'font-size:8.0pt;'
-		_sHTM +=       'text-align:left;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=    '}'
-		_sHTM +=    '.ColunaClaraPrecos{'
-		_sHTM +=       'background:#FFFFFF;'
-		_sHTM +=       'font-family:Tahoma;'
-		_sHTM +=       'font-size:8.0pt;'
-		_sHTM +=       'text-align:right;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=    '}'
-		_sHTM +=    '.ColunaEscuraPrecos{'
-		_sHTM +=       'background:#D6DCE4;'
-		_sHTM +=       'font-family:Tahoma;'
-		_sHTM +=       'font-size:8.0pt;'
-		_sHTM +=       'text-align:right;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=    '}'
-		_sHTM +=    '.ColunaClaraCodigo{'
-		_sHTM +=       'background:#FFFFFF;'
-		_sHTM +=       'font-family:Tahoma;'
-		_sHTM +=       'font-size:7.0pt;'
-		_sHTM +=       'text-align:right;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=    '}'
-		_sHTM +=    '.ColunaEscuraCodigo{'
-		_sHTM +=       'background:#D6DCE4;'
-		_sHTM +=       'font-family:Tahoma;'
-		_sHTM +=       'font-size:7.0pt;'
-		_sHTM +=       'text-align:right;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=    '}'
-		_sHTM +=    '.PrecoGrauBase{'
-	//	_sHTM +=       'background:#8497B0;'
-		_sHTM +=       'background:#82868b;'
-		_sHTM +=       'font-family:Tahoma;'
-		_sHTM +=       'font-size:8.0pt;'
-		_sHTM +=       'text-align:right;'
-		_sHTM +=       'padding: 2px;'
-		_sHTM +=    '}'
-		_sHTM += '</style>'
-
-		_sHTM += '<head>'
-		_sHTM +=    '<title>Tabela preços uva</title>'
-		_sHTM += '</head>'
-		_sHTM += '<body>'
-		_sHTM += '<table width="80%" border="1" cellspacing="0" cellpadding="0" align="center">'
-		
-		// Linhas iniciais da tabela (descricao, tipos de uvas, datas, etc.
-		//
-		// Reserva colunas (colspan) para data e hora proporcionalmente a qt. total de colunas
-		_nQtColHora = round (len (_aVarGrau [1]) / 5, 0)
-		//
-		_sHTM += '<tr>'
-		_sHTM +=    '<th class="TituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1]) - _nQtColHora) + '>'
-		_sHTM +=    'Coop.Nova Aliança'  // alltrim (sm0 -> m0_nomecom)
-		_sHTM +=    ' - Tabela ' + ::CodTabela + ' (' + alltrim (::NomeTabela) + ')'
-		_sHTM +=    ' - uvas <b>' + iif (::TipoUva == 'C', 'comuns', iif (::TipoUva == 'F', 'viniferas', '(SEM DEFINICAO)'))
-		_sHTM +=    ' ' + iif (::Conducao == 'L', 'latadas', iif (::Conducao == 'E', 'espaldeira', '(SEM DEFINICAO)')) + '</b>'
-		_sHTM +=    '</th>'
-		_sHTM +=    '<th class="HoraGeracaoTabela" colspan=' + cvaltochar (_nQtColHora) + '>Gerada pelo ERP em ' + dtoc (date ()) + ' - ' + time () + '</th>'
-		_sHTM += '</tr>'
-//		_sHTM += '<tr>'
-//		_sHTM +=    '<th class="SubTituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1])) + '>Gerada pelo ERP em ' + dtoc (date ()) + ' - ' + time () + '</th>'
-//		_sHTM += '</tr>'
+            // Se nao adicionou mais nenhuma linha na array, eh por que terminou
+            // de ler todas as variedades de todos os grupos. Posso sair do loop.
+            if ! _lAdicionou
+                exit
+            endif
+            aadd (_aVarGrau, aclone (_aLinha))
+            _nVarGrau ++
+        enddo
 
 
-		// Linhas de titulos das colunas (nomes dos grupos, grau base, etc)
-	//	U_Log2 ('debug', '[' + procname () + ']Montando linha titulos grupos')
-		_sHTM += '<tr>'
-		for _nGrupo = 1 to len (_aTitGrup)
-			_sHTM += _aTitGrup [_nGrupo]
-		next
-		_sHTM += '</tr>'
+        // Prepara uma linha com dados adicionais dos subgrupos.
+        // Geralmente sao os % de organicas (uvas comuns) ou de
+        // acrescimos cfe.classificacao (uvas finas).
+//      _aLinha = {'<td> </td>'}  // Primeira coluna vai ser usada pelo grau
+        _aLinha = {'<th class="TituloGrupoClaro">Grau</th>'}
+        for _nGrupo = 1 to len (::Grupos)
 
-		// Adiciona as variedades ao grid
-		for _nVarGrau = 1 to len (_aVarGrau)
-			_sHTM += '<tr>'
-			for _nGrupo = 1 to len (_aVarGrau [_nVarGrau])
-				_sHTM += _aVarGrau [_nVarGrau, _nGrupo]
-			next
-			_sHTM += '</tr>
-		next
+            // Para facilitar a visualizacao, a cada troca de grupo, gero
+            // as colunas com fundo escuro ou com fundo claro.
+            _sTag = '<td class="Coluna' + iif (_IsInt (_nGrupo/2), 'Clara', 'Escura') + 'Descri">'
 
-		_sHTM += '</table>'
-		_sHTM += '</body></html>'
-	endif
+            for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
+                aadd (_aLinha, _sTag + ::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['ObsSubgrupo'] + '</td>')
+            next
+        next
+        aadd (_aVarGrau, aclone (_aLinha))
+
+
+        // Adiciona graus e respectivos precos. Como preciso montar uma matriz
+        // contendo todas as colunas (de todos os grupos), preciso passar por
+        // todos os graus e, dentro desses, cada grupo.
+        for _nGrau = 1 to len (::Grupos [1]['ListaDeGraus'])  // Pode ser o primeiro grupo, pois todos devem ser iguais
+            _aLinha = {}
+            for _nGrupo = 1 to len (::Grupos)
+                _oGrauDeGrupo = ::Grupos [_nGrupo]['ListaDeGraus'][_nGrau]
+
+                // Define tags de linha diferentes para graus inteiros e para decimais
+                if _IsInt (_oGrauDeGrupo ['Grau'])
+                    _sTagLinha = 'th'  // Caracter em negrito
+                else
+                    _sTagLinha = 'td'  // Caracter normal
+                endif
+
+                if _nGrupo == 1
+                    aadd (_aLinha, '<' + _sTagLinha + ' class="ColunaClaraDescri">' + transform (_oGrauDeGrupo ['Grau'], iif (_IsInt (_oGrauDeGrupo ['Grau']), "@E 99", "@E 99.9")) + '</' + _sTagLinha + '>')
+                endif
+
+                // Para facilitar a visualizacao, a cada troca de grupo, gero
+                // as colunas com fundo escuro ou com fundo claro.
+                if _oGrauDeGrupo ['Grau'] == ::Grupos [_nGrupo]['GrauBase']
+                    _sTag = '<th class="PrecoGrauBase">'
+                else
+                    if _nGrupo / 2 == int (_nGrupo / 2)
+                        _sTag = '<th class="ColunaClaraPrecos">'
+                    else
+                        _sTag = '<th class="ColunaEscuraPrecos">'
+                    endif
+                endif
+
+                // Define tag para gerar 'tooltip'
+                _sToolTip := '<abbr title="'
+                _sToolTip += 'Agio a partir do grau base: ' + alltrim (transform (_oGrauDeGrupo ['AgioSobreGrauBase'], "@E 9999.99")) + '%'
+                _sToolTip += '&#013;' + alltrim (_oGrauDeGrupo ['ObsGrauDeGrupo'])
+                _sToolTip += '">'
+            //  U_Log2 ('debug', '[' + procname () + ']' + _sToolTip)
+
+                // Como sempre existe codigo base de cada variedade, este sempre deverah ter preco
+                aadd (_aLinha, _sTag + _sToolTip + transform (_oGrauDeGrupo ['PrecoCodBase'], ::MascaraPrecos) + '</th>')
+
+                // Estas colunas existem somente para uvas comuns
+                if ::TipoUva == 'C'
+                    aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaBordadura'],   ::MascaraPrecos) + '</th>')
+                    aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'], ::MascaraPrecos) + '</th>')
+                    aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaOrganica'],    ::MascaraPrecos) + '</th>')
+                endif
+
+            next
+            aadd (_aVarGrau, aclone (_aLinha))
+        next
+    //  U_Log2 ('debug', '[' + procname () + ']_aVarGrau final:')
+    //  U_Log2 ('debug', _aVarGrau)
+
+    endif
+
+    // Passo 2: montagem do HTML
+    if len (_aVarGrau) == 0
+        _Super:SomaMsg ("Sem variedades para esta tabela. Impossivel gerar HTML.")
+    else
+        // dicas em https://www.w3schools.com/css/css_text_align.asp
+
+        _sHTM := '<!DOCTYPE html><html>'
+
+        // Define classes de estilos CSS para os diferentes tipo de celulas
+        _sHTM += '<style>'
+
+ 
+
+        //Estilo para fixar a 2° linha 
+         _sHTM +=    'tr:nth-child(2) {'
+        _sHTM +=    ' position: sticky;'
+        _sHTM +=    'top: 0;'
+        _sHTM +=    ' background-color: white;'
+        _sHTM +=    ' z-index: 1;'
+        _sHTM +=    ' }'
+        // Estilo para fixar a coluna "Grau" 
+        _sHTM +=    '#tabela {'
+        _sHTM +=    'overflow-x: auto;'
+        _sHTM +=    'display: block;'
+        _sHTM +=    '}'
+        _sHTM +=    '.table-container {'
+        _sHTM +=    'overflow-x: auto;'
+        _sHTM +=    '}'
+        // Fixa a primeira célula na horizontal'
+        _sHTM +=    'th:first-child {'
+        _sHTM +=    'position: sticky;'
+        _sHTM +=    'left: 0;'
+        _sHTM +=    'z-index: 2;'
+        _sHTM +=    'background-color: white;'
+        _sHTM +=    '}'
+        // Estilo para fixar a primeira coluna na vertical'
+        _sHTM +=    'th {'
+        _sHTM +=    'position: sticky;'
+        _sHTM +=    'background-color: white;'
+        _sHTM +=    'z-index: 1;'
+        _sHTM +=    '}'
+       
+       
+        _sHTM +=    '.TituloTabela{'
+        _sHTM +=       'color:#000000;'
+        _sHTM +=       'background:#FFFFFF;'
+        _sHTM +=       'font-family:Arial;'
+    //  _sHTM +=       'text-align:center;'
+        _sHTM +=       'text-align:left;'
+        _sHTM +=       'font-size:11.0pt;'
+        _sHTM +=       'font-weight:700;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=       'border-right:none;'  // Para nao aparecer borda entre o titulo e a hora
+        _sHTM +=       'height: 30px;'
+        _sHTM +=    '}'
+        _sHTM +=    '.HoraGeracaoTabela{'
+        _sHTM +=       'color:#000000;'
+        _sHTM +=       'background:#FFFFFF;'
+        _sHTM +=       'font-family:Arial;'
+        _sHTM +=       'text-align:right;'
+        _sHTM +=       'font-size:9.0pt;'
+        _sHTM +=       'font-weight:700;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=       'border-left:none;'  // Para nao aparecer borda entre o titulo e a hora
+        _sHTM +=    '}'
+        _sHTM +=    '.TituloGrupoClaro{'
+        _sHTM +=       'color:#000000;'
+        _sHTM +=       'background:#FFFFFF;'
+        _sHTM +=       'font-family:Arial;'
+        _sHTM +=       'text-align:center;'
+        _sHTM +=       'font-size:9.0pt;'
+        _sHTM +=       'font-weight:700;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=    '}'
+        _sHTM +=    '.TituloGrupoEscuro{'
+        _sHTM +=       'color:#000000;'
+        _sHTM +=       'background:#D6DCE4;'
+        _sHTM +=       'font-family:Arial;'
+        _sHTM +=       'text-align:center;'
+        _sHTM +=       'font-size:9.0pt;'
+        _sHTM +=       'font-weight:700;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=    '}'
+        _sHTM +=    '.ColunaClaraDescri{'
+        _sHTM +=       'background:#FFFFFF;'
+        _sHTM +=       'font-family:Tahoma;'
+        _sHTM +=       'font-size:8.0pt;'
+        _sHTM +=       'text-align:left;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=    '}'
+        _sHTM +=    '.ColunaEscuraDescri{'
+        _sHTM +=       'background:#D6DCE4;'
+        _sHTM +=       'font-family:Tahoma;'
+        _sHTM +=       'font-size:8.0pt;'
+        _sHTM +=       'text-align:left;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=    '}'
+        _sHTM +=    '.ColunaClaraPrecos{'
+        _sHTM +=       'background:#FFFFFF;'
+        _sHTM +=       'font-family:Tahoma;'
+        _sHTM +=       'font-size:8.0pt;'
+        _sHTM +=       'text-align:right;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=    '}'
+        _sHTM +=    '.ColunaEscuraPrecos{'
+        _sHTM +=       'background:#D6DCE4;'
+        _sHTM +=       'font-family:Tahoma;'
+        _sHTM +=       'font-size:8.0pt;'
+        _sHTM +=       'text-align:right;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=    '}'
+        _sHTM +=    '.ColunaClaraCodigo{'
+        _sHTM +=       'background:#FFFFFF;'
+        _sHTM +=       'font-family:Tahoma;'
+        _sHTM +=       'font-size:7.0pt;'
+        _sHTM +=       'text-align:right;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=    '}'
+        _sHTM +=    '.ColunaEscuraCodigo{'
+        _sHTM +=       'background:#D6DCE4;'
+        _sHTM +=       'font-family:Tahoma;'
+        _sHTM +=       'font-size:7.0pt;'
+        _sHTM +=       'text-align:right;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=    '}'
+        _sHTM +=    '.PrecoGrauBase{'
+    //  _sHTM +=       'background:#8497B0;'
+        _sHTM +=       'background:#82868b;'
+        _sHTM +=       'font-family:Tahoma;'
+        _sHTM +=       'font-size:8.0pt;'
+        _sHTM +=       'text-align:right;'
+        _sHTM +=       'padding: 2px;'
+        _sHTM +=    '}'
+        _sHTM += '</style>'
+
+        _sHTM += '<head>'
+        _sHTM +=    '<title>Tabela preços uva</title>'
+        _sHTM += '</head>'
+        _sHTM += '<body>'
+        _sHTM += '<table width="80%" border="1" cellspacing="0" cellpadding="0" align="center">'
+        
+        // Linhas iniciais da tabela (descricao, tipos de uvas, datas, etc.
+        //
+        // Reserva colunas (colspan) para data e hora proporcionalmente a qt. total de colunas
+        _nQtColHora = round (len (_aVarGrau [1]) / 5, 0)
+        //
+        _sHTM += '<tr>'
+        _sHTM +=    '<th class="TituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1]) - _nQtColHora) + '>'
+        _sHTM +=    'Coop.Nova Aliança'  // alltrim (sm0 -> m0_nomecom)
+        _sHTM +=    ' - Tabela ' + ::CodTabela + ' (' + alltrim (::NomeTabela) + ')'
+        _sHTM +=    ' - uvas <b>' + iif (::TipoUva == 'C', 'comuns', iif (::TipoUva == 'F', 'viniferas', '(SEM DEFINICAO)'))
+        _sHTM +=    ' ' + iif (::Conducao == 'L', 'latadas', iif (::Conducao == 'E', 'espaldeira', '(SEM DEFINICAO)')) + '</b>'
+        _sHTM +=    '</th>'
+        _sHTM +=    '<th class="HoraGeracaoTabela" colspan=' + cvaltochar (_nQtColHora) + '>Gerada pelo ERP em ' + dtoc (date ()) + ' - ' + time () + '</th>'
+        _sHTM += '</tr>'
+//      _sHTM += '<tr>'
+//      _sHTM +=    '<th class="SubTituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1])) + '>Gerada pelo ERP em ' + dtoc (date ()) + ' - ' + time () + '</th>'
+//      _sHTM += '</tr>'
+
+
+        // Linhas de titulos das colunas (nomes dos grupos, grau base, etc)
+    //  U_Log2 ('debug', '[' + procname () + ']Montando linha titulos grupos')
+        _sHTM += '<tr>'
+        for _nGrupo = 1 to len (_aTitGrup)
+            _sHTM += _aTitGrup [_nGrupo]
+        next
+        _sHTM += '</tr>'
+
+        // Adiciona as variedades ao grid
+        for _nVarGrau = 1 to len (_aVarGrau)
+            _sHTM += '<tr>'
+            for _nGrupo = 1 to len (_aVarGrau [_nVarGrau])
+                _sHTM += _aVarGrau [_nVarGrau, _nGrupo]
+            next
+            _sHTM += '</tr>
+        next
+
+        _sHTM += '</table>'
+        _sHTM += '</body></html>'
+    endif
 return _sHTM
+// // --------------------------------------------------------------------------
+// // Gera tabela em formato HTML
+// METHOD GeraHTM () Class ClsTbUva
+// 	local _sHTM       := ''
+// 	local _nGrupo     := 0
+// 	local _nSubgrup   := 0
+// 	local _aTitGrup   := {}
+// 	local _aVarGrau   := {}
+// 	local _nVarGrau   := 0
+// 	local _aLinha     := {}
+// 	local _lAdicionou := .F.
+// 	local _sTag       := ''
+// 	local _sTagICod   := ''
+// 	local _sTagFCod   := ''
+// 	local _nGrau      := 0
+// 	local _sToolTip   := ''
+// 	local _oGrauDeGrupo := NIL
+// 	local _oVariedade := NIL
+// 	local _lTemDescSubgrupo := .F.
+// 	local _nQtColHora := 0
+
+// 	// Como a quantidade de celulas mescladas eh muito grande, achei melhor
+// 	// preparar arrays com os dados (jah eh bastante complicado) e, num
+// 	// passo seguinte, gerar HTML.
+
+// 	// Passo 1: preparar arrays de dados para o HTML
+// 	if empty (::CodTabela)
+// 		_Super:SomaMsg ("Codigo de tabela nao definido. Impossivel gerar HTML.")
+// 	else
+
+// 		// Prepara titulos dos grupos
+// 		_aTitGrup = {}
+// 		aadd (_aTitGrup, '<th> </th>')  // Esta coluna vai ser, posteriormente, usada para o grau.
+// 		for _nGrupo = 1 to len (::Grupos)
+// 			aadd (_aTitGrup, '<th class=' + iif (_nGrupo / 2 == int (_nGrupo / 2), '"TituloGrupoClaro"', '"TituloGrupoEscuro"') + ;
+// 			                 ' colspan=' + cvaltochar (len (::Grupos [_nGrupo]['ListaDeSubgrupos'])) + ' align=center>' + ;
+// 			                 'Gr.' + alltrim (::Grupos [_nGrupo]['Codigo']) + ;
+// 			                 ' ' + alltrim (::Grupos [_nGrupo]['Descricao']) + ;
+// 			                 '</th>')
+// 		next
+
+// 		_aVarGrau = {}
+
+// 		// Prepara uma linha com titulos dos subgrupos. Mas, antes, verifica se
+// 		// algum deles tem dados a mostrar, de movo a evitar gerar uma linha
+// 		// vazia no HTML.
+// 		_lTemDescSubgrupo = .F.
+// 		for _nGrupo = 1 to len (::Grupos)
+// 			for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
+// 				if ! empty (::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['DescSubgrupo'])
+// 					_lTemDescSubgrupo = .T.
+// 					exit
+// 				endif
+// 			next
+// 		next
+// 		if _lTemDescSubgrupo
+// 			//_aLinha = {'<th class="TituloGrupoClaro">Grau</th>'}
+// 			_aLinha = {'<th </th>'}
+// 			for _nGrupo = 1 to len (::Grupos)
+
+// 				// Para facilitar a visualizacao, a cada troca de grupo, gero
+// 				// as colunas com fundo escuro ou com fundo claro.
+// 				_sTag = '<td class="TituloGrupo' + iif (_IsInt (_nGrupo/2), 'Claro', 'Escuro') + '">'
+
+// 				for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
+// 					aadd (_aLinha, _sTag + ::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['DescSubgrupo'] + '</th>')
+// 				next
+// 			next
+// 			aadd (_aVarGrau, aclone (_aLinha))
+// 		endif
+
+
+// 		// Para adicionar as linhas com as variedades, optei por fazer um loop
+// 		// com WHILE para rodar ateh o momento em que nao adicionar mais nenhuma
+// 		// linha (cada grupo tem uma quantidade diferente de variedades).
+// 		_nVarGrau = 1
+// 		do while .t.
+// 			_aLinha = {'<td> </td>'}  // Primeira coluna vai ser usada pelo grau
+// 			_lAdicionou = .F.
+
+// 			// Para cada grupo, verifica se ainda tem variedades a adicionar
+// 			for _nGrupo = 1 to len (::Grupos)
+
+// 				// Para facilitar a visualizacao, a cada troca de grupo, gero
+// 				// as colunas com fundo escuro ou com fundo claro.
+// 				if _IsInt (_nGrupo / 2)
+// 					_sTag = '<td class="ColunaClaraDescri">'
+
+// 					// Quero mostrar o codigo do item com uma fonte um pouco menor.
+// 					_sTagICod = '<span class="ColunaClaraCodigo">('
+// 					_sTagFCod = ')</span>'
+// 				else
+// 					_sTag = '<td class="ColunaEscuraDescri">'
+
+// 					// Quero mostrar o codigo do item com uma fonte um pouco menor.
+// 					_sTagICod = '<span class="ColunaEscuraCodigo">('
+// 					_sTagFCod = ')</span>'
+// 				endif
+
+// 				// Se ainda tiver variedades neste grupo para serem adicionadas
+// 				// ao HTM, entao devo gerar mais uma linha.
+// 				if _nVarGrau <= len (::Grupos [_nGrupo]['ListaDeVariedades'])
+// 					_oVariedade = ::Grupos [_nGrupo]['ListaDeVariedades'][_nVarGrau]
+
+// 					// Variedade base sempre vai existir, independente de tipo/conducao
+// 					aadd (_aLinha, _TagVariedade (_oVariedade, 'Base', _sTag, _sTagICod, _sTagFCod))
+
+// 					// Estas colunas existem somente para uvas comuns
+// 					if ::TipoUva == 'C'
+// 						aadd (_aLinha, _TagVariedade (_oVariedade, 'Bordadura', _sTag, _sTagICod, _sTagFCod))
+// 						aadd (_aLinha, _TagVariedade (_oVariedade, 'Conversao', _sTag, _sTagICod, _sTagFCod))
+// 						aadd (_aLinha, _TagVariedade (_oVariedade, 'Organica', _sTag, _sTagICod, _sTagFCod))
+// 					endif
+
+// 					_lAdicionou = .T.
+// 				else
+
+// 					// Preciso colocar um espaco nestas posicoes para gerar uma celula vazia no HTML depois.
+// 					for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
+// 						aadd (_aLinha, _sTag + ' </td>')
+// 					next
+// 				endif
+// 			next
+
+// 			// Se nao adicionou mais nenhuma linha na array, eh por que terminou
+// 			// de ler todas as variedades de todos os grupos. Posso sair do loop.
+// 			if ! _lAdicionou
+// 				exit
+// 			endif
+// 			aadd (_aVarGrau, aclone (_aLinha))
+// 			_nVarGrau ++
+// 		enddo
+
+
+// 		// Prepara uma linha com dados adicionais dos subgrupos.
+// 		// Geralmente sao os % de organicas (uvas comuns) ou de
+// 		// acrescimos cfe.classificacao (uvas finas).
+// //		_aLinha = {'<td> </td>'}  // Primeira coluna vai ser usada pelo grau
+// 		_aLinha = {'<th class="TituloGrupoClaro">Grau</th>'}
+// 		for _nGrupo = 1 to len (::Grupos)
+
+// 			// Para facilitar a visualizacao, a cada troca de grupo, gero
+// 			// as colunas com fundo escuro ou com fundo claro.
+// 			_sTag = '<td class="Coluna' + iif (_IsInt (_nGrupo/2), 'Clara', 'Escura') + 'Descri">'
+
+// 			for _nSubgrup = 1 to len (::Grupos [_nGrupo]['ListaDeSubgrupos'])
+// 				aadd (_aLinha, _sTag + ::Grupos [_nGrupo]['ListaDeSubgrupos'][_nSubgrup]['ObsSubgrupo'] + '</td>')
+// 			next
+// 		next
+// 		aadd (_aVarGrau, aclone (_aLinha))
+
+
+// 		// Adiciona graus e respectivos precos. Como preciso montar uma matriz
+// 		// contendo todas as colunas (de todos os grupos), preciso passar por
+// 		// todos os graus e, dentro desses, cada grupo.
+// 		for _nGrau = 1 to len (::Grupos [1]['ListaDeGraus'])  // Pode ser o primeiro grupo, pois todos devem ser iguais
+// 			_aLinha = {}
+// 			for _nGrupo = 1 to len (::Grupos)
+// 				_oGrauDeGrupo = ::Grupos [_nGrupo]['ListaDeGraus'][_nGrau]
+
+// 				// Define tags de linha diferentes para graus inteiros e para decimais
+// 				if _IsInt (_oGrauDeGrupo ['Grau'])
+// 					_sTagLinha = 'th'  // Caracter em negrito
+// 				else
+// 					_sTagLinha = 'td'  // Caracter normal
+// 				endif
+
+// 				if _nGrupo == 1
+// 					aadd (_aLinha, '<' + _sTagLinha + ' class="ColunaClaraDescri">' + transform (_oGrauDeGrupo ['Grau'], iif (_IsInt (_oGrauDeGrupo ['Grau']), "@E 99", "@E 99.9")) + '</' + _sTagLinha + '>')
+// 				endif
+
+// 				// Para facilitar a visualizacao, a cada troca de grupo, gero
+// 				// as colunas com fundo escuro ou com fundo claro.
+// 				if _oGrauDeGrupo ['Grau'] == ::Grupos [_nGrupo]['GrauBase']
+// 					_sTag = '<th class="PrecoGrauBase">'
+// 				else
+// 					if _nGrupo / 2 == int (_nGrupo / 2)
+// 						_sTag = '<th class="ColunaClaraPrecos">'
+// 					else
+// 						_sTag = '<th class="ColunaEscuraPrecos">'
+// 					endif
+// 				endif
+
+// 				// Define tag para gerar 'tooltip'
+// 				_sToolTip := '<abbr title="'
+// 				_sToolTip += 'Agio a partir do grau base: ' + alltrim (transform (_oGrauDeGrupo ['AgioSobreGrauBase'], "@E 9999.99")) + '%'
+// 				_sToolTip += '&#013;' + alltrim (_oGrauDeGrupo ['ObsGrauDeGrupo'])
+// 				_sToolTip += '">'
+// 			//	U_Log2 ('debug', '[' + procname () + ']' + _sToolTip)
+
+// 				// Como sempre existe codigo base de cada variedade, este sempre deverah ter preco
+// 				aadd (_aLinha, _sTag + _sToolTip + transform (_oGrauDeGrupo ['PrecoCodBase'], ::MascaraPrecos) + '</th>')
+
+// 				// Estas colunas existem somente para uvas comuns
+// 				if ::TipoUva == 'C'
+// 					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaBordadura'],   ::MascaraPrecos) + '</th>')
+// 					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaEmConversao'], ::MascaraPrecos) + '</th>')
+// 					aadd (_aLinha, _sTag + transform (_oGrauDeGrupo ['PrecoCodOrganicaOrganica'],    ::MascaraPrecos) + '</th>')
+// 				endif
+
+// 			next
+// 			aadd (_aVarGrau, aclone (_aLinha))
+// 		next
+// 	//	U_Log2 ('debug', '[' + procname () + ']_aVarGrau final:')
+// 	//	U_Log2 ('debug', _aVarGrau)
+
+// 	endif
+
+// 	// Passo 2: montagem do HTML
+// 	if len (_aVarGrau) == 0
+// 		_Super:SomaMsg ("Sem variedades para esta tabela. Impossivel gerar HTML.")
+// 	else
+// 		// dicas em https://www.w3schools.com/css/css_text_align.asp
+
+// 		_sHTM := '<!DOCTYPE html><html>'
+
+// 		// Define classes de estilos CSS para os diferentes tipo de celulas
+// 		_sHTM += '<style>'
+// 		_sHTM +=    '.TituloTabela{'
+// 		_sHTM +=       'color:#000000;'
+// 		_sHTM +=       'background:#FFFFFF;'
+// 		_sHTM +=       'font-family:Arial;'
+// 	//	_sHTM +=       'text-align:center;'
+// 		_sHTM +=       'text-align:left;'
+// 		_sHTM +=       'font-size:11.0pt;'
+// 		_sHTM +=       'font-weight:700;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=       'border-right:none;'  // Para nao aparecer borda entre o titulo e a hora
+// 		_sHTM +=       'height: 30px;'
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.HoraGeracaoTabela{'
+// 		_sHTM +=       'color:#000000;'
+// 		_sHTM +=       'background:#FFFFFF;'
+// 		_sHTM +=       'font-family:Arial;'
+// 		_sHTM +=       'text-align:right;'
+// 		_sHTM +=       'font-size:9.0pt;'
+// 		_sHTM +=       'font-weight:700;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=       'border-left:none;'  // Para nao aparecer borda entre o titulo e a hora
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.TituloGrupoClaro{'
+// 		_sHTM +=       'color:#000000;'
+// 		_sHTM +=       'background:#FFFFFF;'
+// 		_sHTM +=       'font-family:Arial;'
+// 		_sHTM +=       'text-align:center;'
+// 		_sHTM +=       'font-size:9.0pt;'
+// 		_sHTM +=       'font-weight:700;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.TituloGrupoEscuro{'
+// 		_sHTM +=       'color:#000000;'
+// 		_sHTM +=       'background:#D6DCE4;'
+// 		_sHTM +=       'font-family:Arial;'
+// 		_sHTM +=       'text-align:center;'
+// 		_sHTM +=       'font-size:9.0pt;'
+// 		_sHTM +=       'font-weight:700;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.ColunaClaraDescri{'
+// 		_sHTM +=       'background:#FFFFFF;'
+// 		_sHTM +=       'font-family:Tahoma;'
+// 		_sHTM +=       'font-size:8.0pt;'
+// 		_sHTM +=       'text-align:left;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.ColunaEscuraDescri{'
+// 		_sHTM +=       'background:#D6DCE4;'
+// 		_sHTM +=       'font-family:Tahoma;'
+// 		_sHTM +=       'font-size:8.0pt;'
+// 		_sHTM +=       'text-align:left;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.ColunaClaraPrecos{'
+// 		_sHTM +=       'background:#FFFFFF;'
+// 		_sHTM +=       'font-family:Tahoma;'
+// 		_sHTM +=       'font-size:8.0pt;'
+// 		_sHTM +=       'text-align:right;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.ColunaEscuraPrecos{'
+// 		_sHTM +=       'background:#D6DCE4;'
+// 		_sHTM +=       'font-family:Tahoma;'
+// 		_sHTM +=       'font-size:8.0pt;'
+// 		_sHTM +=       'text-align:right;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.ColunaClaraCodigo{'
+// 		_sHTM +=       'background:#FFFFFF;'
+// 		_sHTM +=       'font-family:Tahoma;'
+// 		_sHTM +=       'font-size:7.0pt;'
+// 		_sHTM +=       'text-align:right;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.ColunaEscuraCodigo{'
+// 		_sHTM +=       'background:#D6DCE4;'
+// 		_sHTM +=       'font-family:Tahoma;'
+// 		_sHTM +=       'font-size:7.0pt;'
+// 		_sHTM +=       'text-align:right;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=    '}'
+// 		_sHTM +=    '.PrecoGrauBase{'
+// 	//	_sHTM +=       'background:#8497B0;'
+// 		_sHTM +=       'background:#82868b;'
+// 		_sHTM +=       'font-family:Tahoma;'
+// 		_sHTM +=       'font-size:8.0pt;'
+// 		_sHTM +=       'text-align:right;'
+// 		_sHTM +=       'padding: 2px;'
+// 		_sHTM +=    '}'
+// 		_sHTM += '</style>'
+
+// 		_sHTM += '<head>'
+// 		_sHTM +=    '<title>Tabela preços uva</title>'
+// 		_sHTM += '</head>'
+// 		_sHTM += '<body>'
+// 		_sHTM += '<table width="80%" border="1" cellspacing="0" cellpadding="0" align="center">'
+		
+// 		// Linhas iniciais da tabela (descricao, tipos de uvas, datas, etc.
+// 		//
+// 		// Reserva colunas (colspan) para data e hora proporcionalmente a qt. total de colunas
+// 		_nQtColHora = round (len (_aVarGrau [1]) / 5, 0)
+// 		//
+// 		_sHTM += '<tr>'
+// 		_sHTM +=    '<th class="TituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1]) - _nQtColHora) + '>'
+// 		_sHTM +=    'Coop.Nova Aliança'  // alltrim (sm0 -> m0_nomecom)
+// 		_sHTM +=    ' - Tabela ' + ::CodTabela + ' (' + alltrim (::NomeTabela) + ')'
+// 		_sHTM +=    ' - uvas <b>' + iif (::TipoUva == 'C', 'comuns', iif (::TipoUva == 'F', 'viniferas', '(SEM DEFINICAO)'))
+// 		_sHTM +=    ' ' + iif (::Conducao == 'L', 'latadas', iif (::Conducao == 'E', 'espaldeira', '(SEM DEFINICAO)')) + '</b>'
+// 		_sHTM +=    '</th>'
+// 		_sHTM +=    '<th class="HoraGeracaoTabela" colspan=' + cvaltochar (_nQtColHora) + '>Gerada pelo ERP em ' + dtoc (date ()) + ' - ' + time () + '</th>'
+// 		_sHTM += '</tr>'
+// //		_sHTM += '<tr>'
+// //		_sHTM +=    '<th class="SubTituloTabela" colspan=' + cvaltochar (len (_aVarGrau [1])) + '>Gerada pelo ERP em ' + dtoc (date ()) + ' - ' + time () + '</th>'
+// //		_sHTM += '</tr>'
+
+
+// 		// Linhas de titulos das colunas (nomes dos grupos, grau base, etc)
+// 	//	U_Log2 ('debug', '[' + procname () + ']Montando linha titulos grupos')
+// 		_sHTM += '<tr>'
+// 		for _nGrupo = 1 to len (_aTitGrup)
+// 			_sHTM += _aTitGrup [_nGrupo]
+// 		next
+// 		_sHTM += '</tr>'
+
+// 		// Adiciona as variedades ao grid
+// 		for _nVarGrau = 1 to len (_aVarGrau)
+// 			_sHTM += '<tr>'
+// 			for _nGrupo = 1 to len (_aVarGrau [_nVarGrau])
+// 				_sHTM += _aVarGrau [_nVarGrau, _nGrupo]
+// 			next
+// 			_sHTM += '</tr>
+// 		next
+
+// 		_sHTM += '</table>'
+// 		_sHTM += '</body></html>'
+// 	endif
+// return _sHTM
 
 
 // --------------------------------------------------------------------------
