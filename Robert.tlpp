@@ -144,7 +144,7 @@ user function robert ()
 		// _sFuncao += '_GLPI15020 ()'
 		// _sFuncao += '_GLPI15070 ()'
 		// _sFuncao += '_GLPI15191 ()'
-		_sFuncao += '_GLPI15288 ()'
+		//_sFuncao += '_GLPI15288 ()'
 		// _sFuncao += '_ImpGPC ()'
 		// _sFuncao += '_memoria ()'
 		// _sFuncao += '_metaf ()'
