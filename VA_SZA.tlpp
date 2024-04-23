@@ -4,29 +4,28 @@
 // Descricao..: Tela de manutencao de listas de precos de uva para a safra.
 //
 // Historico de alteracoes:
-// 27/03/2009 - Robert - Verifica se estah rodando em TOP ou nao.
-// 05/11/2009 - Robert - Nao executa se nao estiver rodando em TOP.
-// 16/07/2010 - Robert - Importa precos de uma tabela para outra.
-// 06/01/2011 - Robert - Verifica existencia da tabela no SZ7 antes de excluir.
-// 08/07/2017 - Robert - Implementada replicacao da tabela BASE<ano> para a tabela atual.
-// 23/11/2018 - Robert - A partir de 2019 nao pretendo mais usar a tabela SZ7.
-// 21/03/2020 - Robert - Nao verifica mais tabela SZ7 para nenhum caso.
-// 31/12/2023 - Robert - Rotina desenterrada dos escombros. Criada diferenciacao de modelos 1, 2 e 3
-//                     - Implementada copia de dados entre tabelas (modelo 3)
-//                     - Migrada da extensao .PRW para .TLPP
-//                     - Implementada geracao da tabela ZBI
-// 23/01/2024 - Robert - Melhorada geracao ZBI (opcao de gerar apenas variedades faltantes)
-//                     - Viniferas latadas gera SZI classif. 'DS' e nao mais 'D'.
-// 25/01/2024 - Robert - Exportacao para ZBI da tag 'PrecoFinaLatadaClasC'
-// 13/02/2024 - Robert - Filtrar por item na exportacao para ZBI
-// 14/02/2024 - Robert - Melhoria fluxo exportacao para ZBI.
+// 27/03/2009 - Robert  - Verifica se estah rodando em TOP ou nao.
+// 05/11/2009 - Robert  - Nao executa se nao estiver rodando em TOP.
+// 16/07/2010 - Robert  - Importa precos de uma tabela para outra.
+// 06/01/2011 - Robert  - Verifica existencia da tabela no SZ7 antes de excluir.
+// 08/07/2017 - Robert  - Implementada replicacao da tabela BASE<ano> para a tabela atual.
+// 23/11/2018 - Robert  - A partir de 2019 nao pretendo mais usar a tabela SZ7.
+// 21/03/2020 - Robert  - Nao verifica mais tabela SZ7 para nenhum caso.
+// 31/12/2023 - Robert  - Rotina desenterrada dos escombros. Criada diferenciacao de modelos 1, 2 e 3
+//                      - Implementada copia de dados entre tabelas (modelo 3)
+//                      - Migrada da extensao .PRW para .TLPP
+//                      - Implementada geracao da tabela ZBI
+// 23/01/2024 - Robert  - Melhorada geracao ZBI (opcao de gerar apenas variedades faltantes)
+//                      - Viniferas latadas gera SZI classif. 'DS' e nao mais 'D'.
+// 25/01/2024 - Robert  - Exportacao para ZBI da tag 'PrecoFinaLatadaClasC'
+// 13/02/2024 - Robert  - Filtrar por item na exportacao para ZBI
+// 14/02/2024 - Robert  - Melhoria fluxo exportacao para ZBI.
+// 23/04/2024 - Claudia - Incluida a criação de ZBI para Comuns em espaldeira. GLPI:15312.
 //
-
+// ----------------------------------------------------------------------------------------
 #include "protheus.ch"
 
-// --------------------------------------------------------------------------
 User Function va_sza()
-//	local   _nOpcao    := 0
 	local   _sFilTop   := ''
 	private aRotina    := {}
 	private _nModelTab := 0
@@ -68,16 +67,16 @@ User Function va_sza()
 
 	// Modelo usando SZA x ZX5
 	case _nModelTab == 3
-		aadd (aRotina, {"&Pesquisar"         ,     "AxPesqui",  0,1})
-		aadd (aRotina, {"&Incluir"           ,     "AxInclui",  0,3})
-		aadd (aRotina, {"&Alterar"           ,     "AxAltera",  0,4})
-		aadd (aRotina, {"&Excluir"           ,     "U_SZA_E",   0,5})
-		aadd (aRotina, {"&Alterar grupos"    ,     "U_ZX5_13 (sza -> za_cod)", 0, 4})
-		aadd (aRotina, {"&Alterar variedades",     "U_ZX5_14 (sza -> za_cod)", 0, 4})
-		aadd (aRotina, {"&Copiar de outra tabela", "U_SZA_RT (sza -> za_cod)", 0, 4})
-		aadd (aRotina, {"&Gerar tabela em HTML",   "U_SZA_HTM (sza -> za_cod)", 0, 4})
-		aadd (aRotina, {"&Exportar para ZBI",      "U_SZA_ZBI (sza -> za_cod)", 0, 4})
-		dbselectarea ("SZA")
+		aadd (aRotina, {"&Pesquisar"         		, "AxPesqui"					, 0, 1})
+		aadd (aRotina, {"&Incluir"           		, "AxInclui"					, 0, 3})
+		aadd (aRotina, {"&Alterar"           		, "AxAltera"					, 0, 4})
+		aadd (aRotina, {"&Excluir"           		, "U_SZA_E"						, 0, 5})
+		aadd (aRotina, {"&Copiar itens da tabela"	, "U_SZA_RT (sza -> za_cod)"	, 0, 4})
+		aadd (aRotina, {"&Alterar grupos/preços"    , "U_ZX5_13 (sza -> za_cod)"	, 0, 4})
+		aadd (aRotina, {"&Alterar variedades"		, "U_ZX5_14 (sza -> za_cod)"	, 0, 4})
+		aadd (aRotina, {"&Gerar tabela em HTML"		, "U_SZA_HTM (sza -> za_cod)"	, 0, 4})
+		aadd (aRotina, {"&Exportar para ZBI"		, "U_SZA_ZBI (sza -> za_cod)"	, 0, 4})
+		dbselectarea ("SZA")  
 		dbSetOrder (1)
 		_sFilTop = "ZA_MODELO = '3'"
 		mBrowse(,,,,"SZA",,,,,,,,,,,,,,_sFilTop)
@@ -421,8 +420,7 @@ static function _GeraZBI (_sCodTab)
 
 	if _lContinua
 		_nOperacao = aviso ("Selecione operacao" ;
-			, "Ja existem dados no arquivo ZBI para esta tabela de precos." + ;
-			"Voce tem opcao de apagar todos os registros existentes e gerar novos, " + ;
+			, "Voce tem opcao de apagar todos os registros existentes e gerar novos, " + ;
 			"ou gerar apenas os novos (por exemplo, se foi incluida uma nova variedade de uva na tabela)." ;
 			, {"Acrescentar novos", "(Re)gerar tudo", "Cancelar"};
 			, 3 ;  //  Largura da janela (1=default, 2 = media, 3 = grande)
@@ -553,6 +551,16 @@ static function _GeraZBI (_sCodTab)
 								,_sProduto     = _aListaVar [_nIdxListaVar, 1] ;
 								,_sGrau        = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) ;
 								,_sConduc      = _oTbUva:Conducao ;
+								,_sClassif     = '' ;
+								,_nPreco       = _aListaVar [_nIdxListaVar, 2] ;
+								,_lRegerarTudo = (_nOperacao == 2) ;
+							)
+							// Para uvas comuns em condução ESPALDEIRA
+							_GravaZBI ( ;
+								_sCodTab       = _oTbUva:CodTabela ;
+								,_sProduto     = _aListaVar [_nIdxListaVar, 1] ;
+								,_sGrau        = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) ;
+								,_sConduc      = 'E';
 								,_sClassif     = '' ;
 								,_nPreco       = _aListaVar [_nIdxListaVar, 2] ;
 								,_lRegerarTudo = (_nOperacao == 2) ;
