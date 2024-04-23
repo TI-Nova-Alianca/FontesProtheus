@@ -44,6 +44,7 @@
 // 06/02/2024 - Robert  - Log de validacao de encerramento de OS
 // 04/04/2024 - Robert  - Criado FILTER_EQUIPMENT (bens): ST9 somente bens com O.S. aberta no STJ.
 //                      - Acrescentado no FILTER_ORDER para O.S. preventivas: somente ultimos 30 e proximos 60 dias
+// 23/04/2024 - Robert  - Desabilitado filtro de equipamentos, por sugestao da Totvs (o proprio sistema jah faria a filtragem dos bend pelo campo 'ativo=S')
 //
 
 #include "PROTHEUS.ch"
@@ -99,7 +100,7 @@ User Function MNTNG()
 // nao consegui abrir a documentacao em https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878		_xRet = ""
 // nao consegui abrir a documentacao em https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878		U_Log2 ('info', '[' + procname () + ']Filtrando executor: _xRet = ' + _xRet)
 
-
+/* desabilitado em 22/04/24 por sugestao da Totvs (o proprio sistema jah faria a filtragem dos bend pelo campo 'ativo=S')
 	// Filtro para equipamentos (bens): Vou querer somente bens que tenham O.S. em aberto
 	ElseIf _sIDdLocal == "FILTER_EQUIPMENT"
 		_xRet := ''
@@ -110,7 +111,7 @@ User Function MNTNG()
 		_xRet +=    " AND STJ.TJ_FILIAL   = ST9.T9_FILIAL"
 		_xRet +=    " AND STJ.TJ_CODBEM   = ST9.T9_CODBEM"
 		_xRet +=    " AND STJ.TJ_TERMINO != 'S')"
-	
+*/
 	
 	// Filtro para ordens de servico
 	ElseIf _sIDdLocal == "FILTER_ORDER"
