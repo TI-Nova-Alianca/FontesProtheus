@@ -28,8 +28,6 @@ User Function VA_GNF3 (_lAuto)
 
 	Private cPerg   := "VAGNF3"
 
-	U_HELP ('LEMBRAR DE PASSAR A UVA ISABEL PRECOCE PARA A COLUNA DA ISABEL!!!',, .T.)
-
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if ! U_ZZUVL ('045', __cUserID, .T.)
 		return
@@ -80,6 +78,8 @@ User Function VA_GNF3 (_lAuto)
 			Processa( { |lEnd| _Gera2021 ()})
 		elseif mv_par05 == '2023'
 			Processa( { |lEnd| _Gera2023 ()})
+		elseif mv_par05 == '2024'
+			Processa( { |lEnd| _Gera2024 ()})
 		else
 			u_help ('Sem tratamento para esta safra')
 		endif
@@ -1248,6 +1248,141 @@ static function _Gera2023 ()
 	u_help ("Processo concluido.")
 return
 
+// --------------------------------------------------------------------------
+static function _Gera2024 ()
+	local _oSQL      := NIL
+	local _sAliasQ   := ""
+	local _nVCompl   := 0
+	local _sClasFina := ''
+	local _sMsgNF    := ''
+	local _nRecAtu   := 0
+	local _nRecCount := 0
+	local _oCarSaf   := NIL
+	local _sTpForn   := ''
+	local _nVlUni    := 0
+	local _sObs      := ''
+
+	// Busca valores efetivos recebidos pelo produtor, para depois verificar
+	// necessidade de complementar.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, ITEM_NOTA"
+	_oSQL:_sQuery +=      ", PRODUTO, DESCRICAO, PESO_LIQ"
+	_oSQL:_sQuery +=      ", GRAU"
+	_oSQL:_sQuery +=      ", SIST_CONDUCAO, CLAS_ABD, CLAS_FINAL, VUNIT_EFETIVO, GRUPO_PAGTO"
+	_oSQL:_sQuery +=      ", COUNT (*) OVER (PARTITION BY FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE) AS QTITENS"
+	_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA P"
+	_oSQL:_sQuery += " WHERE P.SAFRA  = '" + mv_par05 + "'"
+	_oSQL:_sQuery +=   " AND P.ASSOCIADO + P.LOJA_ASSOC BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
+	_oSQL:_sQuery +=   " AND P.FILIAL  BETWEEN '" + mv_par14 + "' AND '" + mv_par15 + "'"
+	_oSQL:_sQuery +=   " AND P.PRODUTO BETWEEN '" + mv_par09 + "' AND '" + mv_par10 + "'"
+	if ! empty (mv_par12)
+		_oSQL:_sQuery +=    " AND P.PRODUTO IN " + FormatIn (alltrim (mv_par12), "/")
+	endif
+	if ! empty (mv_par13)
+		_oSQL:_sQuery +=    " AND P.PRODUTO NOT IN " + FormatIn (alltrim (mv_par13), "/")
+	endif
+	_oSQL:_sQuery += " ORDER BY FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, PRODUTO, GRAU, CLAS_FINAL, CLAS_ABD"
+	_oSQL:Log ('[' + procname () + ']')
+	_sAliasQ = _oSQL:Qry2Trb (.f.)
+	dbselectarea (_sAliasQ)
+	
+	count to _nRecCount
+	dbselectarea ("ZZ9")
+	(_sAliasQ) -> (dbgotop ())
+	procregua (_nRecCount)
+	
+	_nRecAtu = 0
+	do while ! (_sAliasQ) -> (eof ())
+		incproc ()
+		u_log2 ('info', '[' + cvaltochar (++_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']NF orig: ' + (_sAliasQ) -> doc + ' Produto ' + alltrim ((_sAliasQ) -> produto) + '-' + alltrim ((_sAliasQ) -> descricao) + ' gr.' + (_sAliasQ) -> grau + ' ' + _sClasFina)
+		_sMsgNF = ''
+
+		// Encontra a carga de origem, pois pode ter sido compartilhada com
+		// outro produtor.
+		sze -> (dbsetorder (3))  // ZE_FILIAL, ZE_NFGER, ZE_SERIE, R_E_C_N_O_, D_E_L_E_T_
+		if ! sze -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> doc + (_sAliasQ) -> serie, .F.))
+			u_help ("Nao encotrei nenhuma carga referenciando a contranota '" + (_sAliasQ) -> doc + "' da filial '" + (_sAliasQ) -> filial + "'",, .t.)
+			exit
+		endif
+
+		// Instancia a carga para poder verificar mais a fundo.
+		_oCarSaf := ClsCarSaf():New (sze -> (recno ()))
+		if empty (_oCarSaf:Carga)
+			u_help ("Impossivel instanciar carga (ou carga invalida).",, .t.)
+			exit
+		else
+			_oCarSaf:TabelaPreco = mv_par16 // essa é a tabela
+			if ! _oCarSaf:Precifica('ParaNF')
+				u_help ("Erro na funcao de precificacao: " + _oCarSaf:UltMsg)
+				_lContinua = .F.
+			else
+				_nVlUni = _oCarSaf:ItPrcParaNF [val((_sAliasQ) -> ITEM_NOTA)]
+				_sObs   = _oCarSaf:ItObs [val((_sAliasQ) -> ITEM_NOTA)]
+			endif
+		endif
+
+		_nVCompl = ((_sAliasQ) -> peso_liq * _nVlUni) - ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo)
+
+		// Implementei este paragrafo em 16/06/23, mas nao cheguei a testar
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery = "SELECT dbo.VA_FTIPO_FORNECEDOR_UVA ('" + (_sAliasQ) -> associado + "', '" + (_sAliasQ) -> loja_assoc + "', '" + mv_par05 + "0331')" // situacao ao final da safra	
+		_sTpForn = alltrim (left (_oSQL:RetQry (1, .f.), 1))
+		if empty (_sTpForn)
+			u_help ("Tipo fornecedor de uva indefinido (forn/loja " + (_sAliasQ) -> associado + "/" + (_sAliasQ) -> loja_assoc,, .t.)
+		endif
+
+		// Gera proxima pre-nf livre
+		_sQuery := " select max (ZZ9_PRE_NF)"
+		_sQuery +=  " from " + RETSQLNAME ("ZZ9") + " ZZ9  "
+		_sQuery += " where ZZ9.D_E_L_E_T_ != '*'"
+		_sQuery +=   " and ZZ9.ZZ9_FILIAL = '" + (_sAliasQ) -> FILIAL + "'"
+		_sQuery +=   " and ZZ9.ZZ9_SAFRA  = '" + mv_par05 + "'"
+		_sPreNF = _IncPreNF (U_RetSQL (_sQuery))
+
+		reclock ("ZZ9", .T.)
+		zz9 -> zz9_filial = (_sAliasQ) -> FILIAL
+		zz9 -> zz9_safra  = mv_par05
+		zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_PAGTO
+		zz9 -> zz9_parcel = mv_par06
+		zz9 -> zz9_fornec = (_sAliasQ) -> associado
+		zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
+		zz9 -> zz9_pre_nf = _sPreNF
+		zz9 -> zz9_tiponf = "C"  // N=Normal;C=Complemento
+		zz9 -> zz9_produt = (_sAliasQ) -> produto
+		zz9 -> zz9_grau   = (_sAliasQ) -> grau
+		zz9 -> zz9_classe = (_sAliasQ) -> clas_final
+		zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
+		zz9 -> zz9_conduc = (_sAliasQ) -> sist_conducao
+		zz9 -> zz9_vunOld = (_sAliasQ) -> VUnit_efetivo
+		zz9 -> zz9_quant  = 0
+		zz9 -> zz9_qtOri  = (_sAliasQ) -> peso_liq  						// Campo util para relatorios posteriores
+		zz9 -> zz9_vunit  = _nVCompl   										// Valor total a complementar
+		zz9 -> zz9_nfcomp = iif (zz9 -> zz9_vunit <= 0, 'VLR_MENOR', '')    // Para evitar que posteriormente o programa VA_GNF2 tente gerar nota para este registro.
+		zz9 -> zz9_vunit2 = _nVlUni  										// Preco unitario que foi usado para calcular o complemento
+		zz9 -> zz9_obs    = _sObs 											// Observacoes geradas pelo prog. de calculo do preco
+		//zz9 -> zz9_vunit3 = _aRetPrc [3]  								// Preco unitario da tabela CONAB
+		zz9 -> zz9_nfori  = (_sAliasQ) -> doc
+		zz9 -> zz9_serior = (_sAliasQ) -> serie
+		zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
+		zz9 -> zz9_msgNF  = 'COMPL PRECO;' + _sMsgNF
+		zz9 -> zz9_TES    = U_TESSafra(mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V')
+		zz9 -> zz9_TpForn = _sTpForn
+		// Guarda numero das cargas compartilhadas
+		if valtype (_oCarSaf) == 'O' .and. len (_oCarSaf:CCompart) > 0
+			zz9 -> zz9_ccomp  = _oCarSaf:TodasComp ()
+		endif
+		// Grava as possibilidades de misturas de variedades.
+		If (_sAliasQ)-> QTITENS > 1
+			zz9 -> zz9_mistu1 = 'Contem mistura'
+		EndIf
+		
+		msunlock ()
+		(_sAliasQ) -> (dbskip ())
+	enddo
+
+	u_help ("Processo concluido.")
+return
+
 
 // --------------------------------------------------------------------------
 static function _Clona (_nValor)
@@ -1311,5 +1446,6 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {13, "Exceto varied (separ.por /)   ", "C", 60, 0,  "",   "   ", {},             ""})
 	aadd (_aRegsPerg, {14, "Filial inicial                ", "C", 2,  0,  "",   "SM0", {},             ""})
 	aadd (_aRegsPerg, {15, "Filial final                  ", "C", 2,  0,  "",   "SM0", {},             ""})
+	aadd (_aRegsPerg, {16, "Tabela utilizada p/ preço     ", "C", 4,  0,  "",   "   ", {},             ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 return
