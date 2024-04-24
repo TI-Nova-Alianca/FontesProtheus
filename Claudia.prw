@@ -66,7 +66,6 @@ User Function claudia ()
 	// _enviaClientes()
 
 	//u_help("verbas")
-	//u_help(GetSXENum("ZA4","ZA4_NUM"))
 	//U_BatZA4()
 
 	//u_help("ZC2")
@@ -75,8 +74,111 @@ User Function claudia ()
 	//u_help("CTB")
 	//U_BACACTB()
 
+	u_help("custo ST")
+	_GLPI15288 ()
+
 
 Return
+
+// --------------------------------------------------------------------------
+// Atualiza custo standard cfe planilha (inclusive itens filhos (unitarios)
+static function _GLPI15288 ()
+    local _aDados    := {}
+    local _nDado     := 0
+    local _nCustD    := 0
+    local _aCSV      := {}
+    local _nCSV      := 0
+    local _aFilhos   := {}
+    local _nFilho    := 0
+    local _oSQL      := NIL
+    local _nDecCustD := tamsx3 ("B1_CUSTD")[2]
+
+    _aCSV = U_LeCSV ('c:\temp\GLPI_15288.csv', ';')
+    for _nCSV = 1 to len (_aCSV)
+        _aCSV [_nCSV, 3] = round (val (strtran (strtran (_aCSV [_nCSV, 3], '"', ''), ',', '.')), _nDecCustD)
+    next
+    U_Log2 ('debug', _aCSV)
+
+    // Usuario deseja atualizar tambem o cadastro das unidades. Para isso
+    // vou procurar os filhos de cada item do arquivo CSV (que tem somente
+    // as caixas) e acrescentar esses filhos na array de dados que vai ser
+    // usada para alterar os cadastros.
+    sb1 -> (dbsetorder (1))
+    for _nCSV = 1 to len (_aCSV)
+
+        if ! sb1 -> (dbseek (xfilial ("SB1") + U_TamFixo (_aCSV [_nCSV, 1], 15, ' '), .F.))
+            U_Log2 ('erro', '[' + procname () + ']Nao encontrado no SB1: ' + _aCSV [_nCSV, 1])
+        else
+
+            // Adiciona o pai (que estava no CSV original)
+            aadd (_aDados, {_aCSV [_nCSV, 1], _aCSV [_nCSV, 2], _aCSV [_nCSV, 3]})
+
+            // Adiciona os (se existirem) filhos dele.
+            _oSQL := ClsSQL ():New ()
+            _oSQL:_sQuery := ""
+            _oSQL:_sQuery += "SELECT B1_COD, B1_DESC"
+            _oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
+            _oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
+            _oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+            _oSQL:_sQuery +=   " AND SB1.B1_CODPAI  = '" + _aCSV [_nCSV, 1] + "'"
+            _aFilhos := _oSQL:Qry2Array (.f., .f.)
+            for _nFilho = 1 to len (_aFilhos)
+                aadd (_aDados, {_aFilhos [_nFilho, 1], _aFilhos [_nFilho, 2], _aCSV [_nCSV, 3] / sb1 -> b1_qtdemb})
+            next
+        endif
+    next
+    U_Log2 ('debug', _aDados)
+
+    sb1 -> (dbsetorder (1))
+    sb5 -> (dbsetorder (1))
+    for _nDado = 1 to len (_aDados)
+        if len (_aDados [_nDado]) < 3
+            U_Log2 ('erro', '[' + procname () + ']Sem custo para ' + _aDados [_nDado, 1] + ' ' + _aDados [_nDado, 2])
+        else
+            if ! sb1 -> (dbseek (xfilial ("SB1") + U_TamFixo (_aDados [_nDado, 1], 15, ' '), .F.))
+                U_Log2 ('erro', '[' + procname () + ']Nao encontrado no SB1: ' + _aDados [_nDado, 1])
+            else
+                if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+                    u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+                else
+                //  u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+
+                    _nCustD = _aDados [_nDado, 3]
+                    if _nCustD == 0
+                        U_Log2 ('aviso', '[' + procname () + ']'+ sb1 -> b1_cod + SB1 -> B1_DESC + ' custo zerado na planilha. Nao vou alterar.')
+                    else
+                        if sb1 -> b1_custd != _nCustD .or. sb1 -> B1_DATREF != date ()
+
+                            u_log2 ('info', 'Alterando custo ' + sb1 -> b1_cod + SB1 -> B1_DESC + ' de ' + transform (sb1 -> b1_custd, '@E 999,999.9999') + ' para ' + transform (_nCustD, '@E 999,999.9999'))
+
+                            // Cria variaveis para uso na gravacao do evento de alteracao
+                            regtomemory ("SB1", .F., .F.)
+                            //regtomemory ("SB5", .F., .F.)
+                            //m->b5_vasisde = 'S'
+                            m->b1_custd  = _nCustD
+                            m->B1_DATREF = date ()
+
+                            // Grava evento de alteracao
+                            _oEvento := ClsEvent():new ()
+                            _oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 15288 - ajustar B1_CUSTD', .F.)
+                            reclock ("SB1", .f.)
+                            sb1 -> B1_custd  = m->b1_custd
+                            SB1 -> B1_DATREF = m->B1_DATREF
+                            msunlock ()
+                            U_AtuMerc ("SB1", sb1 -> (recno ()))
+
+                            // Cai fora no primeiro, para testes.
+                        //  exit
+
+                        else
+                            U_Log2 ('debug', '[' + procname () + ']Dados jah estavam corretos')
+                        endif
+                    endif
+                endif
+            endif
+        endif
+    next
+return
 // // ------------------------------------------------------------------------------------
 // Static Function _enviaClientes()
 

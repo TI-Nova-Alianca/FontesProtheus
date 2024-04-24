@@ -76,6 +76,8 @@ CLASS ClsCarSaf from ClsBase
 	public  data ItPropRur        // Array de Itens da carga - Codigo propriedade rural (antigo 'cadastro viticola')
 	public  data Loja        // ze_lojasso
 	public  data NomeFornec  // A2_NOME - nome do fornecedor
+	public  data NFProdutor  // ze_nfprod
+	public  data NFSerProd   // ze_snfprod
 	public  data PesoBruto   // ZE_PESOBRU
 	public  data PesoTara    // ZE_PESOTAR
 	public  data PortImpTk   // Porta / caminho para impressao do ticket
@@ -880,6 +882,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::ItPropRur        = {}
 	::Loja        = ''
 	::NomeFornec  = ''
+	::NFProdutor  = ''
+	::NFSerProd   = ''
 	::PesoBruto   = 0
 	::PesoTara    = 0
 	// migrado para o metoto NEW ---> ::PortImpTk   = ''
@@ -907,6 +911,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Fornece    = m->ze_assoc
 		::Loja       = m->ze_lojasso
 		::NomeFornec = m->ze_nomasso
+		::NFProdutor = m->ze_nfprod
+		::NFSerProd  = m->ze_snfprod
 		::PesoBruto  = m->ze_pesobru
 		::PesoTara   = m->ze_pesotar
 		::Segregada  = (m->ze_segreg == 'S')
@@ -941,6 +947,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Fornece    = sze -> ze_assoc
 		::Loja       = sze -> ze_lojasso
 		::NomeFornec = sze -> ze_nomasso
+		::NFProdutor = sze -> ze_nfprod
+		::NFSerProd  = sze -> ze_snfprod
 		::PesoBruto  = sze -> ze_pesobru
 		::PesoTara   = sze -> ze_pesotar
 		::RegSZE     = sze -> (recno ())

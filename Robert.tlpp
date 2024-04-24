@@ -2854,7 +2854,7 @@ return
 static function _GLPI15287 ()
 
 	// Parte 1 - gerar as pre-notas na tabela ZZ9 para conferencia
-	cPerg = "VAGNF3"
+	/*cPerg = "VAGNF3"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
 	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
@@ -2872,26 +2872,26 @@ static function _GLPI15287 ()
 	U_GravaSX1 (cPerg, '15', 'z')    // Filial final
 	U_GravaSX1 (cPerg, '16', '24C')  // Tabela a qual será usada para buscar o preço unitário
 	U_VA_GNF3 (.T.)
+	*/
 
-/*
 	// Parte 2 - gerar as contranotas, com base nas pre-notas.
 	Private cPerg   := "VAGNF2"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
 	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
 	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', _sSafraCpl) // Safra referencia
-	U_GravaSX1 (cPerg, '06', 'O')    // Parcelas sep.barras (bco=todas)
-	U_GravaSX1 (cPerg, '07', 'B')    // Grupo pagto
+	U_GravaSX1 (cPerg, '05', '2024') // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'A')    // Gerar sequencia 
+	U_GravaSX1 (cPerg, '07', 'A')     // Grupo pagto -- definido no ClsAssoc, chumbado no programa grupo A
 	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
 	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
 	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
-	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
-	U_GravaSX1 (cPerg, '12', '9969')     // Apenas estas variedades
+	U_GravaSX1 (cPerg, '11', '801')  // Cond pagto
+	U_GravaSX1 (cPerg, '12', '') 	 // Apenas estas variedades
 	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
 	U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
 	u_va_gnf2 (.t.)
-*/
+
 return
 
 // --------------------------------------------------------------------------

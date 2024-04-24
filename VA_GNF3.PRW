@@ -4,19 +4,20 @@
 // Descricao: Gera registros tipo 'complemento de preco' no arquivo ZZ9 (previa das notas de compra de uva da safra)
 //
 // Historico de alteracoes:
-// 26/10/2012 - Robert - Ajustes para safra 2012.
-// 09/06/2015 - Robert - Verifica se o usuario tem acesso pela tabela ZZU.
-//                     - Ajustes para 2015.
-// 18/06/2015 - Robert - View VA_NOTAS_SAFRA renomeada para VA_VNOTAS_SAFRA
-// 22/04/2017 - Robert - Tratamento para 2017
-// 10/07/2017 - Robert - Novo complemento geral 2017
-// 23/06/2020 - Robert - Implementacoes para safra 2020
-// 06/07/2020 - Robert - Criados parametros de variedades a considerar e a desconsiderar.
-// 22/04/2021 - Robert - Criado tratamento para safra 2020 (GLPI 9891).
-//    05/2023 - Robert - Tratamentos para complemento 2023 (maio) - GLPI 13532.
-// 16/06/2023 - Robert - Gravacao campo zz9_TpForn - GLPI 13699
-// 18/04/2014 - Robert - Criado tratamento para ajuste tabela 2024 (GLPI 15287)
-//
+// 26/10/2012 - Robert  - Ajustes para safra 2012.
+// 09/06/2015 - Robert  - Verifica se o usuario tem acesso pela tabela ZZU.
+//                      - Ajustes para 2015.
+// 18/06/2015 - Robert  - View VA_NOTAS_SAFRA renomeada para VA_VNOTAS_SAFRA
+// 22/04/2017 - Robert  - Tratamento para 2017
+// 10/07/2017 - Robert  - Novo complemento geral 2017
+// 23/06/2020 - Robert  - Implementacoes para safra 2020
+// 06/07/2020 - Robert  - Criados parametros de variedades a considerar e a desconsiderar.
+// 22/04/2021 - Robert  - Criado tratamento para safra 2020 (GLPI 9891).
+//    05/2023 - Robert  - Tratamentos para complemento 2023 (maio) - GLPI 13532.
+// 16/06/2023 - Robert  - Gravacao campo zz9_TpForn - GLPI 13699
+// 18/04/2014 - Robert  - Criado tratamento para ajuste tabela 2024 (GLPI 15287)
+// 24/04/2024 - Claudia - A partir de 2024, o campo passou a ser V=Complemento de valor, 
+//                        e nao mais N=Normal;C=Complemento
 
 // --------------------------------------------------------------------------
 User Function VA_GNF3 (_lAuto)
@@ -935,7 +936,7 @@ Static Function _Gera2020 ()
 			zz9 -> zz9_fornec = (_sAliasQ) -> associado
 			zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
 			zz9 -> zz9_pre_nf = _sPreNF
-			zz9 -> zz9_tiponf = "C"
+			zz9 -> zz9_tiponf = "C" 
 			zz9 -> zz9_produt = (_sAliasQ) -> produto
 			zz9 -> zz9_grau   = (_sAliasQ) -> grau
 			zz9 -> zz9_classe = (_sAliasQ) -> clas_final
@@ -990,7 +991,7 @@ static function _Gera2021 ()
 	endif
 	_oSQL:_sQuery += " ORDER BY ASSOCIADO, LOJA_ASSOC, FILIAL, PRODUTO, GRAU, CLAS_FINAL, CLAS_ABD"
 	_oSQL:Log ()
-	_sAliasQ = _oSQL:Qry2Trb ()
+	_sAliasQ = _oSQL:Qry2Trb (.F.)
 	procregua ((_sAliasQ) -> (reccount ()))
 	do while ! (_sAliasQ) -> (eof ())
 		incproc ()
@@ -1307,6 +1308,7 @@ static function _Gera2024 ()
 
 		// Instancia a carga para poder verificar mais a fundo.
 		_oCarSaf := ClsCarSaf():New (sze -> (recno ()))
+
 		if empty (_oCarSaf:Carga)
 			u_help ("Impossivel instanciar carga (ou carga invalida).",, .t.)
 			exit
@@ -1316,8 +1318,10 @@ static function _Gera2024 ()
 				u_help ("Erro na funcao de precificacao: " + _oCarSaf:UltMsg)
 				_lContinua = .F.
 			else
-				_nVlUni = _oCarSaf:ItPrcParaNF [val((_sAliasQ) -> ITEM_NOTA)]
-				_sObs   = _oCarSaf:ItObs [val((_sAliasQ) -> ITEM_NOTA)]
+				_nVlUni     = _oCarSaf:ItPrcParaNF [val((_sAliasQ) -> ITEM_NOTA)]
+				_sObs       = _oCarSaf:ItObs [val((_sAliasQ) -> ITEM_NOTA)]
+				_sNFProd    = _oCarSaf:NFProdutor
+				_sNfSerProd = _oCarSaf:NFSerProd
 			endif
 		endif
 
@@ -1342,12 +1346,13 @@ static function _Gera2024 ()
 		reclock ("ZZ9", .T.)
 		zz9 -> zz9_filial = (_sAliasQ) -> FILIAL
 		zz9 -> zz9_safra  = mv_par05
-		zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_PAGTO
+		//zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_PAGTO
+		zz9 -> zz9_grupo  = 'A' // sera gerado todos com grupo A -> definição de grupos ::FSRegraPagto ClsAssoc
 		zz9 -> zz9_parcel = mv_par06
 		zz9 -> zz9_fornec = (_sAliasQ) -> associado
 		zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
 		zz9 -> zz9_pre_nf = _sPreNF
-		zz9 -> zz9_tiponf = "C"  // N=Normal;C=Complemento
+		zz9 -> zz9_tiponf = "V"  // A partir de 2024, o campo passou a ser V=Complemento de valor, e nao mais N=Normal;C=Complemento
 		zz9 -> zz9_produt = (_sAliasQ) -> produto
 		zz9 -> zz9_grau   = (_sAliasQ) -> grau
 		zz9 -> zz9_classe = (_sAliasQ) -> clas_final
@@ -1367,6 +1372,8 @@ static function _Gera2024 ()
 		zz9 -> zz9_msgNF  = 'COMPL PRECO;' + _sMsgNF
 		zz9 -> zz9_TES    = U_TESSafra(mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V')
 		zz9 -> zz9_TpForn = _sTpForn
+		zz9 -> zz9_nfprod = _sNFProd
+		zz9 -> zz9_snfpro = _sNfSerProd
 		// Guarda numero das cargas compartilhadas
 		if valtype (_oCarSaf) == 'O' .and. len (_oCarSaf:CCompart) > 0
 			zz9 -> zz9_ccomp  = _oCarSaf:TodasComp ()
