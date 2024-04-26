@@ -56,6 +56,7 @@
 //                      - Criado tratamento para desfazimento de guarda de pallets na logistica (atributo :EtqReferenciada) - GLPI 14999
 // 08/03/2024 - Robert  - Desconsiderar mensagem "Ja existe uma movimentacao com este numero de documento" como um erro, pois basta tentar novamente.
 // 21/03/2024 - Robert  - Nao permitia transf.para ax.11 com motivo 04 (bloqueio criado em 28/02 para desfazimento de guarda de pallet) - GLPI 15121
+// 25/04/2024 - Robert  - Ajustes validacoes desfazimento guarda pallets (GLPI 14965)
 //
 
 // ------------------------------------------------------------------------------------
@@ -266,7 +267,8 @@ METHOD Exclui () Class ClsTrEstq
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "select count (*)"
 		_oSQL:_sQuery +=  " from tb_wms_pedidos"
-		_oSQL:_sQuery += " where saida_id = 'ZAG" + xfilial ("ZAG") + ::Docto + "'"  // Manter consistencia com a view v_wms_pedido !!!
+//		_oSQL:_sQuery += " where saida_id = 'ZAG" + xfilial ("ZAG") + ::Docto + "'"  // Manter consistencia com a view v_wms_pedido !!!
+		_oSQL:_sQuery += " where saida_id = 'ZAG" + xfilial ("ZAG") + ::Docto + ::Seq + "'"  // Manter consistencia com a view v_wms_pedido !!!
 		_oSQL:_sQuery +=   " and status  != '9'"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		if _oSQL:RetQry (1, .f.) > 0
@@ -1406,8 +1408,9 @@ METHOD PodeIncl () Class ClsTrEstq
 			endif
 		endif
 
+
 		// No momento, nao temos outro motivo para desfazimento sem ser o estorno do apontamento.
-		if _lContinua .and. za1 -> za1_quant != ::Quantidade
+		if _lContinua .and. za1 -> za1_quant != ::QtdSolic
 			_Super:SomaMsg ("Quantidade original da etiqueta referenciada = " + cvaltochar (za1 -> za1_quant) + ".")
 			_lContinua = .F.
 		endif
@@ -1443,8 +1446,23 @@ METHOD PodeIncl () Class ClsTrEstq
 			_oSQL:_sQuery +=    " AND D3_FILIAL  = '" + ::FilDest + "'"
 			_oSQL:_sQuery +=    " AND D3_VAETIQ  = '" + ::EtqRef  + "'"
 			_oSQL:_sQuery +=    " AND D3_ESTORNO = ''"
-			if _oSQL:RetQry (1, .t.) < SuperGetMv ("MV_ULMES", .f., ctod (''), ::FilDest)
+			if stod (_oSQL:RetQry (1, .f.)) < SuperGetMv ("MV_ULMES", .f., ctod (''), ::FilDest)
 				_Super:SomaMsg ("Etiqueta referenciada foi apontada em mes ja encerrado no estoque.")
+				_lContinua = .F.
+			endif
+		endif
+
+		if _lContinua
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := " SELECT TOP 1 D3_LOCAL"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
+			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND D3_FILIAL  = '" + ::FilDest + "'"
+			_oSQL:_sQuery +=    " AND D3_VAETIQ  = '" + ::EtqRef  + "'"
+			_oSQL:_sQuery +=    " AND D3_ESTORNO = ''"
+			_oSQL:_sQuery +=    " AND D3_CF      LIKE 'PR%'"
+			if _oSQL:RetQry (1, .f.) != ::AlmDest
+				_Super:SomaMsg ("Alm. destino deve ser o mesmo onde a etiqueta referenciada foi apontada (" + _oSQL:RetQry (1, .f.) + ").")
 				_lContinua = .F.
 			endif
 		endif
@@ -1461,6 +1479,23 @@ METHOD PodeIncl () Class ClsTrEstq
 			_Super:SomaMsg ("OP referenciada '" + ::OP + "' ja encontra-se encerrada.")
 			_lContinua = .F.
 		endif
+
+		// Nao permitir mais de uma solicitacao de desfazimento da mesma etiqueta.
+		if _lContinua
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := " SELECT COUNT (*)"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZAG")
+			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
+			_oSQL:_sQuery +=    " AND ZAG_CODMOT = '09'"
+			_oSQL:_sQuery +=    " AND ZAG_ETQREF = '" + ::EtqRef  + "'"
+			_oSQL:_sQuery +=    " AND ZAG_EXEC  != 'X'"  // Nao estornada
+			if _oSQL:RetQry (1, .f.) > 0
+				_Super:SomaMsg ("Ja existe solicitacao de desfazimento de guarda da etiqueta referenciada.")
+				_lContinua = .F.
+			endif
+		endif
+
 	endif
 
 	if ! _lContinua .and. ! empty (::UltMsg)
