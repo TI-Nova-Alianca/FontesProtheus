@@ -1815,7 +1815,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_Super:SomaMsg ("Nao consta como associado nem como ex-associado nesta data.")
 			_lContinua = .F.
 		endif
-		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! (IsInCallStack ("U_BATSAFR") .and. IsInCallStack ("_GERASZI"))
+		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_GNF6").and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! (IsInCallStack ("U_BATSAFR") .and. IsInCallStack ("_GERASZI"))
 			_Super:SomaMsg ("Movimento de compra de safra: so' pode ser incluido por rotinas especificas, ou manualmente quando tratar-se de titulo transferido de outra filial. Informe filial de origem.")
 			_lContinua = .F.
 		endif

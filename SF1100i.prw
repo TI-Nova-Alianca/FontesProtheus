@@ -719,7 +719,7 @@ static function _DadosAdic ()
 	
 	// Abre tela para usuario informar dados adicionais
 //	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUSN")
-	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUSN") .and. ! IsInCallStack ("LOJA720")  // rotina troca/devolucoes loja
+	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_GNF6") .and. ! IsInCallStack ("U_VA_RUSN") .and. ! IsInCallStack ("LOJA720")  // rotina troca/devolucoes loja
 		// Tela em loop para validar dados.
 		do while .T.
 			@ 0, 0 TO 300, 320 DIALOG oDlg1 TITLE "Dados Adicionais NF"

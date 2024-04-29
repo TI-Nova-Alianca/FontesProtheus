@@ -2875,7 +2875,8 @@ static function _GLPI15287 ()
 	*/
 
 	// Parte 2 - gerar as contranotas, com base nas pre-notas.
-	Private cPerg   := "VAGNF2"
+	//Private cPerg   := "VAGNF2"
+	Private cPerg   := "VAGNF6"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
 	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
@@ -2883,14 +2884,13 @@ static function _GLPI15287 ()
 	U_GravaSX1 (cPerg, '05', '2024') // Safra referencia
 	U_GravaSX1 (cPerg, '06', 'A')    // Gerar sequencia 
 	U_GravaSX1 (cPerg, '07', 'A')     // Grupo pagto -- definido no ClsAssoc, chumbado no programa grupo A
-	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
-	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
-	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
-	U_GravaSX1 (cPerg, '11', '801')  // Cond pagto
-	U_GravaSX1 (cPerg, '12', '') 	 // Apenas estas variedades
-	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
-	U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
-	u_va_gnf2 (.t.)
+	U_GravaSX1 (cPerg, '08', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
+	U_GravaSX1 (cPerg, '09', '801')  // Cond pagto
+	U_GravaSX1 (cPerg, '10', '') 	 // Apenas estas variedades
+	U_GravaSX1 (cPerg, '11', '')     // Exceto estas variedades
+	//U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
+	//u_va_gnf2 (.t.)
+	u_va_gnf6 (.t.)
 
 return
 

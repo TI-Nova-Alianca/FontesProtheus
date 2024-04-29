@@ -54,7 +54,7 @@ user function MTColSE2 ()
 //	U_Log2 ('debug', '[' + procname () + ']type ("_aHeadSE2"):' + type ("_aHeadSE2"))
 
 	//if (IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2")) .and. IsInCallStack ("NFEFLDCHG")
-	if IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2") //) .and. IsInCallStack ("NFEFLDCHG")
+	if IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2") .or. IsInCallStack ("U_VA_GNF6")  //) .and. IsInCallStack ("NFEFLDCHG")
 		if cTipo $ "N/C" .and. cFormul == "S"
 			if type ('_aParPgSaf') != 'A'
 				_sMsgErro += "Nao tenho dados para distribuir as parcelas de pagamento da safra!"

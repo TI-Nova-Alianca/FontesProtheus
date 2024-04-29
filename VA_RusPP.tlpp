@@ -64,7 +64,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'M'})
 
 		// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
-		_oAssocCP = ClsAssoc():New ('000161', '01')
+		_oAssocCP = ClsAssoc():New ('003865', '01')
 	//	//                                _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
 	//	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .f.,     .f.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
 		_oAssocCP:FSSafra      = _sSafPag
@@ -105,9 +105,6 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			next
 		endif
 	endif
-	u_log2 ('debug', '_aParcel depois de ler o XML:')
-	u_log2 ('debug', _aParcel)
-
 	// A parcela do frete cai sempre na proxima posicao livre
 	if _lContinua
 		_nParcel = 1
@@ -119,7 +116,11 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			_lContinua = .F.
 		else
 			_nParcFrt = _nParcel
-			U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
+			if _nVlFrete == 0
+				U_Log2 ('debug', 'Não tem parcela de frete.')
+			else
+				U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
+			endif
 		endif
 	endif
 
@@ -307,7 +308,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 				if _aParcel [_nParcel, 3] <= 0
 					loop
 				endif
-			//	U_Log2 ('debug', 'Definindo mes para vencimento da parcela ' + cvaltochar (_nParcel))
+			    //	U_Log2 ('debug', 'Definindo mes para vencimento da parcela ' + cvaltochar (_nParcel))
 				// Parcela do frete sempre eh a ultima (jah descobri
 				// anteriormente qual das parcelas vai ter o frete.
 				if _nParcel == _nParcFrt
@@ -373,10 +374,9 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 				enddo
 			endif
 		next
-		//	U_Log2 ('info', 'Parcelamento previsto:')
-		//	u_log2 ('info', _aParcel)
+		//U_Log2 ('info', 'Parcelamento previsto:')
+		//u_log2 ('info', _aParcel)
 	endif
-
 
 	// Retorna somente as linhas com dados definidos
 	_aAux = {}
@@ -387,6 +387,6 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			endif
 		next
 	endif
-//	U_Log2 ('info', '[' + procname () + ']Parcelas previstas:')
-//	U_Log2 ('info', _aAux)
+	U_Log2 ('info', '[' + procname () + ']Parcelas previstas:')
+	U_Log2 ('info', _aAux)
 return _aAux

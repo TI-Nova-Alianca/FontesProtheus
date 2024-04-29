@@ -755,7 +755,7 @@ static function _ValNfOri ()
 		for _nLinha = 1 to len (aCols)
 			if ! GDDeleted (_nLinha) .And. ! empty (GDFieldGet ("D1_NFORI", _nLinha))
 				if ! empty (_sNfOri) .and. GDFieldGet ("D1_NFORI", _nLinha) != _sNfOri
-					if ! IsInCallStack ("U_VA_GNF2")  // Para notas de complemento de safra temos tratamento via tabela CCD + nfesefaz.prw
+					if ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_GNF6") // Para notas de complemento de safra temos tratamento via tabela CCD + nfesefaz.prw
 						u_help ("SEFAZ nao autoriza mais de uma NF-e referenciada para NF-e complementar. Informe apenas uma NF de origem.")
 						_lRet = .F.
 						exit

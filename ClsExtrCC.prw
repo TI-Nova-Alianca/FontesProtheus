@@ -649,7 +649,7 @@ METHOD Gera () Class ClsExtrCC
 						
 						// Compra de safra: para nao misturar com as faturas e transf. entre filiais, verifica se eh a nota original
 						if ::Dados [_nLinha, .ExtrCCTM] == '13'
-							if alltrim (::Dados [_nLinha, .ExtrCCZIOrigem]) == 'VA_GNF2'
+							if alltrim(::Dados [_nLinha, .ExtrCCZIOrigem]) $ 'VA_GNF2/VA_GNF6'
 								_lTagSomar = .T.
 							endif
 						else

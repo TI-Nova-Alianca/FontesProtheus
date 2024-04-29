@@ -348,7 +348,7 @@ Static Function _ValSafra ()
 			u_help ("Notas de uva: Grau deve ser informado no campo '" + alltrim (RetTitle ("D1_GRAU")) + "'.",, .t.)
 			_lRetSafr = .F.
 		endif
-		if empty (GDFieldGet ("D1_VAVITIC")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas nas obs da nota, pois acumula varias notas de entrada.
+		if empty (GDFieldGet ("D1_VAVITIC")) .and. ! IsInCallStack ("U_VA_GNF2")  .and. ! IsInCallStack ("U_VA_GNF6") // Para notas de compra vai apenas nas obs da nota, pois acumula varias notas de entrada.
 			u_help ("Notas de uva: Numero do cadastro viticola deve ser informado no campo '" + alltrim (RetTitle ("D1_VAVITIC")) + "'.",, .t.)
 			_lRetSafr = .F.
 		endif
@@ -367,19 +367,19 @@ Static Function _ValSafra ()
 						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM99")) + "'.",, .t.)
 						_lRetSafr = .F.
 					endif
-					if empty (GDFieldGet ("D1_PRM02")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
+					if empty (GDFieldGet ("D1_PRM02")) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_GNF6") // Para notas de compra vai apenas a classificacao final.
 						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por acucar deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM02")) + "'.",, .t.)
 						_lRetSafr = .F.
 					endif
-					if empty (GDFieldGet ("D1_PRM03")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
+					if empty (GDFieldGet ("D1_PRM03")) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_GNF6") // Para notas de compra vai apenas a classificacao final.
 						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por sanidade deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM03")) + "'.",, .t.)
 						_lRetSafr = .F.
 					endif
-					if empty (GDFieldGet ("D1_PRM04")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
+					if empty (GDFieldGet ("D1_PRM04")) .and. ! IsInCallStack ("U_VA_GNF2")  .and. ! IsInCallStack ("U_VA_GNF6")// Para notas de compra vai apenas a classificacao final.
 						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por maturacao deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM04")) + "'.",, .t.)
 						_lRetSafr = .F.
 					endif
-					if empty (GDFieldGet ("D1_PRM05")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
+					if empty (GDFieldGet ("D1_PRM05")) .and. ! IsInCallStack ("U_VA_GNF2")  .and. ! IsInCallStack ("U_VA_GNF6")// Para notas de compra vai apenas a classificacao final.
 						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por materiais estranhos deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM05")) + "'.",, .t.)
 						_lRetSafr = .F.
 					endif

@@ -139,7 +139,7 @@ User Function MT100Agr ()
 	U_PerfMon ('F', 'GravacaoMATA100')  // Para metricas de performance
 
 	// Imprime romaneio de entrada - GLPI 11903
-	if (inclui .or. altera) .and. cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUSN") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
+	if (inclui .or. altera) .and. cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUSN") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_GNF6")
 		U_Log2 ('debug', '[' + procname () + ']Estou logando a pilha de chamadas para identificar de onde abre msg de impressaodo romaneio no reprocessamento do painel XML.')
 		U_LogPCham ()
 		if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")

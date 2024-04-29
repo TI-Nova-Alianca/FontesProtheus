@@ -41,7 +41,7 @@ User Function SX5NOTA ()
 		endif
 	else
 //		if IsInCallStack ("U_VA_RUS") .or. IsInCallStack ("U_VA_GNF2") .or. IsInCallStack ("U_VA_GNF5")
-		if IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2") .or. IsInCallStack ("U_VA_GNF5")
+		if IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2") .or. IsInCallStack ("U_VA_GNF6") .or. IsInCallStack ("U_VA_GNF5")
 			if ! left (_xSERIE, 3) $ GetMv ("VA_SERSAFR", .F., '')
 				_lRet = .F.
 			endif
