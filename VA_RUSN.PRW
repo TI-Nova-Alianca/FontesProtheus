@@ -4,57 +4,57 @@
 // Descricao..: Gera contranota de entrada ref. recebimento de uva durante a safra (uso na balanca).
 //
 // Historico de alteracoes:
-// 10/02/2010 - Robert - Nao permite gerar nota em ambiente 'contingencia'
-// 15/02/2010 - Robert - Grava campo ze_obs nos dados adicionais da nota.
-// 11/01/2011 - Robert - Tratamento para o campo ZE_CADVITI.
-// 30/01/2011 - Robert - Backup de campos de filtragem do MBrowse antes de entrar na tela do SPED.
-// 21/02/2011 - Robert - Criado tratamento para quando der erro em rotina automatica, mas nao houver arquivo de log gerado.
-// 23/01/2012 - Robert - Busca nao conformidades e cargas aglutinadas para os dados adicionais da nota.
-// 18/01/2013 - Elaine - Busca classificacao do grau da uva pela funcao VA_CLAUF
-// 31/01/2013 - Robert - Puxa clas.uva fina para a descricao somente se tiver todas as classificacoes informadas.
-// 04/02/2015 - Robert - Tratamento para desconsiderar classificacao uva fina quando producao propria.
-// 12/02/2015 - Robert - Matodo ConsChv() trocado por ConsAutori() na consulta de autorizacao do SPED.
-// 28/10/2015 - Robert - Gravacao de dados adicionais no ZZ4 passa a ser feita apenas em campo memo do SF1.
-// 04/01/2016 - Robert - Tratamento para parametro VA_SERSAFR.
-// 18/02/2016 - Robert - Restaura parametros da rotina MATA103 apos sua execucao.
-// 18/01/2017 - Robert - Valida campo ZZC_OK.
-// 07/03/2017 - Catia  - Setar o parametro de amarracao com fornecedores sempre como NAO
-// 04/01/2017 - Robert - Gravacao do campo F1_VASAFRA (criado por que comecamos a safra 2018 ainda dentro no ano de 2017).
-// 18/01/2018 - Robert - Passa a bloquear acesso via funcao SoftLock() e nao mais Semaforo().
-// 08/01/2019 - Robert - Ajustes na geracao do D1_LOTECTL para tratar nao conformidades.
-// 28/01/2019 - Robert - Liberado gerar contranota para fornecedor 012373.
-// 05/02/2019 - Robert - Ajustes para receber uva de associados da Coop.Garibaldi.
-// 08/04/2019 - Catia  - include TbiConn.ch 
-// 13/12/2019 - Robert - Inicio ajustes para safra 2020 (d1_lotefor).
-// 03/01/2020 - Robert - Gravacao campo F1_VAFLAG.
-// 15/01/2020 - Robert - Gravacao campo ZF_VALFRET.
-// 23/01/2020 - Robert - Tratamento para fornecedores nao associados: 012373, 012791, 012792.
-// 04/02/2020 - Robert - Ajustada chamada funcao calculo preco quando mais de uma variedade na nota.
-// 10/02/2020 - Robert - Desabilitada altercao de parametros para 'contabiliza online=nao'.
-// 20/02/2020 - Robert - Desabilitada gravacao do ZF_IDSZ9 no D1_LOTEFOR (cadastros estao desatualizados, nao ajuda em nada. Vai ser passado para NaWeb)
-// 01/07/2020 - Robert - Calculo de frete passa a ser em funcao separada, para facilitar posteriores recalculos.
-// 04/01/2021 - Robert - Ajustes diversos safra 2021
-// 11/01/2021 - Robert - Ajustes diversos safra 2021
-// 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
-//                     - Definido TES (028) e preco unitario (1,00) para producao propria Livramento.
-// 19/01/2021 - Robert - Producao propria Livramento passa a entrar com mesmo preco de associados (entrava a 1,00)
-// 02/02/2021 - Robert - Chamada do VA_RusEn no final para enderecar uva no estoque (GLPI 8779).
-// 09/02/2021 - Robert - Finaliza a thread (paliativo) se estiver usando muita memoria (GLPI 9376).
-// 10/02/2021 - Robert - Limite memoria (finaliza rotina) aumentado de 250 p/ 300 Mb (GLPI 9376).
-//                     - Inseridas chamadas da funcao FreeObj() em alguns casos (GLPI 9376).
-// 16/02/2021 - Robert - Passa a ler parametro VA_TSAFNJ (GLPI 9424)
-//                     - Implementada simulacao de geracao de contranota (GLPI 9420)
-// 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
-// 29/03/2021 - Robert - Novo parametro funcao VA_RusPP (GLPI 9592).
-// 22/04/2021 - Robert - Passa a usar a funcao U_TESSafra() para definicao do TES a usar (GLPI 9891)
-// 11/01/2022 - Robert - Ajustes safra 2022
-// 17/01/2022 - Robert - Ajustes precos safra 2022
-// 22/01/2022 - Robert - Permitia seguir sem testar se a funcao VA_RusMV tinha dado erro.
-// 03/02/2023 - Robert - Leitura var.menor valor passa a usar ClsCarSaf:VarMenorLv
-//                     - Tratamentos diversos para cargas compartilhadas
-// 29/04/2023 - Robert - Chamada da busca de variedade de menor valor passa a ser diferenciada por safra.
+// 10/02/2010 - Robert  - Nao permite gerar nota em ambiente 'contingencia'
+// 15/02/2010 - Robert  - Grava campo ze_obs nos dados adicionais da nota.
+// 11/01/2011 - Robert  - Tratamento para o campo ZE_CADVITI.
+// 30/01/2011 - Robert  - Backup de campos de filtragem do MBrowse antes de entrar na tela do SPED.
+// 21/02/2011 - Robert  - Criado tratamento para quando der erro em rotina automatica, mas nao houver arquivo de log gerado.
+// 23/01/2012 - Robert  - Busca nao conformidades e cargas aglutinadas para os dados adicionais da nota.
+// 18/01/2013 - Elaine  - Busca classificacao do grau da uva pela funcao VA_CLAUF
+// 31/01/2013 - Robert  - Puxa clas.uva fina para a descricao somente se tiver todas as classificacoes informadas.
+// 04/02/2015 - Robert  - Tratamento para desconsiderar classificacao uva fina quando producao propria.
+// 12/02/2015 - Robert  - Matodo ConsChv() trocado por ConsAutori() na consulta de autorizacao do SPED.
+// 28/10/2015 - Robert  - Gravacao de dados adicionais no ZZ4 passa a ser feita apenas em campo memo do SF1.
+// 04/01/2016 - Robert  - Tratamento para parametro VA_SERSAFR.
+// 18/02/2016 - Robert  - Restaura parametros da rotina MATA103 apos sua execucao.
+// 18/01/2017 - Robert  - Valida campo ZZC_OK.
+// 07/03/2017 - Catia   - Setar o parametro de amarracao com fornecedores sempre como NAO
+// 04/01/2017 - Robert  - Gravacao do campo F1_VASAFRA (criado por que comecamos a safra 2018 ainda dentro no ano de 2017).
+// 18/01/2018 - Robert  - Passa a bloquear acesso via funcao SoftLock() e nao mais Semaforo().
+// 08/01/2019 - Robert  - Ajustes na geracao do D1_LOTECTL para tratar nao conformidades.
+// 28/01/2019 - Robert  - Liberado gerar contranota para fornecedor 012373.
+// 05/02/2019 - Robert  - Ajustes para receber uva de associados da Coop.Garibaldi.
+// 08/04/2019 - Catia   - include TbiConn.ch 
+// 13/12/2019 - Robert  - Inicio ajustes para safra 2020 (d1_lotefor).
+// 03/01/2020 - Robert  - Gravacao campo F1_VAFLAG.
+// 15/01/2020 - Robert  - Gravacao campo ZF_VALFRET.
+// 23/01/2020 - Robert  - Tratamento para fornecedores nao associados: 012373, 012791, 012792.
+// 04/02/2020 - Robert  - Ajustada chamada funcao calculo preco quando mais de uma variedade na nota.
+// 10/02/2020 - Robert  - Desabilitada altercao de parametros para 'contabiliza online=nao'.
+// 20/02/2020 - Robert  - Desabilitada gravacao do ZF_IDSZ9 no D1_LOTEFOR (cadastros estao desatualizados, nao ajuda em nada. Vai ser passado para NaWeb)
+// 01/07/2020 - Robert  - Calculo de frete passa a ser em funcao separada, para facilitar posteriores recalculos.
+// 04/01/2021 - Robert  - Ajustes diversos safra 2021
+// 11/01/2021 - Robert  - Ajustes diversos safra 2021
+// 15/01/2021 - Robert  - Novo parametro metodo :RetFixo da classe ClsSQL().
+//                      - Definido TES (028) e preco unitario (1,00) para producao propria Livramento.
+// 19/01/2021 - Robert  - Producao propria Livramento passa a entrar com mesmo preco de associados (entrava a 1,00)
+// 02/02/2021 - Robert  - Chamada do VA_RusEn no final para enderecar uva no estoque (GLPI 8779).
+// 09/02/2021 - Robert  - Finaliza a thread (paliativo) se estiver usando muita memoria (GLPI 9376).
+// 10/02/2021 - Robert  - Limite memoria (finaliza rotina) aumentado de 250 p/ 300 Mb (GLPI 9376).
+//                      - Inseridas chamadas da funcao FreeObj() em alguns casos (GLPI 9376).
+// 16/02/2021 - Robert  - Passa a ler parametro VA_TSAFNJ (GLPI 9424)
+//                      - Implementada simulacao de geracao de contranota (GLPI 9420)
+// 19/02/2021 - Robert  - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
+// 29/03/2021 - Robert  - Novo parametro funcao VA_RusPP (GLPI 9592).
+// 22/04/2021 - Robert  - Passa a usar a funcao U_TESSafra() para definicao do TES a usar (GLPI 9891)
+// 11/01/2022 - Robert  - Ajustes safra 2022
+// 17/01/2022 - Robert  - Ajustes precos safra 2022
+// 22/01/2022 - Robert  - Permitia seguir sem testar se a funcao VA_RusMV tinha dado erro.
+// 03/02/2023 - Robert  - Leitura var.menor valor passa a usar ClsCarSaf:VarMenorLv
+//                      - Tratamentos diversos para cargas compartilhadas
+// 29/04/2023 - Robert  - Chamada da busca de variedade de menor valor passa a ser diferenciada por safra.
+// 30/04/2024 - Claudia - Seta parametros F12. GLPI: 15367
 //
-
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -684,6 +684,17 @@ User Function va_rusN (_lSimulNF)
 		// Busca a Proxima NF da serie informada.
 		_sNF = NxtSX5Nota (_sSerie)
 		u_log2 ('info', '[' + procname () + ']Vou tentar gerar NF: ' + _sNF)
+
+		// seta parametros F12
+		if U_AmbTeste ()
+			U_GravaSX1 ("MTA103", "01", "2")
+			U_GravaSX1 ("MTA103", "06", "2")
+			U_GravaSX1 ("MTA103", "17", "2")
+		else
+			U_GravaSX1 ("MTA103", "01", "2")
+			U_GravaSX1 ("MTA103", "06", "1")
+			U_GravaSX1 ("MTA103", "17", "2")
+		endif
 
 		// Prepara campos do cabecalho da nota
 		_aAutoSF1 := {}

@@ -186,6 +186,7 @@ Static Function _Gera02()
 			_lContinua := _Gera03(_aItem[_x,1],_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
 		Next
 	
+		u_help("Processo finalizado")
 		// Notifica interessados.
 		if _lContinua
 			U_ZZUNU({'019', '116', '052', '068'}, ;  // Fiscal, custos, contabilidade, direcao/ger.financeiro
@@ -225,9 +226,11 @@ Static Function _Gera03 (_sItem,_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,
 	if U_AmbTeste ()
 		U_GravaSX1 ("MTA103", "01", "2")
 		U_GravaSX1 ("MTA103", "06", "2")
+		U_GravaSX1 ("MTA103", "17", "2")
 	else
 		U_GravaSX1 ("MTA103", "01", "2")
 		U_GravaSX1 ("MTA103", "06", "1")
+		U_GravaSX1 ("MTA103", "17", "2")
 	endif
 
 	if _lContinua
@@ -379,9 +382,9 @@ Static Function _Gera03 (_sItem,_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,
 	endif
 
 	if ! _lContinua
-		u_help("PROCESSO CANCELADO. Notas ja' geradas: de '" + _sNFIni + "' a '" + _sNFFim + "' para itens:"+_sItem)
+		u_log2("PROCESSO CANCELADO. Notas ja' geradas: de '" + _sNFIni + "' a '" + _sNFFim + "' para itens:"+_sItem)
 	else
-		u_help("Processo finalizado. Notas geradas: de '" + _sNFIni + "' a '" + _sNFFim + "' para itens:"+_sItem)
+		u_log2("Processo finalizado. Notas geradas: de '" + _sNFIni + "' a '" + _sNFFim + "' para itens:"+_sItem)
 	endif
 		
 Return _lContinua
