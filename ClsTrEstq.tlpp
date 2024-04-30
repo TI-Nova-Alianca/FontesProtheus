@@ -57,6 +57,7 @@
 // 08/03/2024 - Robert  - Desconsiderar mensagem "Ja existe uma movimentacao com este numero de documento" como um erro, pois basta tentar novamente.
 // 21/03/2024 - Robert  - Nao permitia transf.para ax.11 com motivo 04 (bloqueio criado em 28/02 para desfazimento de guarda de pallet) - GLPI 15121
 // 25/04/2024 - Robert  - Ajustes validacoes desfazimento guarda pallets (GLPI 14965)
+// 29/04/2024 - Robert  - Metodo AlmUsaEtiq nao considerava a filial.
 //
 
 // ------------------------------------------------------------------------------------
@@ -173,7 +174,12 @@ Return ::self
 // --------------------------------------------------------------------------
 // Verifica se o almoxarifado usa etiquetas para entrada de material.
 METHOD AlmUsaEtiq (_sAlm) Class ClsTrEstq
-return (_sAlm $ '01/02')
+	local _lRet := .F.
+	if ::FilDest == '01' .and. (_sAlm $ '01/02')
+		_lRet = .T.
+	endif
+//return (_sAlm $ '01/02')
+return _lRet
 
 
 
@@ -854,8 +860,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 	_sUserName = iif (_sUserName == NIL, cUsername, _sUserName)
 
 	// Se ainda tem alguma liberacao pendente...
-//	if empty (::UsrAutOri) .or. empty (::UsrAutDst) .or. empty (::UsrAutPCP) .or. empty (::UsrAutQld)
-	if empty (::UsrAutOri) .or. empty (::UsrAutDst) //.or. empty (::UsrAutPCP) .or. empty (::UsrAutQld)
+	if empty (::UsrAutOri) .or. empty (::UsrAutDst)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT rtrim (LIBERADORES_ALMORI)    AS ORI,"
 		_oSQL:_sQuery +=       " rtrim (LIBERADORES_ALMDST)    AS DST"
