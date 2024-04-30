@@ -92,6 +92,7 @@ user function BatSafr (_sQueFazer, _sSafrComp, _nDias)
 	elseif _sQueFazer == 'TransfTitNaoAssocParaMatriz'  //'9'
 		_TransFil ()
 	
+	// Transfere (das filiais para a matriz) dos associados
 	elseif _sQueFazer == 'TransfSZIParaMatriz' //'8'
 		_TrSZIMat (_sSafrComp, _nDias)
 
@@ -1152,7 +1153,6 @@ return
 
 // --------------------------------------------------------------------------
 // Transfere para a matriz os registros do SZI que ainda tiverem saldo.
-// Teoricamente isso jah foi feito quando o SZI foi gerado, mas pode ter sobrado alguma coisa.
 static function _TrSZIMat (_sSafrComp, _nDias)
 	local _oSQL      := NIL
 	local _aRegSZI   := {}
