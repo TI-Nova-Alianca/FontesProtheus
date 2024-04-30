@@ -49,12 +49,12 @@
 user function BatSafr (_sQueFazer, _sSafrComp, _nDias)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
-	local _sMsg      := ""
-	local _aCols     := {}
-	local _aSemNota  := {}
-	local _oSQL      := NIL
+	//local _sMsg      := ""
+	//local _aCols     := {}
+	//local _aSemNota  := {}
+	//local _oSQL      := NIL
 	local _sArqLgOld := ''
-	local _oAViso    := NIL
+	//local _oAViso    := NIL
 
 	_sQueFazer = iif (_sQueFazer == NIL, '', _sQueFazer)
 
