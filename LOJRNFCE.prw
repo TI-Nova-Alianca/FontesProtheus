@@ -1,11 +1,19 @@
+
+// Programa: lojrnfce
+// Autor...: catia cardoso
+// Data....: 23/05/2019
+//
+// Historico de alteracoes:
+// 23/05/2019 - Catia   - impressao customizada do cupom - procurar por CUSTOMIZADO
+// 23/02/2021 - Sandra  - Ajuste para nova versão
+// 06/05/2-24 - Claudia - Atualizada a versão. GLPI: 15154
+//
+// -------------------------------------------------------------------------------------
+//
 #INCLUDE "PROTHEUS.CH"
 #INCLUDE "TBICONN.CH"
 #INCLUDE "FWPRINTSETUP.CH"
 #INCLUDE "RPTDEF.CH"
-
-// Historico de alteracoes:
-// 23/05/2019 - Catia - impressao customizada do cupom - procurar por CUSTOMIZADO
-// 23/02/2021 - Sandra - Ajuste para nova versão
 
 //Modalidades de TEF disponíveis no sistema
 #DEFINE TEF_SEMCLIENT_DEDICADO  "2"         // Utiliza TEF Dedicado Troca de Arquivos                      
@@ -1041,7 +1049,7 @@ BEGIN SEQUENCE
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
 		cTexto    += cCRLF
-		
+
 		/*
 			DIVISAO II – Informações de detalhes de produtos/serviços
 			A impressao dessa divisão é opcional ou conforme definido por UF
@@ -1075,6 +1083,7 @@ BEGIN SEQUENCE
 		Aadd(aColDiv2, 08)	// VlUnit.
 		Aadd(aColDiv2, 10)	// VlTotal	
 		
+	
 		// soma das colunas Codigo + " " + Descricao 
 		//nCodDesc := aColDiv2[1] + 1 + aColDiv2[2]
 	    nCodDesc := aColDiv2[1] + 3 + aColDiv2[2] // customizado
@@ -1334,7 +1343,7 @@ BEGIN SEQUENCE
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
 		cTexto    += cCRLF											 
-  
+
 		/*
 			DIVISAO IV – Informações da consulta via chave de acesso
 		*/
@@ -1360,7 +1369,7 @@ BEGIN SEQUENCE
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
 		cTexto    += cCRLF											 
-  
+
 		/*
 			Divisão VI – Informações sobre o Consumidor
 		*/		
@@ -1532,7 +1541,7 @@ BEGIN SEQUENCE
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
 		cTexto    += cCRLF													  
-		
+
 		/*
 			DIVISAO IX – Mensagem de Interesse do Contribuinte
 		*/
@@ -2101,4 +2110,3 @@ If lContinua
 EndIf
 
 Return .T.
-
