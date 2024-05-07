@@ -89,8 +89,8 @@
 //                      - Nao fazia leitura da linha correta na GDFieldGet, nos testes de bloqueio gerencial tipo S
 // 21/03/2024 - Robert  - Arredonda casas decimais antes de testar preco sucos (bloqueio gerencial tipo S)
 // 28/03/2024 - Robert  - Nao ignorava linhas com bloqueio manual e eliminacao de residuos no bloqueio preco sucos (bloqueio gerencial tipo S)
+// 06/05/2024 - Claudia - Ajustada validação de contratos rapel, verificando % em contratos inativos.
 //
-
 // -------------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV(_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -430,14 +430,16 @@ user function GrvLibPV(_lLiberar)
 				endif
 			else
 				_sQuery := ""
-				_sQuery += " SELECT 1"
+				_sQuery += " SELECT  ZAX.ZAX_PRAPEL "
 				_sQuery += "   FROM ZAX010 AS ZAX"
 				_sQuery += "  WHERE ZAX.D_E_L_E_T_  = ''"
 				_sQuery += "    AND ZAX_CLIENT      = '" + M->C5_CLIENTE + "'"
 				_sQuery += "    AND ZAX_LOJA        = '" + M->C5_LOJACLI + "'"
 				aDados := U_Qry2Array(_sQuery)
-     			if len (aDados) > 0
-     				u_help ("Cliente sem base de rapel e com percentuais de rapel cadastrados. Verifique!")
+     			if len(aDados) > 0
+					if aDados[1,1] > 0
+     					u_help ("Cliente sem base de rapel e com percentuais de rapel cadastrados. Verifique!")
+					endif
 					_lLiberar = .F.
     			endif
 			endif
