@@ -20,9 +20,9 @@
 //                     - Melhorias na geracao do HTML
 // 14/02/2024 - Robert - Criado atributo :MascaraPrecos (campo za_QtDecPr)
 // 05/04/2024 - Robert - Imprimir campo zx5_13Crit na exportacao para HTML (eh apenas informativo)
-// 22/04/2024 - Daiana - Incluidas colunas fixas.
+// 22/04/2024 - Daiana - Incluidas colunas fixas no HTML.
+// 07/05/2024 - Robert - Tratamento para 'tipo de agio 2'.
 //
-
 
 #Include "Protheus.ch"
 
@@ -635,6 +635,38 @@ METHOD DefPAgio (_nEsteGrau as numeric, _nGrauBase as numeric) Class ClsTbUva
 		case _nEsteGrau == _nGrauBase +14 ; _nRetAgio = 135
 		case _nEsteGrau == _nGrauBase +15 ; _nRetAgio = 145
 		case _nEsteGrau == _nGrauBase +16 ; _nRetAgio = 155  // Se surgirem novos graus, acrescentar aqui.
+		endcase
+	elseif ::TipoAgioEntreGraus == '2'  // Simulacao CONSAD 07/05/2024
+		do case
+		case _nEsteGrau == _nGrauBase -12 ; _nRetAgio = -110
+		case _nEsteGrau == _nGrauBase -11 ; _nRetAgio = -100
+		case _nEsteGrau == _nGrauBase -10 ; _nRetAgio = -90
+		case _nEsteGrau == _nGrauBase -9  ; _nRetAgio = -80
+		case _nEsteGrau == _nGrauBase -8  ; _nRetAgio = -70
+		case _nEsteGrau == _nGrauBase -7  ; _nRetAgio = -60
+		case _nEsteGrau == _nGrauBase -6  ; _nRetAgio = -50
+		case _nEsteGrau == _nGrauBase -5  ; _nRetAgio = -40
+		case _nEsteGrau == _nGrauBase -4  ; _nRetAgio = -30
+		case _nEsteGrau == _nGrauBase -3  ; _nRetAgio = -20
+		case _nEsteGrau == _nGrauBase -2  ; _nRetAgio = -10
+		case _nEsteGrau == _nGrauBase -1  ; _nRetAgio = -5
+		case _nEsteGrau == _nGrauBase +0  ; _nRetAgio = 0
+		case _nEsteGrau == _nGrauBase +1  ; _nRetAgio = 10
+		case _nEsteGrau == _nGrauBase +2  ; _nRetAgio = 20
+		case _nEsteGrau == _nGrauBase +3  ; _nRetAgio = 30
+		case _nEsteGrau == _nGrauBase +4  ; _nRetAgio = 40
+		case _nEsteGrau == _nGrauBase +5  ; _nRetAgio = 50
+		case _nEsteGrau == _nGrauBase +6  ; _nRetAgio = 60
+		case _nEsteGrau == _nGrauBase +7  ; _nRetAgio = 70
+		case _nEsteGrau == _nGrauBase +8  ; _nRetAgio = 80
+		case _nEsteGrau == _nGrauBase +9  ; _nRetAgio = 90
+		case _nEsteGrau == _nGrauBase +10 ; _nRetAgio = 100
+		case _nEsteGrau == _nGrauBase +11 ; _nRetAgio = 110
+		case _nEsteGrau == _nGrauBase +12 ; _nRetAgio = 120
+		case _nEsteGrau == _nGrauBase +13 ; _nRetAgio = 130
+		case _nEsteGrau == _nGrauBase +14 ; _nRetAgio = 140
+		case _nEsteGrau == _nGrauBase +15 ; _nRetAgio = 150
+		case _nEsteGrau == _nGrauBase +16 ; _nRetAgio = 160  // Se surgirem novos graus, acrescentar aqui.
 		endcase
 	elseif ::TipoAgioEntreGraus == 'M'  // Padrao MOC (CONAB)
 		do case

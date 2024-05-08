@@ -10,6 +10,7 @@
 // 01/02/2019 - Robert - Desconsidera quem teve movimentos tipo 11, 17 e 27
 //                     - Mostra todos os associados, com motivo pelo qual foram desconsiderados no calculo.
 // 16/04/2024 - Robert - Melhorias gerais e tratamento para gravacao de distribuicao de perdas (GLPI 15192).
+// 08/05/2024 - Robert - Chamada de parametros da tela de contas a pagar.
 //
 
 // --------------------------------------------------------------------------
@@ -40,6 +41,11 @@ User Function szi_ds ()
 	if _lContinua .and. cFilAnt != '01'
 		u_help ("Distribuicao de sobras ou perdas deve ser rodada na matriz.",, .t.)
 		_lContinua = .F.
+	endif
+
+	if _lContinua
+		u_help ("A seguir serao mostrados os parametros da rotina de inclusao de titulos a pagar. Verifique opcoes de contabilizacao.")
+		Pergunte ("FIN050", .t.)
 	endif
 
 	if _lContinua
@@ -89,7 +95,6 @@ Static Function _Calc ()
 	local _aAssoc     := {}
 	local _nAssoc     := 0
 	local _nTotDist   := 0
-	local _oAux       := NIL
 	local _aCols      := {}
 	local _sLinInf    := ""
 	local _oEvento    := NIL
@@ -234,7 +239,7 @@ Static Function _Calc ()
 				_oCtaCorr:Obs     = _sMemCalc
 				_oCtaCorr:Safra   = _sSafraBas
 				if ! _oCtaCorr:PodeIncl ()
-					u_help ('Associado ' + _oCtaCorr:Assoc + '/' + _oCtaCorr:Loja + ' - ' + alltrim (_oAux:_aArray [_nAssoc, 3]) + chr (13) + chr (10) + _oCtaCorr:UltMsg)
+					u_help ('Associado ' + _oCtaCorr:Assoc + '/' + _oCtaCorr:Loja + chr (13) + chr (10) + _oCtaCorr:UltMsg)
 					exit
 				else
 					if ! _oCtaCorr:Grava ()

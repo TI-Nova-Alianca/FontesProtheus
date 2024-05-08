@@ -173,7 +173,7 @@ user function robert ()
 		// _sFuncao += '_VA_XLS ()'
 		// _sFuncao += '_verif ()'
 
-		_sFuncao += '_GLPI15287 ()' // CONTRA NOTA SAFRAAAAAAAAAAAAAA
+		// _sFuncao += '_GLPI15287 ()' // CONTRA NOTA SAFRAAAAAAAAAAAAAA
 
 		//u_help("custo")
 		//_sFuncao += '_GLPI15288()'
@@ -1334,12 +1334,12 @@ return
 // Testes custo em partes
 static function _cusPartes ()
 	local _lContinua := .T.
-	local _dDataSB9  := stod ('20240229')  // '20191231'
+	local _dDataSB9  := stod ('20240331')  // '20191231'
 
-	if _lContinua .and. ! U_AmbTeste ()
-		u_help ("Por enquanto, apenas em base de teste!",, .t.)
-		_lContinua = .F.
-	endif
+//	if _lContinua .and. ! U_AmbTeste ()
+//		u_help ("Por enquanto, apenas em base de teste!",, .t.)
+//		_lContinua = .F.
+//	endif
 
 	// Inicializa custo em partes. Cfe o link https://centraldeatendimento.totvs.com/hc/pt-br/articles/4416690411159-Cross-Segmento-Backoffice-Linha-Protheus-SIGAEST-Configuração-do-Custo-em-Partes-sem-procedures
 	// os saldos das partes devem ser inicializados, como se fosse uma distribuicao inicial do saldo existente antes de comecar a trabalhar em partes.
@@ -3871,7 +3871,7 @@ static function _RevCH()
 	U_BatRevCh ("CE", "NFE", 2)  // 90)
 	U_BatRevCh ("DF", "CTE", 2)  // 90)
 	U_BatRevCh ("DF", "NFE", 2)  // 90)
-	U_BatRevCh ("ES", "CTE", 2)  // 90, '32230893561108000304570000000132841174876808', .t.)
+	U_BatRevCh ("ES", "CTE", 2, 90, '32230893561108000304570000000132841174876808', .t.)
 	U_BatRevCh ("ES", "NFE", 2)  // 90)
 	U_BatRevCh ("GO", "CTE", 2)  // 90)
 	U_BatRevCh ("GO", "NFE", 2)  // 90)
