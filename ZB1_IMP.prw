@@ -21,6 +21,7 @@
 // 13/12/2021 - Claudia - Incluido totalizador conforme solicitado. GLPI: 11345
 // 14/02/2022 - Claudia - Gravada a taxa calculada.
 // 16/02/2022 - Claudia - Gtavado campo ZB1_VLRTAR calculado.
+// 09/05/2024 - Claudia - Alterado para novo layout cielo 15. GLPI: 15409
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -93,11 +94,11 @@ User Function ZB1_IMP()
 					_aHeader := {}
 					_aHeader := BuscaHeader(_aHeader, cLinha)
 				
-				Case _TpReg == '1' // Detalhe do resumo de operações RO
+				Case _TpReg == 'D' // Detalhe do resumo de operações RO
 					_aRO := {}
 					_aRO := BuscaRO(_aRO, cLinha)
 				
-				Case _TpReg == '2' //Detalhe do comprovante de venda CV
+				Case _TpReg == 'E' //Detalhe do comprovante de venda CV
 					_aCV := {}
 					_aCV := BuscaCV(_aCV, cLinha)
 					
@@ -142,26 +143,26 @@ Static Function BuscaRO(_aRO, cLinha)
 
 	_sEstab   := SubStr(cLinha,  2, 10)
 	_sFilial  := BuscaFilial(_sEstab)
-	_sTpTran  := SubStr(cLinha, 24,  2) 
-	_ano 	  := '20' + SubStr(cLinha, 26, 2)
-	_mesdia   := SubStr(cLinha, 28, 4)
-	_dDtApre  := STOD(_ano +_mesdia)
-	_ano 	  := '20' + SubStr(cLinha, 38, 2)
-	_mesdia   := SubStr(cLinha, 40, 4)
-	_dDtEnv   := STOD(_ano +_mesdia)
-	_nVlrBrt  := val(SubStr(cLinha, 45,  13))/100
-	_nVlrTax  := val(SubStr(cLinha, 59,  13))/100
-	_nVlrRej  := val(SubStr(cLinha, 73,  13))/100
-	_nVlrLiq  := val(SubStr(cLinha, 87,  13))/100
-	_sBanco   := SubStr(cLinha,100,  4)
-	_sAgencia := SubStr(cLinha,104,  5)
-	_sConta   := SubStr(cLinha,109, 14)
-	_sStaPgto := SubStr(cLinha,123,  2)
-	_sAdm	  := SubStr(cLinha,185,  3)
+	_sTpTran  := ""//SubStr(cLinha, 24,  2) 
+	_dDtApre  := date() //STOD(_ano +_mesdia)
+	_dDtEnv   := date()//STOD(_ano +_mesdia)
+	_sBanco   := SubStr(cLinha,114,  4)
+	_sAgencia := SubStr(cLinha,118,  5)
+	_sConta   := SubStr(cLinha,123, 20)
+	_sAdm	  := SubStr(cLinha,54,  3)
 	_sAdmDes  := BuscaBandeira(_sAdm)
-	_sNumRO   := SubStr(cLinha,188, 22)
-	_nPerTax  := Val(SubStr(cLinha,210, 4))/100
-	_nVlrTar  := Val(SubStr(cLinha,214, 5))/100	
+	_sStaPgto := SubStr(cLinha,70,  2)
+	_nVlrBrt  := val(SubStr(cLinha, 73,  13))/100
+	_nVlrTax  := val(SubStr(cLinha, 87,  13))/100
+	_nVlrLiq  := val(SubStr(cLinha, 101,  13))/100
+	_nVlrRej  := 0 // val(SubStr(cLinha, 73,  13))/100
+	_sNumRO   := "" //SubStr(cLinha,188, 22)
+	_nPerTax  := 0 //Val(SubStr(cLinha,210, 4))/100
+	_nVlrTar  := 0 //Val(SubStr(cLinha,214, 5))/100	
+	//_ano 	  := SubStr(cLinha, 288, 4)
+	//_mes      := SubStr(cLinha, 286, 2)
+	//_dia      := SubStr(cLinha, 284, 2)
+	//_nDtVenc  := STOD(_ano + _mes + _dia)
 	
 	aadd (_aRO,{ 	_sFilial	,; // 1
 					_sEstab  	,; // 2
@@ -180,7 +181,7 @@ Static Function BuscaRO(_aRO, cLinha)
 					_sAdmDes	,; // 15
 					_sNumRO		,; // 16
 					_nPerTax	,; // 17
-					_nVlrTar	}) // 18
+					_nVlrTar	}) 
 	
 Return _aRO
 //
@@ -188,19 +189,23 @@ Return _aRO
 // Carrega registro 2 - CV do arquivo
 Static Function BuscaCV(_aCV, cLinha)
 
-	_sCartao := SubStr(cLinha, 19,19)
-	_dDtVen  := STOD(SubStr(cLinha, 38, 8))
-	_nVlrPar := val(SubStr(cLinha, 47,  13))/100
-	_sParNum := SubStr(cLinha, 60, 2)
-	_sParTot := SubStr(cLinha, 62, 2)
-	_sMotRej := SubStr(cLinha, 64, 3)
+	_sCartao := SubStr(cLinha,172,4)
+	_ano 	 := SubStr(cLinha, 634, 4)
+	_mes     := SubStr(cLinha, 632, 2)
+	_dia     := SubStr(cLinha, 630, 2)
+	_dDtVen  := STOD(_ano + _mes + _dia)
+	_sParNum := SubStr(cLinha, 18, 2)
+	_sAutCod := SubStr(cLinha, 22, 6)
+	_sNSUCod := SubStr(cLinha,176, 6)
+	_sNumNFe := SubStr(cLinha,182, 9)
+	_sTID	 := SubStr(cLinha,192,20)
+	_sSinal  := SubStr(cLinha,247,1)
+	_nVlrPar := val(SubStr(cLinha,276,  13))/100
+	_sMotRej := SubStr(cLinha, 627, 3)
 	_sDesRej := BuscaRejeicao(_sMotRej)
-	_sAutCod := SubStr(cLinha, 67, 6)
-	_sTID	 := SubStr(cLinha, 73,20)
-	_sNSUCod := SubStr(cLinha, 93, 6)
-	_sNumNFe := SubStr(cLinha,140, 9)
-	_sIDTran := SubStr(cLinha,189,29)
-	_sSinal  := SubStr(cLinha,46,1)
+	_sParTot := SubStr(cLinha, 62, 2)
+	_sIDTran := SubStr(cLinha,605,15)
+	
 	If _sSinal == '+'
 		_sStaImp := 'I'
 	Else
@@ -267,7 +272,7 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 					ZB1->ZB1_ADMDES := _aRO[1,15] 
 					ZB1->ZB1_NUMRO  := _aRO[1,16]  
 					ZB1->ZB1_PERTAX := _aRO[1,17]  
-					ZB1->ZB1_VLRTAR := ROUND((_aCV[1,3] * _aRO[1,17])/100,2) //_aRO[1,18] 
+					ZB1->ZB1_VLRTAR := _aRO[1,7]  //ROUND((_aCV[1,3] * _aRO[1,17])/100,2) //_aRO[1,18] 
 					ZB1->ZB1_CARTAO := _aCV[1,1] 
 					ZB1->ZB1_DTAVEN := _aCV[1,2]  
 					ZB1->ZB1_VLRPAR := _aCV[1,3]  
@@ -285,10 +290,10 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 					ZB1->ZB1_ARQUIV := alltrim(mv_par02)	
 				ZB1->(MsUnlock())
 
-				_vlrTaxa := ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
+				_vlrTaxa := _aRO[1,7]//ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
 				aadd(_aRel,{ 	_aRO[1,1],; 	// filial
 								_aRO[1,9],; 	// valor liquido da venda
-								_aCV[1,3],; 	// valor da parcela
+								_aRO[1,6],; 	// valor Bruto da parcela
 								_aRO[1,17],; 	// % taxa
 								_vlrTaxa ,;     // valor da taxa
 								_aCV[1,2],; 	// data de venda
@@ -312,7 +317,7 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 				EndIf
 			Else
 
-				_vlrTaxa := ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
+				_vlrTaxa := _aRO[1,7] // ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
 				aadd(_aRel,{ 	_aRO[1,1],; 	// filial
 								_aRO[1,9],; 	// valor liquido da venda
 								_aCV[1,3],; 	// valor da parcela
@@ -535,7 +540,7 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"%.Taxa"		, "@E 999.99"   			,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	//TRCell():New(oSection1,"COLUNA6", 	"" ,"%.Taxa"		, "@E 999.99"   			,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA8", 	"" ,"Dt.Venda"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA9", 	"" ,"Dt.Proces."	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
@@ -631,7 +636,7 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _sCliente  }) // cliente
 		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aRel[i,2] }) // vlr. liquido
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aRel[i,3] }) // vlr.parcela
-		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aRel[i,4] }) // % taxa
+		//oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aRel[i,4] }) // % taxa
 		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aRel[i,5] }) // vlr. taxa
 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aRel[i,6] }) // dt. venda
 		oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aRel[i,7] }) // dt. process
@@ -656,26 +661,27 @@ Static Function PrintReport(oReport)
 		oSection1:PrintLine()
 	Next
 
-	oReport:ThinLine()
-	oReport:SkipLine(1)
-	_nLinha:= _PulaFolha(_nLinha)
-	oReport:PrintText("TOTAL CREDITO EM CONTA:" ,, 100)
-	_nLinha:= _PulaFolha(_nLinha)
-	oReport:PrintText("Valor da Parcela:" ,, 100)
-	oReport:PrintText(PADL('R$' + Transform(_nTotVenda, "@E 999,999,999.99"),20,' '),, 900)
-	oReport:PrintText("Valor da Taxa:" ,, 100)
-	oReport:PrintText(PADL('R$' + Transform(_nTotTax, "@E 999,999,999.99"),20,' '),, 900)
-	oReport:SkipLine(1)
+	 oReport:ThinLine()
+	 oReport:SkipLine(1)
 
-	_nLinha:= _PulaFolha(_nLinha)
-	oReport:PrintText("TOTAL DEBITO EM CONTA:" ,, 100)
-	_nLinha:= _PulaFolha(_nLinha)
-	oReport:PrintText("Valor da Parcela:" ,, 100)
-	oReport:PrintText(PADL('R$' + Transform(_nTotDVenda, "@E 999,999,999.99"),20,' '),, 900)
-	oReport:PrintText("Valor da Taxa:" ,, 100)
-	oReport:PrintText(PADL('R$' + Transform(_nTotDTax, "@E 999,999,999.99"),20,' '),, 900)
-	oReport:SkipLine(1)
-	oReport:ThinLine()
+	// _nLinha:= _PulaFolha(_nLinha)
+	// oReport:PrintText("TOTAL CREDITO EM CONTA:" ,, 100)
+	// _nLinha:= _PulaFolha(_nLinha)
+	// oReport:PrintText("Valor da Parcela:" ,, 100)
+	// oReport:PrintText(PADL('R$' + Transform(_nTotVenda, "@E 999,999,999.99"),20,' '),, 900)
+	// oReport:PrintText("Valor da Taxa:" ,, 100)
+	// oReport:PrintText(PADL('R$' + Transform(_nTotTax, "@E 999,999,999.99"),20,' '),, 900)
+	// oReport:SkipLine(1)
+
+	// _nLinha:= _PulaFolha(_nLinha)
+	// oReport:PrintText("TOTAL DEBITO EM CONTA:" ,, 100)
+	// _nLinha:= _PulaFolha(_nLinha)
+	// oReport:PrintText("Valor da Parcela:" ,, 100)
+	// oReport:PrintText(PADL('R$' + Transform(_nTotDVenda, "@E 999,999,999.99"),20,' '),, 900)
+	// oReport:PrintText("Valor da Taxa:" ,, 100)
+	// oReport:PrintText(PADL('R$' + Transform(_nTotDTax, "@E 999,999,999.99"),20,' '),, 900)
+	// oReport:SkipLine(1)
+	// oReport:ThinLine()
 
 	_nLinha:= _PulaFolha(_nLinha)
 	oReport:PrintText("TOTAL GERAL" ,, 100)

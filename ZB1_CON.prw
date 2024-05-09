@@ -30,6 +30,7 @@
 // 05/07/2021 - Claudia - Incluido status 02. GLPI: 10399
 // 04/11/2021 - Claudia - Ajustado para importar somente venda de link cielo. GLPI 11145
 // 15/02/2022 - Claudia - Criada rotina para gravação de diferenças de arredondamento. GLPI: 11622
+// 09/05/2024 - Claudia - Alterado para novo layout cielo 15. GLPI: 15409
 //
 // -----------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -83,9 +84,9 @@ User Function ZB1_CON(_sConciliar)
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZB1") 
 		_oSQL:_sQuery += " WHERE ZB1_FILIAL = '" + cFilAnt + "'"
 		_oSQL:_sQuery += " AND D_E_L_E_T_ = ''" 
-		_oSQL:_sQuery += " AND ZB1_STAPGT IN ('01','02')"//-- PAGO/ENVIADO PARA O BANCO
+		_oSQL:_sQuery += " AND ZB1_STAPGT IN ('03','04')"//-- PAGO/ENVIADO PARA O BANCO
 		_oSQL:_sQuery += " AND ZB1_STAIMP = 'I' "        //-- APENAS OS IMPORTADOS
-		_oSQL:_sQuery += " AND ZB1_ARQUIV LIKE'%CIELO%'" //-- APENAS ARQUIVOS DA CIELO
+		_oSQL:_sQuery += " AND UPPER(ZB1_ARQUIV) LIKE'%CIELO%'" //-- APENAS ARQUIVOS DA CIELO
 		If !empty(mv_par01)
 			_oSQL:_sQuery += " AND ZB1_NSUCOD = '" + mv_par01 + "' " // FILTRA POR NSU
 		EndIf
