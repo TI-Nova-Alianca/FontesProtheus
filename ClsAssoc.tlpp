@@ -125,8 +125,8 @@
 // 06/02/2024 - Robert  - Metodo SldQuotCap - ignorar saida indevida assoc 002848 (GLPI 14843)
 // 25/02/2024 - Robert  - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 09/05/2024 - Claudia - Incluida perdas no capital social.
 //
-
 // -------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 #include "VA_Inclu.prw"
