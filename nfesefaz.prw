@@ -126,6 +126,7 @@
 // 13/10/2022 - Robert  - Pequena melhoria nos logs quando ambiente de teste.
 // 25/05/2023 - Robert  - Obriga uso da tabela CDD para NF referenciadas, quando complemento de safra (GLPI 13532)
 // 06/05/2024 - Claudia - Atualizada a versão. GLPI: 15154
+// 09/05/2024 - Claudia - Incluido trecho customizado. GLPI: 15407
 //
 // --------------------------------------------------------------------------
 #INCLUDE "PROTHEUS.CH"   
@@ -462,6 +463,8 @@ Local lEasy			:= SuperGetMV("MV_EASY") == "S"
 Local lSimpNac   	:= SuperGetMV("MV_CODREG")== "1" .or. SuperGetMV("MV_CODREG")== "2"
 Local lCD2PARTIC	:= CD2->(FieldPos("CD2_PARTIC")) > 0
 Local lC6_CODINF	:= SC6->(FieldPos("C6_CODINF")) > 0 
+Local lCpoAlqSB1 	:= SB1->(FieldPos("B1_IMPNCM")) > 0        	    // Alianca - Verifica a existencia do campo de Aliq. de Imposto NCM/NBS
+Local lCpoAlqSBZ	:= SBZ->(FieldPos("BZ_IMPNCM")) > 0     	   	// Alianca - Verifica a existencia do campo de Aliq. de Imposto NCM/NBS na tabela SBZ
 Local lCpoMsgLT		:= SF4->(FieldPos("F4_MSGLT")) > 0 
 Local lCpoCusEnt	:= SF4->(FieldPos("F4_CUSENTR")) > 0 			//Tratamento para atender o DECRETO Nº 35.679, de 13 de Outubro de 2010 - Pernambuco para o Ramo de Auto Peças
 Local lCpoLoteFor	:= SB8->(FieldPos("B8_LOTEFOR")) > 0  
@@ -3081,7 +3084,7 @@ If cTipo == "1"
 							//cInfAdic  += cMsgFci + ", Valor da Importacao R$ " + ConvType((cAliasSD2)->D2_VLIMPOR, 11,2)
 						//EndIf
 			            		            
-						//Adequação NT2013/003 - Verifica se o valor será composto da tabela SBZ ou SB1
+						//Alianca - Adequação NT2013/003 - Verifica se o valor será composto da tabela SBZ ou SB1
 						nAliqNcm := 0
 						If lCpoAlqSBZ .And. lCpoAlqSB1   
 							nAliqNcm := RetFldProd(cCodProd,"B1_IMPNCM","SB1")
@@ -3090,6 +3093,7 @@ If cTipo == "1"
 						If !empty(nAliqNcm) .and. nAliqNcm == 0 .And. lCpoAlqSB1   	 
 							nAliqNcm:=  SB1->B1_IMPNCM
 						EndIf	
+			            		            
 			            If lCpoMsgLT .And. lCpoLoteFor .And. SF4->F4_MSGLT $ "1" 
 							cNumLotForn := Alltrim(Posicione("SB8",2,xFilial("SB8")+(cAliasSD2)->D2_NUMLOTE+(cAliasSD2)->D2_LOTECTL+cCodProd,"B8_LOTEFOR"))
 							if !Empty(cNumLotForn)
