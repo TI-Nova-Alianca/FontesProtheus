@@ -484,8 +484,10 @@ static function _ValXML ()
 
 		// se nao encontrar o XML, nao permite continuar obriga que exista o XML na ZZX para dar entrada no documento 
 		if _nRetQry = 0
+	IF DTOS (date ()) <= '20240509'  // estamos sem SEFAZ e nao conseguimos baixar/validar XML hoje.
 			u_help ("XML da NF-e/CT-e referenciada NAO ENCONTRADA na nossa base de dados (tabela ZZX). Não é permitido incluir NF-e/CT-e sem XML. Providencie o XML")
 			_lRet = .F.
+	ENDIF
 			_lContinua = .F.
 		endif
 		// Se encontrou pela chave da NF-e, verifica os demais dados.

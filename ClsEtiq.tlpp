@@ -63,6 +63,7 @@
 // 19/02/2024 - Robert - Implementado metodo EndGuardaFull()
 // 04/03/2024 - Robert - Nao gravava campo ZA1_FULLW=1 quando etiqueta gerada pelo ZAG com destino ao ax.01 (GLPI 15030)
 // 22/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 06/05/2024 - Robert - Valid.qt.etiq. x qt.prev.OP desconsiderava etiquetas estornadas.
 //
 
 #Include "Protheus.ch"
@@ -1519,6 +1520,7 @@ METHOD PodeIncl () Class ClsEtiq
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_FILIAL = '" + xfilial ("ZA1") + "'"
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_OP     = '" + ::OP + "'"
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_APONT != 'I'"  // Inutilizadas nao contam
+			_oSQL:_sQuery +=   " AND ZA1.ZA1_APONT != 'E'"  // Estornadas nao podem mais ser apontadas, entao nao contam
 		//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 			_nEtqJaTem = _oSQL:RetQry (1, .f.)
 			if (_nEtqJaTem + ::Quantidade) > sc2 -> c2_quant

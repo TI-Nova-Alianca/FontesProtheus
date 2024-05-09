@@ -108,6 +108,7 @@
 // 25/02/2024 - Robert - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 09/04/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 16/04/2024 - Robert - Validacoes para gravacao de distribuicao de perdas (GLPI 15192)
+// 08/05/2024 - Robert - Nao verifica existencia de corr.mon. ao incluir TM 41.
 //
 
 // ------------------------------------------------------------------------------------
@@ -1759,6 +1760,10 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_Super:SomaMsg ("Data de nascimento deste associado nao informada no cadastro.")
 				_lContinua = .F.
 			endif
+
+			// VER RETORNO DA KARINA NO CHAMADO 8501
+			// "No estatuto novo fala em 75 anos e sócio a mais de 10 anos para solicitar a redução do capital social na ordem de 20% ao ano, mantendo o valor minimo de cotas correspondente a 1 mil quilos de uva da variedade Isabel, grau babo 15, conforme tabela da Conab da safra corrente."
+
 			if _lContinua
 				_oDUtil := ClsDUtil():New()
 				_dAniver = _oDUtil:Aniver (_oAssoc:DtNascim, 65)
@@ -1938,6 +1943,8 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_lContinua = .F.
 			endif
 		endif
+
+		// Para evitar que seja gerado em duplicidade.
 		if _lContinua
 			_sQuery := ""
 			_sQuery += "SELECT COUNT (*)"
@@ -2087,9 +2094,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	endif
 
 	// Verifica periodo fechado (correcao monetaria jah calculada) - independente de filial.
-	// Conselho optou por calcular correcao diaria (o que ainda estah sendo feito manualmente)
-	// e somente aplicavel (por enquanto) a movimento 07. Robert, 23/11/2022
-//	if _lContinua .and. ! ::TM $ '19/'
+	if _lContinua .and. ! ::TM $ '19/41'  // TM 19/41 (distr.sobras/perdas) sao sempre retroativas, pois dependo do fechto.exercicio para ter o valor.
 		_sQuery := ""
 		_sQuery += "SELECT COUNT (*)"
 		_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
@@ -2103,7 +2108,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_Super:SomaMsg ("Ja' existe calculo de correcao monetaria para este mes (ou posterior).")
 			_lContinua = .F.
 		endif
-//	endif
+	endif
 
 	// Para comecar a ser considerado como 'fornecedor de uva'
 	if _lContinua .and. ::TM == '39'
