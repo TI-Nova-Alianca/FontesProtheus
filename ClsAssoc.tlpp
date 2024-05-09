@@ -2374,7 +2374,7 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 		_oSQL:_sQuery +=                  " AND SA2.A2_VACBASE = '" + ::CodBase + "'"
 		_oSQL:_sQuery +=                  " AND SA2.A2_VALBASE = '" + ::LojaBase + "'"
 		_oSQL:_sQuery +=   " )"
-		_oSQL:_sQuery +=   " AND SZI.ZI_TM IN ('10','11','12','17','18','19','20','27')"
+		_oSQL:_sQuery +=   " AND SZI.ZI_TM IN ('10','11','12','17','18','19','20','27','41')"
 
 		// Ignora lctos feitos por engano (era para outro associado) cfe. GLPI 14843
 		// Nao deletei-os por que deram origem a toitulos no SE2 que nao quisemos mais
@@ -2412,6 +2412,8 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 					_aRet [.QtCapEntradasTransfEnquantoSocio] += _oCtaCorr:Valor
 				case _oCtaCorr:TM == '19'
 					_aRet [.QtCapIntegralizacaoSobrasEnquantoSocio] += _oCtaCorr:Valor
+				case _oCtaCorr:TM == '41'
+					_aRet [.QtCapIntegralizacaoPerdasEnquantoSocio] += _oCtaCorr:Valor
 				case _oCtaCorr:TM == '27'
 					_aRet [.QtCapBaixaPorInatividade] += _oCtaCorr:Valor
 				endcase
@@ -2425,6 +2427,9 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 					_aRet [.QtCapResgatesEmAbertoQuandoExSocio] += _nSaldoMov
 				case _oCtaCorr:TM == '19'
 					_aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio] += _oCtaCorr:Valor
+				case _oCtaCorr:TM == '41'
+					_aRet [.QtCapIntegralizacaoPerdasEnquantoExSocio] -= _oCtaCorr:Valor
+			
 				endcase
 			endif
 
@@ -2446,6 +2451,7 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 			_aRet [.QtCapSaldoNaData] += _aRet [.QtCapIntegralizadoEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] -= _aRet [.QtCapSaldoResgatadoEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] += _aRet [.QtCapIntegralizacaoSobrasEnquantoSocio]
+			_aRet [.QtCapSaldoNaData] -= _aRet [.QtCapIntegralizacaoPerdasEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] += _aRet [.QtCapEntradasTransfEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] -= _aRet [.QtCapSaidasTransfEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] -= _aRet [.QtCapBaixaPorInatividade]
@@ -2472,7 +2478,9 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 			u_log ('QtCapSaidasTransfEnquantoSocio..........:', _aRet [.QtCapSaidasTransfEnquantoSocio])
 			u_log ('QtCapEntradasTransfEnquantoSocio........:', _aRet [.QtCapEntradasTransfEnquantoSocio])
 			u_log ('QtCapIntegralizacaoSobrasEnquantoSocio..:', _aRet [.QtCapIntegralizacaoSobrasEnquantoSocio])
+			u_log ('QtCapIntegralizacaoPerdasEnquantoSocio..:', _aRet [.QtCapIntegralizacaoPerdasEnquantoSocio])
 			u_log ('QtCapIntegralizacaoSobrasEnquantoExSocio:', _aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio])
+			u_log ('QtCapIntegralizacaoPerdasEnquantoExSocio:', _aRet [.QtCapIntegralizacaoPerdasEnquantoExSocio])
 			u_log ('QtCapResgatesEmAbertoNaData.............:', _aRet [.QtCapResgatesEmAbertoNaData])
 			u_log ('QtCapTotalResgatesEmAberto..............:', _aRet [.QtCapTotalResgatesEmAberto])
 			u_log ('QtCapBaixaPorInatividade................:', _aRet [.QtCapBaixaPorInatividade])
@@ -2512,12 +2520,14 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 		_sRetTXT += "Transf.quota feitas para outros associados........: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapSaidasTransfEnquantoSocio],           "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Transf.quota recebidas de outros associados.......: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapEntradasTransfEnquantoSocio],         "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Integralizacoes de sobras.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapIntegralizacaoSobrasEnquantoSocio],   "@E 999,999,999.99") + _sCRLF
+		_sRetTXT += "Integralizacoes de perdas.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapIntegralizacaoPerdasEnquantoSocio],   "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Baixas por inatividade............................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapBaixaPorInatividade],                 "@E 999,999,999.99") + _sCRLF + _sCRLF
 		_sRetTXT += "Detalhes (enquanto ex-associado):" + _sCRLF
 		_sRetTXT += "---------------------------------" + _sCRLF
 		_sRetTXT += "Resgates efetuados................................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapSaldoResgatadoQuandoExSocio],         "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Pedidos resgate em aberto.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapResgatesEmAbertoQuandoExSocio],       "@E 999,999,999.99") + _sCRLF
-		_sRetTXT += "Integralizacoes de sobras.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio], "@E 999,999,999.99") + _sCRLF + _sCRLF
+		_sRetTXT += "Integralizacoes de sobras.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio], "@E 999,999,999.99") + _sCRLF
+		_sRetTXT += "Integralizacoes de perdas.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapIntegralizacaoPerdasEnquantoExSocio], "@E 999,999,999.99") + _sCRLF + _sCRLF
 		_sRetTXT += "---------------------------------------------------------------------" + _sCRLF
 		_sRetTXT += "                  **** Documento sigiloso ****" + _sCRLF
 		_sRetTXT += "---------------------------------------------------------------------" + _sCRLF
@@ -2549,7 +2559,9 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 		_sRetXML += '<TransfParaOutrosAssoc>'        + cValToChar (_aRet [.QtCapSaidasTransfEnquantoSocio])           + '</TransfParaOutrosAssoc>'
 		_sRetXML += '<TransfDeOutrosAssoc>'          + cValToChar (_aRet [.QtCapEntradasTransfEnquantoSocio])         + '</TransfDeOutrosAssoc>'
 		_sRetXML += '<IntegralizacoesSobras>'        + cValToChar (_aRet [.QtCapIntegralizacaoSobrasEnquantoSocio])   + '</IntegralizacoesSobras>'
+		_sRetXML += '<IntegralizacoesPerdas>'        + cValToChar (_aRet [.QtCapIntegralizacaoPerdasEnquantoSocio])   + '</IntegralizacoesPerdas>'
 		_sRetXML += '<IntegralizacoesSobrasExSocio>' + cValToChar (_aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio]) + '</IntegralizacoesSobrasExSocio>'
+		_sRetXML += '<IntegralizacoesPerdasExSocio>' + cValToChar (_aRet [.QtCapIntegralizacaoPerdasEnquantoExSocio]) + '</IntegralizacoesPerdasExSocio>'
 		_sRetXML += '<BaixaPorInatividade>'          + cValToChar (_aRet [.QtCapBaixaPorInatividade])                 + '</BaixaPorInatividade>'
 		_sRetXML += '<ExSocioResgatesEfetuados>'     + cValToChar (_aRet [.QtCapSaldoResgatadoQuandoExSocio])         + '</ExSocioResgatesEfetuados>'
 		_sRetXML += '<ExSocioResgatesEmAberto>'      + cValToChar (_aRet [.QtCapResgatesEmAbertoQuandoExSocio])       + '</ExSocioResgatesEmAberto>'

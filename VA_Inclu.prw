@@ -5,13 +5,15 @@
 //              Foi criado como .prw por que a pasta de includes eh geralmente 'esquecida'
 //
 // Historico de alteracoes:
-// 29/09/2017 - Robert - Incluidos nomes de colunas de retorno do webservice da E-Sales.
-// 12/01/2018 - Robert - Ajustados nomes das colunas do cadastro viticola para buscar dos grupos familiares.
-// 10/01/2019 - Robert - Novas colunas cadastro viticola.
-// 24/01/2019 - Robert - Criada array .InspecoesSafra
-// 01/03/2019 - Robert - Criada tag .InspecoesSafraMisturaNoTombador
+// 29/09/2017 - Robert  - Incluidos nomes de colunas de retorno do webservice da E-Sales.
+// 12/01/2018 - Robert  - Ajustados nomes das colunas do cadastro viticola para buscar dos 
+//              grupos familiares.
+// 10/01/2019 - Robert  - Novas colunas cadastro viticola.
+// 24/01/2019 - Robert  - Criada array .InspecoesSafra
+// 01/03/2019 - Robert  - Criada tag .InspecoesSafraMisturaNoTombador
+// 09/05/2024 - Claudia - Incluida perdas no capital social.
 //
-
+// -------------------------------------------------------------------------------------------------
 // Define nomes para colunas da array de cadastros viticolas.
 #XTranslate .CadVitCodigo      => 1
 #XTranslate .CadVitCodGrpFam   => 2
@@ -97,7 +99,9 @@
 #XTranslate .QtCapRetTXT                              => 15
 #XTranslate .QtCapBaixaPorInatividade                 => 16
 #XTranslate .QtCapRetXML                              => 17
-#XTranslate .QtCapQtColunas                           => 17
+#XTranslate .QtCapIntegralizacaoPerdasEnquantoSocio   => 18
+#XTranslate .QtCapIntegralizacaoPerdasEnquantoExSocio => 19
+#XTranslate .QtCapQtColunas                           => 19
 
 
 // Define nomes para as colunas retornadas pelo metodo de geracao de dados para extrato de conta corrente da classe de associado.
