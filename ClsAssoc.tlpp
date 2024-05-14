@@ -2328,8 +2328,6 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 	local _lAtivo    := .T.
 	local _sObsAli   := ''
 
-	//u_logIni (GetClassName (::Self) + '.' + procname ())
-	
 	if _lContinua .and. (valtype (_dDataRef) != "D" .or. empty (_dDataRef))
 		_Super:SomaMsg ("Nao foi informada data de referencia para buscar saldo de cota capital.")
 		_lContinua = .F.
@@ -2387,7 +2385,7 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 		_oSQL:_sQuery +=        ") "
 
 		_oSQL:_sQuery += " ORDER BY ZI_DATA"
-	//	_oSQL:Log ()
+		_oSQL:Log ()
 		_aRetQry = _oSQL:Qry2Array (.f., .f.)
 		_aRet = afill (array (.QtCapQtColunas), 0)
 		for _nRetQry = 1 to len (_aRetQry)
@@ -2467,23 +2465,23 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 
 		// Habilitar este trecho para conferencias, quando necessario.
 		if .f.
-			u_log ('QtCapSaldoNaData........................:', _aRet [.QtCapSaldoNaData])
-			u_log ('QtCapSaldoImplantadoEnquantoSocio.......:', _aRet [.QtCapSaldoImplantadoEnquantoSocio])
-			u_log ('QtCapSaldoResgatadoEnquantoSocio........:', _aRet [.QtCapSaldoResgatadoEnquantoSocio])
-			u_log ('QtCapIntegralizadoEnquantoSocio.........:', _aRet [.QtCapIntegralizadoEnquantoSocio])
-			u_log ('QtCapResgatesEmAbertoEnquantoSocio......:', _aRet [.QtCapResgatesEmAbertoEnquantoSocio])
-			u_log ('QtCapIntegralizEmAbertoEnquantoSocio....:', _aRet [.QtCapIntegralizEmAbertoEnquantoSocio])
-			u_log ('QtCapResgatesEmAbertoQuandoExSocio......:', _aRet [.QtCapResgatesEmAbertoQuandoExSocio])
-			u_log ('QtCapSaldoResgatadoQuandoExSocio........:', _aRet [.QtCapSaldoResgatadoQuandoExSocio])
-			u_log ('QtCapSaidasTransfEnquantoSocio..........:', _aRet [.QtCapSaidasTransfEnquantoSocio])
-			u_log ('QtCapEntradasTransfEnquantoSocio........:', _aRet [.QtCapEntradasTransfEnquantoSocio])
-			u_log ('QtCapIntegralizacaoSobrasEnquantoSocio..:', _aRet [.QtCapIntegralizacaoSobrasEnquantoSocio])
-			u_log ('QtCapIntegralizacaoPerdasEnquantoSocio..:', _aRet [.QtCapIntegralizacaoPerdasEnquantoSocio])
-			u_log ('QtCapIntegralizacaoSobrasEnquantoExSocio:', _aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio])
-			u_log ('QtCapIntegralizacaoPerdasEnquantoExSocio:', _aRet [.QtCapIntegralizacaoPerdasEnquantoExSocio])
-			u_log ('QtCapResgatesEmAbertoNaData.............:', _aRet [.QtCapResgatesEmAbertoNaData])
-			u_log ('QtCapTotalResgatesEmAberto..............:', _aRet [.QtCapTotalResgatesEmAberto])
-			u_log ('QtCapBaixaPorInatividade................:', _aRet [.QtCapBaixaPorInatividade])
+			u_log2 ('info', 'QtCapSaldoNaData........................: ' + cvaltochar (_aRet [.QtCapSaldoNaData]))
+			u_log2 ('info', 'QtCapSaldoImplantadoEnquantoSocio.......: ' + cvaltochar (_aRet [.QtCapSaldoImplantadoEnquantoSocio]))
+			u_log2 ('info', 'QtCapSaldoResgatadoEnquantoSocio........: ' + cvaltochar (_aRet [.QtCapSaldoResgatadoEnquantoSocio]))
+			u_log2 ('info', 'QtCapIntegralizadoEnquantoSocio.........: ' + cvaltochar (_aRet [.QtCapIntegralizadoEnquantoSocio]))
+			u_log2 ('info', 'QtCapResgatesEmAbertoEnquantoSocio......: ' + cvaltochar (_aRet [.QtCapResgatesEmAbertoEnquantoSocio]))
+			u_log2 ('info', 'QtCapIntegralizEmAbertoEnquantoSocio....: ' + cvaltochar (_aRet [.QtCapIntegralizEmAbertoEnquantoSocio]))
+			u_log2 ('info', 'QtCapResgatesEmAbertoQuandoExSocio......: ' + cvaltochar (_aRet [.QtCapResgatesEmAbertoQuandoExSocio]))
+			u_log2 ('info', 'QtCapSaldoResgatadoQuandoExSocio........: ' + cvaltochar (_aRet [.QtCapSaldoResgatadoQuandoExSocio]))
+			u_log2 ('info', 'QtCapSaidasTransfEnquantoSocio..........: ' + cvaltochar (_aRet [.QtCapSaidasTransfEnquantoSocio]))
+			u_log2 ('info', 'QtCapEntradasTransfEnquantoSocio........: ' + cvaltochar (_aRet [.QtCapEntradasTransfEnquantoSocio]))
+			u_log2 ('info', 'QtCapIntegralizacaoSobrasEnquantoSocio..: ' + cvaltochar (_aRet [.QtCapIntegralizacaoSobrasEnquantoSocio]))
+			u_log2 ('info', 'QtCapIntegralizacaoPerdasEnquantoSocio..: ' + cvaltochar (_aRet [.QtCapIntegralizacaoPerdasEnquantoSocio]))
+			u_log2 ('info', 'QtCapIntegralizacaoSobrasEnquantoExSocio: ' + cvaltochar (_aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio]))
+			u_log2 ('info', 'QtCapIntegralizacaoPerdasEnquantoExSocio: ' + cvaltochar (_aRet [.QtCapIntegralizacaoPerdasEnquantoExSocio]))
+			u_log2 ('info', 'QtCapResgatesEmAbertoNaData.............: ' + cvaltochar (_aRet [.QtCapResgatesEmAbertoNaData]))
+			u_log2 ('info', 'QtCapTotalResgatesEmAberto..............: ' + cvaltochar (_aRet [.QtCapTotalResgatesEmAberto]))
+			u_log2 ('info', 'QtCapBaixaPorInatividade................: ' + cvaltochar (_aRet [.QtCapBaixaPorInatividade]))
 		endif
 
 		// Busca observacoes sempre no codigo/loja base
@@ -2570,7 +2568,6 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	//u_logFim (GetClassName (::Self) + '.' + procname ())
 return _aRet
 
 

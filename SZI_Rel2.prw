@@ -17,6 +17,7 @@
 // 24/09/2019 - Robert - ClsExtrCC passa a ter novo atributo :FormaResult.
 // 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 // 04/08/2023 - Robert - Nao imprime mais o nucleo (tornou-se um metodo da classe e eu nao to a fim de alterar aqui)
+// 14/05/2024 - Robert - Em caso de listar capital, verifica se os associados tem mais de um codigo/loja e mostra aviso em tela.
 //
 
 #Include "va_inclu.prw"
@@ -124,6 +125,9 @@ static function _Imprime ()
 	local _nDescriTM := 0
 	local _sDescriTM := ""
 	local _oAssoc    := NIL
+	local _aMaisDe1  := {}
+	local _nMaisDe1  := 0
+	local _aColsF3   := {}
 	private _nMaxLin := 68
 	li = _nMaxLin + 1
 
@@ -149,7 +153,9 @@ static function _Imprime ()
 		_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
 		_oSQL:_sQuery +=             RETSQLNAME ("SA2") + " SA2 "
 		_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC  + SZI.ZI_LOJASSO  BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
+//		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC  + SZI.ZI_LOJASSO  BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC   BETWEEN '" + mv_par01 + "' AND '" + mv_par03 + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO BETWEEN '" + mv_par02 + "' AND '" + mv_par04 + "'"
 		_oSQL:_sQuery +=   " AND SA2.D_E_L_E_T_ != '*'"
 		_oSQL:_sQuery +=   " AND SA2.A2_FILIAL   = '" + xfilial ("SA2") + "'"
 		_oSQL:_sQuery +=   " AND SA2.A2_COD      = SZI.ZI_ASSOC"
@@ -161,7 +167,33 @@ static function _Imprime ()
 			_lContinua = .F.
 		endif
 	endif
-	
+
+	if _lContinua .and. mv_par07 == 2  // Listar movimentos 'de capital'
+		incproc ("Verificando associados...")
+		_aMaisDe1 = {}
+		for _nAssoc = 1 to len (_aAssoc)
+			_oAssoc := ClsAssoc ():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2], .T.)
+			if ! empty (_oAssoc:Codigo)  // Se conseguiu instanciar o associado
+				if len (_oAssoc:aCodigos) > 1
+					for _nMaisDe1 = 1 to len (_oAssoc:aCodigos)
+
+						// Se esta loja nao estiver na lista
+						if ascan (_aAssoc, {|_aVal| _aVal [1] == _oAssoc:aCodigos [_nMaisDe1] .and. _aVal [2] == _oAssoc:aLojas [_nMaisDe1]}) == 0
+							aadd (_aMaisDe1, {_oAssoc:aCodigos [_nMaisDe1], _oAssoc:aLojas [_nMaisDe1], _oAssoc:Nome})
+						endif
+					next
+				endif
+			endif
+		next
+		if len (_aMaisDe1) > 0
+			_aColsF3 = {}
+			aadd (_aColsF3, {1, 'Codigo', 60, ''})
+			aadd (_aColsF3, {2, 'Loja',   30, ''})
+			aadd (_aColsF3, {3, 'Nome',  180, ''})
+			U_F3Array (_aMaisDe1, "Associados com mais de um codigo/loja.", _aColsF3, NIL, NIL, "Foram encontrados associados com mais de um codigo/loja.", "Lembre-se de gerar este relatorio para todos os codigos/lojas, a fim de obter o valor correto de capital.")
+		endif
+	endif
+
 	// Monta array com a lista dos tipos de movimento e suas descricoes.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
