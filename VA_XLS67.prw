@@ -262,11 +262,8 @@ Static Function _Gera()
     _oSQL:ArqDestXLS = 'VA_XLS67'
     _oSQL:Qry2XLS (.F., .F., .F.)
 
-
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
