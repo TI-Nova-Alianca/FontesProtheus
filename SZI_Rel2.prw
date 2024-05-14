@@ -17,7 +17,7 @@
 // 24/09/2019 - Robert - ClsExtrCC passa a ter novo atributo :FormaResult.
 // 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 // 04/08/2023 - Robert - Nao imprime mais o nucleo (tornou-se um metodo da classe e eu nao to a fim de alterar aqui)
-// 14/05/2024 - Robert - Em caso de listar capital, verifica se os associados tem mais de um codigo/loja e mostra aviso em tela.
+// 14/05/2024 - Robert - Em caso de listar capital, verifica se os associados tem mais de um codigo/loja e mostra aviso em tela (GLPI 15390)
 //
 
 #Include "va_inclu.prw"
@@ -161,10 +161,16 @@ static function _Imprime ()
 		_oSQL:_sQuery +=   " AND SA2.A2_COD      = SZI.ZI_ASSOC"
 		_oSQL:_sQuery +=   " AND SA2.A2_LOJA     = SZI.ZI_LOJASSO"
 		_oSQL:_sQuery +=   " ORDER BY " + {"ZI_ASSOC, ZI_LOJASSO", "ZI_NOMASSO"} [aReturn [8]]
-		_aAssoc := aclone (_oSQL:Qry2Array ())
+		_aAssoc := aclone (_oSQL:Qry2Array (.f., .f.))
 		if len (_aAssoc) == 0
 			u_help ("Nao foi encontrado nenhum associado no intervalo solicitado.")
 			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. mv_par07 == 2  // Listar movimentos 'de capital'
+		if ! empty (mv_par05) .or. mv_par06 < stod ('20491231')
+			_lContinua = U_MsgNoYes ("Voce esta listando movimentos de capital. Tenha em mente que, para que o saldo final fique correto, toda a faixa de datas deve ser considerada (de 'vazio' ate 31/12/2049). Deseja continuar mesmo assim?")
 		endif
 	endif
 
@@ -203,150 +209,152 @@ static function _Imprime ()
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ != '*'"
 		_oSQL:_sQuery +=   " AND ZX5_FILIAL  = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_TABELA  = '10'"
-		_aDescriTM := aclone (_oSQL:Qry2Array ())
+		_aDescriTM := aclone (_oSQL:Qry2Array (.f., .f.))
 //		u_log ('Tipos de mov:', _aDescriTM)
 	endif
 
-	_aTotGer = {0, 0, 0}
-	procregua (len (_aAssoc))
-	for _nAssoc = 1 to len (_aAssoc)
-		incproc ()
+	if _lContinua
+		_aTotGer = {0, 0, 0}
+		procregua (len (_aAssoc))
+		for _nAssoc = 1 to len (_aAssoc)
+			incproc ()
 
-		// Se nao conseguir instanciar o associado, nem adianta continuar.
-		_oAssoc := ClsAssoc ():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2], .T.)
-		if valtype (_oAssoc) != "O"
-			loop
-		endif
-
-		_aSubTot = {0, 0, 0}
-		// Gera extrato do associado
-		_oExtr := ClsExtrCC ():New ()
-		_oExtr:Cod_assoc = _aAssoc [_nAssoc, 1]
-		_oExtr:Loja_assoc = _aAssoc [_nAssoc, 2]
-		_oExtr:DataIni = mv_par05
-		_oExtr:DataFim = mv_par06
-		_oExtr:TMIni = ''
-		_oExtr:TMFim = 'zz'
-		_oExtr:LerObs = (mv_par08 == 1)
-		_oExtr:LerComp3os = .t.
-		_oExtr:TipoExtrato = iif (mv_par07 == 1, 'N', 'C')
-		_oExtr:FormaResult = 'A'  // Quero o resultado em formato de array.
-		_oExtr:Gera ()
-//		u_log (_oExtr:Resultado)
-
-		// Uma nova pagina para cada associado.
-		if len (_oExtr:Resultado) > 0
-			cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
-			@ li, 0 psay "Associado: " + _aAssoc [_nAssoc, 1] + "/" + _aAssoc [_nAssoc, 2] + ' - ' + _aAssoc [_nAssoc, 3] // + '    Nucleo: ' + _oAssoc:Nucleo
-			li ++
-		endif
-
-		// Imprime possiveis mensagens de erro.
-		if ! empty (_oExtr:UltMsg)
-			@ li, 0 psay _oExtr:UltMsg
-			li += 2
-		endif
-
-		// Varre a array do extrato e imprime seus dados.
-		for _nExtr = 1 to len (_oExtr:Resultado)
-
-			// Observacoes, se tiver, sao concatenadas com o historico.
-			_sHist = alltrim (_oExtr:Resultado [_nExtr, .ExtrCCHist])
-			if mv_par08 == 1 .and. ! empty (_oExtr:Resultado [_nExtr, .ExtrCCObs])
-				_sHist += chr (13) + chr (10) + "Obs.:" + _oExtr:Resultado [_nExtr, .ExtrCCObs]
+			// Se nao conseguir instanciar o associado, nem adianta continuar.
+			_oAssoc := ClsAssoc ():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2], .T.)
+			if valtype (_oAssoc) != "O"
+				loop
 			endif
 
-			// Quebra o historico em quantas linhas forem necessarias (pelo menos uma).
-			_aHist = U_QuebraTXT (_sHist, _nTamHist)
-			if len (_aHist) == 0
-				aadd (_aHist, "")
-			endif
+			_aSubTot = {0, 0, 0}
+			// Gera extrato do associado
+			_oExtr := ClsExtrCC ():New ()
+			_oExtr:Cod_assoc = _aAssoc [_nAssoc, 1]
+			_oExtr:Loja_assoc = _aAssoc [_nAssoc, 2]
+			_oExtr:DataIni = mv_par05
+			_oExtr:DataFim = mv_par06
+			_oExtr:TMIni = ''
+			_oExtr:TMFim = 'zz'
+			_oExtr:LerObs = (mv_par08 == 1)
+			_oExtr:LerComp3os = .t.
+			_oExtr:TipoExtrato = iif (mv_par07 == 1, 'N', 'C')
+			_oExtr:FormaResult = 'A'  // Quero o resultado em formato de array.
+			_oExtr:Gera ()
+	//		u_log (_oExtr:Resultado)
 
-			// Descricao do tipo de movimento
-			_nDescriTM = ascan (_aDescriTM, {|_aVal| _aVal [1] == _oExtr:Resultado [_nExtr, .ExtrCCTM]})
-			if _nDescriTM > 0
-				_sDescriTM = _aDescriTM [_nDescriTM, 2]
-			else
-				_sDescriTM = ''
-			endif
-
-			// Monta linha para impressao
-			if _nExtr == 1  // A primeira linha contem apenas o saldo anterior para inicio do relatorio.
-				_sLinImp = ""
-				_sLinImp += space (191) + "SALDO ANTERIOR:"
-				_sLinImp += transform (_oExtr:Resultado [_nExtr, .ExtrCCSaldo], "@E 999,999,999.99")
-			else 
-				_sLinImp = ""
-				_sLinImp += U_TamFixo (_oExtr:Resultado [_nExtr, .ExtrCCDescFil], 13) + "  "
-				_sLinImp += U_TamFixo (dtoc (_oExtr:Resultado [_nExtr, .ExtrCCData]), 10) + "   "
-				_sLinImp += U_TamFixo (_oExtr:Resultado [_nExtr, .ExtrCCPrefixo] + "/" + _oExtr:Resultado [_nExtr, .ExtrCCTitulo] + "-" + _oExtr:Resultado [_nExtr, .ExtrCCParcela], 15, ' ') + '   '
-				_sLinImp += U_TamFixo (_oExtr:Resultado [_nExtr, .ExtrCCTM] + "-" + _sDescriTM, 28) + "  "
-				_sLinImp += U_TamFixo (_aHist [1], _nTamHist) + " "  // Primeira linha do historico
-				_sLinImp += transform (_oExtr:Resultado [_nExtr, .ExtrCCValorDebito], "@EZ 999,999,999.99") + ' '
-				_sLinImp += transform (_oExtr:Resultado [_nExtr, .ExtrCCValorCredito], "@EZ 999,999,999.99") + ' '
-				_sLinImp += transform (_oExtr:Resultado [_nExtr, .ExtrCCSaldo], "@E 999,999,999.99")
-			endif
-
-			if li > _nMaxLin
+			// Uma nova pagina para cada associado.
+			if len (_oExtr:Resultado) > 0
 				cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
+				@ li, 0 psay "Associado: " + _aAssoc [_nAssoc, 1] + "/" + _aAssoc [_nAssoc, 2] + ' - ' + _aAssoc [_nAssoc, 3] // + '    Nucleo: ' + _oAssoc:Nucleo
+				li ++
 			endif
-			@ li, 0 psay _sLinImp
-			li ++
 
-			// Imprime as linhas restantes do historico.
-			for _nHist = 2 to len (_aHist)
+			// Imprime possiveis mensagens de erro.
+			if ! empty (_oExtr:UltMsg)
+				@ li, 0 psay _oExtr:UltMsg
+				li += 2
+			endif
+
+			// Varre a array do extrato e imprime seus dados.
+			for _nExtr = 1 to len (_oExtr:Resultado)
+
+				// Observacoes, se tiver, sao concatenadas com o historico.
+				_sHist = alltrim (_oExtr:Resultado [_nExtr, .ExtrCCHist])
+				if mv_par08 == 1 .and. ! empty (_oExtr:Resultado [_nExtr, .ExtrCCObs])
+					_sHist += chr (13) + chr (10) + "Obs.:" + _oExtr:Resultado [_nExtr, .ExtrCCObs]
+				endif
+
+				// Quebra o historico em quantas linhas forem necessarias (pelo menos uma).
+				_aHist = U_QuebraTXT (_sHist, _nTamHist)
+				if len (_aHist) == 0
+					aadd (_aHist, "")
+				endif
+
+				// Descricao do tipo de movimento
+				_nDescriTM = ascan (_aDescriTM, {|_aVal| _aVal [1] == _oExtr:Resultado [_nExtr, .ExtrCCTM]})
+				if _nDescriTM > 0
+					_sDescriTM = _aDescriTM [_nDescriTM, 2]
+				else
+					_sDescriTM = ''
+				endif
+
+				// Monta linha para impressao
+				if _nExtr == 1  // A primeira linha contem apenas o saldo anterior para inicio do relatorio.
+					_sLinImp = ""
+					_sLinImp += space (191) + "SALDO ANTERIOR:"
+					_sLinImp += transform (_oExtr:Resultado [_nExtr, .ExtrCCSaldo], "@E 999,999,999.99")
+				else 
+					_sLinImp = ""
+					_sLinImp += U_TamFixo (_oExtr:Resultado [_nExtr, .ExtrCCDescFil], 13) + "  "
+					_sLinImp += U_TamFixo (dtoc (_oExtr:Resultado [_nExtr, .ExtrCCData]), 10) + "   "
+					_sLinImp += U_TamFixo (_oExtr:Resultado [_nExtr, .ExtrCCPrefixo] + "/" + _oExtr:Resultado [_nExtr, .ExtrCCTitulo] + "-" + _oExtr:Resultado [_nExtr, .ExtrCCParcela], 15, ' ') + '   '
+					_sLinImp += U_TamFixo (_oExtr:Resultado [_nExtr, .ExtrCCTM] + "-" + _sDescriTM, 28) + "  "
+					_sLinImp += U_TamFixo (_aHist [1], _nTamHist) + " "  // Primeira linha do historico
+					_sLinImp += transform (_oExtr:Resultado [_nExtr, .ExtrCCValorDebito], "@EZ 999,999,999.99") + ' '
+					_sLinImp += transform (_oExtr:Resultado [_nExtr, .ExtrCCValorCredito], "@EZ 999,999,999.99") + ' '
+					_sLinImp += transform (_oExtr:Resultado [_nExtr, .ExtrCCSaldo], "@E 999,999,999.99")
+				endif
+
 				if li > _nMaxLin
 					cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 				endif
-				@ li, 76 psay _aHist [_nHist]
+				@ li, 0 psay _sLinImp
 				li ++
+
+				// Imprime as linhas restantes do historico.
+				for _nHist = 2 to len (_aHist)
+					if li > _nMaxLin
+						cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
+					endif
+					@ li, 76 psay _aHist [_nHist]
+					li ++
+				next
+
+				// Acumula subtotais e totais.
+				_aSubTot [1] += _oExtr:Resultado [_nExtr, .ExtrCCValorDebito]
+				_aSubTot [2] += _oExtr:Resultado [_nExtr, .ExtrCCValorCredito]
+				_aSubTot [3] := _oExtr:Resultado [_nExtr, .ExtrCCSaldo]  // Sempre o saldo final deste associado
+				_aTotGer [1] += _oExtr:Resultado [_nExtr, .ExtrCCValorDebito]
+				_aTotGer [2] += _oExtr:Resultado [_nExtr, .ExtrCCValorCredito]
+
+				// Se for a primeira linha, significa que eh o saldo inicial. Vou deixar uma linha em branco.
+				if _nExtr == 1
+					li ++
+				endif
 			next
 
-			// Acumula subtotais e totais.
-			_aSubTot [1] += _oExtr:Resultado [_nExtr, .ExtrCCValorDebito]
-			_aSubTot [2] += _oExtr:Resultado [_nExtr, .ExtrCCValorCredito]
-			_aSubTot [3] := _oExtr:Resultado [_nExtr, .ExtrCCSaldo]  // Sempre o saldo final deste associado
-			_aTotGer [1] += _oExtr:Resultado [_nExtr, .ExtrCCValorDebito]
-			_aTotGer [2] += _oExtr:Resultado [_nExtr, .ExtrCCValorCredito]
-
-			// Se for a primeira linha, significa que eh o saldo inicial. Vou deixar uma linha em branco.
-			if _nExtr == 1
-				li ++
+			// Acumula o saldo de todos os associados.
+			_aTotGer [3] += _aSubTot [3]
+			
+			if li > _nMaxLin - 3
+				cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 			endif
+			@ li, 0 psay space (176) + "--------------  -------------  -------------"
+			li ++
+			_sLinImp := space (119) + "Totais "
+			_sLinImp += U_TamFixo (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + _oAssoc:Nome, 50, ' ')
+			_sLinImp += transform (_aSubTot [1], "@E 999,999,999.99") + " " + transform (_aSubTot [2], "@E 999,999,999.99") + " " + transform (_aSubTot [3], "@E 999,999,999.99")
+			@ li, 0 psay _sLinImp
+			li += 2
+			@ li, 0 psay __PrtThinLine ()
+			li += 2
 		next
 
-		// Acumula o saldo de todos os associados.
-		_aTotGer [3] += _aSubTot [3]
-		
 		if li > _nMaxLin - 3
 			cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 		endif
-		@ li, 0 psay space (176) + "--------------  -------------  -------------"
-		li ++
-		_sLinImp := space (119) + "Totais "
-		_sLinImp += U_TamFixo (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + _oAssoc:Nome, 50, ' ')
-		_sLinImp += transform (_aSubTot [1], "@E 999,999,999.99") + " " + transform (_aSubTot [2], "@E 999,999,999.99") + " " + transform (_aSubTot [3], "@E 999,999,999.99")
+		_sLinImp := space (160) + "TOTAIS GERAIS   "
+		_sLinImp += transform (_aTotGer [1], "@E 999,999,999.99") + " " + transform (_aTotGer [2], "@E 999,999,999.99") + " " + transform (_aTotGer [3], "@E 999,999,999.99")
 		@ li, 0 psay _sLinImp
 		li += 2
 		@ li, 0 psay __PrtThinLine ()
 		li += 2
-	next
 
-	if li > _nMaxLin - 3
-		cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
+		// Imprime parametros usados na geracao do relatorio
+		if li > _nMaxLin - 2
+			cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
+		endif
+		U_ImpParam (_nMaxLin)
 	endif
-	_sLinImp := space (160) + "TOTAIS GERAIS   "
-	_sLinImp += transform (_aTotGer [1], "@E 999,999,999.99") + " " + transform (_aTotGer [2], "@E 999,999,999.99") + " " + transform (_aTotGer [3], "@E 999,999,999.99")
-	@ li, 0 psay _sLinImp
-	li += 2
-	@ li, 0 psay __PrtThinLine ()
-	li += 2
-
-	// Imprime parametros usados na geracao do relatorio
-	if li > _nMaxLin - 2
-		cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
-	endif
-	U_ImpParam (_nMaxLin)
 return
 
 

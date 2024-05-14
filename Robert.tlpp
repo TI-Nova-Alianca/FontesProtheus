@@ -155,7 +155,7 @@ user function robert ()
 		// _sFuncao += '_reginv ()'
 		// _sFuncao += '_recmail ()'
 		// _sFuncao += '_RevCH ()'
-		// _sFuncao += '_RelAssoc ()'
+		_sFuncao += '_RelAssoc ()'
 		// _sFuncao += '_SF1()'
 		// _sFuncao += '_SimCtb ()'
 		// _sFuncao += '_SimSafr23 ()'
@@ -5271,13 +5271,20 @@ static function _RelAssoc ()
 //	aadd (_aAssoc, {'023824', '01', '2023'})  // EMA SOSTER BOFF
 //	aadd (_aAssoc, {'023827', '01', '2023'})  // MERCELO BOFF
 //	aadd (_aAssoc, {'002480', '01', '2023'})  // DANIEL SGANZERLA
-	aadd (_aAssoc, {'012722', '01', '2022'})  // Casiano Arcari - muitos descontos de Unimed
+//	aadd (_aAssoc, {'012722', '01', '2022'})  // Casiano Arcari - muitos descontos de Unimed
 //	aadd (_aAssoc, {'002380', '01', '2023'})  // Elmar Busetti
 //	aadd (_aAssoc, {'002859', '01', '2023'})  // Celso Chiarani
 //	aadd (_aAssoc, {'003026', '01', '2023'})  // Marcos Parisotto
 //	aadd (_aAssoc, {'005212', '01', '2022'})  // Heleno Facchin - estaria faltando matade dos valores no demonatrativo de IR ano base 2022
 //	aadd (_aAssoc, {'005212', '01', '2023'})  // Heleno Facchin
-//	aadd (_aAssoc, {'003865', '01', '2023'})  // Sidimar Fleck
+
+003865 - Sidimar Fleck
+000161 - Alceu D.
+002560 - Velocino Fioravante
+000186 - Aureio D.
+000268 - Rui Bertuol
+
+
 //	_oSQL := ClsSQL ():New ()
 //	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO, ZI_SAFRA"
 //	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
@@ -5290,12 +5297,12 @@ static function _RelAssoc ()
 //	_aAssoc := aclone (_oSQL:Qry2Array (.f., .f.))
 	for _nAssoc = 1 to len (_aAssoc)
 		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc, 1])
-		U_GravaSX1 ("ML_FECHASA", '01', _aAssoc [_nAssoc, 3])  // safra
-		U_GravaSX1 ("ML_FECHASA", '02', _aAssoc [_nAssoc, 1])  // cod assoc
-		U_GravaSX1 ("ML_FECHASA", '03', _aAssoc [_nAssoc, 2])  // loja
-		U_GravaSX1 ("ML_FECHASA", '04', 2)  // lista saldo CC 1=sim;2=nao
-		U_GravaSX1 ("ML_FECHASA", '05', 2)  // lista pagtos/compens
-		U_ml_fechasafra (.T.)
+		//U_GravaSX1 ("ML_FECHASA", '01', _aAssoc [_nAssoc, 3])  // safra
+		//U_GravaSX1 ("ML_FECHASA", '02', _aAssoc [_nAssoc, 1])  // cod assoc
+		//U_GravaSX1 ("ML_FECHASA", '03', _aAssoc [_nAssoc, 2])  // loja
+		//U_GravaSX1 ("ML_FECHASA", '04', 2)  // lista saldo CC 1=sim;2=nao
+		//U_GravaSX1 ("ML_FECHASA", '05', 2)  // lista pagtos/compens
+		//U_ml_fechasafra (.T.)
 
 		//
 		// U_GravaSX1 ("IRASSOC", '01', '')  // CPF ini
@@ -5310,15 +5317,15 @@ static function _RelAssoc ()
 		// U_GravaSX1 ("IRASSOC", '03', '2023')  // ano base
 		// u_IRAssoc (.T.)
 		//
-		//U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL2', "02", '')
-		//U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL2', "04", 'zz')
-		//U_GravaSX1 ('SZI_REL2', "05", stod ("19000000"))
-		//U_GravaSX1 ('SZI_REL2', "06", stod ("20491231"))
-		//U_GravaSX1 ('SZI_REL2', "07", 1)  // tipo normal/capital
-		//U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
-		//U_szi_rel2 (.t.)
+		U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc, 1])
+		U_GravaSX1 ('SZI_REL2', "02", '')
+		U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc, 1])
+		U_GravaSX1 ('SZI_REL2', "04", 'zz')
+		U_GravaSX1 ('SZI_REL2', "05", ctod (''))
+		U_GravaSX1 ('SZI_REL2', "06", stod ("20491231"))
+		U_GravaSX1 ('SZI_REL2', "07", 2)  // tipo normal/capital
+		U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
+		U_szi_rel2 (.t.)
 		//U_GravaSX1 ('SZI_REL', "01", _aAssoc [_nAssoc])
 		//U_GravaSX1 ('SZI_REL', "02", '')
 		//U_GravaSX1 ('SZI_REL', "03", _aAssoc [_nAssoc])

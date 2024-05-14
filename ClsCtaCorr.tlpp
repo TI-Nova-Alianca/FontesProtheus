@@ -109,6 +109,7 @@
 // 09/04/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 16/04/2024 - Robert - Validacoes para gravacao de distribuicao de perdas (GLPI 15192)
 // 08/05/2024 - Robert - Nao verifica existencia de corr.mon. ao incluir TM 41.
+// 14/05/2024 - Robert - Nao tinha definicao de colunas para mostrar vctos programados de resgate no metodo :Desassoc (GLPI 15390)
 //
 
 // ------------------------------------------------------------------------------------
@@ -381,8 +382,7 @@ METHOD Desassoc () Class ClsCtaCorr
 	local _dData     := ctod ('')
 	local _nQtParcel := 0
 	local _sJustif   := ""
-
-	u_logIni (GetClassName (::Self) + '.' + procname ())
+	local _aColsF3   := {}
 
 	if _lContinua
 		_oAssoc := ClsAssoc():New (::Assoc, ::Loja)
@@ -394,7 +394,7 @@ METHOD Desassoc () Class ClsCtaCorr
 	// Gera lctos de resgate somente para o codigo/loja base
 	if _lContinua .and. (_oAssoc:Codigo + _oAssoc:Loja == _oAssoc:CodBase + _oAssoc:LojaBase)
 		_nQuota = _oAssoc:SldQuotCap (::DtMovto) [1]
-		u_log ("Saldo quota capital:", _nQuota)
+		u_log2 ('info', "Saldo quota capital: " + cvaltochar (_nQuota))
 		if msgyesno ("O desligamento de um associado deveria gerar lancamentos para resgate de saldo de quota capital." + chr (13) + chr (10) + ;
 		             "Saldo a resgatar: " + alltrim (transform (_nQuota, "@E 999,999,999.99")) + chr (13) + chr (10) + ;
 		             "Deseja gerar esses lancamentos agora?")
@@ -460,16 +460,17 @@ METHOD Desassoc () Class ClsCtaCorr
 						endif
 
 					next
-					u_log (_oAUtil:_aArray)
+					u_log2 ('debug', _oAUtil:_aArray)
 					
 					// Faz a distribuicao do saldo entre as parcelas.
 					_oAUtil:Dist (2, _nQuota, 2, 'P')
-					u_log ('parcelas distribuidas:', _oAUtil:_aArray)
+					u_log2 ('info', 'parcelas distribuidas:')
+					u_log2 ('info', _oAUtil:_aArray)
 			
 					// Gera um novo movimento na conta corrente para cada parcela.
 					CursorWait ()
 					for _nParc = 1 to len (_oAUtil:_aArray)
-						u_log ("Gerando parc. ", _nparc)
+						U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando parcela ' + cvaltochar (_nparc))
 						_oParc := ClsCtaCorr():New ()
 						_oParc:Assoc      = ::Assoc
 						_oParc:Loja       = ::Loja
@@ -496,13 +497,15 @@ METHOD Desassoc () Class ClsCtaCorr
 			
 					// Mostra valores para informacao do usuario.
 					if _lContinua
-						u_F3Array (_oAUtil:_aArray, "Resgates", NIL, 350, 300, "Previsoes de resgates da quota capital gerados:", "Valor total: " + alltrim (transform (_nQuota, "@E 999,999.99")), .F.)
+						_aColsF3 = {}
+						aadd (_aColsF3, {1, 'Vencto', '@D'})
+						aadd (_aColsF3, {2, 'Valor',  '@E 999,999,999.99'})
+						u_F3Array (_oAUtil:_aArray, "Resgates", _aColsF3, 350, 300, "Previsoes de resgates da quota capital gerados:", "Valor total: " + alltrim (transform (_nQuota, "@E 999,999.99")), .F.)
 					endif
 				endif
 			endif
 		endif
 	endif
-	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 
 

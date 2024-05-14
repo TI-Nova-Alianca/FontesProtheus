@@ -6,6 +6,14 @@
 //            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
 //            apenas para poder incluir no projeto e manter na pasta dos fontes.
 //
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Classe
+// #Descricao         #Gera dados para extrato de movimentacao de conta corrente de associados
+// #PalavasChave      #extrato #conta_corrente #associados
+// #TabelasPrincipais #SZI #SA2 #SE2 #SE5 #FK7 #FKA #FK2 #ZZM #ZX5
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 03/05/2019 - Robert - Busca historico detalhado (pelo SE5) usando a mesma funcao do SZI_REL.PRW.
 // 20/09/2019 - Robert - Passa a buscar estornos do FK2 atraves da tabela FKA.
@@ -14,14 +22,8 @@
 // 08/11/2019 - Robert - Ajusta tag <somarApp> para TM=13 nao listar faturas e transf. entre filiais.
 // 12/08/2020 - Robert - Criado parametro TMIgnorar para atender calculo de correcao monetaria, onde precisa ignorar TM=31.
 // 13/08/2020 - Robert - Tratava campo ZX5_10CAPI como 'C' (quando o correto eh 'S') para movtos. de capital.
+// 14/05/2024 - Robert - ZI_TM=11 busca pelo saldo, para que nao seja duplicado quando for feita a baixa (GLPI 15390)
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Classe
-// #Descricao         #Gera dados para extrato de movimentacao de conta corrente de associados
-// #PalavasChave      #extrato #conta_corrente #associados
-// #TabelasPrincipais #SZI #SA2 #SE2 #SE5 #FK7 #FKA #FK2 #ZZM #ZX5
-// #Modulos           #COOP
 
 #include "protheus.ch"
 #include "VA_Inclu.prw"
@@ -120,8 +122,6 @@ METHOD Gera () Class ClsExtrCC
 	local _nDescriTM := 0
 	local _lTagSomar := .F.
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
-
 	if empty (::Cod_assoc)   ; _lContinua = .F. ; ::UltMsg += "Codigo do associado deve ser informado." ; endif
 	if empty (::Loja_assoc)  ; _lContinua = .F. ; ::UltMsg += "Loja do associado deve ser informado."   ; endif
 	if empty (::TipoExtrato) ; _lContinua = .F. ; ::UltMsg += "Tipo de extrato deve ser informado."     ; endif
@@ -184,7 +184,9 @@ METHOD Gera () Class ClsExtrCC
 			// Busca conta corrente
 			_oSQL:_sQuery += "SELECT 'SZI' AS ORIGEM, ZI_FILIAL AS FILIAL, "
 			_oSQL:_sQuery +=       " ZI_DATA AS DATA, ZI_TM AS TIPO_MOV, ZX5.ZX5_10DESC AS DESC_TM, ZI_HISTOR AS HIST, ZI_ASSOC AS ASSOC, ZI_LOJASSO AS LOJASSO, ZI_CODMEMO AS CODMEMO,"
-			_oSQL:_sQuery +=       " ZI_VALOR AS VALOR, '' AS E5_RECPAG, ZI_DOC AS NUMERO, ZI_SERIE AS PREFIXO, '' AS DOCUMEN, '' AS E5_SEQ,"
+		//	_oSQL:_sQuery +=       " ZI_VALOR AS VALOR,"
+			_oSQL:_sQuery +=       " CASE WHEN ZI_TM = '11' THEN ZI_SALDO ELSE ZI_VALOR END AS VALOR,"
+			_oSQL:_sQuery +=       " '' AS E5_RECPAG, ZI_DOC AS NUMERO, ZI_SERIE AS PREFIXO, '' AS DOCUMEN, '' AS E5_SEQ,"
 			_oSQL:_sQuery +=       " '' AS E5_MOTBX, ZI_PARCELA AS E5_PARCELA, '' AS E5_TIPODOC, '' AS FORNADT, '' AS LOJAADT, '' AS E5_ORIGEM"
 			_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
 			_oSQL:_sQuery +=             RETSQLNAME ("ZX5") + " ZX5 "
@@ -206,44 +208,6 @@ METHOD Gera () Class ClsExtrCC
 			_oSQL:_sQuery +=   " AND SZI.ZI_DATA     BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_DATA     < '" + dtos (_dDtCorte) + "'"
 
-/* Tentativa frustrada
-			// Em ocasioes como calculo de correcao monetaria, preciso considerar a data de vencimento dos titulos, em vez da emissao.
-			if empty (::TMPorVcto)
-				_oSQL:_sQuery +=   " AND SZI.ZI_DATA     BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
-				_oSQL:_sQuery +=   " AND SZI.ZI_DATA     < '" + dtos (_dDtCorte) + "'"
-			else
-				_oSQL:_sQuery +=   " AND ("
-				_oSQL:_sQuery +=          " (SZI.ZI_TM NOT IN " + FormatIn (::TMPorVcto, '/')
-				_oSQL:_sQuery +=            " AND SZI.ZI_DATA     BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
-				_oSQL:_sQuery +=            " AND SZI.ZI_DATA     < '" + dtos (_dDtCorte) + "'"
-				_oSQL:_sQuery +=            ")"
-				_oSQL:_sQuery +=         " OR "
-				_oSQL:_sQuery +=       " ( "
-				_oSQL:_sQuery +=          " (SZI.ZI_TM IN " + FormatIn (::TMPorVcto, '/')
-				_oSQL:_sQuery +=          " AND (SELECT SE2.E2_VENCREA"
-				_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SE2") + " SE2 "
-				_oSQL:_sQuery +=                " WHERE SE2.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=                  " AND SE2.E2_FILIAL = SZI.ZI_FILIAL"
-				_oSQL:_sQuery +=                  " AND SE2.E2_FORNECE = SZI.ZI_ASSOC"
-				_oSQL:_sQuery +=                  " AND SE2.E2_LOJA = SZI.ZI_LOJASSO"
-				_oSQL:_sQuery +=                  " AND SE2.E2_NUM = SZI.ZI_DOC"
-				_oSQL:_sQuery +=                  " AND SE2.E2_PREFIXO = SZI.ZI_SERIE"
-				_oSQL:_sQuery +=                  " AND SE2.E2_PARCELA = SZI.ZI_PARCELA"
-				_oSQL:_sQuery +=               ") BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
-				_oSQL:_sQuery +=          " AND (SELECT SE2.E2_VENCREA"
-				_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SE2") + " SE2 "
-				_oSQL:_sQuery +=                " WHERE SE2.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=                  " AND SE2.E2_FILIAL = SZI.ZI_FILIAL"
-				_oSQL:_sQuery +=                  " AND SE2.E2_FORNECE = SZI.ZI_ASSOC"
-				_oSQL:_sQuery +=                  " AND SE2.E2_LOJA = SZI.ZI_LOJASSO"
-				_oSQL:_sQuery +=                  " AND SE2.E2_NUM = SZI.ZI_DOC"
-				_oSQL:_sQuery +=                  " AND SE2.E2_PREFIXO = SZI.ZI_SERIE"
-				_oSQL:_sQuery +=                  " AND SE2.E2_PARCELA = SZI.ZI_PARCELA"
-				_oSQL:_sQuery +=               ") < '" + dtos (_dDtCorte) + "'"
-				_oSQL:_sQuery +=            "))"
-				_oSQL:_sQuery +=         ")"
-			endif
-*/
 			_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *"  // Nao quero lcto que gerou movto bancario por que vai ser buscado posteriormente do SE5.
 			_oSQL:_sQuery +=                     " FROM " + RETSQLNAME ("SE5") + " SE5 "
 			_oSQL:_sQuery +=                    " WHERE SE5.D_E_L_E_T_ != '*'"
@@ -384,7 +348,9 @@ METHOD Gera () Class ClsExtrCC
 			// BUSCA LANCAMENTOS FEITOS NO SZI DENTRO DO INTERVALO SOLICITADO
 			_oSQL:_sQuery += "SELECT 'SZI' AS ORIGEM, ZI_FILIAL AS FILIAL, " // + U_LeSM0 ('2', cEmpAnt, '', 'SZI', 'ZI_FILIAL', 'ZI_FILIAL') [2] + " AS DESCFIL, "
 			_oSQL:_sQuery +=       " ZI_DATA AS DATA, ZI_TM AS TM, ZX5.ZX5_10DESC AS DESC_TM, ZI_HISTOR AS HIST, ZI_ASSOC AS ASSOC, ZI_LOJASSO AS LOJASSO, ZI_CODMEMO AS CODMEMO,"
-			_oSQL:_sQuery +=       " ZI_VALOR AS VALOR, ZI_DOC AS NUMERO, ZI_SERIE AS PREFIXO, '' AS SEQ, '' AS MOTBX, ZI_PARCELA AS PARCELA, '' AS FK2_DOC, ZI_ORIGEM, "
+//			_oSQL:_sQuery +=       " ZI_VALOR AS VALOR,"
+			_oSQL:_sQuery +=       " CASE WHEN ZI_TM = '11' THEN ZI_SALDO ELSE ZI_VALOR END AS VALOR,"
+			_oSQL:_sQuery +=       " ZI_DOC AS NUMERO, ZI_SERIE AS PREFIXO, '' AS SEQ, '' AS MOTBX, ZI_PARCELA AS PARCELA, '' AS FK2_DOC, ZI_ORIGEM, "
 			_oSQL:_sQuery +=       " ZX5.ZX5_10DC AS DC"
 			_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
 			_oSQL:_sQuery +=             RETSQLNAME ("ZX5") + " ZX5 "
@@ -532,7 +498,7 @@ METHOD Gera () Class ClsExtrCC
 		//	_oSQL:Log ()
 			_sAliasQ = _oSQL:Qry2Trb (.F.)
 			TCSetField (_sAliasQ, "DATA", "D")
-			(_sAliasQ) -> (dbgotop ())                	
+			(_sAliasQ) -> (dbgotop ())
 			do while ! (_sAliasQ) -> (eof ())
 
 				// Gera nova linha para retorno.
