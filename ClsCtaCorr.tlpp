@@ -13,109 +13,106 @@
 // #Modulos           #COOP
 
 // Historico de alteracoes:
-// 02/09/2011 - Robert - Implementados metodos Grava, PodeIncl, GeraAtrib.
-// 12/12/2011 - Robert - Implementados metodos Associar e Desassoc.
-// 15/12/2011 - Robert - Permite ao usuario escolher se gera lctos. ao incluir movimento
-//                       de associar/desassociar (para permitir inclusao de data de
-//                       associacao de pessoas jah associadas antes de termos a cta.corrente).
-// 05/01/2012 - Robert - Melhorias gerais geracao resgates quota capital no metodo 'Desassoc'.
-// 20/01/2012 - Robert - Tratamentos para transferencia de saldo de quota capital.
-// 17/04/2012 - Robert - Passa a permitir informar numero de parcelas para resgate de quota (desassociacao).
-// 19/04/2012 - Robert - Metodo :SaldoEm considerava E5_VALOR + E5_VLDESCO e passa a considerar E5_VALOR + E5_VLDESCO - E5_VLJUROS - E5_VLMULTA.
-//                     - Metodo :SaldoEm passa a desconsiderar E5_TIPODOC = 'JR'.
-// 16/05/2012 - Robert - Funcao U_GeraSE2 recebe parametro adicional indicando se contabiliza online.
-// 15/08/2012 - Robert - Metodo :SldQuotCap passa a usar codigo e loja base do associado.
-// 02/09/2012 - Robert - Metodo :SaldoEm passa a buscar dados em funcao interna do SQL.
-// 13/09/2012 - Robert - Passa a exigir forma de pagamento quando TM = 07.
-// 11/10/2012 - Robert - Criado metodo TransFil e demais tratamentos para transf. saldo entre filiais.
-// 20/11/2012 - Robert - Atributo OQueGera passa a ser um metodo, pois vai ser usado em mais lugares.
-//                     - Criado tratamento para outros creditos com entrada de valor (gera SE5).
-// 07/12/2012 - Robert - Permite incluir movimento 07 para ex-associado, mediante confirmacao.
-// 10/12/2012 - Robert - Implementada geracao de DP no SE2 seguida de mov.bancario a receber no SE5.
-// 07/03/2013 - Elaine - Method PodeIncl nao permite mais incluir se nao tiver um fornecedor informado caso o tipo de movimento for 03, 05 ou 06.             
-// 15/08/2013 - Robert - Gravacao do campo ZI_ORIGEM.
-// 16/08/2013 - Robert - Criado metodo HistTrFil.
-// 29/07/2015 - Robert - Metodo HistTrFil substituido pelo HistBaixas (mais completo).
-// 10/09/2015 - Robert - Leitura do parametro VA_USRCMCC trocada para validacao do grupo 051 da tabela ZZU.
-// 11/09/2015 - Robert - Atributos TMCorrMonD e TMCorrMonC estavam sendo inicializados com conteudo invertido.
-// 23/10/2015 - Robert - Transf. de saldo entre filiais libeada para qualquer tipo de movimento (antes era apenas TM=13).
-// 26/10/2015 - Robert - Criado atributo SeqOrig (passa a ser exigido para inclusao por transf. de outra filial).
-// 09/11/2015 - Robert - Ao gerar titulo tipo "DP+SE5_R" mandava a data de emissao em branco.
-// 19/02/2016 - Robert - Criado tratamento para o campo ZI_PARCELA.
-//                     - Funcao de geracao do SE2 passada de U_GeraSE2 para metodo interno desta classe.
-//                     - Melhorada validacao de conta bancaria (para geracao de PA).
-// 03/03/2016 - Robert - Exigia forma de pagamento 1 ou 2, mas temos novas opcoes (3 e 4).
-// 26/04/2016 - Robert - Nao permite mais transferir saldo de movto tipo 07 entre filiais.
-//                     - Criado atributo ::VctoSE2
-//                     - Grava SE2 com parcela e vencimento sugeridos, quando possivel (util para casos de transf. entre filiais).
-// 22/06/2016 - Robert - Permite inclusao quando nao socio, se tiver filial origem (pode ser transf. de saldo de cota, por exemplo).
-// 23/06/2016 - Robert - Sugere datas para resgate de cota e permite ao usuario alterar.
-// 11/08/2016 - Robert - Tratamento para a opcao '5' no campo ZX5_10GERI.
-// 03/10/2016 - Robert - Passa a exigir nucleo / subnucleo informados no cadastro.
-// 03/01/2016 - Robert - Criado metodo RecnoSE2().
-//                     - Ajustes atualizacao do SE5 apos transf. saldo entre fiiais.
-//                     - Metodo AtuSaldo() passa a buscar o saldo e fazer o ajuste (caso necessario), nao mais recebendo o saldo por parametro.  
-// 12/01/2016 - Robert - Verifica saldo do capital antes de incluir movimento 27.
-// 13/01/2016 - Robert - Rot.aut.geracao SE2 retornava erro em alguns casos mesmo tendo gravado o registro (mensagens de contabilizacao, por exemplo).
-// 03/02/2017 - Robert - Tratamento para o tamanho do campo E5_HISTOR no update do SE5 no metodo GeraSE2().
-// 06/02/2017 - Robert - Nao permite transferir saldo de movto que gerou mov.bancario no SE5.
-// 14/06/2017 - Robert - Metodo GeraSE2() lia dados do SZI, exigindo que o arquivo estivesse posicionado.
-// 06/09/2017 - Robert - Metodo PodeIncl() aceita movto.11 via confirmacao se for superusuario.
-// 07/12/2017 - Robert - Gera SU5 no final do metodo Associar().
-// 11/01/2018 - Catia  - Chamado 3350 - Nova validacao no conta corrente - nao permite incluir movimentos com o mesmo doc/prefixo/parcela - dava erro na rotina automatica do SE2
-// 05/04/2018 - Robert - Eliminado campo zi_pjurmes (nunca fora usado)
-// 15/05/2018 - Robert - Implementada gravacao da parcela no metodo Desassoc()
-// 06/07/2018 - Robert - Busca saldo atual no SE2 para movtos a partir de 2018
-// 21/01/2019 - Robert - Aceita movimento tipo 19 de ex assicoado.
-// 29/01/2019 - Robert - Na exclusao do SZI, em vez de abrir tela para confirmar exclusao do titulo no financeiro, chama rotina automatica.
-// 26/02/2019 - Robert - Data sugerida para inicio de resgate de sobras passa a ser sempre no ano seguinte.
-// 05/03/2019 - Robert - Desabilitada chamada do metodo _oAssoc:GeraSU5 (associados agora sao cadastrados como clientes no SA1)
-// 08/04/2019 - Catia  - include TbiConn.ch 
-// 09/05/2019 - Robert - Pede confirmacao na inclusao manual de movimento tipo 19.
-// 30/05/2019 - Robert - Grava FK2_HISTOR quando transferencia de saldo para outra filial.
-// 06/12/2019 - Robert - Grava E2_VENCREA (estava ficando vazio)
-// 21/01/2019 - Robert - Valida minimo de 15% do saldo de cota para transferir.
-//                       Gera lctos de resgate somente para o codigo/loja base.
-// 17/03/2020 - Robert - Passa a permitir inclusao de movtos que geram NDF (via solicitacao de confirmacao) - GLPI 7687
-//                     - Comentariadas declaracoes de variaveis em desuso.
-// 23/05/2020 - Robert - Criados tratamentos para :TM=31
-//                     - Melhoradas algumas mensagens de erro e removidas linhas comentariadas
-// 26/10/2020 - Robert - Na exclusao, exigia ZI_DATA = dDataBase. Agora exige E2_EMISSAO = dDataBase, que eh o que realmente importa.
-// 08/01/2021 - Robert - Permite incluir TM 13 quando rotina U_VA_RUSN.
-// 13/01/2021 - Robert - Permite incluir TM 16 quando ex socio.
-// 13/03/2021 - Robert - Permite incluir TM 13 quando chamado da rotina BatSafr (opcao de geracao do SZI sobre notas de compra de safra) - GLPI 9592.
-//                     - Metodo TransFil passa a aceitar data para baixa contra transitoria; melhorados logs.
-// 23/03/2021 - Robert - Criados atributos Safra e GrpPgSafra, com respectiva leitura e gravacao (GLPI 9592).
-// 11/06/2021 - Robert - Nao gravava campo E2_VASAFRA no metodo GeraSE2 (GLPI 10208)
-// 20/07/2021 - Robert - Novo tratamento para passar bco/ag/cta na geracao do SE2 (variaveis AUTBANCO, ...) (GLPI 10494)
-// 13/09/2021 - Robert - Criado tratamento para TM=32 (GLPI 10803)
-//                     - Nao gravava campos ZI_FORNECE e ZI_LOJAFOR no metodo :Grava()
-//                     - Implementados atributo :RegRelac e metodo :RegRelac()
-// 07/12/2021 - Robert - Na geracao dos titulos de resgate de cotas (apos desligamento) passa a gerar E2_EMISSAO = dDataBase e nao mais na data do vcto.
-// 08/12/2021 - Robert - Validacoes para gravacao de TM=33 (GLPI 
-// 19/01/2022 - Robert - Nao inicializava atributo ::Safra quando chamado via tela de manutencao da conta corrente.
-// 23/02/2022 - Robert - Ordenados por tipo de movimento alguns blocos de codigo no metodo PodeIncl().
-// 01/04/2022 - Robert - Ajuste teste se associado jah possui lcto restituicao FUNRURAL.
-// 22/08/2022 - Robert - Removidos alguns trechos comentariados.
-// 23/11/2022 - Robert - Bloquear somente mov.07 quando jah tiver corr.mon. (ver obs no local)
-// 16/12/2022 - Robert - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
-// 13/03/2023 - Robert - Novos parametros FINA090.
-// 29/05/2023 - Robert - Metodos Grava() e TransFil() passam a usar controle de transacao (GLPI 13532).
-// 21/09/2023 - Robert - Nao salvava area de trabalho no metodo PodeIncl() - GLPI 14182.
-//                     - Nao validava codigo e loja de fornecedor (nao do associado) no metodo PodeIncl() - GLPI 14182.
-// 15/12/2023 - Robert - Portado de .prw para .tlpp e passa a herdar a ClsBase (GLPI 14548)
-// 08/01/2024 - Robert - Melhorada query que valida a baixa original em caso de transf. entre filiais TM=13.
-// 25/02/2024 - Robert - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
-// 09/04/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
-// 16/04/2024 - Robert - Validacoes para gravacao de distribuicao de perdas (GLPI 15192)
-// 08/05/2024 - Robert - Nao verifica existencia de corr.mon. ao incluir TM 41.
+// 02/09/2011 - Robert  - Implementados metodos Grava, PodeIncl, GeraAtrib.
+// 12/12/2011 - Robert  - Implementados metodos Associar e Desassoc.
+// 15/12/2011 - Robert  - Permite ao usuario escolher se gera lctos. ao incluir movimento
+//                        de associar/desassociar (para permitir inclusao de data de
+//                        associacao de pessoas jah associadas antes de termos a cta.corrente).
+// 05/01/2012 - Robert  - Melhorias gerais geracao resgates quota capital no metodo 'Desassoc'.
+// 20/01/2012 - Robert  - Tratamentos para transferencia de saldo de quota capital.
+// 17/04/2012 - Robert  - Passa a permitir informar numero de parcelas para resgate de quota (desassociacao).
+// 19/04/2012 - Robert  - Metodo :SaldoEm considerava E5_VALOR + E5_VLDESCO e passa a considerar E5_VALOR + E5_VLDESCO - E5_VLJUROS - E5_VLMULTA.
+//                      - Metodo :SaldoEm passa a desconsiderar E5_TIPODOC = 'JR'.
+// 16/05/2012 - Robert  - Funcao U_GeraSE2 recebe parametro adicional indicando se contabiliza online.
+// 15/08/2012 - Robert  - Metodo :SldQuotCap passa a usar codigo e loja base do associado.
+// 02/09/2012 - Robert  - Metodo :SaldoEm passa a buscar dados em funcao interna do SQL.
+// 13/09/2012 - Robert  - Passa a exigir forma de pagamento quando TM = 07.
+// 11/10/2012 - Robert  - Criado metodo TransFil e demais tratamentos para transf. saldo entre filiais.
+// 20/11/2012 - Robert  - Atributo OQueGera passa a ser um metodo, pois vai ser usado em mais lugares.
+//                      - Criado tratamento para outros creditos com entrada de valor (gera SE5).
+// 07/12/2012 - Robert  - Permite incluir movimento 07 para ex-associado, mediante confirmacao.
+// 10/12/2012 - Robert  - Implementada geracao de DP no SE2 seguida de mov.bancario a receber no SE5.
+// 07/03/2013 - Elaine  - Method PodeIncl nao permite mais incluir se nao tiver um fornecedor informado caso o tipo de movimento for 03, 05 ou 06.             
+// 15/08/2013 - Robert  - Gravacao do campo ZI_ORIGEM.
+// 16/08/2013 - Robert  - Criado metodo HistTrFil.
+// 29/07/2015 - Robert  - Metodo HistTrFil substituido pelo HistBaixas (mais completo).
+// 10/09/2015 - Robert  - Leitura do parametro VA_USRCMCC trocada para validacao do grupo 051 da tabela ZZU.
+// 11/09/2015 - Robert  - Atributos TMCorrMonD e TMCorrMonC estavam sendo inicializados com conteudo invertido.
+// 23/10/2015 - Robert  - Transf. de saldo entre filiais libeada para qualquer tipo de movimento (antes era apenas TM=13).
+// 26/10/2015 - Robert  - Criado atributo SeqOrig (passa a ser exigido para inclusao por transf. de outra filial).
+// 09/11/2015 - Robert  - Ao gerar titulo tipo "DP+SE5_R" mandava a data de emissao em branco.
+// 19/02/2016 - Robert  - Criado tratamento para o campo ZI_PARCELA.
+//                      - Funcao de geracao do SE2 passada de U_GeraSE2 para metodo interno desta classe.
+//                      - Melhorada validacao de conta bancaria (para geracao de PA).
+// 03/03/2016 - Robert  - Exigia forma de pagamento 1 ou 2, mas temos novas opcoes (3 e 4).
+// 26/04/2016 - Robert  - Nao permite mais transferir saldo de movto tipo 07 entre filiais.
+//                      - Criado atributo ::VctoSE2
+//                      - Grava SE2 com parcela e vencimento sugeridos, quando possivel (util para casos de transf. entre filiais).
+// 22/06/2016 - Robert  - Permite inclusao quando nao socio, se tiver filial origem (pode ser transf. de saldo de cota, por exemplo).
+// 23/06/2016 - Robert  - Sugere datas para resgate de cota e permite ao usuario alterar.
+// 11/08/2016 - Robert  - Tratamento para a opcao '5' no campo ZX5_10GERI.
+// 03/10/2016 - Robert  - Passa a exigir nucleo / subnucleo informados no cadastro.
+// 03/01/2016 - Robert  - Criado metodo RecnoSE2().
+//                      - Ajustes atualizacao do SE5 apos transf. saldo entre fiiais.
+//                      - Metodo AtuSaldo() passa a buscar o saldo e fazer o ajuste (caso necessario), nao mais recebendo o saldo por parametro.  
+// 12/01/2016 - Robert  - Verifica saldo do capital antes de incluir movimento 27.
+// 13/01/2016 - Robert  - Rot.aut.geracao SE2 retornava erro em alguns casos mesmo tendo gravado o registro (mensagens de contabilizacao, por exemplo).
+// 03/02/2017 - Robert  - Tratamento para o tamanho do campo E5_HISTOR no update do SE5 no metodo GeraSE2().
+// 06/02/2017 - Robert  - Nao permite transferir saldo de movto que gerou mov.bancario no SE5.
+// 14/06/2017 - Robert  - Metodo GeraSE2() lia dados do SZI, exigindo que o arquivo estivesse posicionado.
+// 06/09/2017 - Robert  - Metodo PodeIncl() aceita movto.11 via confirmacao se for superusuario.
+// 07/12/2017 - Robert  - Gera SU5 no final do metodo Associar().
+// 11/01/2018 - Catia   - Chamado 3350 - Nova validacao no conta corrente - nao permite incluir movimentos com o mesmo doc/prefixo/parcela - dava erro na rotina automatica do SE2
+// 05/04/2018 - Robert  - Eliminado campo zi_pjurmes (nunca fora usado)
+// 15/05/2018 - Robert  - Implementada gravacao da parcela no metodo Desassoc()
+// 06/07/2018 - Robert  - Busca saldo atual no SE2 para movtos a partir de 2018
+// 21/01/2019 - Robert  - Aceita movimento tipo 19 de ex assicoado.
+// 29/01/2019 - Robert  - Na exclusao do SZI, em vez de abrir tela para confirmar exclusao do titulo no financeiro, chama rotina automatica.
+// 26/02/2019 - Robert  - Data sugerida para inicio de resgate de sobras passa a ser sempre no ano seguinte.
+// 05/03/2019 - Robert  - Desabilitada chamada do metodo _oAssoc:GeraSU5 (associados agora sao cadastrados como clientes no SA1)
+// 08/04/2019 - Catia   - include TbiConn.ch 
+// 09/05/2019 - Robert  - Pede confirmacao na inclusao manual de movimento tipo 19.
+// 30/05/2019 - Robert  - Grava FK2_HISTOR quando transferencia de saldo para outra filial.
+// 06/12/2019 - Robert  - Grava E2_VENCREA (estava ficando vazio)
+// 21/01/2019 - Robert  - Valida minimo de 15% do saldo de cota para transferir.
+//                        Gera lctos de resgate somente para o codigo/loja base.
+// 17/03/2020 - Robert  - Passa a permitir inclusao de movtos que geram NDF (via solicitacao de confirmacao) - GLPI 7687
+//                      - Comentariadas declaracoes de variaveis em desuso.
+// 23/05/2020 - Robert  - Criados tratamentos para :TM=31
+//                      - Melhoradas algumas mensagens de erro e removidas linhas comentariadas
+// 26/10/2020 - Robert  - Na exclusao, exigia ZI_DATA = dDataBase. Agora exige E2_EMISSAO = dDataBase, que eh o que realmente importa.
+// 08/01/2021 - Robert  - Permite incluir TM 13 quando rotina U_VA_RUSN.
+// 13/01/2021 - Robert  - Permite incluir TM 16 quando ex socio.
+// 13/03/2021 - Robert  - Permite incluir TM 13 quando chamado da rotina BatSafr (opcao de geracao do SZI sobre notas de compra de safra) - GLPI 9592.
+//                      - Metodo TransFil passa a aceitar data para baixa contra transitoria; melhorados logs.
+// 23/03/2021 - Robert  - Criados atributos Safra e GrpPgSafra, com respectiva leitura e gravacao (GLPI 9592).
+// 11/06/2021 - Robert  - Nao gravava campo E2_VASAFRA no metodo GeraSE2 (GLPI 10208)
+// 20/07/2021 - Robert  - Novo tratamento para passar bco/ag/cta na geracao do SE2 (variaveis AUTBANCO, ...) (GLPI 10494)
+// 13/09/2021 - Robert  - Criado tratamento para TM=32 (GLPI 10803)
+//                      - Nao gravava campos ZI_FORNECE e ZI_LOJAFOR no metodo :Grava()
+//                      - Implementados atributo :RegRelac e metodo :RegRelac()
+// 07/12/2021 - Robert  - Na geracao dos titulos de resgate de cotas (apos desligamento) passa a gerar E2_EMISSAO = dDataBase e nao mais na data do vcto.
+// 08/12/2021 - Robert  - Validacoes para gravacao de TM=33 (GLPI 
+// 19/01/2022 - Robert  - Nao inicializava atributo ::Safra quando chamado via tela de manutencao da conta corrente.
+// 23/02/2022 - Robert  - Ordenados por tipo de movimento alguns blocos de codigo no metodo PodeIncl().
+// 01/04/2022 - Robert  - Ajuste teste se associado jah possui lcto restituicao FUNRURAL.
+// 22/08/2022 - Robert  - Removidos alguns trechos comentariados.
+// 23/11/2022 - Robert  - Bloquear somente mov.07 quando jah tiver corr.mon. (ver obs no local)
+// 16/12/2022 - Robert  - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
+// 13/03/2023 - Robert  - Novos parametros FINA090.
+// 29/05/2023 - Robert  - Metodos Grava() e TransFil() passam a usar controle de transacao (GLPI 13532).
+// 21/09/2023 - Robert  - Nao salvava area de trabalho no metodo PodeIncl() - GLPI 14182.
+//                      - Nao validava codigo e loja de fornecedor (nao do associado) no metodo PodeIncl() - GLPI 14182.
+// 15/12/2023 - Robert  - Portado de .prw para .tlpp e passa a herdar a ClsBase (GLPI 14548)
+// 08/01/2024 - Robert  - Melhorada query que valida a baixa original em caso de transf. entre filiais TM=13.
+// 25/02/2024 - Robert  - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 09/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 16/04/2024 - Robert  - Validacoes para gravacao de distribuicao de perdas (GLPI 15192)
+// 08/05/2024 - Robert  - Nao verifica existencia de corr.mon. ao incluir TM 41.
+// 15/05/2024 - Claudia - Incluido o campo de vencimento financeiro na gravação. GLPI:15476
 //
-
 // ------------------------------------------------------------------------------------
-//#include "colors.ch"
 #Include "Protheus.ch"
-//#Include "RwMake.ch"
-//#Include "TbiConn.ch"
 #include "VA_Inclu.prw"
 
 // --------------------------------------------------------------------------
@@ -749,6 +746,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 		::VctoSE2For = m->zi_vctoFor
 		::Safra      = m->zi_safra
 		::GrpPgSafra = m->zi_gpsaf
+		::VctoSE2    = m->zi_vencto
 	elseif _sOrigem == "SZI"
 		::Filial   = szi -> zi_filial
 		::RegSZI   = szi -> (recno ())

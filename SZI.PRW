@@ -66,15 +66,15 @@
 // 14/04/2023 - Robert  - Geracao manual do SE2 passa a perguntar data de vencimento.
 // 03/08/2023 - Robert  - Rel. de IR nao tem mais o parametro de 'nucleo'.
 // 18/10/2023 - Robert  - Desabilitado botao 'compensar com titulos de outros fornecedores'
+// 15/05/2024 - Claudia - Incluido o campo de vencimento financeiro na gravação. GLPI:15476
 //
-
+// --------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
 #Include "RwMake.ch"
 #Include "TbiConn.ch"
 #include "VA_Inclu.prw"
 
-// --------------------------------------------------------------------------------------------------
 User Function szi()
 	local _aCores      := U_SZILG (.T.)
 	local _aRotSald    := {}
@@ -789,6 +789,7 @@ User Function SZII ()
 		CursorWait ()
 		_oCtaCorr := ClsCtaCorr():New ()
 		_oCtaCorr:GeraAtrib ('SZI')
+		_oCtaCorr:VctoSE2    = m->zi_vencto   // campo virtual
 		_oCtaCorr:VctoSE2For = m->zi_vctoFor  // Campo virtual.
 		_oCtaCorr:Obs        = m->zi_obs      // Os demais atributos jah estavam gravados no SZI.
 		_lRet = _oCtaCorr:Grava (.T., .F.)
