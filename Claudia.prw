@@ -74,12 +74,20 @@ User Function claudia ()
 	//u_help("CTB")
 	//U_BACACTB()
 
-	u_help("custo ST")
-	_GLPI15288 ()
+	//u_help("custo ST")
+	//_GLPI15288 ()
 
+    //u_help("teste relatorio")
+    //_GLPI15199()
+
+    u_help("OP")
+    u_va_xls67()
 
 Return
 
+static function _GLPI15199()
+    u_va_xls66()
+Return
 // --------------------------------------------------------------------------
 // Atualiza custo standard cfe planilha (inclusive itens filhos (unitarios)
 static function _GLPI15288 ()
