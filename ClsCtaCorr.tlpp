@@ -111,6 +111,7 @@
 // 08/05/2024 - Robert	- Nao verifica existencia de corr.mon. ao incluir TM 41.
 // 14/05/2024 - Robert	- Nao tinha definicao de colunas para mostrar vctos programados de resgate no metodo :Desassoc (GLPI 15390)
 // 15/05/2024 - Claudia - Incluido o campo de vencimento financeiro na gravação. GLPI:15476
+// 20/05/2024 - Cláudia - Inlcuida a TM 42 para datas retroativas. GLPI: 15498
 //
 // ------------------------------------------------------------------------------------
 //#include "colors.ch"
@@ -2098,7 +2099,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	endif
 
 	// Verifica periodo fechado (correcao monetaria jah calculada) - independente de filial.
-	if _lContinua .and. ! ::TM $ '19/41'  // TM 19/41 (distr.sobras/perdas) sao sempre retroativas, pois dependo do fechto.exercicio para ter o valor.
+	if _lContinua .and. ! ::TM $ '19/41/42'  // TM 19/41 (distr.sobras/perdas) sao sempre retroativas, pois dependo do fechto.exercicio para ter o valor.
 		_sQuery := ""
 		_sQuery += "SELECT COUNT (*)"
 		_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
