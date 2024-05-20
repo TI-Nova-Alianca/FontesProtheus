@@ -22,6 +22,7 @@
 // 14/02/2022 - Claudia - Gravada a taxa calculada.
 // 16/02/2022 - Claudia - Gtavado campo ZB1_VLRTAR calculado.
 // 09/05/2024 - Claudia - Alterado para novo layout cielo 15. GLPI: 15409
+// 20/05/2024 - Claudia - Ajustada a impressão das parcelas. GLPI: 15499
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -293,7 +294,7 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 				_vlrTaxa := _aRO[1,7]//ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
 				aadd(_aRel,{ 	_aRO[1,1],; 	// filial
 								_aRO[1,9],; 	// valor liquido da venda
-								_aRO[1,6],; 	// valor Bruto da parcela
+								_aCV[1,3],; 	// valor parcela
 								_aRO[1,17],; 	// % taxa
 								_vlrTaxa ,;     // valor da taxa
 								_aCV[1,2],; 	// data de venda
@@ -538,10 +539,10 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"		,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Título"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	//TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	//TRCell():New(oSection1,"COLUNA6", 	"" ,"%.Taxa"		, "@E 999.99"   			,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	//TRCell():New(oSection1,"COLUNA7", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA8", 	"" ,"Dt.Venda"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA9", 	"" ,"Dt.Proces."	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA10", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
@@ -634,10 +635,10 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aRel[i,1] }) // filial
 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _sTitulo   }) // titulo
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _sCliente  }) // cliente
-		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aRel[i,2] }) // vlr. liquido
+		//oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aRel[i,2] }) // vlr. liquido
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aRel[i,3] }) // vlr.parcela
 		//oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aRel[i,4] }) // % taxa
-		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aRel[i,5] }) // vlr. taxa
+		//oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aRel[i,5] }) // vlr. taxa
 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aRel[i,6] }) // dt. venda
 		oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aRel[i,7] }) // dt. process
 		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aRel[i,8] }) // cod.autoriz
@@ -683,17 +684,24 @@ Static Function PrintReport(oReport)
 	// oReport:SkipLine(1)
 	// oReport:ThinLine()
 
+	// _nLinha:= _PulaFolha(_nLinha)
+	// oReport:PrintText("TOTAL GERAL" ,, 100)
+	// _nLinha:= _PulaFolha(_nLinha)
+	// oReport:PrintText("Valor da Parcela:" ,, 100)
+	// _vTPar := _nTotVenda - _nTotDVenda 
+	// oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
+	// oReport:PrintText("Valor da Taxa:" ,, 100)
+	// _vTTax := _nTotTax - _nTotDTax
+	// oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	// oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
+	// oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
+
 	_nLinha:= _PulaFolha(_nLinha)
 	oReport:PrintText("TOTAL GERAL" ,, 100)
 	_nLinha:= _PulaFolha(_nLinha)
 	oReport:PrintText("Valor da Parcela:" ,, 100)
 	_vTPar := _nTotVenda - _nTotDVenda 
 	oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
-	oReport:PrintText("Valor da Taxa:" ,, 100)
-	_vTTax := _nTotTax - _nTotDTax
-	oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
-	oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
-	oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
 	oReport:SkipLine(1)
 	oReport:ThinLine()
 
