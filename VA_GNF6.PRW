@@ -489,7 +489,7 @@ Static Function _GeraNota(_sFornece, _sLoja, _aItens, _sMsgContr, _sSerie, _sUF,
 	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
 	// Eh importante manter a integridade do formato dessa array.
 	if _lContinua
-
+		//_aParPgSaf = _ParCpl (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcela, _sGrpPagto)
         _aParPgSaf := aclone(U_VA_RusPP(_sSafra, _sGrpPagto, _nVlrUvas, 0, dDataBase))
         if len(_aParPgSaf) == 0
             u_help("Sem definicao de parcelamento para pagamento.",, .T.)
@@ -686,7 +686,48 @@ Static Function _GeraNota(_sFornece, _sLoja, _aItens, _sMsgContr, _sSerie, _sUF,
 	end transaction
 
 return _lContinua
+// //
+// // --------------------------------------------------------------------------
+// // Gera array de parcelamento especifico para complemento em junho/2023
+// Static Function _ParCpl(_aPreNF, _sSafra, _sFornece, _sLoja, _sParcel, _sGrpPag, _nVlrUvas)
+// 	local _aParcel   := {}
+// 	local _nParcel   := 0
+// 	local _nTotCompl := 0
 
+// 	_nVlrUvas = round (_nVlrUvas, 2)
+
+// 	// Monta array no mesmo formato gerado pelo VA_RusPP() e que vai ser lido
+// 	// posteriormente pelo P.E. MTColSE2.
+// 	// Eh importante manter a integridade do formato dessa array.
+// 	// As datas jah foram definidas no SE2 durante a safra.
+// 	// Vou gerar os complementos com vencimento um dia antes.
+// 	aadd (_aParcel, {0, stod ('20230630'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'A'})
+// 	aadd (_aParcel, {0, stod ('20230728'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'B'})
+// 	aadd (_aParcel, {0, stod ('20230830'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'C'})
+// 	aadd (_aParcel, {0, stod ('20230928'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'D'})
+// 	aadd (_aParcel, {0, stod ('20231030'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'E'})
+// 	aadd (_aParcel, {0, stod ('20231129'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'F'})
+// 	aadd (_aParcel, {0, stod ('20231228'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'G'})
+// 	aadd (_aParcel, {0, stod ('20240130'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'H'})
+// 	aadd (_aParcel, {0, stod ('20240228'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'I'})
+// 	// mar/24 eh aux.comb.; nao vou gerar parcela de uva nesse mes. aadd (_aParcel, {0, stod ('20240328'), 0, 0, '', '?'})
+// 	aadd (_aParcel, {0, stod ('20240429'), 0, round (_nVlrUvas / 10, 2), 'COMPL.SAFRA GRP ' + _sGrpPag, 'J'})
+
+// 	// Ajusta diferencas na ultima parcela.
+// 	_nTotCompl = 0
+// 	for _nParcel = 1 to len (_aParcel)
+// 		_nTotCompl += _aParcel [_nParcel, 4]
+// 	next
+// 	_aParcel [len (_aParcel), 4] += _nVlrUvas - _nTotCompl
+// 	for _nParcel = 1 to len (_aParcel)
+// 		if _aParcel [_nParcel, 4] <= 0
+// 			u_help ("Parcela negativa ou zerada!",, .t.)
+// 			U_Log2 ('debug', _aParcel)
+// 			_aParcel = {}
+// 		endif
+// 	next
+// return _aParcel
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
