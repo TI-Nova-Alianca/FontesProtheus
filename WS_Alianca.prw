@@ -134,6 +134,7 @@
 // 23/01/2023 - Robert  - Desabilitada acao ConsultaEstruturaComCustos
 // 19/02/2024 - Robert  - Novos (e obrigatorios) atributos para o metodo _oAssoc:FechSafra()
 // 28/02/2024 - Robert  - Leitura nova tag _EtiqReferenciada para alimentar ClsTrEstq:EtqRef (GLPI 14999)
+// 20/05/2024 - Robert  - Ajustado retorno da funcao de abertura de solicitacao de manutencao (retornava sempre OK)
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1120,7 +1121,7 @@ static function _TrEstGrid ()
 					//		_sRetGrid += "<Retorno>OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq + "</Retorno>"
 					_sRetGrid += "<Retorno>OK</Retorno>"
 			//		U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
-					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+			//		u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
 				endif
 			else  // Vou apenas retornar se os itens seriam ou nao aceitos
 				if ! empty (&('_oTrEstq' + cvaltochar (_nItem)):UltMsg)
@@ -1662,7 +1663,7 @@ static function _IncCarSaf ()
 	if empty (_sErroWS) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem3",        .F., .F.) ; endif
 	if empty (_sErroWS) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif
 	if empty (_sErroWS) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe3",           .F., .F.) ; endif
-	if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
+	if empty (_sErroWS) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante3",        .F., .F.) ; endif
 	if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
 		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	endif
@@ -2887,7 +2888,8 @@ static function _IncManut()
 		MSExecAuto( {|x,z,y,w| MNTA280(x,z,y,w)}, , , _aSolic )
 
 		If lMsErroAuto
-			_sMsgRetWS	+= memoread (NomeAutoLog())
+//			_sMsgRetWS	+= memoread (NomeAutoLog())
+			_SomaErro (memoread (NomeAutoLog()))
 		else
 			_sMsgRetWS	+= 'Registro gravado com sucesso!'
 		Endif
