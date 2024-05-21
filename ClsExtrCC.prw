@@ -54,7 +54,6 @@ CLASS ClsExtrCC
 	data Resultado
 	data FormaResult
 	data TMIgnorar
-//	data TMPorVcto
 
 	// Declaracao dos Metodos da classe
 	METHOD New ()
@@ -80,7 +79,6 @@ METHOD New () Class ClsExtrCC
 	::Resultado   = {}
 	::FormaResult = 'A'  // Formato do resultado: [A]=Array (default) ou [X]=XML
 	::TMIgnorar   = ''
-//	::TMPorVcto   = ''
 
 	// Gera uma linha vazia para retorno. Serve como modelo para incluir novas linhas zeradas no extrato.
 	::LinhaVazia  = aclone (array (.ExtrCCQtColunas))
@@ -121,11 +119,21 @@ METHOD Gera () Class ClsExtrCC
 	local _sDescriTM := ''
 	local _nDescriTM := 0
 	local _lTagSomar := .F.
-
+	local _sTMCapSld := ''
 	if empty (::Cod_assoc)   ; _lContinua = .F. ; ::UltMsg += "Codigo do associado deve ser informado." ; endif
 	if empty (::Loja_assoc)  ; _lContinua = .F. ; ::UltMsg += "Loja do associado deve ser informado."   ; endif
 	if empty (::TipoExtrato) ; _lContinua = .F. ; ::UltMsg += "Tipo de extrato deve ser informado."     ; endif
 
+	// Movimentos de capital, quando sao 'baixados' no financeiro, acabam aparecendo
+	// mais de uma vez (uma a credido e uma a debito) e zerando um aou outro.
+	// Ex.: TM 12 (integralizacao da joia inicial) soma ao capital. Quando esse
+	// movimento for baixado (seja por pagamento normal ou por compensacao) com
+	// notas de safra, vai aparecer anulando o movimento 12 original e, com isso,
+	// zerando o capital.
+	// A saida que encontramos foi mostrar esses movimentos pelo saldo (se jah
+	// teve baixa, aparece apenas a linha, para historico, mas sem valor).
+	_sTMCapSld := "('11', '12', '20')"
+	
 	// Como preciso retornar uma linha de saldos iniciais, vou partir do saldo mais recente (arquivo ZZM) e compor o extrato
 	// completo, mas vou retornar apenas o periodo entre as datas solicitadas pelo usuario. Por isso, tenho duas variaveis
 	// de data inicial: uma com a data que o usuario solicitou e outra com a data a partir da qual vou realmente gerar os
@@ -181,11 +189,12 @@ METHOD Gera () Class ClsExtrCC
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += "WITH _CTE AS ("
 			
+
 			// Busca conta corrente
 			_oSQL:_sQuery += "SELECT 'SZI' AS ORIGEM, ZI_FILIAL AS FILIAL, "
 			_oSQL:_sQuery +=       " ZI_DATA AS DATA, ZI_TM AS TIPO_MOV, ZX5.ZX5_10DESC AS DESC_TM, ZI_HISTOR AS HIST, ZI_ASSOC AS ASSOC, ZI_LOJASSO AS LOJASSO, ZI_CODMEMO AS CODMEMO,"
 		//	_oSQL:_sQuery +=       " ZI_VALOR AS VALOR,"
-			_oSQL:_sQuery +=       " CASE WHEN ZI_TM = '11' THEN ZI_SALDO ELSE ZI_VALOR END AS VALOR,"
+			_oSQL:_sQuery +=       " CASE WHEN ZI_TM IN " + _sTMCapSld + " THEN ZI_SALDO ELSE ZI_VALOR END AS VALOR,"
 			_oSQL:_sQuery +=       " '' AS E5_RECPAG, ZI_DOC AS NUMERO, ZI_SERIE AS PREFIXO, '' AS DOCUMEN, '' AS E5_SEQ,"
 			_oSQL:_sQuery +=       " '' AS E5_MOTBX, ZI_PARCELA AS E5_PARCELA, '' AS E5_TIPODOC, '' AS FORNADT, '' AS LOJAADT, '' AS E5_ORIGEM"
 			_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
@@ -349,7 +358,7 @@ METHOD Gera () Class ClsExtrCC
 			_oSQL:_sQuery += "SELECT 'SZI' AS ORIGEM, ZI_FILIAL AS FILIAL, " // + U_LeSM0 ('2', cEmpAnt, '', 'SZI', 'ZI_FILIAL', 'ZI_FILIAL') [2] + " AS DESCFIL, "
 			_oSQL:_sQuery +=       " ZI_DATA AS DATA, ZI_TM AS TM, ZX5.ZX5_10DESC AS DESC_TM, ZI_HISTOR AS HIST, ZI_ASSOC AS ASSOC, ZI_LOJASSO AS LOJASSO, ZI_CODMEMO AS CODMEMO,"
 //			_oSQL:_sQuery +=       " ZI_VALOR AS VALOR,"
-			_oSQL:_sQuery +=       " CASE WHEN ZI_TM = '11' THEN ZI_SALDO ELSE ZI_VALOR END AS VALOR,"
+			_oSQL:_sQuery +=       " CASE WHEN ZI_TM IN " + _sTMCapSld + " THEN ZI_SALDO ELSE ZI_VALOR END AS VALOR,"
 			_oSQL:_sQuery +=       " ZI_DOC AS NUMERO, ZI_SERIE AS PREFIXO, '' AS SEQ, '' AS MOTBX, ZI_PARCELA AS PARCELA, '' AS FK2_DOC, ZI_ORIGEM, "
 			_oSQL:_sQuery +=       " ZX5.ZX5_10DC AS DC"
 			_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "

@@ -155,7 +155,7 @@ user function robert ()
 		// _sFuncao += '_reginv ()'
 		// _sFuncao += '_recmail ()'
 		// _sFuncao += '_RevCH ()'
-		// _sFuncao += '_RelAssoc ()'
+		_sFuncao += '_RelAssoc ()'
 		// _sFuncao += '_SF1()'
 		// _sFuncao += '_SimCtb ()'
 		// _sFuncao += '_SimSafr23 ()'
@@ -5257,9 +5257,9 @@ static function _RelAssoc ()
 	local _nAssoc  := 0
 //	aadd (_aAssoc, {'003024', '01', '2020'})  // Vilson Da Campo - NF de compra devolvida em 2020.
 //	aadd (_aAssoc, {'002660', '01', '2020'})  // Cledinei Da Campo - NF trocada com Vilson em 2020.
-//	aadd (_aAssoc, {'005567', '01', '2022'})  // Fazenda Passo da Cria
+//	aadd (_aAssoc, {'005567', '01', '2024'})  // Fazenda Passo da Cria
 //	aadd (_aAssoc, {'002517', '01', '2022'})  // Santo Jose Busetti (diversas variedades de uva)
-//	aadd (_aAssoc, {'003621', '01', '2022'})  // Dejair Betlinski
+//	aadd (_aAssoc, {'003621', '01', '2024'})  // Dejair Betlinski
 //	aadd (_aAssoc, {'010637', '01', '2022'})  // Cristiano Adilio de Souza - premio 2022 duplicado
 //	aadd (_aAssoc, {'002911', '01', '2017'})  // Honorino - premio 2022 duplicado - saiu em 2022
 //	aadd (_aAssoc, {'010602', '01', '2019'})  // Jorge Salton - conferencia IR 2022
@@ -5271,13 +5271,16 @@ static function _RelAssoc ()
 //	aadd (_aAssoc, {'023824', '01', '2023'})  // EMA SOSTER BOFF
 //	aadd (_aAssoc, {'023827', '01', '2023'})  // MERCELO BOFF
 //	aadd (_aAssoc, {'002480', '01', '2023'})  // DANIEL SGANZERLA
-	aadd (_aAssoc, {'012722', '01', '2022'})  // Casiano Arcari - muitos descontos de Unimed
+//	aadd (_aAssoc, {'012722', '01', '2022'})  // Casiano Arcari - muitos descontos de Unimed
 //	aadd (_aAssoc, {'002380', '01', '2023'})  // Elmar Busetti
 //	aadd (_aAssoc, {'002859', '01', '2023'})  // Celso Chiarani
 //	aadd (_aAssoc, {'003026', '01', '2023'})  // Marcos Parisotto
 //	aadd (_aAssoc, {'005212', '01', '2022'})  // Heleno Facchin - estaria faltando matade dos valores no demonatrativo de IR ano base 2022
 //	aadd (_aAssoc, {'005212', '01', '2023'})  // Heleno Facchin
-//	aadd (_aAssoc, {'003865', '01', '2023'})  // Sidimar Fleck
+//	aadd (_aAssoc, {'003865', '01', '2024'})  // Sidimar Fleck
+//	aadd (_aAssoc, {'000167', '01', '2024'})  // Andre Dalle Molle
+//	aadd (_aAssoc, {'002885', '01', '2024'})  // eVARISTO pANIZZON - Saiu em 2016 e foi gerada distr.sobra posteriormente
+	aadd (_aAssoc, {'002560', '01', '2024'})  // Velocino Fioravante - jah resgatou parte das cotas
 //	_oSQL := ClsSQL ():New ()
 //	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO, ZI_SAFRA"
 //	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
@@ -5293,8 +5296,7 @@ static function _RelAssoc ()
 		U_GravaSX1 ("ML_FECHASA", '01', _aAssoc [_nAssoc, 3])  // safra
 		U_GravaSX1 ("ML_FECHASA", '02', _aAssoc [_nAssoc, 1])  // cod assoc
 		U_GravaSX1 ("ML_FECHASA", '03', _aAssoc [_nAssoc, 2])  // loja
-		U_GravaSX1 ("ML_FECHASA", '04', 2)  // lista saldo CC 1=sim;2=nao
-		U_GravaSX1 ("ML_FECHASA", '05', 2)  // lista pagtos/compens
+		U_GravaSX1 ("ML_FECHASA", '04', 1)  // lista saldo CC 1=sim;2=nao
 		U_ml_fechasafra (.T.)
 
 		//
@@ -5310,15 +5312,19 @@ static function _RelAssoc ()
 		// U_GravaSX1 ("IRASSOC", '03', '2023')  // ano base
 		// u_IRAssoc (.T.)
 		//
-		//U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL2', "02", '')
-		//U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL2', "04", 'zz')
-		//U_GravaSX1 ('SZI_REL2', "05", stod ("19000000"))
-		//U_GravaSX1 ('SZI_REL2', "06", stod ("20491231"))
-		//U_GravaSX1 ('SZI_REL2', "07", 1)  // tipo normal/capital
-		//U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
-		//U_szi_rel2 (.t.)
+		U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc, 1])
+		U_GravaSX1 ('SZI_REL2', "02", '')
+		U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc, 1])
+		U_GravaSX1 ('SZI_REL2', "04", 'zz')
+		U_GravaSX1 ('SZI_REL2', "05", stod ("19000000"))
+		U_GravaSX1 ('SZI_REL2', "06", stod ("20491231"))
+		U_GravaSX1 ('SZI_REL2', "07", 2)  // tipo normal/capital
+		U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
+		U_szi_rel2 (.t.)
+		//
+		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+		U_Log2 ('info', _oAssoc:SldQuotCap (dDataBase, .T.) [.QtCapRetTXT])
+
 		//U_GravaSX1 ('SZI_REL', "01", _aAssoc [_nAssoc])
 		//U_GravaSX1 ('SZI_REL', "02", '')
 		//U_GravaSX1 ('SZI_REL', "03", _aAssoc [_nAssoc])

@@ -2234,20 +2234,22 @@ static function _Modelo4 ()
 	// Lista lancamentos em aberto a debito na conta corrente
 	if _lContinua .and. type ('_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem') == 'A'
 		_Cabec (_nMaxLin - 4)
-		@li, 0 PSAY 'Descontos em aberto:   Data        Historico                                                    Saldo'
+		@li, 0 PSAY 'Descontos em aberto:   Data        Historico                                                    Saldo   Vcto'
 		li ++
 		_nTotDesc = 0
 		for _nLctoCC = 1 to len (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem)
 			_Cabec (_nMaxLin)
-			if _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT != 'TOTAIS' .and. _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dc:TEXT == 'D'
+			if _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT != 'TOTAIS' .and. _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dc:TEXT == 'D' .and. _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_capital:TEXT != 'S'
 				_sLinImp := space (23)
 				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dtMovto:TEXT, 10) + '  '
 				_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_hist:TEXT, 50) + '  '
-				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT), '@E 999,999,999.99') + ' '
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT), '@E 999,999,999.99') + '   '
 
 				// Nao posso aproveitar a linha de totais que vem no XML por que acumula debitos
 				// e creditos, e neste momento quero apenas os debitos.
 				_nTotDesc += val (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_saldo:TEXT)
+
+				_sLinImp += dtoc (stod (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_vctoFin:TEXT))
 				@ li, 0 psay _sLinImp
 				li ++
 			endif

@@ -99,8 +99,8 @@
 #XTranslate .QtCapRetTXT                              => 15
 #XTranslate .QtCapBaixaPorInatividade                 => 16
 #XTranslate .QtCapRetXML                              => 17
-#XTranslate .QtCapIntegralizacaoPerdasEnquantoSocio   => 18
-#XTranslate .QtCapIntegralizacaoPerdasEnquantoExSocio => 19
+#XTranslate .QtCapRateioPerdasEnquantoSocio           => 18
+#XTranslate .QtCapRateioPerdasEnquantoExSocio         => 19
 #XTranslate .QtCapQtColunas                           => 19
 
 
