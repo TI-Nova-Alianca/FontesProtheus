@@ -82,8 +82,8 @@
 // 12/09/2023 - Claudia - Incluido LPAD 520/024de taxa pagar.me. GLPI: 14141
 // 11/01/2024 - Robert  - Desabilitado envio de alguns avisos de acompanhamento.
 // 03/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 22/05/2024 - Claudia - Configuração lpad 520 002 para filial 08. GLPI: 15510
 //
-
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -159,10 +159,10 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			_xRet = _oSQL:RetQry ()
 		endcase
 
-		case _sLPad == '520' .and. _sSeq='002' 
-			if _sQueRet == 'CRED' .and.  ALLTRIM(SE5->E5_NATUREZ) != '110198' // GLPI: 
-				// cielo 
-				if (alltrim(SE5->E5_ORIGEM) =='ZB1' .or. alltrim(SE5->E5_ORIGEM) =='FINA740') .and. alltrim(SE5->E5_TIPO) $ 'CC/CD'				
+		case _sLPad + _sSeq == '520002' .and. _sQueRet == 'CRED' .and.  ALLTRIM(SE5->E5_NATUREZ) != '110198' 
+			Do Case 
+				// CIELO 
+				Case (alltrim(SE5->E5_ORIGEM) =='ZB1' .or. alltrim(SE5->E5_ORIGEM) =='FINA740') .and. alltrim(SE5->E5_TIPO) $ 'CC/CD' .and. SE1->E1_FILIAL <> '08' 				
 					if !empty(SE5->E5_ADM) 
 						do case
 							case SE5->E5_ADM == "100" .or. SE5->E5_ADM =="101"
@@ -190,36 +190,49 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 								_xRet:= "101021101005"
 						endcase
 					endif
-				else
-					// pagar-me
-					if alltrim(SE5->E5_ORIGEM) == 'ZD0'
-						Do Case
-							Case !empty(SE1->E1_ADM) // cartão
-								do case
-									case SE1->E1_ADM == "100" .or. SE1->E1_ADM =="101"
-										_xRet:= "101021101002"
-									case SE1->E1_ADM == "200" .or. SE1->E1_ADM =="201"
-										_xRet:= "101021101001"
-									case SE1->E1_ADM == "300" .or. SE1->E1_ADM =="301"
-										_xRet:= "101021101003"
-									case SE1->E1_ADM == "400" .or. SE1->E1_ADM =="401"
-										_xRet:= "101021101004"
-									otherwise
-										_xRet:= "101021101005"
-								endcase
 
-							Case empty(SE1->E1_ADM) 	// boleto
-								_xRet := "101020201001" // conta clientes	
+				// LOJA CARTÃO
+				Case SE1->E1_FILIAL == '08' .AND. alltrim(SE1->E1_TIPO) $ ('CC/CD') .and.  alltrim(SE5->E5_ORIGEM) =='FINA740'
+					do case
+						case alltrim(SE1->E1_CLIENTE) == "100" .or. alltrim(SE1->E1_CLIENTE) =="101"
+							_xRet:= "101021101002"
+						case alltrim(SE1->E1_CLIENTE) == "200" .or. alltrim(SE1->E1_CLIENTE) =="201"
+							_xRet:= "101021101001"
+						case alltrim(SE1->E1_CLIENTE) == "300" .or. alltrim(SE1->E1_CLIENTE) =="301"
+							_xRet:= "101021101003"
+						case alltrim(SE1->E1_CLIENTE) == "400" .or. alltrim(SE1->E1_CLIENTE) =="401"
+							_xRet:= "101021101004"
+						otherwise
+							_xRet:= "101021101005"
+					endcase
 
-							Otherwise
-								_xRet := "101020201001" // conta clientes							
-						EndCase
-					else
+				// PAGAR.ME
+				Case alltrim(SE5->E5_ORIGEM) == 'ZD0'
+					Do Case
+						Case !empty(SE1->E1_ADM) // cartão
+							do case
+								case SE1->E1_ADM == "100" .or. SE1->E1_ADM =="101"
+									_xRet:= "101021101002"
+								case SE1->E1_ADM == "200" .or. SE1->E1_ADM =="201"
+									_xRet:= "101021101001"
+								case SE1->E1_ADM == "300" .or. SE1->E1_ADM =="301"
+									_xRet:= "101021101003"
+								case SE1->E1_ADM == "400" .or. SE1->E1_ADM =="401"
+									_xRet:= "101021101004"
+								otherwise
+									_xRet:= "101021101005"
+							endcase
 
-						_xRet := "101020201001"
-					endif
-				endif  				
-			endif
+						Case empty(SE1->E1_ADM) 	// boleto
+							_xRet := "101020201001" // conta clientes	
+
+						Otherwise
+							_xRet := "101020201001" // conta clientes							
+					EndCase
+
+				Otherwise
+					_xRet := "101020201001"
+			endcase
 
 	case _sLpad+_sseq $ ('520002/521002/527002')  .and. ALLTRIM(SE5->E5_NATUREZ) != '110198' // GLPI:  // ESX - tratamento baixa e cancelamento da baixa para venda futura
 
@@ -269,6 +282,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				endcase
 				_qd2->(dbclosearea())
 		endif
+
 	case _sLPad + _sSeq $ '520003'
 		u_help (SE1->E1_TIPO)
 		u_help (SE5->E5_VLDESCO)
