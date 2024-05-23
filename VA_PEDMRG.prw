@@ -15,6 +15,7 @@
 // 18/01/2024 - Claudia - Alterada a filial para a filial atendida. GLPI 14643
 // 26/01/2024 - Claudia - Alterada rotina de frete. GLPI: 14811
 // 29/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 20/05/2024 - Claudia - Ajustado calculo de rapel para MG. GLPI: 15491
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -66,6 +67,7 @@ static function _CalcMargem(_sPrgName)
     local _nTotFrete    := 0
     local _nTotFinan    := 0
     local _nTotMargem   := 0 
+    local _nTotPRap     := 0
     local _aZC1         := {}    
 
     _sFilial := fbuscacpo("SA1",1,xFilial("SA1")+ m->c5_cliente + m->c5_lojacli,"A1_VAFILAT")
@@ -148,6 +150,7 @@ static function _CalcMargem(_sPrgName)
             _nVFinan  := (_nVVenda * _nParcFin)/100
             _nVMargem := _nVVenda - (_nVCusto + _nVComis + _nVPisCof + _nVICMS + _nVRapel + _nVFreteT + _nVFinan)
             _nPMargem := (_nVMargem / _nVVenda) * 100
+            _nTxRapel := u_va_rapel(m->c5_cliente, m->c5_lojacli, _sProduto) // Busca Rapel do cliente
 
             if FBuscaCpo("SF4",1,XFILIAL("SF4")+aCols[_x,_nPosTes],"F4_DUPLIC") <> "N"
 
@@ -173,7 +176,7 @@ static function _CalcMargem(_sPrgName)
                                 _nVPisCof                       ,;  // ZC1_VPC
                                 (_nVPisCof/_nVVenda) * 100      ,;  // ZC1_PPC 
                                 _nVRapel                        ,;  // ZC1_VRAP
-                                (_nVRapel/_nVVenda) * 100       ,;  // ZC1_PRAP 
+                                _nTxRapel                       ,;  // ZC1_PRAP 
                                 _nVFreteT                       ,;  // ZC1_VFRE
                                 (_nVFreteT/_nVVenda) * 100      ,;  // ZC1_PFRE
                                 _nVFinan                        ,;  // ZC1_VFIN 
@@ -194,6 +197,7 @@ static function _CalcMargem(_sPrgName)
                 _nTotICMS   += _nVICMS
                 _nTotPisCof += _nVPisCof
                 _nTotRapel  += _nVRapel
+                //_nTotPRap   += _nTxRapel
                 _nTotFrete  += _nVFreteT
                 _nTotFinan  += _nVFinan
                 _nTotMargem += _nVMargem 
@@ -227,7 +231,7 @@ static function _CalcMargem(_sPrgName)
                         _nTotPisCof                 ,;  // ZC1_VPC
                         (_nTotPisCof/_nTotVenda)*100,;  // ZC1_PPC 
                         _nTotRapel                  ,;  // ZC1_VRAP
-                        (_nTotRapel/_nTotVenda)*100 ,;  // ZC1_PRAP 
+                        _nTotPRap                   ,;  // ZC1_PRAP 
                         _nTotFrete                  ,;  // ZC1_VFRE
                         (_nTotFrete/_nTotVenda)*100 ,;  // ZC1_PFRE
                         _nTotFinan                  ,;  // ZC1_VFIN 
@@ -277,7 +281,6 @@ Static Function _BuscaSequencial(_sFilial, _sCliente, _sLoja, _sPedido)
     _oSQL:_sQuery += " AND ZC1_CLI      = '"+ _sCliente +"' "
     _oSQL:_sQuery += " AND ZC1_LOJA     = '"+ _sLoja    +"' "
     _oSQL:_sQuery += " AND ZC1_PED      = '"+ _sPedido  +"' "
-//    _aSeq := aclone(_oSQL:Qry2Array())
     _aSeq := aclone(_oSQL:Qry2Array(.f., .f.))
 
     For _x := 1 to Len(_aSeq)
@@ -295,7 +298,6 @@ Static Function _CalcFrete(_sFilial)
 
         // Considera frete zerado
     if M->C5_TPFRETE $ 'FTDS'  // C=CIF;F=FOB;T=Por conta terceiros;R=Por conta remetente;D=Por conta destinatário;S=Sem frete                                    
-		//m->c5_mvfre := 0
 		_nPerFrete  := 0
 	else
         // Busca o % frete do cabeçalho
@@ -308,8 +310,7 @@ Static Function _CalcFrete(_sFilial)
         _oSQL:_sQuery += " AND GU9_FILIAL   = '" + _sFilial     + "'"
         _oSQL:_sQuery += " AND GU9_CDUF     = '" + m->c5_vaest  + "'"
         _oSQL:_sQuery += " AND GU9_SIT      = '1'"
-//        _aGU9 := aclone(_oSQL:Qry2Array())
-        _aGU9 := aclone(_oSQL:Qry2Array(.f., .f.))
+        _aGU9:= aclone(_oSQL:Qry2Array(.f., .f.))
 
         for _x:=1 to Len(_aGU9)
             _nPerFrete := _aGU9[_x, 1]
@@ -330,87 +331,6 @@ Static Function _CalcFrete(_sFilial)
     // u_log2('info', 'Valor frete pós calculo: ' + cvaltochar(m->c5_mvfre))
 
 Return _nPerFrete
-// //
-// // ----------------------------------------------------------------------------------------------------
-// // Retorna valor do frete
-// Static Function _CalcFrete(_sFilial)
-//     local _oSQL      := NIL
-//     local _nVlProdut := 0
-//     local _x	     := 0
-//     local _aGUL      := {}
-//     local _aGU9      := {}
-//     local _nFrete    := 0
-//     local _nRetFrt   := 0
-//     local _nPrcFrete := 0
-//     local _sCEP      := Posicione("SA1",1, xFilial("SA1") + m->c5_cliente + m->c5_lojacli, "A1_CEP") // CEP do cliente
-
-//     // Considera frete zerado
-//     if M->C5_TPFRETE $ 'FTDS'  // C=CIF;F=FOB;T=Por conta terceiros;R=Por conta remetente;D=Por conta destinatário;S=Sem frete                                    
-// 		m->c5_mvfre := 0
-// 		_nPrcFrete  := 0
-// 	else
-//         _oSQL  := ClsSQL ():New ()
-//         _oSQL:_sQuery := ""
-//         _oSQL:_sQuery += " SELECT "
-//         _oSQL:_sQuery += " 		GUL_VAPFRE "
-//         _oSQL:_sQuery += " FROM " + RetSQLName ("GUL") 
-//         _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-//         _oSQL:_sQuery += " AND GUL_FILIAL   = '" + _sFilial + "' "
-//         _oSQL:_sQuery += " AND '" + _sCEP + "' BETWEEN GUL_CEPINI AND GUL_CEPFIM "
-//         _aGUL := aclone (_oSQL:Qry2Array ())
-
-//         // Se existir na tabela GUL -> 1º opção
-//         if len(_aGUL) > 0
-//             for _x := 1 to Len(_aGUL)
-//                 _nFrete := _aGUL[_x, 1]
-//             next
-//         endif
-
-//         // Se não existir na GUL ou se for zerado, busca da GU9 -> 2º opção
-//         if _nFrete == 0
-//             _oSQL := ClsSQL ():New ()
-//             _oSQL:_sQuery := ""
-//             _oSQL:_sQuery += " SELECT "
-//             _oSQL:_sQuery += " 		GU9_VAPFRE "
-//             _oSQL:_sQuery += " FROM " + RetSQLName ("GU9") 
-//             _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-//             _oSQL:_sQuery += " AND GU9_FILIAL   = '" + _sFilial     + "'"
-//             _oSQL:_sQuery += " AND GU9_CDUF     = '" + m->c5_vaest  + "'"
-//             _oSQL:_sQuery += " AND GU9_SIT      = '1'"
-//             _aGU9 := aclone (_oSQL:Qry2Array ())
-
-//             for _x:=1 to Len(_aGU9)
-//                 _nFrete := _aGU9[_x, 1]
-//             next
-//         endif
-
-//         for _x := 1 to len(aCols)
-//             if !GDDeleted(_x) .and. empty (GDFieldGet("C6_BLQ", _x))
-//                 _nVlProdut += GDFieldGet("C6_VALOR", _x)
-//             endif
-//         next
-
-//         _nRetFrt := _nVlProdut * _nFrete / 100
-
-// 		if m->c5_mvfre > 0
-// 			_nPrcFrete := 0
-// 			for _x := 1 To Len(aCols)
-// 				if GDFieldGet ("C6_BLQ", _x) != 'S'
-// 					_nPrcFrete += GDFieldGet("C6_PRCVEN", _x) * GDFieldGet("C6_QTDVEN", _x)
-// 				endif
-// 			next
-// 			_nPrcFrete := m->c5_mvfre * 100 / _nPrcFrete
-//         else
-// 			_nPrcFrete := _nRetFrt
-// 		endif
-// 	endif
-
-//     // Grava frete no pedido
-//     m->c5_mvfre := _nRetFrt
-
-//     u_log2('info', 'Valor frete pós calculo: ' + cvaltochar(m->c5_mvfre))
-
-// Return _nPrcFrete
 //
 // ----------------------------------------------------------------------------------------------------
 // Calcula quantidade de 'meses completos' para aplicar % de acrescimo financeiro a cada 30 dias
@@ -514,21 +434,28 @@ Return _nQtdDias
 // ----------------------------------------------------------------------------------------------------
 // Calcula valor de rapel 
 Static Function _CalcRapel(_sBaseRapel, _sProduto, _sCliente, _sLoja, _nVVenda)
-    local _nTxRapel  := 0
+    local _nTxRapel := 0
+    local _sEst     := ""
+    
 
     if val(_sBaseRapel) > 0  
-        _nTxRapel    := u_va_rapel(_sCliente, _sLoja, _sProduto) // Busca Rapel do cliente
+        _nTxRapel := u_va_rapel(_sCliente, _sLoja, _sProduto)                            // Busca Rapel do cliente
+        _sEst     := Posicione("SA1",1, xFilial("SA1") + _sCliente + _sLoja, "A1_EST")   // Estado do cliente
+        _nValIpi  := MaFisRet(_nitem, "IT_VALIPI")   // IPI
+		_nValSt   := MaFisRet(_nitem, "IT_VALSOL")   // ST
 
-        _nValIpi := mafisret(_nitem, "IT_VALIPI")
-		_nValSt  := MaFisRet(_nitem, "IT_VALSOL")
         do case 
             case _sBaseRapel == '1' // 1= base nota (merc + st + ipi)
-                _nVlrRapel := ((_nVVenda + _nValIpi + _nValSt) * _nTxRapel)/100
-
+                if _sEst $ 'MG' // MG a guia e paga pela empresa
+                    _nVlrRapel := ((_nVVenda + _nValIpi) * _nTxRapel)/100
+                else
+                    _nVlrRapel := ((_nVVenda + _nValIpi + _nValSt) * _nTxRapel)/100
+                endif
+                
             case _sBaseRapel == '2' // 2 = base mecadoria									
                 _nVlrRapel := (_nVVenda * _nTxRapel)/100
 
-            case _sBaseRapel == '3' // 2 = total nf - st			
+            case _sBaseRapel == '3' // 3 = total nf - st			
                 _nVlrRapel := ((_nVVenda + _nValIpi )* _nTxRapel)/100
 
         endcase
@@ -571,8 +498,7 @@ Static Function _GravaCampos(_sFilial)
     _oSQL:_sQuery += " AND C5_NUM      = '" + m->c5_num     + "' "
     _oSQL:_sQuery += " AND C5_CLIENTE  = '" + m->c5_cliente + "' "
     _oSQL:_sQuery += " AND C5_LOJACLI  = '" + m->c5_lojacli + "' "
-//    _aPed := aclone(_oSQL:Qry2Array())
-    _aPed := aclone(_oSQL:Qry2Array(.f., .f.))
+    _aPed:= aclone(_oSQL:Qry2Array(.f., .f.))
 
     For _x := 1 to Len(_aPed)
         if _aPed[_x, 1] > 0 // ja gravado no protheus
@@ -596,18 +522,6 @@ Static Function _GravaZC1(_aZC1)
     local _x := 0
 
     for _x:=1 to Len(_aZC1)
-
-        // if _aZC1[_x,24] > 100 .or. _aZC1[_x,24]  < -100
-        //     _pFrete := 0
-        // else
-        //     _pFrete := _aZC1[_x,24]
-        // endif
-
-        // if _aZC1[_x,28] > 100 .or. _aZC1[_x,28] < -100
-        //     _pMargem := 0
-        // else
-        //     _pMargem := _aZC1[_x,28]
-        // endif
 
         RecLock("ZC1", .T.)
             ZC1 -> ZC1_FILIAL   := _aZC1[_x, 1] 	// Filial
