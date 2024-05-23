@@ -23,6 +23,7 @@
 // 16/02/2022 - Claudia - Gtavado campo ZB1_VLRTAR calculado.
 // 09/05/2024 - Claudia - Alterado para novo layout cielo 15. GLPI: 15409
 // 20/05/2024 - Claudia - Ajustada a impressão das parcelas. GLPI: 15499
+// 22/05/2024 - Claudia - Alterada a captura de parcela e taxas da cielo. GLPI: 15499
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -153,13 +154,13 @@ Static Function BuscaRO(_aRO, cLinha)
 	_sAdm	  := SubStr(cLinha,54,  3)
 	_sAdmDes  := BuscaBandeira(_sAdm)
 	_sStaPgto := SubStr(cLinha,70,  2)
-	_nVlrBrt  := val(SubStr(cLinha, 73,  13))/100
-	_nVlrTax  := val(SubStr(cLinha, 87,  13))/100
-	_nVlrLiq  := val(SubStr(cLinha, 101,  13))/100
+	_nVlrBrt  := 0 // val(SubStr(cLinha, 73,  13))/100
+	_nVlrTax  := 0 //val(SubStr(cLinha, 87,  13))/100
+	_nVlrLiq  := 0// val(SubStr(cLinha, 101,  13))/100
 	_nVlrRej  := 0 // val(SubStr(cLinha, 73,  13))/100
-	_sNumRO   := "" //SubStr(cLinha,188, 22)
-	_nPerTax  := 0 //Val(SubStr(cLinha,210, 4))/100
-	_nVlrTar  := 0 //Val(SubStr(cLinha,214, 5))/100	
+	//_sNumRO   := "" //SubStr(cLinha,188, 22)
+	//_nPerTax  := 0 //Val(SubStr(cLinha,210, 4))/100
+	//_nVlrTar  := 0 //Val(SubStr(cLinha,214, 5))/100	
 	//_ano 	  := SubStr(cLinha, 288, 4)
 	//_mes      := SubStr(cLinha, 286, 2)
 	//_dia      := SubStr(cLinha, 284, 2)
@@ -179,10 +180,7 @@ Static Function BuscaRO(_aRO, cLinha)
 					_sConta     ,; // 12
 					_sStaPgto	,; // 13
 					_sAdm		,; // 14
-					_sAdmDes	,; // 15
-					_sNumRO		,; // 16
-					_nPerTax	,; // 17
-					_nVlrTar	}) 
+					_sAdmDes	}) // 15
 	
 Return _aRO
 //
@@ -191,9 +189,9 @@ Return _aRO
 Static Function BuscaCV(_aCV, cLinha)
 
 	_sCartao := SubStr(cLinha,172,4)
-	_ano 	 := SubStr(cLinha, 634, 4)
-	_mes     := SubStr(cLinha, 632, 2)
-	_dia     := SubStr(cLinha, 630, 2)
+	_ano 	 := SubStr(cLinha, 570, 4)
+	_mes     := SubStr(cLinha, 568, 2)
+	_dia     := SubStr(cLinha, 566, 2)
 	_dDtVen  := STOD(_ano + _mes + _dia)
 	_sParNum := SubStr(cLinha, 18, 2)
 	_sAutCod := SubStr(cLinha, 22, 6)
@@ -206,7 +204,11 @@ Static Function BuscaCV(_aCV, cLinha)
 	_sDesRej := BuscaRejeicao(_sMotRej)
 	_sParTot := SubStr(cLinha, 62, 2)
 	_sIDTran := SubStr(cLinha,605,15)
-	
+	_nVlrBrt := val(SubStr(cLinha,262,  13))/100
+	_nVlrLiq := val(SubStr(cLinha,276,  13))/100
+	_nVlrTx  := val(SubStr(cLinha,290,  13))/100
+	_nPerTax := Val(SubStr(cLinha,242,   5))/100
+
 	If _sSinal == '+'
 		_sStaImp := 'I'
 	Else
@@ -226,7 +228,11 @@ Static Function BuscaCV(_aCV, cLinha)
 				_sNumNFe ,; // 11
 				_sIDTran ,; // 12
 				_sStaImp ,; // 13
-				_sSinal })  // 14
+				_sSinal  ,; // 14
+				_nVlrBrt ,; // 15
+				_nVlrLiq ,; // 16
+				_nVlrTx  ,; // 17
+				_nPerTax }) // 18
 				
 Return _aCV
 //
@@ -250,7 +256,7 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 			dbGoTop()
 			
 			If !dbSeek(sDtPro + PADR(sNSU ,8,' ') +sAut + sSinal)
-			
+
 				Reclock("ZB1",.T.)
 					ZB1->ZB1_FILIAL := _aRO[1,1]
 					ZB1->ZB1_CODEST := _aRO[1,2]
@@ -261,19 +267,19 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 					ZB1->ZB1_TPTRAN := _aRO[1,3]
 					ZB1->ZB1_DTAAPR := _aRO[1,4]
 					ZB1->ZB1_DTAENV := _aRO[1,5]
-					ZB1->ZB1_VLRBRT := _aRO[1,6] 
-					ZB1->ZB1_VLRTAX := _aRO[1,7]
-					ZB1->ZB1_VLRREJ := _aRO[1,8]
-					ZB1->ZB1_VLRLIQ := _aRO[1,9]
-					ZB1->ZB1_BANCO  := sBanco	//_aRO[1,10] 
-					ZB1->ZB1_AGENCI := sAgencia //_aRO[1,11] 
-					ZB1->ZB1_CONTA  := sConta   //_aRO[1,12]
+					ZB1->ZB1_VLRBRT := _aCV[1,15]		//_aRO[1,6] 
+					ZB1->ZB1_VLRTAX := _aCV[1,17]		//_aRO[1,7]
+					ZB1->ZB1_VLRREJ := 0 				//_aRO[1,8]
+					ZB1->ZB1_VLRLIQ := _aCV[1,16] 		//_aRO[1,9]
+					ZB1->ZB1_BANCO  := sBanco			//_aRO[1,10] 
+					ZB1->ZB1_AGENCI := sAgencia 		//_aRO[1,11] 
+					ZB1->ZB1_CONTA  := sConta   		//_aRO[1,12]
 					ZB1->ZB1_STAPGT := _aRO[1,13]
 					ZB1->ZB1_ADM	:= _aRO[1,14]
 					ZB1->ZB1_ADMDES := _aRO[1,15] 
-					ZB1->ZB1_NUMRO  := _aRO[1,16]  
-					ZB1->ZB1_PERTAX := _aRO[1,17]  
-					ZB1->ZB1_VLRTAR := _aRO[1,7]  //ROUND((_aCV[1,3] * _aRO[1,17])/100,2) //_aRO[1,18] 
+					ZB1->ZB1_NUMRO  := ""
+					ZB1->ZB1_PERTAX := _aCV[1,18] 
+					ZB1->ZB1_VLRTAR := _aCV[1,17]  		//ROUND((_aCV[1,3] * _aRO[1,17])/100,2) //_aRO[1,18] 
 					ZB1->ZB1_CARTAO := _aCV[1,1] 
 					ZB1->ZB1_DTAVEN := _aCV[1,2]  
 					ZB1->ZB1_VLRPAR := _aCV[1,3]  
@@ -291,20 +297,20 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 					ZB1->ZB1_ARQUIV := alltrim(mv_par02)	
 				ZB1->(MsUnlock())
 
-				_vlrTaxa := _aRO[1,7]//ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
-				aadd(_aRel,{ 	_aRO[1,1],; 	// filial
-								_aRO[1,9],; 	// valor liquido da venda
-								_aCV[1,3],; 	// valor parcela
-								_aRO[1,17],; 	// % taxa
-								_vlrTaxa ,;     // valor da taxa
-								_aCV[1,2],; 	// data de venda
+				//_vlrTaxa := _aRO[1,7]//ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
+				aadd(_aRel,{ 	_aRO[1,1]	 ,; // filial
+								_aCV[1,15]	 ,; // valor bruto
+								_aCV[1,3]	 ,; // valor parcela
+								_aCV[1,18]	 ,; // % taxa
+								_aCV[1,17] 	 ,; // valor da taxa
+								_aCV[1,2]	 ,; // data de venda
 								_aHeader[1,1],; // data do processamento
-								_aCV[1,8] ,; 	// autorização
-								_aCV[1,10],; 	// NSU
-								'INCLUIDO',;    // status
-								_aCV[1,4] ,;	// parcela
-								_aCV[1,13],;    // status letra
-								_aCV[1,14] })   // sinal
+								_aCV[1,8] 	 ,; // autorização
+								_aCV[1,10]	 ,; // NSU
+								'INCLUIDO'	 ,; // status
+								_aCV[1,4] 	 ,;	// parcela
+								_aCV[1,13]	 ,; // status letra
+								_aCV[1,14]   }) // sinal
 
 				u_log("Registro Importado! NSU:" + sNSU +" Autorização:"+ sAut)
 
@@ -318,20 +324,20 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 				EndIf
 			Else
 
-				_vlrTaxa := _aRO[1,7] // ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
-				aadd(_aRel,{ 	_aRO[1,1],; 	// filial
-								_aRO[1,9],; 	// valor liquido da venda
-								_aCV[1,3],; 	// valor da parcela
-								_aRO[1,17],; 	// % taxa
-								_vlrTaxa ,;     // valor da taxa
-								_aCV[1,2],; 	// data de venda
-								_aHeader[1,1],; // data do processamento
-								_aCV[1,8] ,; 	// autorização
-								_aCV[1,10],; 	// NSU
-								'JÁ IMPORTADO',;// status
-								_aCV[1,4]  ,;	// parcela
-								_aCV[1,13],;    // status letra
-								_aCV[1,14] })   // sinal
+				//_vlrTaxa := _aRO[1,7] // ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
+				aadd(_aRel,{ 	_aRO[1,1]		,; 	// filial
+								_aCV[1,15]		,; 	// valor bruto
+								_aCV[1,3]		,; 	// valor parcela
+								_aCV[1,18]		,; 	// % taxa
+								_aCV[1,17] 		,;  // valor da taxa
+								_aCV[1,2]		,; 	// data de venda
+								_aHeader[1,1]	,;  // data do processamento
+								_aCV[1,8] 		,; 	// autorização
+								_aCV[1,10]		,; 	// NSU
+								'JÁ IMPORTADO'	,;  // status
+								_aCV[1,4]  		,;	// parcela
+								_aCV[1,13]		,;  // status letra
+								_aCV[1,14] 		})  // sinal
 
 				u_log("Registro já importado! NSU:" + sNSU +" Autorização:"+ sAut)
 			EndIf
@@ -541,9 +547,9 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	//TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	//TRCell():New(oSection1,"COLUNA6", 	"" ,"%.Taxa"		, "@E 999.99"   			,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	//TRCell():New(oSection1,"COLUNA7", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA8", 	"" ,"Dt.Venda"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA6", 	"" ,"%.Taxa"		, "@E 999.99"   			,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA7", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"Dt.Autoriz."		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA9", 	"" ,"Dt.Proces."	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA10", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA11", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
@@ -637,8 +643,8 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _sCliente  }) // cliente
 		//oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aRel[i,2] }) // vlr. liquido
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aRel[i,3] }) // vlr.parcela
-		//oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aRel[i,4] }) // % taxa
-		//oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aRel[i,5] }) // vlr. taxa
+		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aRel[i,4] }) // % taxa
+		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aRel[i,5] }) // vlr. taxa
 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aRel[i,6] }) // dt. venda
 		oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aRel[i,7] }) // dt. process
 		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aRel[i,8] }) // cod.autoriz
@@ -702,6 +708,10 @@ Static Function PrintReport(oReport)
 	oReport:PrintText("Valor da Parcela:" ,, 100)
 	_vTPar := _nTotVenda - _nTotDVenda 
 	oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor da Taxa:" ,, 100)
+	_vTTax := _nTotTax - _nTotDTax
+	oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
+
 	oReport:SkipLine(1)
 	oReport:ThinLine()
 
