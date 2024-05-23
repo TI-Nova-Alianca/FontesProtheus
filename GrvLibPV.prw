@@ -90,6 +90,7 @@
 // 21/03/2024 - Robert  - Arredonda casas decimais antes de testar preco sucos (bloqueio gerencial tipo S)
 // 28/03/2024 - Robert  - Nao ignorava linhas com bloqueio manual e eliminacao de residuos no bloqueio preco sucos (bloqueio gerencial tipo S)
 // 06/05/2024 - Claudia - Ajustada validação de contratos rapel, verificando % em contratos inativos.
+// 22/05/2024 - Claudia - E-mail de bloqueio de sucos - eliminado por resíduo. GLPI: 15502
 //
 // -------------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV(_lLiberar)
@@ -492,7 +493,8 @@ user function GrvLibPV(_lLiberar)
 				if ! GDDeleted (_nLinha) ;
 					.and. ! alltrim (GDFieldGet ("C6_BLQ")) $ "SR";  // bloqueio manual ou por eliminacao de residuo
 					.and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_ESTOQUE") == 'S';
-					.and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_DUPLIC") == 'S'
+					.and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES", _nLinha), "F4_DUPLIC") == 'S';
+					.and. GDFieldGet ("C6_BLQ", _nLinha) <> 'R'
 					
 					if ! sb1 -> (dbseek (xfilial ("SB1") + GDFieldGet ("C6_PRODUTO", _nLinha), .f.))
 						u_help ("Produto '" + GDFieldGet ("C6_PRODUTO", _nLinha) + "' nao localizado no cadastro!",, .t.)
