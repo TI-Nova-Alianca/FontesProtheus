@@ -135,8 +135,7 @@
 // 19/02/2024 - Robert  - Novos (e obrigatorios) atributos para o metodo _oAssoc:FechSafra()
 // 28/02/2024 - Robert  - Leitura nova tag _EtiqReferenciada para alimentar ClsTrEstq:EtqRef (GLPI 14999)
 // 20/05/2024 - Robert  - Ajustado retorno da funcao de abertura de solicitacao de manutencao (retornava sempre OK)
-//
-
+// 24/05/2024 - Claudia - Inlcuida gravação da rotina 'GravaPgtoContaCorrente' para unimed e mudinhas. GLPI:15157
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -3039,58 +3038,57 @@ Static Function _GrvPgtoContaCorrente()
 			<Fornecedor>002382</Fornecedor>
 			<Loja>01</Loja>
 			<Sequencial>02</Sequencial>
-			<Parcela>A</Parcela>
-			<TipoMovimento>29</TipoMovimento>
 			<MesReferencia>032023</MesReferencia>
 			<DtEmissao>20230824</DtEmissao>
 			<DtVencimento>20230831</DtVencimento>
 			<Valor>394,43</Valor>
-			<OBs>NOME DO TIPO DE MOVIMENTO + MES E ANO DE REFERENCIA + NOME DO ASSOCIADO</OBs>
-			<TipoPrograma>1</TipoPrograma>
-			<Acao>GravaPgtoContaCorrente</Acao>
-		</WSAlianca> 
-		
-		TipoPrograma : 
-		* 1 - Unimed
-		* 2 - Analises
-		*/
+			<OBs>UNIMED 03/2023 - ADELAR PARISOTTO</OBs>
+			<Acao>GravaTituloPgUnimed</Acao>
+			<Tipo></Tipo>
+
+
+			* Tipo:
+			1 - Unimed jacinto
+			2 - Mudas
+		</WSAlianca> */
 		
 	If empty(_sErroWS)
 		_sUsuario   := _ExtraiTag ("_oXML:_WSAlianca:_User"				, .T., .F.)
 		_sFilial   	:= _ExtraiTag ("_oXML:_WSAlianca:_Filial"			, .T., .F.)
 		_sFornece   := _ExtraiTag ("_oXML:_WSAlianca:_Fornecedor"		, .T., .F.)
 		_sLoja  	:= _ExtraiTag ("_oXML:_WSAlianca:_Loja"				, .T., .F.)
-		if alltrim(_sTipoPrg) == '1'
-			_sSeq       := _ExtraiTag ("_oXML:_WSAlianca:_Sequencial"		, .T., .F.)
-			_sTpMov     := '29'
-			_sParcela   := ''
-			_sSerie     := 'UNJ'
-		else
-			_sSeq       := ''
-			_sParcela   := _ExtraiTag ("_oXML:_WSAlianca:_Parcela"			, .T., .F.)
-			_sTpMov     := _ExtraiTag ("_oXML:_WSAlianca:_TipoMovimento"	, .T., .F.)
-			_sSerie     := 'ANS'
-		endif
-		_sMesRef  	:= _ExtraiTag ("_oXML:_WSAlianca:_MesReferencia"	, .T., .F.)
+		_sSeq       := _ExtraiTag ("_oXML:_WSAlianca:_Sequencial"		, .T., .F.)
 		_sDtEmi     := _ExtraiTag ("_oXML:_WSAlianca:_DtEmissao"		, .T., .F.)
 		_sDtVenc    := _ExtraiTag ("_oXML:_WSAlianca:_DtVencimento"		, .T., .F.)
 		_sOBS     	:= _ExtraiTag ("_oXML:_WSAlianca:_OBs"				, .T., .F.)
-		_sTipoPrg  	:= _ExtraiTag ("_oXML:_WSAlianca:_TipoPrograma"		, .T., .F.)
-		
-		_nValor     := Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_Valor", .T., .F.),",","."))
-		
-		If alltrim(_sTipoPrg) == '1'
-			_sNumero := alltrim(_sMesRef) + alltrim(_sSeq)
-		Else
-			_sNumero := Day2Str(date()) + Month2Str(Date()) + Year2Str(Date())
-		EndIf		
+		_sMesRef  	:= _ExtraiTag ("_oXML:_WSAlianca:_MesReferencia"	, .T., .F.)
+		_sTipo  	:= _ExtraiTag ("_oXML:_WSAlianca:_Tipo"				, .T., .F.)
+		_nValor     := Val(StrTran(_ExtraiTag("_oXML:_WSAlianca:_Valor", .T., .F.),",","."))
+
+		_sNumero 	:= alltrim(_sMesRef) + alltrim(_sSeq)
+	EndIf
+
+	If empty(_sErroWS)
+		Do Case
+			Case _sTipo == '1' 		// unimed jacinto
+				_sTM    := '29'
+				_sSerie := 'UNJ'
+
+			Case _sTipo == '2' 		// mudinhas
+				_sTM    := '24'
+				_sSerie := 'MUD'
+			otherwise
+				_sTM    := ''
+				_sSerie := ''
+				_sErroWS   += "Sem <Tipo> definido"
+		EndCase
 	EndIf
 
 	If empty(_sErroWS)
 		_oCtaCorr:= ClsCtaCorr():New ()
 		_oCtaCorr:Assoc    = _sFornece
 		_oCtaCorr:Loja     = _sLoja
-		_oCtaCorr:TM       = _sTpMov
+		_oCtaCorr:TM       = _sTM
 		_oCtaCorr:DtMovto  = stod(_sDtEmi)
 		_oCtaCorr:VctoSE2  = stod(_sDtVenc)
 		_oCtaCorr:Valor    = _nValor
@@ -3101,7 +3099,7 @@ Static Function _GrvPgtoContaCorrente()
 		_oCtaCorr:Doc      = _sNumero
 		_oCtaCorr:Serie    = _sSerie
 		_oCtaCorr:Origem   = "NAWEB"
-		_oCtaCorr:Parcela  = _sParcela
+		_oCtaCorr:Parcela  = ''
 
 		if _oCtaCorr:PodeIncl ()
 			if ! _oCtaCorr:Grava (.F., .F.)
