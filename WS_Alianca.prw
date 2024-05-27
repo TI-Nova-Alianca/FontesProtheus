@@ -136,6 +136,7 @@
 // 28/02/2024 - Robert  - Leitura nova tag _EtiqReferenciada para alimentar ClsTrEstq:EtqRef (GLPI 14999)
 // 20/05/2024 - Robert  - Ajustado retorno da funcao de abertura de solicitacao de manutencao (retornava sempre OK)
 // 24/05/2024 - Claudia - Inlcuida gravação da rotina 'GravaPgtoContaCorrente' para unimed e mudinhas. GLPI:15157
+//
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
