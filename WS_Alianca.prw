@@ -136,6 +136,7 @@
 // 28/02/2024 - Robert  - Leitura nova tag _EtiqReferenciada para alimentar ClsTrEstq:EtqRef (GLPI 14999)
 // 20/05/2024 - Robert  - Ajustado retorno da funcao de abertura de solicitacao de manutencao (retornava sempre OK)
 // 24/05/2024 - Claudia - Inlcuida gravação da rotina 'GravaPgtoContaCorrente' para unimed e mudinhas. GLPI:15157
+// 27/05/2024 - Daiana  - Removido o n° da linha 3107 e 3110
 //
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -3104,10 +3105,10 @@ Static Function _GrvPgtoContaCorrente()
 
 		if _oCtaCorr:PodeIncl ()
 			if ! _oCtaCorr:Grava (.F., .F.)
-				_sErroWS   += 'Titulo Nº ' + _sNumero + ' não gravado!' + _oCtaCorr:UltMsg
+				_sErroWS   += 'Titulo ' + _sNumero + ' não gravado!' + _oCtaCorr:UltMsg
 			else
 				if empty(_sErroWS)
-					_sMsgRetWS += 'Titulo Nº ' + _sNumero + ' gravado com sucesso!' + _oCtaCorr:UltMsg
+					_sMsgRetWS += 'Titulo ' + _sNumero + ' gravado com sucesso!' + _oCtaCorr:UltMsg
 				endif
 			endif
 		else
