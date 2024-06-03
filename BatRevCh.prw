@@ -38,6 +38,7 @@
 // 17/11/2023 - Robert  - Criado tratamento para codigos de retorno 217 e 613.
 // 06/12/2023 - Robert  - Grava tipo e estado junto nas mensagens de aviso.
 // 03/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 03/06/2024 - Robert  - Nao testava se tem tag de protocolo de autorizacao no retorno da SEFAZ.
 //
 
 // --------------------------------------------------------------------------
@@ -420,7 +421,14 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 
 	elseif _sRetStat $ '100/150'  // Autorizada (100) ou autorizada fora do prazo por ter sido emitida em contingencia (150)
 		_sRetChv  = &('_oXmlRet:' + alltrim (zz4 -> zz4_TRChAu)  + ':TEXT')
-		_sRetPrAut = &('_oXmlRet:' + alltrim (zz4 -> zz4_TRPrAu) + ':TEXT')
+
+		// Jah tive casos em que faltava a tag com protocolo de autorizacao 
+		// talvez quando acompanha mensagem "documento indisponivel no momento".
+		if type ('_oXmlRet:' + alltrim (zz4 -> zz4_TRPrAu) + ':TEXT') == "C"
+			_sRetPrAut = &('_oXmlRet:' + alltrim (zz4 -> zz4_TRPrAu) + ':TEXT')
+		else
+			_sRetPrAut = ''
+		endif
 		if _lDebug
 			u_log2 ('debug', 'Chave (autorizada)......: ' + _sRetChv)
 			u_log2 ('debug', 'Protocolo autorizacao...: ' + _sRetPrAut)
