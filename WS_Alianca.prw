@@ -3052,6 +3052,7 @@ Static Function _GrvPgtoContaCorrente()
 			* Tipo:
 			1 - Unimed jacinto
 			2 - Mudas
+			3 - Analises de solo
 		</WSAlianca> */
 		
 	If empty(_sErroWS)
@@ -3079,6 +3080,11 @@ Static Function _GrvPgtoContaCorrente()
 			Case _sTipo == '2' 		// mudinhas
 				_sTM    := '24'
 				_sSerie := 'MUD'
+
+			Case _sTipo == '3'		// Analises de solo
+				_sTM    := '03'
+				_sSerie := 'ANS'
+
 			otherwise
 				_sTM    := ''
 				_sSerie := ''
