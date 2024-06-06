@@ -143,9 +143,10 @@
 // 03/01/2024 - Robert  - Atualizados gatilhos para safra 2024.
 // 22/02/2024 - Robert  - Chamadas de ClsSQL:Qry2Array() estavam sem parametros.
 // 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 06/06/2024 - Claudia - Incluido historicos de conta corrente via programa. GLPI: 15555
 //
 
-// --------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 
 user function VA_Gat (_sParCpo, _sParSeq)
@@ -909,6 +910,85 @@ user function VA_Gat (_sParCpo, _sParSeq)
 	
 	case _sCampo == "M->C6_PRCVEN" .and. _sCDomin == "C6_PRCVEN"
 		_xRet = GDFieldGet ("C6_PRCVEN")
+
+	case _sCampo == "M->ZI_TM" .and. _sCDomin == "ZI_HISTOR"
+		_sTM := M->ZI_TM
+		do case
+			case alltrim(_sTM) $ ('01/29')
+				_xRet := "UNIMED "+left(m->zi_mesref,2)+'/'+substr(m->zi_mesref,3)+" "+alltrim(m->zi_nomasso)    
+
+			case _sTM == '02'
+				_xRet := "CELULAR "+left(m->zi_mesref,2)+'/'+substr(m->zi_mesref,3)+" "+alltrim(m->zi_nomasso)      
+
+			case _sTM == '03'
+				_xRet := "ANALISE SOLO QUIMICA "+left(m->zi_mesref,2)+'/'+substr(m->zi_mesref,3)+" "+alltrim(m->zi_nomasso)  
+
+			case _sTM == '05'
+				_xRet := "ADTO INSUMOS "+alltrim(m->zi_nomasso)                                                              
+
+			case _sTM == '06'
+				_xRet := "COMPRA SEMENTES "+left(m->zi_mesref,2)+'/'+substr(m->zi_mesref,3)+" "+alltrim(m->zi_nomasso)      
+
+			case _sTM == '07'
+				_xRet := "ADTO SAFRA "+left(m->zi_mesref,2)+'/'+substr(m->zi_mesref,3)+" "+alltrim(m->zi_nomasso)            
+
+			case _sTM == '08'
+				_xRet := "ENTRADA DE " + ALLTRIM (M->ZI_NOMASSO) + " NO QUADRO DE ASSOCIADOS"                                
+
+			case _sTM == '09'
+				_xRet := "DESLIGAMENTO DE " + ALLTRIM (M->ZI_NOMASSO) + " DO QUADRO DE ASSOCIADOS"                           
+
+			case _sTM == '10'
+				_xRet := "IMPLANTACAO CAPITAL SOCIAL " + ALLTRIM (M->ZI_NOMASSO)                                             
+
+			case _sTM == '11'
+				_xRet := "RESGATE QUOTA CAPITAL " + ALLTRIM (M->ZI_NOMASSO)                                                  
+
+			case _sTM == '13'
+				_xRet := 'TRANSF.SALDO PRODUCAO'                                                                             
+
+			case _sTM == '19'
+				_xRet := "INTEGRALIZACAO SOBRAS " + SUBSTR (M->ZI_MESREF, 3, 4) + " " + ALLTRIM (M->ZI_NOMASSO)   
+
+			case _sTM == '24'
+				_xRet := "COMPRA MUDAS "+alltrim(m->zi_nomasso)                                                              
+
+			case _sTM == '25'
+				_xRet := "ESTORNO COMPRA MUDAS "+alltrim(m->zi_nomasso)                                                      
+
+			case _sTM == '26'
+				_xRet := "MULTA "+alltrim(m->zi_nomasso)                                                                     
+
+			case _sTM == '27'
+				_xRet := "BAIXA SALDO COTA "+alltrim(m->zi_nomasso) 
+
+			case _sTM == '32'
+				_xRet := "GUIA ART PROJETO DE " + M->ZI_NOMASSO                                                              
+
+			case _sTM == '33'
+				_xRet := "Vlr retido desconto Funrural Safra cfe Ata AGE 05/05/2021 - " + M->ZI_NOMASSO                      
+
+			case _sTM == '35'
+				_xRet := "ANALISE TECIDO VEGETAL "+left(m->zi_mesref,2)+'/'+substr(m->zi_mesref,3)+" "+alltrim(m->zi_nomasso)
+
+			case _sTM == '36'
+				_xRet := "ANALISE RESIDUOS AGROT "+left(m->zi_mesref,2)+'/'+substr(m->zi_mesref,3)+" "+alltrim(m->zi_nomasso)
+
+			case _sTM == '37'
+				_xRet := "ANALISE SUCO/MOSTO/VINH"+left(m->zi_mesref,2)+'/'+substr(m->zi_mesref,3)+" "+alltrim(m->zi_nomasso)
+
+			case _sTM == '38'
+				_xRet := "ENTRADA DE " + ALLTRIM (M->ZI_NOMASSO) + " COMO FORNECEDOR DE UVA"                                 
+
+			case _sTM == '39'
+				_xRet := "ENTRADA DE " + ALLTRIM (M->ZI_NOMASSO) + " COMO FORNECEDOR DE UVA"                                 
+
+			case _sTM == '40'
+				_xRet := "SAIDA DE " + ALLTRIM (M->ZI_NOMASSO) + " COMO FORNECEDOR DE UVA"                                   
+
+			otherwise
+				_xRet := ""
+		endcase
 
 	otherwise
 
