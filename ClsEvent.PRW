@@ -65,6 +65,7 @@
 // 28/04/2023 - Robert  - Erro na leitura do campo ZN_DIASVLD
 // 30/08/2023 - Robert  - Nao envia mais e-mail de alter.cadastro para grupo 015 (auditoria) - GLPI 14099
 // 20/10/2023 - Robert  - Criados atributos ::Avisar e ::AvisarZZU, com respectiva funcionalidade de envio de aviso (GLPI 14397)
+// 06/06/2024 - Sandra  - Retirado grupo 011, não será mais utilizado. GLPI: 15557
 //
 
 #include "protheus.ch"
@@ -523,11 +524,12 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 			endif
 		endif
 
-		if ::Alias $ "SA1"
-			if _lNotif
-				aadd (::MailToZZU, '011')  // Supervisao comercial
-			endif
-		endif
+		//if ::Alias $ "SA1"
+			//if _lNotif
+				//aadd (::MailToZZU, '011')  // Supervisao comercial
+			//endif
+		//endif
+
 		::Self:Grava ()
 	endif
 

@@ -24,6 +24,7 @@
 // 09/05/2024 - Claudia - Alterado para novo layout cielo 15. GLPI: 15409
 // 20/05/2024 - Claudia - Ajustada a impressão das parcelas. GLPI: 15499
 // 22/05/2024 - Claudia - Alterada a captura de parcela e taxas da cielo. GLPI: 15499
+// 06/06/2024 - Sandra  - Retirado grupo 011, não será mais utilizado. GLPI: 15557
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -421,8 +422,8 @@ Static Function BuscaBandeira(_sAdm)
 			_sAdmDes := 'Elo'
 		Case alltrim(_sAdm)== '009'
 			_sAdmDes := 'Diners'
-		Case alltrim(_sAdm)== '011'
-			_sAdmDes := 'Agiplan'
+		//Case alltrim(_sAdm)== '011'
+			//_sAdmDes := 'Agiplan'
 		Case alltrim(_sAdm)== '015'
 			_sAdmDes := 'Banescard'
 		Case alltrim(_sAdm)== '023'

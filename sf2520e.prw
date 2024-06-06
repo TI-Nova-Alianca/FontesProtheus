@@ -56,6 +56,7 @@
 // 01/11/2022 - Claudia - Incluido o tipo PX para validação de exclusão de títulos. GLPI: 12713
 // 04/12/2023 - Claudia - Alterada a busca de lcto. conta associado, para exclusão de NF's. GLPI: 14388
 // 03/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 06/06/2024 - Sandra  - Retirado grupo 011, não será mais utilizado. GLPI: 15557
 //
 
 // ------------------------------------------------------------------------------------------------------
@@ -169,7 +170,8 @@ static function _MailFin ()
 	for _nTit = 1 to len (_aTit)
 		_sMsg += "Prefixo: " + _aTit [_nTit, 1] + "   Numero: " + _aTit [_nTit, 2] + "   Parcela: " + _aTit [_nTit, 3] + "   Numero bco: " + _aTit [_nTit, 4] + "   Banco: " + _aTit [_nTit, 5] + chr (13) + chr (10)
 	next
-	U_ZZUNU ({'008','011'}, "Exclusao NF " + sf2 -> f2_doc, _sMsg)
+	//U_ZZUNU ({'008','011'}, "Exclusao NF " + sf2 -> f2_doc, _sMsg)
+	U_ZZUNU ({'008',}, "Exclusao NF " + sf2 -> f2_doc, _sMsg)
 return
 //
 // --------------------------------------------------------------------------
