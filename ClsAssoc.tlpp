@@ -126,6 +126,7 @@
 // 25/02/2024 - Robert  - Algumas chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 09/05/2024 - Claudia - Incluida perdas no capital social.
+// 07/06/2024 - Claudia - Perdas será apenas mostrado no cap.social, não afetará o saldo. GLPI: 15568
 //
 // -------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -2377,6 +2378,7 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 		_oSQL:_sQuery +=                  " AND SA2.A2_VALBASE = '" + ::LojaBase + "'"
 		_oSQL:_sQuery +=   " )"
 		_oSQL:_sQuery +=   " AND SZI.ZI_TM IN ('10','11','12','17','18','19','20','27','41')"
+		//_oSQL:_sQuery +=   " AND SZI.ZI_TM IN ('10','11','12','17','18','19','20','27')"
 
 		// Ignora lctos feitos por engano (era para outro associado) cfe. GLPI 14843
 		// Nao deletei-os por que deram origem a toitulos no SE2 que nao quisemos mais
@@ -2453,7 +2455,7 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 			_aRet [.QtCapSaldoNaData] += _aRet [.QtCapIntegralizadoEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] -= _aRet [.QtCapSaldoResgatadoEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] += _aRet [.QtCapIntegralizacaoSobrasEnquantoSocio]
-			_aRet [.QtCapSaldoNaData] -= _aRet [.QtCapRateioPerdasEnquantoSocio]
+			//_aRet [.QtCapSaldoNaData] -= _aRet [.QtCapRateioPerdasEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] += _aRet [.QtCapEntradasTransfEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] -= _aRet [.QtCapSaidasTransfEnquantoSocio]
 			_aRet [.QtCapSaldoNaData] -= _aRet [.QtCapBaixaPorInatividade]
@@ -2522,17 +2524,19 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 		_sRetTXT += "Transf.quota feitas para outros associados........: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapSaidasTransfEnquantoSocio],           "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Transf.quota recebidas de outros associados.......: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapEntradasTransfEnquantoSocio],         "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Integralizacoes de sobras.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapIntegralizacaoSobrasEnquantoSocio],   "@E 999,999,999.99") + _sCRLF
-		_sRetTXT += "Rateios de perdas a compensar.....................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapRateioPerdasEnquantoSocio],   "@E 999,999,999.99") + _sCRLF
+		_sRetTXT += "Integralizacoes de perdas.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapRateioPerdasEnquantoSocio],   "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Baixas por inatividade............................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapBaixaPorInatividade],                 "@E 999,999,999.99") + _sCRLF + _sCRLF
 		_sRetTXT += "Detalhes (enquanto ex-associado):" + _sCRLF
 		_sRetTXT += "---------------------------------" + _sCRLF
 		_sRetTXT += "Resgates efetuados................................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapSaldoResgatadoQuandoExSocio],         "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Pedidos resgate em aberto.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapResgatesEmAbertoQuandoExSocio],       "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Integralizacoes de sobras.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio], "@E 999,999,999.99") + _sCRLF
-		_sRetTXT += "Rateios de perdas a compensar.....................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapRateioPerdasEnquantoExSocio], "@E 999,999,999.99") + _sCRLF + _sCRLF
+		_sRetTXT += "Integralizacoes de perdas.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapRateioPerdasEnquantoExSocio], "@E 999,999,999.99") + _sCRLF + _sCRLF
 		_sRetTXT += "---------------------------------------------------------------------" + _sCRLF
 		_sRetTXT += "                  **** Documento sigiloso ****" + _sCRLF
 		_sRetTXT += "---------------------------------------------------------------------" + _sCRLF
+		_sRetTXT += " * Integralizacoes de perdas: Serão compensadas com sobras futuras." + _sCRLF
+		_sRetTXT += "   (AGO 16, 20 e 22) " + _sCRLF
 		_aRet [.QtCapRetTXT] = _sRetTXT
 
 
