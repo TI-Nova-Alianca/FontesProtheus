@@ -171,7 +171,7 @@ static function _MailFin ()
 		_sMsg += "Prefixo: " + _aTit [_nTit, 1] + "   Numero: " + _aTit [_nTit, 2] + "   Parcela: " + _aTit [_nTit, 3] + "   Numero bco: " + _aTit [_nTit, 4] + "   Banco: " + _aTit [_nTit, 5] + chr (13) + chr (10)
 	next
 	//U_ZZUNU ({'008','011'}, "Exclusao NF " + sf2 -> f2_doc, _sMsg)
-	U_ZZUNU ({'008',}, "Exclusao NF " + sf2 -> f2_doc, _sMsg)
+	U_ZZUNU ({'008'}, "Exclusao NF " + sf2 -> f2_doc, _sMsg)
 return
 //
 // --------------------------------------------------------------------------
