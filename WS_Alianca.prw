@@ -137,6 +137,7 @@
 // 20/05/2024 - Robert  - Ajustado retorno da funcao de abertura de solicitacao de manutencao (retornava sempre OK)
 // 24/05/2024 - Claudia - Inlcuida gravação da rotina 'GravaPgtoContaCorrente' para unimed e mudinhas. GLPI:15157
 // 27/05/2024 - Daiana  - Removido o n° da linha 3107 e 3110
+// 07/06/2024 - Claudia - Incluida a gravação de fornecedor no tipo 3, do 'GravaPgtoContaCorrente'.
 //
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -3108,6 +3109,10 @@ Static Function _GrvPgtoContaCorrente()
 		_oCtaCorr:Serie    = _sSerie
 		_oCtaCorr:Origem   = "NAWEB"
 		_oCtaCorr:Parcela  = ''
+		if _sTipo == '3'
+			_oCtaCorr:Fornece := _sFornece
+			_oCtaCorr:LojaFor := _sLoja 
+		endif
 
 		if _oCtaCorr:PodeIncl ()
 			if ! _oCtaCorr:Grava (.F., .F.)
