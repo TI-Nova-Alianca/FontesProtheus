@@ -16,6 +16,7 @@
 // 26/01/2024 - Claudia - Alterada rotina de frete. GLPI: 14811
 // 29/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 20/05/2024 - Claudia - Ajustado calculo de rapel para MG. GLPI: 15491
+// 10/06/2024 - Claudia - Ajustado os tipos de pedidos que calculam margem. 
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -29,10 +30,14 @@ User function VA_PEDMRG(_sPrgName)
 
     // Verifica se pedido já faturado ou eliminado residuo 
     // Caso positivo, não será mais gravado registros de margens para o mesmo
-    if !empty(m->c5_nota)
+    if !empty(m->c5_nota) 
         u_log2('info', 'Pedido ' + m->c5_num + " ja faturado ou fechado! Não será mais calculados registros de margens! Nota:"+ m->c5_nota)
     else
-        _CalcMargem(_sPrgName)
+        if alltrim(m->c5_tipo) $ ('D/P/I/B')
+            u_log2('info', 'Pedido ' + m->c5_num + " de devolução! Nota:"+ m->c5_nota)
+        else
+            _CalcMargem(_sPrgName)
+        endif
     endif
 
 	U_ML_SRArea(_aAreaAnt)
