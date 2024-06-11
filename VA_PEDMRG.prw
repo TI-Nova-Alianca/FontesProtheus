@@ -34,7 +34,7 @@ User function VA_PEDMRG(_sPrgName)
         u_log2('info', 'Pedido ' + m->c5_num + " ja faturado ou fechado! Não será mais calculados registros de margens! Nota:"+ m->c5_nota)
     else
         if alltrim(m->c5_tipo) $ ('D/P/I/B')
-            u_log2('info', 'Pedido ' + m->c5_num + " de devolução! Nota:"+ m->c5_nota)
+            u_log2('info', 'Pedido ' + m->c5_num + " tipo D/P/I/B! Nota:"+ m->c5_nota)
         else
             _CalcMargem(_sPrgName)
         endif
