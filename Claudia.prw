@@ -86,6 +86,9 @@ User Function claudia ()
     //u_help("relatorio titulos")
     //u_va_vcrpg()
 
+	//u_help("associados")
+    //u_va_integr()
+
 Return
 
 // static function _GLPI15199()
