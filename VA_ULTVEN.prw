@@ -14,9 +14,9 @@
 // 20/01/2022 - Claudia - Incluida a data de emissão da nota e retirada a dt.emissao 
 //                        do pedido. GLPI:11499
 // 13/11/2023 - Claudia - Incluida condição de pgto. GLPI: 14484
-// 11/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 11/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 12/06/2024 - Claudia - Retirado resíduo dos pedidos e filial. GLPI: 15523
 //
-
 // ----------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "totvs.ch"
@@ -33,8 +33,8 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += " SELECT "
     _oSQL:_sQuery += " 	    SC6.C6_PRODUTO " 
-    _oSQL:_sQuery += " FROM SC5010 SC5 "
-    _oSQL:_sQuery += " INNER JOIN SC6010 SC6 "
+    _oSQL:_sQuery += " FROM " + RetSQLName ("SC5") + " SC5 "
+    _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SC6") + " SC6 "
     _oSQL:_sQuery += " 	ON SC6.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 		AND SC6.C6_FILIAL = SC5.C5_FILIAL "
     _oSQL:_sQuery += " 		AND SC6.C6_NUM = SC5.C5_NUM "
@@ -43,61 +43,13 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
     _oSQL:_sQuery += " AND SC5.C5_NUM     = '"+ _sPedido +"'"
     _oSQL:_sQuery += " AND SC5.C5_CLIENTE = '"+ _sCliente+"'"
     _oSQL:_sQuery += " AND SC5.C5_LOJACLI = '"+ _sLoja   +"'"
-
-//    u_log (_oSQL:_squery)
-//    _aItens := aclone (_oSQL:Qry2Array ())
     _aItens := aclone (_oSQL:Qry2Array (.f., .f.))
 
     For _x:=1 to Len(_aItens)
 
         _oSQL:= ClsSQL():New ()
-        _oSQL:_sQuery := ""
-        _oSQL:_sQuery += " SELECT TOP 1"
-        _oSQL:_sQuery += " 	   SC5.C5_FILIAL AS FILIAL"
-        _oSQL:_sQuery += "    ,SC5.C5_NUM AS NUMERO"
-        _oSQL:_sQuery += "    ,SC5.C5_CLIENTE AS CLIENTE"
-        _oSQL:_sQuery += "    ,SC5.C5_LOJACLI AS LOJA_CLIENTE"
-        _oSQL:_sQuery += "    ,SA1.A1_NOME AS NOME"
-        _oSQL:_sQuery += "    ,SC6.C6_PRODUTO AS PRODUTO "
-        _oSQL:_sQuery += "    ,SB1.B1_DESC AS DESCRICAO "
-        _oSQL:_sQuery += "    ,SC6.C6_NOTA AS NOTA "
-        _oSQL:_sQuery += "    ,SC6.C6_SERIE AS SERIE "
-        _oSQL:_sQuery += "    ,SF2.F2_EMISSAO AS EMISSAO "
-        _oSQL:_sQuery += "    ,SC6.C6_QTDVEN AS QTD_VENDIDA "
-        _oSQL:_sQuery += "    ,SC6.C6_PRCVEN AS PRECO_VENDA "
-        _oSQL:_sQuery += "    ,SC6.C6_PRUNIT AS PRECO_UNITARIO "
-        _oSQL:_sQuery += "    ,SC6.C6_VALOR AS VALOR "
-        _oSQL:_sQuery += "    ,TRIM(SC5.C5_CONDPAG) + ' - ' + TRIM(SE4.E4_COND) + ' - ' + TRIM(SE4.E4_DESCRI) AS CONDICAO_PGTO "
-        _oSQL:_sQuery += " FROM " + RetSQLName ("SC5") + " SC5 "
-        _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SC6") + " SC6 "
-        _oSQL:_sQuery += " 	ON SC6.D_E_L_E_T_ = '' "
-        _oSQL:_sQuery += " 		AND SC6.C6_FILIAL  = SC5.C5_FILIAL "
-        _oSQL:_sQuery += " 		AND SC6.C6_NUM     = SC5.C5_NUM "
-        _oSQL:_sQuery += "      AND SC6.C6_PRODUTO = '" + _aItens[_x, 1] + "' "
-        _oSQL:_sQuery += "      AND SC6.C6_NOTA <> '' "
-        _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
-        _oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
-        _oSQL:_sQuery += " 		AND SA1.A1_COD  = SC5.C5_CLIENTE "
-        _oSQL:_sQuery += " 		AND SA1.A1_LOJA = SC5.C5_LOJACLI "
-        _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " SB1 "
-        _oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = '' "
-        _oSQL:_sQuery += " 		AND SB1.B1_COD  = SC6.C6_PRODUTO "
-        _oSQL:_sQuery += "     INNER JOIN " + RetSQLName ("SF2") + " SF2 "
-        _oSQL:_sQuery += " 	ON SF2.D_E_L_E_T_ = '' "
-        _oSQL:_sQuery += " 		AND SF2.F2_FILIAL = SC6.C6_FILIAL "
-        _oSQL:_sQuery += " 		AND SF2.F2_DOC    = SC6.C6_NOTA "
-        _oSQL:_sQuery += " 		AND SF2.F2_SERIE  = SC6.C6_SERIE "
-        _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE4") + " SE4 "
-	    _oSQL:_sQuery += "  ON SE4.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += "      AND SE4.E4_CODIGO = SC5.C5_CONDPAG "
-        _oSQL:_sQuery += " WHERE SC5.D_E_L_E_T_ = '' "
-        _oSQL:_sQuery += " AND C5_FILIAL  = '" + _sFilial  + "' "
-        _oSQL:_sQuery += " AND C5_NUM    <> '" + _sPedido  + "' "
-        _oSQL:_sQuery += " AND C5_CLIENTE = '" + _sCliente + "' "
-        _oSQL:_sQuery += " AND C5_LOJACLI = '" + _sLoja    + "' "
-        _oSQL:_sQuery += " ORDER BY SC5.R_E_C_N_O_ DESC "
+        _oSQL:_sQuery := " SELECT * FROM VA_FULTIMA_VENDA('"+ _aItens[_x, 1] +"','"+ _sCliente +"','"+ _sLoja +"') "
         u_log (_oSQL:_squery)
-//        _aProd := aclone (_oSQL:Qry2Array ())
         _aProd := aclone (_oSQL:Qry2Array (.t., .f.))
 
         For _i:=1 to Len(_aProd)
