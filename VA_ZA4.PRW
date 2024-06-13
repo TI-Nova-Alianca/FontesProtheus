@@ -70,6 +70,7 @@ User Function VA_ZA4()
 		aadd(aRotina, {"&Liberar"            , "U_ZA4_L" 		, 0,4})
 		aadd(aRotina, {"&Estornar"           , "U_ZA4_EL" 		, 0,4})
 		aadd(aRotina, {"&Excluir"            , "U_ZA4_EX" 		, 0,4})
+		aadd(aRotina, {"&Cancelar"           , "U_ZA4_CAN" 		, 0,4})
 		aadd(aRotina, {"&Alterar"            , "U_ZA4_AL"   	, 0,4})
 		aadd(aRotina, {"&Produtos"           , "U_ZA4_PROPER()" , 0,4})
 		aadd(aRotina, {"&Exp.Produtos"       , "U_ZA4_PROEXP()" , 0,6})
@@ -81,6 +82,7 @@ User Function VA_ZA4()
 		AADD(_aCores,{ "ZA4_STATUS == 'I'", 'BR_VERDE'    }) // importado
 		AADD(_aCores,{ "ZA4_STATUS == 'A'", 'BR_AMARELO'  }) // alterado
 		AADD(_aCores,{ "ZA4_STATUS == 'L'", 'BR_VERMELHO' }) // liberado
+		AADD(_aCores,{ "ZA4_STATUS == 'C'", 'BR_PRETO'    }) // cancelados
 	
 		dbselectarea(cString)
 		dbSetOrder (1)
@@ -100,6 +102,7 @@ User function Za4_LGD(_lRetCores)
 	aadd (aCores, {"ZA4->ZA4_STATUS=='I'", 'BR_VERDE'   , 'Reg.Importados'	})
 	aadd (aCores, {"ZA4->ZA4_STATUS=='A'", 'BR_AMARELO'	, 'Reg.Alterados'	})
 	aadd (aCores, {"ZA4->ZA4_STATUS=='L'", 'BR_VERMELHO', 'Reg.Liberados'	})
+	aadd (aCores, {"ZA4->ZA4_STATUS=='C'", 'BR_PRETO'   , 'Reg.Cancelados'	})
 
 
 	if ! _lRetCores
@@ -369,6 +372,29 @@ User Function ZA4_EX()
 		Else
 			u_help("A verba não pode ser excluída!")
 		EndIf  
+	Endif
+
+	u_logFim()
+Return
+//
+// --------------------------------------------------------------------------
+// cancelar
+User Function ZA4_CAN()
+    private altera   := .F.
+    private inclui   := .F.
+    private aGets    := {}
+    private aTela    := {}
+    
+	u_logIni()
+	RegToMemory("ZA4", inclui, .T.)
+
+	// so é permitido cancelamento de verba manual e que nao tenha sido liberada ainda.
+	If !empty(m->za4_dlib)
+		u_help("Verba já liberada! Não pode ser excluida.")
+	Else 
+		RecLock("ZA4",.F.)
+			za4 -> za4_status := 'C'
+		MsUnLock()
 	Endif
 
 	u_logFim()
