@@ -39,6 +39,7 @@
 //  27/01/2022 - Claudia - Incluida validação de usuário para excluir verbas e retirada 
 //                         rotina de alteração. GLPI: 11537
 //  11/04/2024 - Claudia - Incluido status no estorno de verba. GLPI: 15225
+//  13/06/2024 - Claudia - Incluido filtro para não aparecer os cancelados no browser.
 //
 //
 // ------------------------------------------------------------------------------------------------------------
@@ -86,7 +87,9 @@ User Function VA_ZA4()
 	
 		dbselectarea(cString)
 		dbSetOrder (1)
-		mBrowse(,,,,cString,,,,,2,_aCores)
+
+		_sFilTop = "ZA4_STATUS <> 'C'"
+		mBrowse(,,,,cString,,,,,2,_aCores,,,,,,,,_sFilTop)
 
 	EndIf
     U_ML_SRArea(_aAreaAnt)
