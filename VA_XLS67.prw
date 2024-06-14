@@ -5,7 +5,8 @@
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #relatorio
-// #Descricao         #custos #item_consumido #op
+// #Descricao         #Relatório de custos por tipo de item consumido em OP
+// #PalavrasChave     #custos #item_consumido #op
 // #TabelasPrincipais #SC2 #SD3 #ZX5
 // #Modulos           #EST 
 //
