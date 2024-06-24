@@ -5,25 +5,25 @@
 //              de safra (as regras geralmente mudam de uma safra para outra).
 //
 // Historico de alteracoes:
-// 14/01/2021 - Robert - Criada coluna 4 com valores (a distr.por percentuais penaliza sempre a ultima parcela (frete)
-// 12/02/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
-// 08/03/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra (GLPI 9572)
-// 29/03/2021 - Robert - Calculava datas a partir da variavel dDataBase. Agora recebe a data de emissao por parametro (GLPI 9592).
-// 07/05/2021 - Robert - Criado tratamento para quando nao encontrar as regras para pagamento (GLPI 9891).
-// 17/05/2021 - Robert - Se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa (GLPI 9891)
-// 12/02/2022 - Robert - Ajuste no 'se ano+mes previsto jah passou' pois na vdd considerava apenas o mes! (GLPI 11619).
-// 14/03/2022 - Robert - Incluida coluna com a letra para parcela na array de retorno.
-// 10/01/2023 - Robert - Ajustes para safra 2023.
-// 25/01/2023 - Robert - Removidos alguns logs
-// 03/02/2023 - Robert - Removidos alguns logs
-// 21/07/2023 - Robert - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra().
-// 21/02/2023 - Robert - Geravamos tradicionalmente a 1a.parcela no mes de marco, mas em mar/24
-//                       ainda vai ter valores atrasados de 2023 para pagar. Entao optamos por
-//                       'deslocar' todas as parcelas um mes para a frente. Com isso, a primeira
-//                       parcela passa a ser no mes de abril (GLPI 14961)
-// 25/02/2024 - Robert - Estava jogando a 9a. parcela (I) para jan/24 pois voltava a janeiro sem incrementar o ano (GLPI 14961)
+// 14/01/2021 - Robert  - Criada coluna 4 com valores (a distr.por percentuais penaliza sempre a ultima parcela (frete)
+// 12/02/2021 - Robert  - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
+// 08/03/2021 - Robert  - Novos parametros metodo ClsAssoc:FechSafra (GLPI 9572)
+// 29/03/2021 - Robert  - Calculava datas a partir da variavel dDataBase. Agora recebe a data de emissao por parametro (GLPI 9592).
+// 07/05/2021 - Robert  - Criado tratamento para quando nao encontrar as regras para pagamento (GLPI 9891).
+// 17/05/2021 - Robert  - Se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa (GLPI 9891)
+// 12/02/2022 - Robert  - Ajuste no 'se ano+mes previsto jah passou' pois na vdd considerava apenas o mes! (GLPI 11619).
+// 14/03/2022 - Robert  - Incluida coluna com a letra para parcela na array de retorno.
+// 10/01/2023 - Robert  - Ajustes para safra 2023.
+// 25/01/2023 - Robert  - Removidos alguns logs
+// 03/02/2023 - Robert  - Removidos alguns logs
+// 21/07/2023 - Robert  - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra().
+// 21/02/2023 - Robert  - Geravamos tradicionalmente a 1a.parcela no mes de marco, mas em mar/24
+//                        ainda vai ter valores atrasados de 2023 para pagar. Entao optamos por
+//                        'deslocar' todas as parcelas um mes para a frente. Com isso, a primeira
+//                        parcela passa a ser no mes de abril (GLPI 14961)
+// 25/02/2024 - Robert  - Estava jogando a 9a. parcela (I) para jan/24 pois voltava a janeiro sem incrementar o ano (GLPI 14961)
+// 24/06/2024 - Claudia - Alterada as parcelas da safra 2024.
 //
-
 // ------------------------------------------------------------------------------------
 User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 	local _sError     := ''
@@ -313,32 +313,33 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 				// anteriormente qual das parcelas vai ter o frete.
 				if _nParcel == _nParcFrt
 					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
-					_sMesVcSaf = '04'
-				elseif _nParcel == 1
 					_sMesVcSaf = '05'
-				elseif _nParcel == 2
+				elseif _nParcel == 1
 					_sMesVcSaf = '06'
-				elseif _nParcel == 3
+				elseif _nParcel == 2
 					_sMesVcSaf = '07'
-				elseif _nParcel == 4
+				elseif _nParcel == 3
 					_sMesVcSaf = '08'
-				elseif _nParcel == 5
+				elseif _nParcel == 4
 					_sMesVcSaf = '09'
-				elseif _nParcel == 6
+				elseif _nParcel == 5
 					_sMesVcSaf = '10'
-				elseif _nParcel == 7
+				elseif _nParcel == 6
 					_sMesVcSaf = '11'
-				elseif _nParcel == 8
+				elseif _nParcel == 7
 					_sMesVcSaf = '12'
-				elseif _nParcel == 9
+				elseif _nParcel == 8
 					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
 					_sMesVcSaf = '01'
-				elseif _nParcel == 10
+				elseif _nParcel == 9
 					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
 					_sMesVcSaf = '02'
-				elseif _nParcel == 11
+				elseif _nParcel == 10
 					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
 					_sMesVcSaf = '03'
+				elseif _nParcel == 11
+					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
+					_sMesVcSaf = '04'
 				else
 					u_help ("Sem tratamento para parcela " + cvaltochar (_nParcel) + " no ajuste de datas de pagamento de safra.",, .T.)
 					_dVctSafra = _dEmissao
