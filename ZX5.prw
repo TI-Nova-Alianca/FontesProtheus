@@ -116,10 +116,10 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 	if _lContinua
 		_lFiltro = iif (valtype (_lFiltro) == 'L', _lFiltro, .F.)
 		if nOpc != 5 .and. _lFiltro
-			_sFiltro  = U_Get ('Expressao para filtro adicional', 'C', 255, '', '', space (255), .F., '.t.')
-			if empty (_sFiltro)
+			//_sFiltro  = U_Get ('Expressao para filtro adicional', 'C', 255, '', '', space (255), .F., '.t.')
+			//if empty (_sFiltro)
 				_sFiltro = '.t.'
-			endif
+			//endif
 		else
 			_sFiltro = '.T.'
 		endif
