@@ -111,7 +111,7 @@ Static Function _Gera02()
 	local _sCondPag  := ""
 	local _sVariSim  := ''
 	local _sVariNao  := ''
-	local _x         
+	//local _x         
 	private _sGrpZZ9  := ''
 	private _sNFIni   := ""
 	private _sNFFim   := ""
@@ -140,6 +140,7 @@ Static Function _Gera02()
 		_sCondPag  = mv_par09
 		_sVariSim  = alltrim(mv_par10)
 		_sVariNao  = alltrim(mv_par11)
+		_sItem     = alltrim(mv_par12)
 	endif
 
 	if _lContinua
@@ -179,14 +180,18 @@ Static Function _Gera02()
 		_oSQL:Log()
 		_aItem := aclone(_oSQL:Qry2Array (.f., .f.))
 
-		For _x:=1 to Len(_aItem)
-			u_log2('DEBUG', '*** Gera para itens originais:' + _aItem[_x,1])
-			//u_help('Gerando NFs para itens originais de código:' + _aItem[_x,1])
+		u_log(str(Len(_aItem)))
+		U_Help(str(Len(_aItem)))
+		_lContinua := _Gera03(_sItem,_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
+		u_help("Processo finalizado itens:" + _sItem)
 
-			_lContinua := _Gera03(_aItem[_x,1],_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
-		Next
-	
-		u_help("Processo finalizado")
+		// For _x:=1 to Len(_aItem)
+		// 	u_log2('DEBUG', '*** Gera para itens originais:' + _aItem[_x,1])
+		// 	_lContinua := _Gera03(_aItem[_x,1],_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
+		// Next
+
+
+		
 		// Notifica interessados.
 		if _lContinua
 			U_ZZUNU({'019', '116', '052', '068'}, ;  // Fiscal, custos, contabilidade, direcao/ger.financeiro
@@ -410,6 +415,8 @@ Static Function _GeraNota(_sFornece, _sLoja, _aItens, _sMsgContr, _sSerie, _sUF,
 
 		//u_log ("Fornecedor:", _sFornece, _sLoja)
 		// Prepara campos do cabecalho da nota
+
+
 		_aAutoSF1 := {}
 		AADD( _aAutoSF1, { "F1_DOC"      , _sNF						, Nil } )
 		AADD( _aAutoSF1, { "F1_SERIE"    , _sSerie					, Nil } )
@@ -745,6 +752,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {09, "Cond.pagto a usar             ", "C", 3,  0,  "",   "SE4", {},                                       ""})
 	aadd (_aRegsPerg, {10, "Apenas as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                       ""})
 	aadd (_aRegsPerg, {11, "Exceto as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                       ""})
+	aadd (_aRegsPerg, {12, "Item                          ", "C", 4,  0,  "",   "   ", {},                                       "Itens notas."})
 	//aadd (_aRegsPerg, {14, "Tipo de fornecedor            ", "N", 1,  0,  "",   "   ", {"Assoc/ex assoc", "Terceiros", "Todos"}, ""})
 
 	U_ValPerg (cPerg, _aRegsPerg)
