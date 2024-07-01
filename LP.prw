@@ -314,7 +314,11 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				_xret := 0
 		    
 			Case (SE1->E1_TIPO<>"NCC" .OR.!SE5->E5_MOTBX$"STB/STD")
-				_xret := SE5->E5_VADOUTR
+				If ("PAGAR.ME"$SE1->E1_HIST .OR. "CIELO"$SE1->E1_HIST)
+					_xret := 0
+				else
+					_xret := SE5->E5_VADOUTR
+				endif
 				
 			OTHERWISE
 				_xret := 0
