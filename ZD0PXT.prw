@@ -13,6 +13,7 @@
 //  Historico de alterações
 // 06/09/2022 - Claudia - Retirada a coluna de saldos de titulos. 
 // 06/09/2023 - Claudia - Incluida impressão de taxas. GLPI: 14150
+// 04/07/2024 - Claudia - Subtraido um dia da data inicial para busca dos recebimentos. GLPI:15685
 //
 // ----------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -92,7 +93,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " FROM " + RetSQLName ("ZD0")
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND ZD0_FILIAL BETWEEN '"+ mv_par01 +"' AND '"+ mv_par02 +"' "
-	_oSQL:_sQuery += " AND ZD0_DTAEXT BETWEEN '"+ dtos(mv_par03) +"' AND '"+ dtos(mv_par04) +"' "
+	_oSQL:_sQuery += " AND ZD0_DTAEXT BETWEEN '"+ dtos(DaySub(mv_par03, 1)) +"' AND '"+ dtos(mv_par04) +"' "
 	_oSQL:_sQuery += " AND ZD0_TIPO = '2' "
 	_oSQL:_sQuery += " ORDER BY ZD0_DTAEXT "
 	_aDatas := _oSQL:Qry2Array ()
