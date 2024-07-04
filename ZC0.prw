@@ -16,6 +16,7 @@
 // 01/06/2023 - Claudia - Incluidas novas legendas. GLPI: 13643
 // 15/06/2023 - Claudia - Incluida validação para TM 11. GLPI: 13728
 // 19/06/2023 - Claudia - Consulta de logs. GLPI: 13741
+// 04/07/2024 - Claudia - Retirada a TM 07 de validação de NF. GLPI:15683
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -188,7 +189,7 @@ User Function ZC0TDOK()
 	Local _oSQL := ClsSQL ():New ()
 	Local _lRet := .T.
 
-	If M->ZC0_TM <> '11' // NF DE ENTRADA
+	If !alltrim(M->ZC0_TM) $ '11/07' // NF DE ENTRADA
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT * FROM SF2010 "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
