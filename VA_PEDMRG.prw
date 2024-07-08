@@ -17,6 +17,7 @@
 // 29/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 20/05/2024 - Claudia - Ajustado calculo de rapel para MG. GLPI: 15491
 // 10/06/2024 - Claudia - Ajustado os tipos de pedidos que calculam margem. 
+// 01/07/2024 - Claudia - Gravação de total de frete. GLPI: 15648
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -255,7 +256,7 @@ static function _CalcMargem(_sPrgName)
     u_log2('info', 'Margem calculada: ' + cvaltochar(m->c5_vaMCont))
 
     // Grava total do frete
-    m->c5_mvfre := _nVFreteT
+    m->c5_mvfre := _nTotFrete // _nVFreteT
     u_log2('info', 'Frete calculado: ' + cvaltochar(m->c5_vaMCont))
 
     // Grava campos quando pedido já em tabela -> 
