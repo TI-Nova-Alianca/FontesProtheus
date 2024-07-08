@@ -29,12 +29,12 @@ user function MT381VLD ()
 	if _lRet
 		// Nao valida durante a execucao do U_AJLOCEMP por que todos os empenhos
 		// da OP sao refeitos para alterar o almox de onde serao empenhados.
-		if ! IsInCallStack ("U_AJLOCEMP")
-			U_Log2 ('debug', '[' + procname () + ']Nao estou rodando no U_AJLOCEMP. Vou validar CC')
-			_lRet = _VerLinEn ()
-		else
+		//if ! IsInCallStack ("U_AJLOCEMP")
+		//	U_Log2 ('debug', '[' + procname () + ']Nao estou rodando no U_AJLOCEMP. Vou validar CC')
+		//	_lRet = _VerLinEn ()
+		//else
 			U_Log2 ('debug', '[' + procname () + ']Estou rodando no U_AJLOCEMP')
-		endif
+		//endif
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
