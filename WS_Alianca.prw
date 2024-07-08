@@ -138,6 +138,7 @@
 // 24/05/2024 - Claudia - Inlcuida gravação da rotina 'GravaPgtoContaCorrente' para unimed e mudinhas. GLPI:15157
 // 27/05/2024 - Daiana  - Removido o n° da linha 3107 e 3110
 // 07/06/2024 - Claudia - Incluida a gravação de fornecedor no tipo 3, do 'GravaPgtoContaCorrente'.
+// 08/07/2024 - Claudia - Incluida nova ação GravaPgtoMudas. GLPI: 15688
 //
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -338,6 +339,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 			_GrvTituloUnimed ()
 		case _sAcao == 'GravaPgtoContaCorrente'
 			_GrvPgtoContaCorrente ()
+		case _sAcao == 'GravaPgtoMudas'
+			_GrvPgtoMudas ()
 		otherwise
 			_SomaErro ("A acao especificada no XML eh invalida: " + _sAcao)
 		endcase
@@ -3018,7 +3021,7 @@ Static Function _GrvTituloUnimed()
 
 	u_logFim ()
 Return
-
+//
 // --------------------------------------------------------------------------
 // Grava baixas de títulos no conta corrente - associados
 Static Function _GrvPgtoContaCorrente()
@@ -3079,8 +3082,9 @@ Static Function _GrvPgtoContaCorrente()
 				_sSerie := 'UNJ'
 
 			Case _sTipo == '2' 		// mudinhas
-				_sTM    := '24'
-				_sSerie := 'MUD'
+				_sTM     := ''
+				_sSerie  := ''
+				_sErroWS += "Tipo 2 descontinuado nessa rotina"
 
 			Case _sTipo == '3'		// Analises de solo
 				_sTM    := '03'
@@ -3125,6 +3129,137 @@ Static Function _GrvPgtoContaCorrente()
 		else
 			_sErroWS   += "Atualização da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'" + " não permitido. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg
 		endif
+	EndIf
+
+	u_logFim ()
+Return
+//
+// --------------------------------------------------------------------------
+// Grava pagamento de mudas parcelado
+Static Function _GrvPgtoMudas()
+	local _oCtaCorr := NIL
+	local _sUsuario := ""
+	local _sFilial  := ""
+	local _sFornece := ""
+	local _sLoja    := ""
+	local _sVencReal:= ""
+	local _x        := 0
+	local _nParc    := 0
+	
+
+	u_logIni ()
+
+	/* 	<WSAlianca>
+			<User>daiana.ribas</User>
+			<IDAplicacao>gg2gj256y5f2c5b89</IDAplicacao>
+			<Empresa>01</Empresa>
+			<Filial>01</Filial>
+			<Associado>002382</Associado>
+			<LojaAssoc>01</LojaAssoc>
+			<Documento>000240591</Documento>
+			<Serie>10</Serie>
+			<QtdParcelas>4</QtdParcelas>
+			<Valor>2554,56</Valor>
+			<Acao>GravaPgtoMudas</Acao>
+		</WSAlianca> */
+
+	// Recebe parametros NaWeb	
+	If empty(_sErroWS)
+		_sUsuario    := _ExtraiTag("_oXML:_WSAlianca:_User"						, .T., .F.)
+		_sFilial   	 := _ExtraiTag("_oXML:_WSAlianca:_Filial"					, .T., .F.)
+		_sAssociado  := _ExtraiTag("_oXML:_WSAlianca:_Associado"				, .T., .F.)
+		_sLojaAssoc	 := _ExtraiTag("_oXML:_WSAlianca:_LojaAssoc"				, .T., .F.)
+		_sNF   	     := _ExtraiTag("_oXML:_WSAlianca:_Documento"    			, .T., .F.)
+		_sSerieNF    := _ExtraiTag("_oXML:_WSAlianca:_Serie"					, .T., .F.)
+		_nQtd   	 := Val(StrTran(_ExtraiTag("_oXML:_WSAlianca:_QtdParcelas" 	, .T., .F.),",","."))
+		_nValor      := Val(StrTran(_ExtraiTag("_oXML:_WSAlianca:_Valor" 		, .T., .F.),",","."))
+	EndIf
+
+	// Busca NF Da compra das mudas
+	If empty(_sErroWS)
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT TOP 1 "
+		_oSQL:_sQuery += " 	   E2_FORNECE "
+		_oSQL:_sQuery += "    ,E2_LOJA "
+		_oSQL:_sQuery += "    ,E2_VENCREA "
+		_oSQL:_sQuery += " FROM SE2010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND E2_FILIAL  = '"+ _sFilial  +"' " 
+		_oSQL:_sQuery += " AND E2_NUM     = '"+ _sNF      +"' "
+		_oSQL:_sQuery += " AND E2_PREFIXO = '"+ _sSerieNF +"' "
+		_oSQL:_sQuery += " ORDER BY E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCREA "
+		//_oSQL:Log()
+		_aFornece := aclone(_oSQL:Qry2Array(.t., .f.))
+
+		If Len(_aFornece) > 0
+			_sFornece    := _aFornece[1, 1]
+			_sLojaForcec := _aFornece[1, 2]
+			_sVencReal   := _aFornece[1, 3]
+		Else
+			_sErroWS   += "A NF informada não foi encontrada na base de dados."
+		EndIf
+	EndIf
+
+	// Gera array de valores conforme parcelas
+	If empty(_sErroWS)
+		_aParc    := {}
+		_nTotParc := 0
+		for _nParc := 1 to _nQtd
+			aadd(_aParc, round(_nValor/_nQtd, 2))
+			_nTotParc += _aParc[len(_aParc)]
+		next
+		_aParc[len(_aParc)] += (_nValor - _nTotParc)
+	EndIf
+
+	If empty(_sErroWS)
+		_dDataVenc := FirstDate(_sVencReal)  
+
+		For _x:=1 to _nQtd
+			u_log("1 " + _sAssociado +'-'+ _sLojaAssoc)
+			u_log("2 " + _sFornece +'-'+ _sLojaForcec)
+			u_log("3 " + cvaltochar(_aParc[1]))
+			u_log("4 " + dtoc(ddatabase))
+			u_log("5 " + dtoc(_dDataVenc))
+			u_log("6 " + cUserName)
+			u_log("7 " + 'COMPRA DE MUDAS ' + alltrim(cvaltochar(_x)) + 'de' + alltrim(cvaltochar(len(_aParc))))
+			u_log("8 " + strzero(month(ddatabase),2)+strzero(year(ddatabase),4))
+			u_log("9 " + _sNF)
+			u_log("10 " + chr(64 + _x))
+
+			_oCtaCorr := ClsCtaCorr():New()
+			_oCtaCorr:Assoc    = _sAssociado
+			_oCtaCorr:Loja     = _sLojaAssoc
+			_oCtaCorr:Fornece  = _sFornece
+			_oCtaCorr:LojaFor  = _sLojaForcec
+			_oCtaCorr:TM       = '24'
+			_oCtaCorr:DtMovto  = ddatabase
+			_oCtaCorr:Valor    = _aParc[_x]
+			_oCtaCorr:SaldoAtu = _aParc[_x]
+			_oCtaCorr:VctoSE2  = _dDataVenc  
+			_oCtaCorr:Usuario  = cUserName
+			_oCtaCorr:Histor   = 'COMPRA DE MUDAS ' + alltrim(cvaltochar(_x)) + 'de' + alltrim(cvaltochar(len(_aParc)))
+			_oCtaCorr:Obs      = 'Compra de ' + alltrim(fBuscaCpo("SA2", 1, xfilial("SA2") + _sFornece + _sLojaForcec, 'A2_NOME')) + ' '
+			_oCtaCorr:MesRef   = strzero(month(ddatabase),2)+strzero(year(ddatabase),4)
+			_oCtaCorr:Doc      = _sNF      // NF viveirista
+			_oCtaCorr:Serie    = 'MUD'
+			_oCtaCorr:Origem   = "WS_ALIANCA"
+			_oCtaCorr:Parcela  = chr(64 + _x)  // Gera letras a partir do 'A'.
+
+			_dDataVenc := MonthSum(_dDataVenc,1)
+
+			if _oCtaCorr:PodeIncl ()
+				if ! _oCtaCorr:Grava (.F., .F.)
+					_sErroWS   += 'Titulo ' + _sNF + ' não gravado!' + _oCtaCorr:UltMsg
+				else
+					if empty(_sErroWS)
+						_sMsgRetWS += 'Titulo ' + _sNF + ' gravado com sucesso!' + _oCtaCorr:UltMsg
+					endif
+				endif
+			else
+				_sErroWS   += "Atualização da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'" + " não permitido. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg
+			endif
+		Next
 	EndIf
 
 	u_logFim ()
