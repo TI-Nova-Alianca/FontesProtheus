@@ -1,9 +1,9 @@
-// Autor....: Robert Koch
+// Autor....: Claudia Lionço
 // Data.....: 08/05/2009
 // Descricao: Gera notas fiscais de compra/complemento de uva da safra cfe. previsao do arquivo ZZ9.
 //            Criado com base no ML_GNFS de Jeferson Rech.
 //            Programa gerado do VA_GNF2.prw 
-//            Usado a aprtir da safra 2024
+//            Usado a partir da safra 2024
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
@@ -111,7 +111,7 @@ Static Function _Gera02()
 	local _sCondPag  := ""
 	local _sVariSim  := ''
 	local _sVariNao  := ''
-	//local _x         
+	local _x         
 	private _sGrpZZ9  := ''
 	private _sNFIni   := ""
 	private _sNFFim   := ""
@@ -122,6 +122,14 @@ Static Function _Gera02()
 		_sSerie = GetMv("VA_SERSAFR", .F., '')
 		if empty(_sSerie)
 			u_help("Serie a ser usada nas NF de safra nao definida. Verifique se o parametro VA_SERSAFR existe e se contem uma serie de NF valida para esta filial.",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		_lOK := Sx5NumNota(@_sSerie)   // Apresenta Tela para Confirmar o Numero da Primeira NF a Ser Gerada
+		if ! _lOK .or. empty(_sSerie)  // Usuario cancelou ou nao confirmou em tempo habil
+			u_Log2('info', "Usuario nao confirmou a numeracao da primeira nota.")
 			_lContinua = .F.
 		endif
 	endif
@@ -141,9 +149,7 @@ Static Function _Gera02()
 		_sVariSim  = alltrim(mv_par10)
 		_sVariNao  = alltrim(mv_par11)
 		_sItem     = alltrim(mv_par12)
-	endif
 
-	if _lContinua
 		// Monta array com os fornecedores ordenados por nome, para facilitar a posterior separacao das notas,
 		// e simula varias execucoes da rotina com associado inicial = associado final.
 		_oSQL := ClsSQL():New ()
@@ -180,31 +186,30 @@ Static Function _Gera02()
 		_oSQL:Log()
 		_aItem := aclone(_oSQL:Qry2Array (.f., .f.))
 
-		u_log(str(Len(_aItem)))
-		U_Help(str(Len(_aItem)))
-		_lContinua := _Gera03(_sItem,_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
-		u_help("Processo finalizado itens:" + _sItem)
+		// u_log(str(Len(_aItem)))
+		// U_Help(str(Len(_aItem)))
+		// _lContinua := _Gera03(_sItem,_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
+		// u_help("Processo finalizado itens:" + _sItem)
 
-		// For _x:=1 to Len(_aItem)
-		// 	u_log2('DEBUG', '*** Gera para itens originais:' + _aItem[_x,1])
-		// 	_lContinua := _Gera03(_aItem[_x,1],_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
-		// Next
-
+		For _x:=1 to Len(_aItem)
+		 	u_log2('DEBUG', '*** Gera para itens originais:' + _aItem[_x,1])
+		 	_lContinua := _Gera03(_aItem[_x,1],_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
+		Next
 
 		
 		// Notifica interessados.
-		if _lContinua
-			U_ZZUNU({'019', '116', '052', '068'}, ;  // Fiscal, custos, contabilidade, direcao/ger.financeiro
-					"Geracao nota(s) de compra / complemento preco safra", ;
-					"Aviso do sistema: foram geradas nesta data notas de compra / complemento de preco de safra na filial " + cFilAnt + chr (13) + chr (10) + ;
-					"Sugere-se emitir o relatorio 'CONTRANOTAS SAFRA' (VA_XLS30) no modulo Cooperativa, filtrando esta data, para maiores detalhes.")
-		endif
+		// if _lContinua
+		// 	U_ZZUNU({'019', '116', '052', '068'}, ;  // Fiscal, custos, contabilidade, direcao/ger.financeiro
+		// 			"Geracao nota(s) de compra / complemento preco safra", ;
+		// 			"Aviso do sistema: foram geradas nesta data notas de compra / complemento de preco de safra na filial " + cFilAnt + chr (13) + chr (10) + ;
+		// 			"Sugere-se emitir o relatorio 'CONTRANOTAS SAFRA' (VA_XLS30) no modulo Cooperativa, filtrando esta data, para maiores detalhes.")
+		// endif
 	endif
 Return
 //
 // --------------------------------------------------------------------------
 // Gera as NF's
-Static Function _Gera03 (_sItem,_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
+Static Function _Gera03(_sItem,_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,_sSafra,_sParcelas,_sGrpZZ9,_sVarUva,_sTipoNF,_sCondPag,_sVariSim,_sVariNao)
 	local _lContinua  := .T.
 	local _sPreNF     := ""
 	local _sMsgContr  := ""
@@ -216,101 +221,80 @@ Static Function _Gera03 (_sItem,_sSerie,_sFornIni,_sLojaIni,_sFornFim,_sLojaFim,
 	local _sMsgNfZZ9  := ""
 	local _sZZ9NFOri  := ""
 	local _lGerouNF   := .F.
-	private _nTamDesc := tamsx3 ("D1_DESCRI")[1]
-	private _nTamItem := tamsx3 ("D1_ITEM")[1]
-	private _nTamItOr := tamsx3 ("D1_ITEMORI")[1]
-	private _nTamD1Qt := tamsx3 ("D1_QUANT")[1]
+	private _nTamDesc := tamsx3("D1_DESCRI")[1]
+	private _nTamItem := tamsx3("D1_ITEM")[1]
+	private _nTamItOr := tamsx3("D1_ITEMORI")[1]
+	private _nTamD1Qt := tamsx3("D1_QUANT")[1]
 	private _sNFIni   := ""
 	private _sNFFim   := ""
 
-	//u_logSX1 ()
+	u_logSX1 ()
 	
-	// Altera parametro "Mostra lctos contabeis" para "Nao" 
-	// e 'Contabiliza online' para 'sim' na tela de NF de entrada
-	//	if "TESTE" $ upper (GetEnvServer())  // na base teste nao quero contabilizar
-	if U_AmbTeste ()
-		U_GravaSX1 ("MTA103", "01", "2")
-		U_GravaSX1 ("MTA103", "06", "2")
-		U_GravaSX1 ("MTA103", "17", "2")
-	else
-		U_GravaSX1 ("MTA103", "01", "2")
-		U_GravaSX1 ("MTA103", "06", "1")
-		U_GravaSX1 ("MTA103", "17", "2")
+	U_GravaSX1("MTA103", "01", "2")
+	U_GravaSX1("MTA103", "06", "1")
+	U_GravaSX1("MTA103", "17", "2")
+
+	// Guarda parametros em variaveis especificas por que as chamadas de rotinas automaticas vai sobregrava-los.
+	_nTamDesc = tamsx3("D1_DESCRI")[1]
+	_nTamItem = tamsx3("D1_ITEM")[1]
+	_nTamItOr = tamsx3("D1_ITEMORI")[1]
+
+	// Monta array com os fornecedores ordenados por nome, para facilitar a posterior separacao das notas,
+	// e simula varias execucoes da rotina com associado inicial = associado final.
+	_oSQL := ClsSQL():New()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		ZZ9.*, A2_NOME, A2_EST, B1_DESC, ZZ9.R_E_C_N_O_ AS ZZ9RECNO "
+	_oSQL:_sQuery += " FROM " + RetSQLName("ZZ9") + " ZZ9, "
+	_oSQL:_sQuery +=            RetSQLName("SA2") + " SA2, "
+	_oSQL:_sQuery +=            RetSQLName("SB1") + " SB1  "
+	_oSQL:_sQuery += " WHERE SA2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 		AND SA2.A2_FILIAL  = '"+ xFilial("SA2") +"' "
+	_oSQL:_sQuery += " 		AND SA2.A2_COD     = ZZ9_FORNEC"
+	_oSQL:_sQuery += " 		AND SA2.A2_LOJA    = ZZ9_LOJA"
+	_oSQL:_sQuery += " 		AND SA2.A2_CONTA  <> '' "
+	_oSQL:_sQuery += " 		AND SB1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND SB1.B1_FILIAL  = '"+ xFilial("SB1") +"' "
+	_oSQL:_sQuery += " 		AND SB1.B1_COD     = ZZ9_PRODUT "
+	_oSQL:_sQuery += " 		AND ZZ9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 		AND ZZ9_FILIAL     = '" + xfilial("ZZ9") + "'"
+	_oSQL:_sQuery += " 		AND ZZ9_SAFRA      = '" + _sSafra  + "'"
+	_oSQL:_sQuery += " 		AND ZZ9_TIPONF     = '" + _sTipoNF + "'"
+	_oSQL:_sQuery += " 		AND ZZ9_ITEMOR     = '" + _sItem   + "'" // Gera as notas por itens
+	_oSQL:_sQuery += " 		AND ZZ9_NFORI     <> '' "
+	_oSQL:_sQuery += " 		AND ZZ9_NFCOMP     = ''"
+	_oSQL:_sQuery += " 		AND ZZ9_FORNEC + ZZ9_LOJA BETWEEN '" + _sFornIni + _sLojaIni + "' AND '" + _sFornFim + _sLojaFim + "'"
+	if ! empty(_sParcelas)
+		_oSQL:_sQuery += " 	AND ZZ9_PARCEL     IN " + FormatIn(_sParcelas, '/')
 	endif
-
-	if _lContinua
-		// Guarda parametros em variaveis especificas por que as chamadas de rotinas automaticas vai sobregrava-los.
-		_nTamDesc = tamsx3("D1_DESCRI")[1]
-		_nTamItem = tamsx3("D1_ITEM")[1]
-		_nTamItOr = tamsx3("D1_ITEMORI")[1]
+	if ! empty(_sGrpZZ9)
+		_oSQL:_sQuery += " 	AND ZZ9_GRUPO      = '" + _sGrpZZ9 + "'"
 	endif
-
-	if _lContinua
-		// Monta array com os fornecedores ordenados por nome, para facilitar a posterior separacao das notas,
-		// e simula varias execucoes da rotina com associado inicial = associado final.
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT "
-		_oSQL:_sQuery += " 		ZZ9.*, A2_NOME, A2_EST, B1_DESC, ZZ9.R_E_C_N_O_ AS ZZ9RECNO "
-		_oSQL:_sQuery += " FROM " + RetSQLName ("ZZ9") + " ZZ9, "
-		_oSQL:_sQuery +=            RetSQLName ("SA2") + " SA2, "
-		_oSQL:_sQuery +=            RetSQLName ("SB1") + " SB1  "
-		_oSQL:_sQuery += " WHERE SA2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery += " 		AND SA2.A2_FILIAL  = '"+ xFilial("SA2") +"' "
-		_oSQL:_sQuery += " 		AND SA2.A2_COD     = ZZ9_FORNEC"
-		_oSQL:_sQuery += " 		AND SA2.A2_LOJA    = ZZ9_LOJA"
-		_oSQL:_sQuery += " 		AND SA2.A2_CONTA  <> '' "
-		_oSQL:_sQuery += " 		AND SB1.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += " 		AND SB1.B1_FILIAL  = '"+ xFilial("SB1") +"' "
-		_oSQL:_sQuery += " 		AND SB1.B1_COD     = ZZ9_PRODUT "
-		_oSQL:_sQuery += " 		AND ZZ9.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery += " 		AND ZZ9_FILIAL     = '" + xfilial ("ZZ9") + "'"
-		_oSQL:_sQuery += " 		AND ZZ9_SAFRA      = '" + _sSafra  + "'"
-		_oSQL:_sQuery += " 		AND ZZ9_TIPONF     = '" + _sTipoNF + "'"
-		_oSQL:_sQuery += " 		AND ZZ9_ITEMOR     = '" + _sItem   + "'" // Gera as notas por itens
-		_oSQL:_sQuery += " 		AND ZZ9_NFORI     <> '' "
-		_oSQL:_sQuery += " 		AND ZZ9_NFCOMP     = ''"
-		_oSQL:_sQuery += " 		AND ZZ9_FORNEC + ZZ9_LOJA BETWEEN '" + _sFornIni + _sLojaIni + "' AND '" + _sFornFim + _sLojaFim + "'"
-		if ! empty(_sParcelas)
-			_oSQL:_sQuery += " 	AND ZZ9_PARCEL     IN " + FormatIn(_sParcelas, '/')
-		endif
-		if ! empty(_sGrpZZ9)
-			_oSQL:_sQuery += " 	AND ZZ9_GRUPO      = '" + _sGrpZZ9 + "'"
-		endif
-		if ! empty(_sVariSim)
-			_oSQL:_sQuery += " 	AND RTRIM (ZZ9_PRODUT) IN " + FormatIn(_sVariSim, '/')
-		endif
-		if ! empty(_sVariNao)
-			_oSQL:_sQuery += " 	AND RTRIM (ZZ9_PRODUT) NOT IN " + FormatIn(_sVariNao, '/')
-		endif
-		_oSQL:_sQuery += " AND ZZ9_TPFORN IN ('1', '3')"
-		if _sVarUva == 1 // COMUNS
-			_oSQL:_sQuery += " 	AND B1_VARUVA = 'C' "
-		endif
-		if _sVarUva == 2 // FINAS
-			_oSQL:_sQuery += " 	AND B1_VARUVA = 'F' "
-		endif
-		_oSQL:_sQuery += " 		AND ZZ9_GRAU   <> '' "
-		_oSQL:_sQuery += " 		AND ZZ9_VUNIT   > 0  "
-		_oSQL:_sQuery += " 		AND ZZ9_TES    <> '' "
-		_oSQL:_sQuery += " 		AND ZZ9_CONDUC <> '' "
-		_oSQL:_sQuery += " 		AND ((ZZ9_CONDUC = 'L' AND ZZ9_CLABD <>'' )OR (ZZ9_CONDUC = 'E' AND ZZ9_CLASSE <>'' )) "
-		_oSQL:_sQuery += " ORDER BY A2_NOME, ZZ9_FORNEC, ZZ9_LOJA, ZZ9_NFORI, ZZ9_SERIOR "
-		_oSQL:Log()
-		_sAliasQ := _oSQL:Qry2Trb(.F.)
-
-		if (_sAliasQ) -> (eof())
-			u_help("Nenhuma pre-nota encontrada.", _oSQL:_sQuery, .t.)
-			_lContinua = .F.
-		endif
+	if ! empty(_sVariSim)
+		_oSQL:_sQuery += " 	AND RTRIM (ZZ9_PRODUT) IN " + FormatIn(_sVariSim, '/')
 	endif
+	if ! empty(_sVariNao)
+		_oSQL:_sQuery += " 	AND RTRIM (ZZ9_PRODUT) NOT IN " + FormatIn(_sVariNao, '/')
+	endif
+	_oSQL:_sQuery += " AND ZZ9_TPFORN IN ('1', '3')"
+	if _sVarUva == 1 // COMUNS
+		_oSQL:_sQuery += " 	AND B1_VARUVA = 'C' "
+	endif
+	if _sVarUva == 2 // FINAS
+		_oSQL:_sQuery += " 	AND B1_VARUVA = 'F' "
+	endif
+	_oSQL:_sQuery += " 		AND ZZ9_GRAU   <> '' "
+	_oSQL:_sQuery += " 		AND ZZ9_VUNIT   > 0  "
+	_oSQL:_sQuery += " 		AND ZZ9_TES    <> '' "
+	_oSQL:_sQuery += " 		AND ZZ9_CONDUC <> '' "
+	_oSQL:_sQuery += " 		AND ((ZZ9_CONDUC = 'L' AND ZZ9_CLABD <>'' )OR (ZZ9_CONDUC = 'E' AND ZZ9_CLASSE <>'' )) "
+	_oSQL:_sQuery += " ORDER BY A2_NOME, ZZ9_FORNEC, ZZ9_LOJA, ZZ9_NFORI, ZZ9_SERIOR "
+	_oSQL:Log()
+	_sAliasQ := _oSQL:Qry2Trb(.F.)
 
-	if _lContinua
-		_lOK := Sx5NumNota(@_sSerie)   // Apresenta Tela para Confirmar o Numero da Primeira NF a Ser Gerada
-		if ! _lOK .or. empty(_sSerie)  // Usuario cancelou ou nao confirmou em tempo habil
-			u_Log2('info', "Usuario nao confirmou a numeracao da primeira nota.")
-			_lContinua = .F.
-		endif
+	if (_sAliasQ) -> (eof())
+		u_help("Nenhuma pre-nota encontrada.", _oSQL:_sQuery, .t.)
+		_lContinua = .F.
 	endif
 
 	if _lContinua
@@ -415,7 +399,6 @@ Static Function _GeraNota(_sFornece, _sLoja, _aItens, _sMsgContr, _sSerie, _sUF,
 
 		//u_log ("Fornecedor:", _sFornece, _sLoja)
 		// Prepara campos do cabecalho da nota
-
 
 		_aAutoSF1 := {}
 		AADD( _aAutoSF1, { "F1_DOC"      , _sNF						, Nil } )
@@ -595,16 +578,7 @@ Static Function _GeraNota(_sFornece, _sLoja, _aItens, _sMsgContr, _sSerie, _sUF,
 				msunlock()
 			endif
 
-			// // Grava pré nota como gerada
-			// for _nItem = 1 to len(_aItens)
-			// 	zz9 -> (dbgoto(_aItens [_nItem, .ItensRecnosZZ9]))
-				
-			// 	reclock("ZZ9", .F.)
-			// 	zz9 -> zz9_nfComp = sf1 -> f1_doc
-			// 	zz9 -> zz9_serCom = sf1 -> f1_serie
-			// 	msunlock()
-			// next
-
+			// Grava pré nota como gerada
 			for _nItem = 1 to len (_aItens)
 				for _nPreNF = 1 to len (_aItens [_nItem, .ItensRecnosZZ9])
 					zz9 -> (dbgoto (_aItens [_nItem, .ItensRecnosZZ9, _nPreNF]))
@@ -752,7 +726,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {09, "Cond.pagto a usar             ", "C", 3,  0,  "",   "SE4", {},                                       ""})
 	aadd (_aRegsPerg, {10, "Apenas as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                       ""})
 	aadd (_aRegsPerg, {11, "Exceto as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                       ""})
-	aadd (_aRegsPerg, {12, "Item                          ", "C", 4,  0,  "",   "   ", {},                                       "Itens notas."})
+	//aadd (_aRegsPerg, {12, "Item                          ", "C", 4,  0,  "",   "   ", {},                                       "Itens notas."})
 	//aadd (_aRegsPerg, {14, "Tipo de fornecedor            ", "N", 1,  0,  "",   "   ", {"Assoc/ex assoc", "Terceiros", "Todos"}, ""})
 
 	U_ValPerg (cPerg, _aRegsPerg)
