@@ -1,14 +1,14 @@
-// Programa...: ZD0RAS
+// Programa...: VA_SAFFOR
 // Autor......: Cláudia Lionço
-// Data.......: 13/07/2022
-// Descricao..: Gera títulos RA's dos recebíveis Pagar.me
+// Data.......: 12/07/2024
+// Descricao..: Relatório de safra para fornecedores
 //
 // Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Atualizacao
-// #Descricao         #Gera títulos RA's dos recebíveis Pagar.me
-// #PalavasChave      #extrato #pagar.me #recebimento #ecommerce #RA
-// #TabelasPrincipais #ZD0
-// #Modulos   		  #FIN 
+// #TipoDePrograma    #relatorio
+// #Descricao         #Relatório de safra para fornecedores
+// #PalavasChave      #safra #relatorio_fornecedor 
+// #TabelasPrincipais #SE2
+// #Modulos   		  #COOP 
 //
 // Historico de alteracoes:
 //
@@ -23,6 +23,9 @@ User Function VA_SAFFOR()
 	_ValidPerg()
 	Pergunte(cPerg,.T.)
 
+    if cFilant <> '01'
+        u_help("Relatorio deverá ser emitido na matriz!")
+    else
         _oAssoc := ClsAssoc():New (mv_par02, mv_par03)	
 		If _oAssoc:EhSocio(dDataBase)
             u_help("O fornecedor selecionado é sócio. Deve-se imprimir o modelo de relatório <Associados>")
@@ -30,7 +33,7 @@ User Function VA_SAFFOR()
 			oReport := ReportDef()
             oReport:PrintDialog()
 		Endif
-
+    endif
 Return
 //
 //
@@ -70,7 +73,7 @@ Static Function ReportDef()
     // FATURAS
 	oSection3 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
     TRCell():New(oSection3,"COLUNA01", 	"" ,"MÊS/ANO REFERÊNCIA",	    			    ,30,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection3,"COLUNA02", 	"" ,"SALDO"	            , "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+    TRCell():New(oSection3,"COLUNA02", 	"" ,"VALOR PREVISTO"    , "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 
      // VALOR EFETIVO
 	oSection4 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
@@ -123,7 +126,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " AND ASSOCIADO  = '"+ mv_par02 +"' "
     _oSQL:_sQuery += " AND LOJA_ASSOC = '"+ mv_par03 +"' "
     _oSQL:_sQuery += " ORDER BY NOME_ASSOC, ASSOCIADO, LOJA_ASSOC, TIPO_NF DESC, DATA "
-    _aDados := _oSQL:Qry2Array ()
+    _aDados := aclone(_oSQL:Qry2Array(.f., .f.))
 
     If len(_aDados) > 0
     oReport:SkipLine(1)
@@ -171,6 +174,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "    ,SUM(SE2.E2_VALOR) AS VALOR "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SE2") + " SE2 "
     _oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += " AND E2_FILIAL = '" + xFilial("SE2") + "' "
     _oSQL:_sQuery += " AND E2_TIPO = 'TX' "
     _oSQL:_sQuery += " AND SE2.E2_NUM + SE2.E2_PREFIXO IN (SELECT "
     _oSQL:_sQuery += " 	DISTINCT "
@@ -180,7 +184,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "  AND ASSOCIADO  = '" + mv_par02 + "' "
     _oSQL:_sQuery += "  AND LOJA_ASSOC = '" + mv_par03 + "' "
     _oSQL:_sQuery += " ) "
-    _aDados := _oSQL:Qry2Array ()
+    _aDados := aclone(_oSQL:Qry2Array(.f., .f.))
 
     oSection2:Init()
 
@@ -239,7 +243,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " 		,CLAS_ABD "
     _oSQL:_sQuery += " 		,SIST_CONDUCAO "
     _oSQL:_sQuery += " 		,PESO "
-    _aDados := _oSQL:Qry2Array ()
+    _aDados := aclone(_oSQL:Qry2Array(.f., .f.))
 
     oReport:PrintText(" VALOR EFETIVO POR VARIEDADE:",,100)
     oSection4:Init()
@@ -268,13 +272,13 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " AS "
     _oSQL:_sQuery += " (SELECT "
     _oSQL:_sQuery += " 		SUBSTRING(SE2.E2_VENCREA, 5, 2) + '/' + SUBSTRING(SE2.E2_VENCREA, 1, 4) AS VENC_REAL "
-    _oSQL:_sQuery += " 	   ,SE2.E2_SALDO AS SALDO "
+    _oSQL:_sQuery += " 	   ,SE2.E2_VALOR AS VALOR "
     _oSQL:_sQuery += " 	   ,SUBSTRING(SE2.E2_VENCREA, 1, 4) + SUBSTRING(SE2.E2_VENCREA, 5, 2) AS ORD "
     _oSQL:_sQuery += " 	FROM " + RetSQLName ("SE2") + " SE2 "
     _oSQL:_sQuery += " 	WHERE SE2.D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += "  AND SE2.E2_FILIAL = '" + xFilial("SE2") + "' "
     _oSQL:_sQuery += "  AND SE2.E2_FORNECE = '"+ mv_par02 +"' "
     _oSQL:_sQuery += "  AND SE2.E2_LOJA    = '"+ mv_par03 +"' "
-    _oSQL:_sQuery += " 	AND SE2.E2_SALDO > 0 "
     _oSQL:_sQuery += " 	AND SE2.E2_NUM + SE2.E2_PREFIXO IN (SELECT "
     _oSQL:_sQuery += " 		DISTINCT "
     _oSQL:_sQuery += " 			DOC + SERIE "
@@ -284,12 +288,12 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " 		AND LOJA_ASSOC = SE2.E2_LOJA)) "
     _oSQL:_sQuery += " SELECT "
     _oSQL:_sQuery += " 	   VENC_REAL AS MES_ANO_REFERENCIA "
-    _oSQL:_sQuery += "    ,SUM(SALDO) AS SALDO "
+    _oSQL:_sQuery += "    ,SUM(VALOR) AS VALOR "
     _oSQL:_sQuery += " FROM C "
     _oSQL:_sQuery += " GROUP BY VENC_REAL "
     _oSQL:_sQuery += " 		    ,ORD "
     _oSQL:_sQuery += " ORDER BY ORD "
-    _aDados := _oSQL:Qry2Array ()
+    _aDados := aclone(_oSQL:Qry2Array(.f., .f.))
 
     oReport:PrintText(" PREVISÃO DE PAGAMENTO:",,100)
     oSection3:Init()

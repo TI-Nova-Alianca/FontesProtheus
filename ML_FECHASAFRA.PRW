@@ -55,7 +55,7 @@
 User Function ML_FECHASAFRA(_lAutomat)
 	local _sArqOrig := ''
 	local _sArqDest := ''
-	local _lCont    := .T.
+	//local _lCont    := .T.
 	private _lAuto  := iif(valtype(_lAutomat) == "L", _lAutomat, .F.)
 
 	cString := "SD2"
@@ -89,15 +89,15 @@ User Function ML_FECHASAFRA(_lAutomat)
 			_ValidPerg()
 			Pergunte(cPerg, .t.)
 
-			_oAssoc := ClsAssoc():New (mv_par02, mv_par03)	
-			if _oAssoc:EhSocio(dDataBase)
-				_lCont := .T.
-			else
-				_lCont := .F.
-				u_help("O fornecedor selecionado NÃO é sócio. Deve-se imprimir o modelo de relatório <Não Associados>")
-			endif
+			// _oAssoc := ClsAssoc():New (mv_par02, mv_par03)	
+			// if _oAssoc:EhSocio(dDataBase)
+			// 	_lCont := .T.
+			// else
+			// 	_lCont := .F.
+			// 	u_help("O fornecedor selecionado NÃO é sócio. Deve-se imprimir o modelo de relatório <Não Associados>")
+			// endif
 
-			if _lCont
+			// if _lCont
 				if ! _lAuto
 					Pergunte(cPerg, .t.)
 					if mv_par01 >= '2023'
@@ -180,7 +180,7 @@ User Function ML_FECHASAFRA(_lAutomat)
 					_sArqDest += '.##r'
 					copy file (__reldir + _sArqOrig) to (__reldir + _sArqDest)
 				endif
-			endif
+		//	endif
 
 		otherwise
 			u_help("Modelo sem tratamento",, .t.)
