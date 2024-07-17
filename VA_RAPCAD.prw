@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 12/09/2023 - Claudia - Incluida a ligação de cabeçalho e itens pelo código matriz. GLPI: 14186
 // 14/09/2023 - Claudia - Alterada validações de codigo matriz para codigo cliente. GLPI: 14215
+// 17/07/2024 - Claudia - Validação de rapel. GLPI: 15375
 //
 // ------------------------------------------------------------------------------------------------
 #Include "Totvs.ch"
@@ -161,11 +162,11 @@ Static Function _VldPos()
 		_lRet = .F. 
 	endif
 
-	// Vailida se Cliente tem Rapel
-	if fBuscaCpo("SA1", 1, xfilial ("SA1") + _sCliente + _sLoja, "A1_VABARAP") = "0"
-		u_help("Não tem Rapel no Cadastro de Cliente!")
-		_lRet = .F.
-	endif
+	// // Vailida se Cliente tem Rapel
+	// if fBuscaCpo("SA1", 1, xfilial ("SA1") + _sCliente + _sLoja, "A1_VABARAP") = "0"
+	// 	u_help("Não tem Rapel no Cadastro de Cliente!")
+	// 	_lRet = .F.
+	// endif
 	
 	// verifica cliente bloqueado
 	if fBuscaCpo("SA1", 1, xfilial ("SA1") + _sCliente + _sLoja, "A1_MSBLQL") != "2"

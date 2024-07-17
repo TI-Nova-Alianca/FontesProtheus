@@ -91,6 +91,7 @@
 // 28/03/2024 - Robert  - Nao ignorava linhas com bloqueio manual e eliminacao de residuos no bloqueio preco sucos (bloqueio gerencial tipo S)
 // 06/05/2024 - Claudia - Ajustada validação de contratos rapel, verificando % em contratos inativos.
 // 22/05/2024 - Claudia - E-mail de bloqueio de sucos - eliminado por resíduo. GLPI: 15502
+// 17/07/2024 - Claudia - Validação de rapel. GLPI: 15375
 //
 // -------------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV(_lLiberar)
@@ -116,6 +117,7 @@ user function GrvLibPV(_lLiberar)
 	local _lBloqSup  := .F.
 	local _sMsgBlSup := ''
 	local _nPrMinLtr := 0
+	local _x         := 0
 
 	// verifica se o pedido esta salvo antes de fazer a liberação
 	_oSQL := ClsSQL():New()
@@ -427,45 +429,36 @@ user function GrvLibPV(_lLiberar)
 			if _wbaserapel != '0' 
 				if _wrapel = 0
 					u_help ("Tabela de rapel não cadastrada para esse cliente. Verifique!")
-					_lLiberar = .F.										
+					_lLiberar = .F.	
+				else
+					_sCodBase  := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VACBASE")
+					_sLojaBase := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VALBASE")
+
+					_sQuery := ""
+					_sQuery += " SELECT
+					_sQuery += " 	 ZA7_CONT"
+					_sQuery += " 	,ZA7_VIGENT"
+					_sQuery += " FROM ZA7010"
+					_sQuery += " WHERE D_E_L_E_T_ = ''"
+					_sQuery += " AND ZA7_CLI      = '" + _sCodBase          + "'"
+					_sQuery += " AND ZA7_LOJA     = '" + _sLojaBase         + "'"
+					_sQuery += " AND ZA7_VINI    <= '" + DTOS(m->c5_emissao) + "'"
+					_sQuery += " AND ZA7_VFIM    >= '" + DTOS(m->c5_emissao) + "'"
+					aContrato := U_Qry2Array(_sQuery)
+
+					if Len(aContrato) <= 0
+						u_help("Cliente sem contrato e/ou contrato válido. Verifique!")
+						_lLiberar = .F.
+					else
+						for _x := 0 to len(aContrato)
+							if aContrato[_x, 2] == '2'
+								u_help("Cliente sem contrato e/ou contrato válido. Verifique!")
+								_lLiberar = .F.
+							endif
+						next
+					endif									
 				endif
-			else
-				_sQuery := ""
-				_sQuery += " SELECT  ZAX.ZAX_PRAPEL "
-				_sQuery += "   FROM ZAX010 AS ZAX"
-				_sQuery += "  WHERE ZAX.D_E_L_E_T_  = ''"
-				_sQuery += "    AND ZAX_CLIENT      = '" + M->C5_CLIENTE + "'"
-				_sQuery += "    AND ZAX_LOJA        = '" + M->C5_LOJACLI + "'"
-				aDados := U_Qry2Array(_sQuery)
-     			if len(aDados) > 0
-					if aDados[1,1] > 0
-     					u_help ("Cliente sem base de rapel e com percentuais de rapel cadastrados. Verifique!")
-					endif
-					_lLiberar = .F.
-    			endif
 			endif
-
-			// verifica a vigencia de contrato e contrato
-			If _wbaserapel <> '0'
-				_sCodBase  := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VACBASE")
-				_sLojaBase := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VALBASE")
-
-				_sQuery := ""
-				_sQuery += " SELECT
-				_sQuery += " 	ZA7_CONT"
-				_sQuery += " FROM ZA7010"
-				_sQuery += " WHERE D_E_L_E_T_ = ''"
-				_sQuery += " AND ZA7_CLI      = '" + _sCodBase          + "'"
-				_sQuery += " AND ZA7_LOJA     = '" + _sLojaBase         + "'"
-				_sQuery += " AND ZA7_VINI    <= '" + DTOS(m->c5_emissao) + "'"
-				_sQuery += " AND ZA7_VFIM    >= '" + DTOS(m->c5_emissao) + "'"
-				aContrato := U_Qry2Array(_sQuery)
-
-				if Len(aContrato) <= 0
-					u_help ("Cliente sem contrato e/ou contrato válido. Verifique!")
-					_lLiberar = .F.
-				endif
-			EndIf
 		endif
 
 		// se pedido é bonificação
