@@ -450,7 +450,7 @@ user function GrvLibPV(_lLiberar)
 						u_help("Cliente sem contrato e/ou contrato válido. Verifique!")
 						_lLiberar = .F.
 					else
-						for _x := 0 to len(aContrato)
+						for _x := 1 to len(aContrato)
 							if aContrato[_x, 2] == '2'
 								u_help("Cliente sem contrato e/ou contrato válido. Verifique!")
 								_lLiberar = .F.
