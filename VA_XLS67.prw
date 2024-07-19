@@ -11,15 +11,16 @@
 // #Modulos           #EST 
 //
 // Historico de alteracoes:
+// 19/07/2024 - Claudia - Retirada trava de data para execução. GLPI:15733
 // 
 // --------------------------------------------------------------------------
-User Function VA_XLS67 (_lAutomat)
+User Function VA_XLS67(_lAutomat)
 	Local cCadastro := "Relatório de custos por tipo de item consumido em OP"
 	Local aSays     := {}
 	Local aButtons  := {}
 	Local nOpca     := 0
 	Local lPerg     := .F.
-	private _lAuto  := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
+	private _lAuto  := iif(valtype(_lAutomat) == "L", _lAutomat, .F.)
 
 	Private cPerg   := "VAXLS67"
 	_ValidPerg()
@@ -199,7 +200,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		," + RetSQLName ("SC2") + " SC2 "
     _oSQL:_sQuery += " 	WHERE SD3.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 	AND SD3.D3_FILIAL = '"+ xFilial("SD3")+"' "
-    _oSQL:_sQuery += " 	AND SD3.D3_EMISSAO >= '20240101'  " // NAO QUERO LER OPS ANTIGAS DEMAIS
+    //_oSQL:_sQuery += " 	AND SD3.D3_EMISSAO >= '20240101'  " // NAO QUERO LER OPS ANTIGAS DEMAIS
     _oSQL:_sQuery += " 	AND SD3.D3_ESTORNO = ''
     _oSQL:_sQuery += " 	AND SD3.D3_OP != '' " "
     _oSQL:_sQuery += " 	AND SB1.D_E_L_E_T_ = ''
@@ -267,11 +268,12 @@ return
 //
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
-Static Function _ValidPerg ()
+Static Function _ValidPerg()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 	
-	aadd (_aRegsPerg, {01, "Dt Inicial      ", "D", 8, 0,  "",   "   ", {}, ""})
-    aadd (_aRegsPerg, {02, "Dt.Final        ", "D", 8, 0,  "",   "   ", {}, ""})
-	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
+	aadd(_aRegsPerg, {01, "Dt Inicial      ", "D", 8, 0,  "",   "   ", {}, ""})
+    aadd(_aRegsPerg, {02, "Dt.Final        ", "D", 8, 0,  "",   "   ", {}, ""})
+
+	U_ValPerg(cPerg, _aRegsPerg, {}, _aDefaults)
 Return
