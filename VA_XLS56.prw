@@ -14,6 +14,7 @@
 // 27/09/2021 - Claudia - Adicionado campo F4_CSTPIS
 // 19/10/2021 - Claudia - Alterada a data de emissão para data de digitação.
 // 12/04/2022 - Claudia - Incluido novos campos. GLPI: 11904
+// 23/07/2024 - Claudia - Ajuste de campos CST. GLPI: 15758
 //
 // -----------------------------------------------------------------------------------------------------
 User Function VA_XLS56 ()
@@ -85,7 +86,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		AND SFT.FT_FILIAL = D1_FILIAL "
     _oSQL:_sQuery += " 		AND SFT.FT_NFISCAL = D1_DOC "
     _oSQL:_sQuery += " 		AND SFT.FT_SERIE = D1_SERIE "
-    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_CLIENTE "
+    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_FORNECE "
     _oSQL:_sQuery += " 		AND SFT.FT_LOJA = SD1.D1_LOJA "
     _oSQL:_sQuery += " 		AND SFT.FT_ITEM = D1_ITEM) "
     _oSQL:_sQuery += " 	, '') AS CST_PIS "
@@ -99,7 +100,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		AND SFT.FT_FILIAL = D1_FILIAL "
     _oSQL:_sQuery += " 		AND SFT.FT_NFISCAL = D1_DOC "
     _oSQL:_sQuery += " 		AND SFT.FT_SERIE = D1_SERIE "
-    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_CLIENTE "
+    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_FORNECE "
     _oSQL:_sQuery += " 		AND SFT.FT_LOJA = SD1.D1_LOJA "
     _oSQL:_sQuery += " 		AND SFT.FT_ITEM = D1_ITEM) "
     _oSQL:_sQuery += " 	, '') AS CST_COFINS "
@@ -114,7 +115,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		AND SFT.FT_FILIAL = D1_FILIAL "
     _oSQL:_sQuery += " 		AND SFT.FT_NFISCAL = D1_DOC "
     _oSQL:_sQuery += " 		AND SFT.FT_SERIE = D1_SERIE "
-    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_CLIENTE "
+    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_FORNECE "
     _oSQL:_sQuery += " 		AND SFT.FT_LOJA = SD1.D1_LOJA "
     _oSQL:_sQuery += " 		AND SFT.FT_ITEM = D1_ITEM) "
     _oSQL:_sQuery += " 	, '') AS CST_IPI "
@@ -159,6 +160,7 @@ Static Function _Gera()
     _oSQL:_sQuery += "  AS NATUREZA "
     _oSQL:_sQuery += "  ,SF4.F4_VASITO AS OPER_SISDEVIN "
     _oSQL:_sQuery += "  ,ZX5_57DESC AS OPER_DESCR "
+    _oSQL:_sQuery += "  ,SB1.B1_POSIPI AS NCM "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " SD1 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA2") + " SA2 "
     _oSQL:_sQuery += " 	ON (SA2.D_E_L_E_T_ = '' "
@@ -216,7 +218,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		AND SFT.FT_FILIAL = D1_FILIAL "
     _oSQL:_sQuery += " 		AND SFT.FT_NFISCAL = D1_DOC "
     _oSQL:_sQuery += " 		AND SFT.FT_SERIE = D1_SERIE "
-    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_CLIENTE "
+    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_FORNECE "
     _oSQL:_sQuery += " 		AND SFT.FT_LOJA = SD1.D1_LOJA "
     _oSQL:_sQuery += " 		AND SFT.FT_ITEM = D1_ITEM) "
     _oSQL:_sQuery += " 	, '') AS CST_PIS "
@@ -230,7 +232,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		AND SFT.FT_FILIAL = D1_FILIAL "
     _oSQL:_sQuery += " 		AND SFT.FT_NFISCAL = D1_DOC "
     _oSQL:_sQuery += " 		AND SFT.FT_SERIE = D1_SERIE "
-    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_CLIENTE "
+    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_FORNECE "
     _oSQL:_sQuery += " 		AND SFT.FT_LOJA = SD1.D1_LOJA "
     _oSQL:_sQuery += " 		AND SFT.FT_ITEM = D1_ITEM) "
     _oSQL:_sQuery += " 	, '') AS CST_COFINS "
@@ -245,7 +247,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		AND SFT.FT_FILIAL = D1_FILIAL "
     _oSQL:_sQuery += " 		AND SFT.FT_NFISCAL = D1_DOC "
     _oSQL:_sQuery += " 		AND SFT.FT_SERIE = D1_SERIE "
-    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_CLIENTE "
+    _oSQL:_sQuery += " 		AND SFT.FT_CLIEFOR = D1_FORNECE "
     _oSQL:_sQuery += " 		AND SFT.FT_LOJA = SD1.D1_LOJA "
     _oSQL:_sQuery += " 		AND SFT.FT_ITEM = D1_ITEM) "
     _oSQL:_sQuery += " 	, '') AS CST_IPI "
@@ -290,6 +292,7 @@ Static Function _Gera()
     _oSQL:_sQuery += "  AS NATUREZA "
     _oSQL:_sQuery += "  ,SF4.F4_VASITO AS OPER_SISDEVIN "
     _oSQL:_sQuery += "  ,ZX5_57DESC AS OPER_DESCR "
+    _oSQL:_sQuery += "  ,SB1.B1_POSIPI AS NCM "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " SD1 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
     _oSQL:_sQuery += " 	ON (SA1.D_E_L_E_T_ = '' "
