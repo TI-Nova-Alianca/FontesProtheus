@@ -22,6 +22,7 @@
 // 14/02/2024 - Robert  - Melhoria fluxo exportacao para ZBI.
 // 23/04/2024 - Claudia - Incluida a criação de ZBI para Comuns em espaldeira. GLPI:15312.
 // 13/06/2024 - Claudia - Incluida exportação de tabela de preço em planilha. GLPI: 15594
+// 24/07/2024 - Claudia - Exportação de tabela de preço para planilha. GLPI: 15770
 //
 // ----------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -711,41 +712,60 @@ return
 // --------------------------------------------------------------------------
 // Execução da consulta
 Static Function _GeraXLS(_sCodTab)
-	local _oSQL  := NIL
+	local _oSQL := NIL
+
+	_nModelo =  aviso(    "Exportar tabela de preço de uva em planilha" ;
+						, "Exportar tabela de preço de uva em planilha" ;
+						, {"Completo","Apenas com grau base"} ;
+						, 2 ;
+						, "Selecione o modelo de relatório")
 
 	procregua (10)
 	incproc ("Gerando arquivo de exportacao")
 
-    _oSQL := ClsSQL ():New ()
-    _oSQL:_sQuery := " SELECT "
-    _oSQL:_sQuery += " 	   ZX513.ZX5_13SAFR AS TABELA "
-    _oSQL:_sQuery += "    ,TRIM(SZA.ZA_DESC) AS DESCRICAO_TABELA "
-    _oSQL:_sQuery += "    ,ZX513.ZX5_13GRUP AS GRUPO "
-    _oSQL:_sQuery += "    ,ZX513.ZX5_13DESC AS DESCRICAO_GRUPO "
-    _oSQL:_sQuery += "    ,ZX514.ZX5_14PROD AS PRODUTO "
-    _oSQL:_sQuery += "    ,SB1.B1_DESC AS DESCRICAO_PRODUTO "
-    _oSQL:_sQuery += "    ,ZX513.ZX5_13GBAS AS GRAU_BASE "
-    _oSQL:_sQuery += "    ,ZX513.ZX5_13PBCO AS VALOR_GRAU_BASE "
-    _oSQL:_sQuery += " FROM " + RetSQLName ("ZX5") + " ZX513 " 
-    _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("ZX5") + " ZX514 "   
-    _oSQL:_sQuery += " 	ON ZX514.D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += " 		AND ZX514.ZX5_TABELA = '14' "
-    _oSQL:_sQuery += " 		AND ZX514.ZX5_14SAFR = ZX513.ZX5_13SAFR "
-    _oSQL:_sQuery += " 		AND ZX514.ZX5_14GRUP = ZX513.ZX5_13GRUP  "
-    _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SZA") + " SZA "     
-    _oSQL:_sQuery += " 	    ON SZA.ZA_COD = ZX513.ZX5_13SAFR "
-    _oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SB1") + " SB1 "  
-    _oSQL:_sQuery += " 	    ON SB1.B1_COD = ZX514.ZX5_14PROD "
-    _oSQL:_sQuery += " WHERE ZX513.D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += " AND ZX513.ZX5_TABELA = '13' "
-    _oSQL:_sQuery += " AND ZX513.ZX5_13SAFR = '"+ _sCodTab +"' "
-    _oSQL:_sQuery += " ORDER BY  ZX513.ZX5_13SAFR "
-    _oSQL:_sQuery += "          ,ZX513.ZX5_13GRUP "
-    _oSQL:_sQuery += "          ,ZX514.ZX5_14PROD "
-    _oSQL:Log ()
-    _oSQL:ArqDestXLS = 'VA_XLS66'
-    _oSQL:Qry2XLS (.F., .F., .F.)
+	if _nModelo == 1
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := " SELECT * FROM VA_FTABELA_PRECO_SAFRA('"+ _sCodTab +"') "
+		_oSQL:_sQuery += " ORDER BY TABELA, GRUPO, PRODUTO "
+		_oSQL:Log ()
 
+		_oSQL:Qry2Xls (.F., .F., .F.)
+	else
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := " SELECT "
+		_oSQL:_sQuery += " 	   ZX513.ZX5_13SAFR AS TABELA "
+		_oSQL:_sQuery += "    ,TRIM(SZA.ZA_DESC) AS DESCRICAO_TABELA "
+		_oSQL:_sQuery += "    ,ZX513.ZX5_13GRUP AS GRUPO "
+		_oSQL:_sQuery += "    ,ZX513.ZX5_13DESC AS DESCRICAO_GRUPO "
+		_oSQL:_sQuery += "    ,ZX514.ZX5_14PROD AS PRODUTO "
+		_oSQL:_sQuery += "    ,SB1.B1_DESC AS DESCRICAO_PRODUTO "
+		_oSQL:_sQuery += "    ,CASE "
+		_oSQL:_sQuery += " 			WHEN CAST(ZX513.ZX5_13GRUP AS INT) < 200 THEN 'L' "
+		_oSQL:_sQuery += " 			WHEN CAST(ZX513.ZX5_13GRUP AS INT) >= 200 AND "
+		_oSQL:_sQuery += " 				 CAST(ZX513.ZX5_13GRUP AS INT) < 300 THEN 'E' "
+		_oSQL:_sQuery += " 			WHEN CAST(ZX513.ZX5_13GRUP AS INT) >= 300 THEN 'L' "
+		_oSQL:_sQuery += " 		END AS CONDUCAO "
+		_oSQL:_sQuery += "    ,ZX513.ZX5_13GBAS AS GRAU_BASE "
+		_oSQL:_sQuery += "    ,REPLACE(ZX513.ZX5_13PBCO, '.', ',') AS VALOR_GRAU_BASE "
+		_oSQL:_sQuery += " FROM " + RetSQLName("ZX5") + " ZX513 "  
+		_oSQL:_sQuery += " INNER JOIN " + RetSQLName("ZX5") + " ZX514 "  
+		_oSQL:_sQuery += " 		ON ZX514.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " 		AND ZX514.ZX5_TABELA = '14' "
+		_oSQL:_sQuery += " 		AND ZX514.ZX5_14SAFR = ZX513.ZX5_13SAFR "
+		_oSQL:_sQuery += " 		AND ZX514.ZX5_14GRUP = ZX513.ZX5_13GRUP "
+		_oSQL:_sQuery += " INNER JOIN " + RetSQLName("SZA") + " SZA "
+		_oSQL:_sQuery += " 		ON SZA.ZA_COD = ZX513.ZX5_13SAFR "
+		_oSQL:_sQuery += " LEFT JOIN " + RetSQLName("SB1") + " SB1 "
+		_oSQL:_sQuery += " 		ON SB1.B1_COD = ZX514.ZX5_14PROD "
+		_oSQL:_sQuery += " WHERE ZX513.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND ZX513.ZX5_TABELA = '13' "
+		_oSQL:_sQuery += " AND ZX513.ZX5_13SAFR = '" + _sCodTab + "' "
+		_oSQL:_sQuery += " ORDER BY ZX513.ZX5_13SAFR, ZX513.ZX5_13GRUP, ZX514.ZX5_14PROD "
+		_oSQL:Log ()
+
+		_oSQL:Qry2Xls (.F., .F., .F.)
+
+	endif
 return
 //
 // --------------------------------------------------------------------------
