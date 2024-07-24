@@ -112,6 +112,7 @@
 // 14/05/2024 - Robert	- Nao tinha definicao de colunas para mostrar vctos programados de resgate no metodo :Desassoc (GLPI 15390)
 // 15/05/2024 - Claudia - Incluido o campo de vencimento financeiro na gravação. GLPI:15476
 // 20/05/2024 - Cláudia - Inlcuida a TM 42 para datas retroativas. GLPI: 15498
+// 24/07/2024 - Claudia - Ajustados os parametros passados na rotina F3Array. GLPI: 15771
 //
 // ------------------------------------------------------------------------------------
 //#include "colors.ch"
@@ -499,8 +500,8 @@ METHOD Desassoc () Class ClsCtaCorr
 					// Mostra valores para informacao do usuario.
 					if _lContinua
 						_aColsF3 = {}
-						aadd (_aColsF3, {1, 'Vencto', '@D'})
-						aadd (_aColsF3, {2, 'Valor',  '@E 999,999,999.99'})
+						aadd (_aColsF3, {1, 'Vencto', '8','@D'					})
+						aadd (_aColsF3, {2, 'Valor' ,'15','@E 999,999,999.99'	})
 						u_F3Array (_oAUtil:_aArray, "Resgates", _aColsF3, 350, 300, "Previsoes de resgates da quota capital gerados:", "Valor total: " + alltrim (transform (_nQuota, "@E 999,999.99")), .F.)
 					endif
 				endif
