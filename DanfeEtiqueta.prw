@@ -11,7 +11,8 @@
 // #Modulos           #FAT
 //
 // Historico de alteracoes:
-// 28/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 28/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 25/07/2024 - Claudia - Ajustado endereço de entrega. GLPI: 15776
 //
 //--------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -617,8 +618,8 @@ static function impZebra(aNFe, aEmit, aDest)
     local nNumero    := 6
     local nSerie     := 7
     local nData      := 8
-    local nTamEmit   := len( allTrim( aEmit[nNome] ) ) //Quantidade de caracteres da razão social do emitente
-    local nTamDest   := len( allTrim( aDest[nNome] ) ) //Quantidade de caracteres da razão social do destinatário
+    local nTamEmit   := len(allTrim( aEmit[nNome] ) ) //Quantidade de caracteres da razão social do emitente
+    local nTamDest   := len(allTrim( aDest[nNome] ) ) //Quantidade de caracteres da razão social do destinatário
     local nMaxNome   := 80 // Quantidade de caracteres máxima da primeira linha da razão social
     LOCAL nMaxEnd    := 80 // Quantidade maxima do endereço
     local _x         := 0
@@ -629,7 +630,7 @@ static function impZebra(aNFe, aEmit, aDest)
     Default aDest    := {}
 
     _sEnder   := _BuscaEndEntrega(aNFe[nSerie],aNFe[nNumero])
-    _nTamEnd  := len( allTrim( _sEnder) )
+    _nTamEnd  := len(allTrim(_sEnder) )
 
     _sVolume  := _BuscaVolEsp(aNFe[nSerie],aNFe[nNumero],'1') // RETORNA VOLUME
     _sEspecie := _BuscaVolEsp(aNFe[nSerie],aNFe[nNumero],'2') // RETORNA ESPECIE
@@ -833,7 +834,7 @@ Static Function _BuscaEndEntrega(_sSerie, _sDoc)
     _oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
-    _oSQL:_sQuery += " 	 TRIM(SA1.A1_ENDENT) + ' - ' + TRIM(SA1.A1_BAIRROE) + ' - ' + TRIM(SA1.A1_ESTE) "
+    _oSQL:_sQuery += " 	 TRIM(SA1.A1_END) + ' - ' + TRIM(SA1.A1_BAIRRO) + ' - ' + TRIM(SA1.A1_EST) "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " SF2 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
     _oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
