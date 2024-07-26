@@ -12,32 +12,32 @@
 // #Modulos           #COOP
 
 // Historico de alteracoes:
-// 13/09/2018 - Robert - Incluída coluna TIPO_ORGANICO.
-// 22/10/2018 - Andre  - Incluído campos MUNICIPIO, BAIRRO e VALOR_UNIT. Também adicionado pergunta para TIPO DE NOTA.
-// 15/04/2020 - Robert - Acrescentadas colunas CLAS_LATADA e SIST_CONDUCAO
-// 25/02/2021 - Robert - Passa a buscar grupo familiar na view VA_VASSOC_GRP_FAM (GLPI 8804).
-//                     - Abertos parametros para selecionar se vai exportar cada tipo de contranota (GLPI 9489).
-// 11/08/2021 - Robert - View VA_VASSOC_GRP_FAM migrada do database do Protheus para o NaWeb (GLPI 10673).
-// 08/09/2021 - Robert - Incluida coluna de FUNRURAL.
-// 23/02/2022 - Robert - Incluida coluna VALOR_FRETE (GLPI 11665)
-// 24/02/2023 - Robert - Removidas linhas comentariadas.
+// 13/09/2018 - Robert  - Incluída coluna TIPO_ORGANICO.
+// 22/10/2018 - Andre   - Incluído campos MUNICIPIO, BAIRRO e VALOR_UNIT. Também adicionado pergunta para TIPO DE NOTA.
+// 15/04/2020 - Robert  - Acrescentadas colunas CLAS_LATADA e SIST_CONDUCAO
+// 25/02/2021 - Robert  - Passa a buscar grupo familiar na view VA_VASSOC_GRP_FAM (GLPI 8804).
+//                      - Abertos parametros para selecionar se vai exportar cada tipo de contranota (GLPI 9489).
+// 11/08/2021 - Robert  - View VA_VASSOC_GRP_FAM migrada do database do Protheus para o NaWeb (GLPI 10673).
+// 08/09/2021 - Robert  - Incluida coluna de FUNRURAL.
+// 23/02/2022 - Robert  - Incluida coluna VALOR_FRETE (GLPI 11665)
+// 24/02/2023 - Robert  - Removidas linhas comentariadas.
+// 26/07/2024 - Claudia - Incluidos novos campos e versão implificada para financeiro. GLPI:15781
 //
-
-// --------------------------------------------------------------------------
-User Function VA_XLS30 (_lAutomat)
+// --------------------------------------------------------------------------------------------------------------------
+User Function VA_XLS30(_lAutomat)
 	Local cCadastro := "Exporta contranotas de safra"
 	Local aSays     := {}
 	Local aButtons  := {}
 	Local nOpca     := 0
 	Local lPerg     := .F.
-	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
+	private _lAuto  := iif(valtype(_lAutomat) == "L", _lAutomat, .F.)
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
+	if ! U_ZZUVL('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 
-	Private cPerg   := "VAXLS30"
+	Private cPerg := "VAXLS30"
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
 
@@ -56,27 +56,24 @@ User Function VA_XLS30 (_lAutomat)
 		Endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
 Static Function _TudoOk()
 	Local _lRet     := .T.
 Return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
+// Geração
 Static Function _Gera()
 	local _oSQL := NIL
 
-	procregua (10)
-	incproc ("Gerando arquivo de exportacao")
+	procregua(10)
+	incproc("Gerando arquivo de exportacao")
 
 	// Busca dados
-	incproc ("Buscando dados")
-	_oSQL := ClsSQL ():New ()
+	incproc("Buscando dados")
+	_oSQL:= ClsSQL():New()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " WITH C"
 	_oSQL:_sQuery += " AS (SELECT"
@@ -155,7 +152,7 @@ Static Function _Gera()
 		_oSQL:_sQuery += " AND TIPO_NF != 'V'"
 	endif 
 	_oSQL:_sQuery += " AND FILIAL BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "'"
-	_oSQL:_sQuery += " AND DATA   BETWEEN '" + dtos (mv_par13) + "' AND '" + dtos (mv_par14) + "'"
+	_oSQL:_sQuery += " AND DATA   BETWEEN '" + dtos(mv_par13) + "' AND '" + dtos(mv_par14) + "'"
 	_oSQL:_sQuery += " AND ASSOCIADO + LOJA_ASSOC BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
 	if mv_par10 == 1
 		_oSQL:_sQuery += " AND FINA_COMUM = 'C'"
@@ -168,66 +165,83 @@ Static Function _Gera()
 	_oSQL:_sQuery +=          " NOTAS.CLAS_ABD, NOTAS.SIST_CONDUCAO, "
 	_oSQL:_sQuery +=          " NOTAS.DOC, NOTAS.SERIE, NOTAS.DATA, NOTAS.CAD_VITIC, NOTAS.VALOR_UNIT, NOTAS.VALOR_TOTAL, TIPO_NF, TIPO_ORGANICO"
 	_oSQL:_sQuery += ")"
-	_oSQL:_sQuery += " SELECT SAFRA ,FILIAL ,SA2.A2_VANUCL AS NUCLEO, "
-	_oSQL:_sQuery +=        " RTRIM (ISNULL((SELECT ZX5_36.ZX5_36DESC"
-	_oSQL:_sQuery +=                         " FROM " + RetSQLName ("ZX5") + " ZX5_36"
-	_oSQL:_sQuery +=                        " WHERE ZX5_36.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=                          " AND ZX5_36.ZX5_FILIAL = '  '"
-	_oSQL:_sQuery +=                          " AND ZX5_36.ZX5_TABELA = '36'"
-	_oSQL:_sQuery +=                          " AND ZX5_36.ZX5_36COD = SA2.A2_VASUBNU), '')) AS SUBNUCLEO, SA2.A2_MUN AS MUNICIPIO, SA2.A2_BAIRRO AS BAIRRO, "
+	if mv_par19 == 1
+		_oSQL:_sQuery += " SELECT SAFRA ,FILIAL ,SA2.A2_VANUCL AS NUCLEO, "
+		_oSQL:_sQuery +=        " RTRIM (ISNULL((SELECT ZX5_36.ZX5_36DESC"
+		_oSQL:_sQuery +=                         " FROM " + RetSQLName("ZX5") + " ZX5_36"
+		_oSQL:_sQuery +=                        " WHERE ZX5_36.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                          " AND ZX5_36.ZX5_FILIAL = '  '"
+		_oSQL:_sQuery +=                          " AND ZX5_36.ZX5_TABELA = '36'"
+		_oSQL:_sQuery +=                          " AND ZX5_36.ZX5_36COD = SA2.A2_VASUBNU), '')) AS SUBNUCLEO, SA2.A2_MUN AS MUNICIPIO, SA2.A2_BAIRRO AS BAIRRO, A2_EST AS ESTADO, "
 
-	_oSQL:_sQuery +=        " RTRIM (ISNULL ((SELECT TOP 1 CCAssociadoGrpFamCod + '-' + CCAssociadoGrpFam" // TOP 1 PARA EVITAR POSSIVEL CASO DO ASSOCIADO ESTAR LIGADO A MAIS DE UM GRUPO FAMILIAR"
-	_oSQL:_sQuery +=                          " FROM " + U_LkServer ('NAWEB') + ".VA_VASSOC_GRP_FAM"
-	_oSQL:_sQuery +=                         " WHERE CCAssociadoCod  = C.ASSOCIADO"
-	_oSQL:_sQuery +=                           " AND CCAssociadoLoja = C.LOJA), '')) AS GRP_FAMILIAR, "
+		_oSQL:_sQuery +=        " RTRIM (ISNULL ((SELECT TOP 1 CCAssociadoGrpFamCod + '-' + CCAssociadoGrpFam" // TOP 1 PARA EVITAR POSSIVEL CASO DO ASSOCIADO ESTAR LIGADO A MAIS DE UM GRUPO FAMILIAR"
+		_oSQL:_sQuery +=                          " FROM " + U_LkServer('NAWEB') + ".VA_VASSOC_GRP_FAM"
+		_oSQL:_sQuery +=                         " WHERE CCAssociadoCod  = C.ASSOCIADO"
+		_oSQL:_sQuery +=                           " AND CCAssociadoLoja = C.LOJA), '')) AS GRP_FAMILIAR, "
 
-	_oSQL:_sQuery +=        " TIPO_NF, ASSOCIADO, LOJA ,NOME_ASSOC,"
-	_oSQL:_sQuery +=        " TIPO_FORNEC, PRODUTO ,TIPO ,COR ,TINTOREA ,DESCRICAO ,GRAU ,ACUCAR ,SANIDADE ,MATURACAO ,MAT_ESTRANHO, "
-	_oSQL:_sQuery +=        " CLAS_FINAL as CLAS_ESPALDEIRA, CLAS_ABD AS CLAS_LATADA, SIST_CONDUCAO, CAD_VITIC ,PESO_LIQ ,CONTRANOTA, VALOR_UNIT, VALOR_TOTAL, DATA ,CARGA ,NF_PRODUTOR,"
-	_oSQL:_sQuery +=        " CASE TIPO_ORGANICO WHEN 'C' THEN 'CONVENCIONAL' "
-	_oSQL:_sQuery +=                           " WHEN 'E' THEN 'EM CONVERSAO' "
-	_oSQL:_sQuery +=                           " WHEN 'B' THEN 'BORDADURA' "
-	_oSQL:_sQuery +=                           " WHEN 'O' THEN 'ORGANICA' "
-	_oSQL:_sQuery +=        " END AS TIPO_ORGANICO, "
-	_oSQL:_sQuery +=        " VLR_FUNRURAL,"
-	_oSQL:_sQuery +=        " VALOR_FRETE"
-	_oSQL:_sQuery += " FROM	C,"
-	_oSQL:_sQuery +=        RetSQLName ("SA2") + " SA2"
-	_oSQL:_sQuery += " WHERE CARGA BETWEEN '" + mv_par08 + "' AND '" + mv_par09 + "'"
-	_oSQL:_sQuery += " AND NF_PRODUTOR BETWEEN '" + mv_par11 + "' AND '" + mv_par12 + "'"
-	_oSQL:_sQuery += " AND SA2.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND SA2.A2_FILIAL = '  '"
-	_oSQL:_sQuery += " AND SA2.A2_COD = C.ASSOCIADO"
-	_oSQL:_sQuery += " AND SA2.A2_LOJA = C.LOJA"
-	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, CONTRANOTA"
-	_oSQL:Log ()
-	_oSQL:Qry2Xls ()
+		_oSQL:_sQuery +=        " TIPO_NF, ASSOCIADO, LOJA ,NOME_ASSOC, A2_CGC AS CPF_CNPJ,"
+		_oSQL:_sQuery +=        " TIPO_FORNEC, PRODUTO ,TIPO ,COR ,TINTOREA ,DESCRICAO ,GRAU ,ACUCAR ,SANIDADE ,MATURACAO ,MAT_ESTRANHO, "
+		_oSQL:_sQuery +=        " CLAS_FINAL as CLAS_ESPALDEIRA, CLAS_ABD AS CLAS_LATADA, SIST_CONDUCAO, CAD_VITIC ,PESO_LIQ ,CONTRANOTA, VALOR_UNIT, VALOR_TOTAL, DATA ,CARGA ,NF_PRODUTOR,"
+		_oSQL:_sQuery +=        " CASE TIPO_ORGANICO WHEN 'C' THEN 'CONVENCIONAL' "
+		_oSQL:_sQuery +=                           " WHEN 'E' THEN 'EM CONVERSAO' "
+		_oSQL:_sQuery +=                           " WHEN 'B' THEN 'BORDADURA' "
+		_oSQL:_sQuery +=                           " WHEN 'O' THEN 'ORGANICA' "
+		_oSQL:_sQuery +=        " END AS TIPO_ORGANICO, "
+		_oSQL:_sQuery +=        " VLR_FUNRURAL,"
+		_oSQL:_sQuery +=        " VALOR_FRETE"
+		_oSQL:_sQuery += " FROM	C,"
+		_oSQL:_sQuery +=        RetSQLName("SA2") + " SA2"
+		_oSQL:_sQuery += " WHERE CARGA BETWEEN '" + mv_par08 + "' AND '" + mv_par09 + "'"
+		_oSQL:_sQuery += " AND NF_PRODUTOR BETWEEN '" + mv_par11 + "' AND '" + mv_par12 + "'"
+		_oSQL:_sQuery += " AND SA2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND SA2.A2_FILIAL = '  '"
+		_oSQL:_sQuery += " AND SA2.A2_COD = C.ASSOCIADO"
+		_oSQL:_sQuery += " AND SA2.A2_LOJA = C.LOJA"
+		_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, CONTRANOTA"
+	else
+		_oSQL:_sQuery += " SELECT SAFRA ,FILIAL, "
+		_oSQL:_sQuery += "        SA2.A2_MUN AS MUNICIPIO, A2_EST AS ESTADO, "
+		_oSQL:_sQuery += "        ASSOCIADO, LOJA ,NOME_ASSOC AS NOME, A2_CGC AS CPF_CNPJ,"
+		_oSQL:_sQuery += "        PESO_LIQ ,CONTRANOTA, VALOR_UNIT, VALOR_TOTAL, DATA "
+		_oSQL:_sQuery += " FROM	C,"
+		_oSQL:_sQuery +=        RetSQLName("SA2") + " SA2"
+		_oSQL:_sQuery += " WHERE CARGA BETWEEN '" + mv_par08 + "' AND '" + mv_par09 + "'"
+		_oSQL:_sQuery += " AND NF_PRODUTOR BETWEEN '" + mv_par11 + "' AND '" + mv_par12 + "'"
+		_oSQL:_sQuery += " AND SA2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND SA2.A2_FILIAL = '  '"
+		_oSQL:_sQuery += " AND SA2.A2_COD = C.ASSOCIADO"
+		_oSQL:_sQuery += " AND SA2.A2_LOJA = C.LOJA"
+		_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, DATA"
+	EndIf
+	_oSQL:Log()
+	_oSQL:Qry2Xls()
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
-Static Function _ValidPerg ()
+Static Function _ValidPerg()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 	
 	//                 Ordem Descri                          tipo tam           dec          valid    F3     opcoes (combo)                    help
-	aadd (_aRegsPerg, {01, "Produtor inicial              ", "C", 6,             0,            "",   "SA2",  {},                               "Codigo do produtor (fornecedor) inicial para filtragem"})
-	aadd (_aRegsPerg, {02, "Loja produtor inicial         ", "C", 2,             0,            "",   "   ",  {},                               "Loja do produtor (fornecedor) inicial para filtragem"})
-	aadd (_aRegsPerg, {03, "Produtor final                ", "C", 6,             0,            "",   "SA2",  {},                               "Codigo do produtor (fornecedor) final para filtragem"})
-	aadd (_aRegsPerg, {04, "Loja produtor final           ", "C", 2,             0,            "",   "   ",  {},                               "Loja do produtor (fornecedor) final para filtragem"})
-	aadd (_aRegsPerg, {05, "Safra referencia              ", "C", 4,             0,            "",   "   ",  {},                               "Safra (ano) para filtragem"})
-	aadd (_aRegsPerg, {06, "Filial inicial                ", "C", 2,             0,            "",   "SM0",  {},                               ""})
-	aadd (_aRegsPerg, {07, "Filial final                  ", "C", 2,             0,            "",   "SM0",  {},                               ""})
-	aadd (_aRegsPerg, {08, "Carga inicial                 ", "C", 4,             0,            "",   "   ",  {},                               ""})
-	aadd (_aRegsPerg, {09, "Carga final                   ", "C", 4,             0,            "",   "   ",  {},                               ""})
-	aadd (_aRegsPerg, {10, "Comum / vinifera              ", "N", 1,             0,            "",   "   ",  {"Comuns", "Viniferas", "Todas"}, ""})
-	aadd (_aRegsPerg, {11, "NF produtor inicial           ", "C", 9,             0,            "",   "   ",  {},                               ""})
-	aadd (_aRegsPerg, {12, "NF produtor final             ", "C", 9,             0,            "",   "   ",  {},                               ""})
-	aadd (_aRegsPerg, {13, "Data contranota inicial       ", "D", 8,             0,            "",   "   ",  {},                               ""})
-	aadd (_aRegsPerg, {14, "Data contranota final         ", "D", 8,             0,            "",   "   ",  {},                               ""})
-	aadd (_aRegsPerg, {15, "Notas de entrada/recebimento? ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
-	aadd (_aRegsPerg, {16, "Notas de producao propria?    ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
-	aadd (_aRegsPerg, {17, "Notas de compra?              ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
-	aadd (_aRegsPerg, {18, "Notas de complemento de valor?", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
-	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
+	aadd(_aRegsPerg, {01, "Produtor inicial              ", "C", 6,             0,            "",   "SA2",  {},                               "Codigo do produtor (fornecedor) inicial para filtragem"})
+	aadd(_aRegsPerg, {02, "Loja produtor inicial         ", "C", 2,             0,            "",   "   ",  {},                               "Loja do produtor (fornecedor) inicial para filtragem"})
+	aadd(_aRegsPerg, {03, "Produtor final                ", "C", 6,             0,            "",   "SA2",  {},                               "Codigo do produtor (fornecedor) final para filtragem"})
+	aadd(_aRegsPerg, {04, "Loja produtor final           ", "C", 2,             0,            "",   "   ",  {},                               "Loja do produtor (fornecedor) final para filtragem"})
+	aadd(_aRegsPerg, {05, "Safra referencia              ", "C", 4,             0,            "",   "   ",  {},                               "Safra (ano) para filtragem"})
+	aadd(_aRegsPerg, {06, "Filial inicial                ", "C", 2,             0,            "",   "SM0",  {},                               ""})
+	aadd(_aRegsPerg, {07, "Filial final                  ", "C", 2,             0,            "",   "SM0",  {},                               ""})
+	aadd(_aRegsPerg, {08, "Carga inicial                 ", "C", 4,             0,            "",   "   ",  {},                               ""})
+	aadd(_aRegsPerg, {09, "Carga final                   ", "C", 4,             0,            "",   "   ",  {},                               ""})
+	aadd(_aRegsPerg, {10, "Comum / vinifera              ", "N", 1,             0,            "",   "   ",  {"Comuns", "Viniferas", "Todas"}, ""})
+	aadd(_aRegsPerg, {11, "NF produtor inicial           ", "C", 9,             0,            "",   "   ",  {},                               ""})
+	aadd(_aRegsPerg, {12, "NF produtor final             ", "C", 9,             0,            "",   "   ",  {},                               ""})
+	aadd(_aRegsPerg, {13, "Data contranota inicial       ", "D", 8,             0,            "",   "   ",  {},                               ""})
+	aadd(_aRegsPerg, {14, "Data contranota final         ", "D", 8,             0,            "",   "   ",  {},                               ""})
+	aadd(_aRegsPerg, {15, "Notas de entrada/recebimento? ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
+	aadd(_aRegsPerg, {16, "Notas de producao propria?    ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
+	aadd(_aRegsPerg, {17, "Notas de compra?              ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
+	aadd(_aRegsPerg, {18, "Notas de complemento de valor?", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
+	aadd(_aRegsPerg, {19, "Relatório                     ", "N", 1,             0,            "",   "   ",  {"Completo", "Simplificado"},     ""})
+	U_ValPerg(cPerg, _aRegsPerg, {}, _aDefaults)
 Return
