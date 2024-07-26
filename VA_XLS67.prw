@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 19/07/2024 - Claudia - Retirada trava de data para execução. GLPI:15733
+// 26/07/2024 - Claudia - Incluido filtro de filial. GLPI: 15778
 // 
 // --------------------------------------------------------------------------
 User Function VA_XLS67(_lAutomat)
@@ -199,7 +200,8 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		," + RetSQLName ("SB1") + " SB1 "
     _oSQL:_sQuery += " 		," + RetSQLName ("SC2") + " SC2 "
     _oSQL:_sQuery += " 	WHERE SD3.D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += " 	AND SD3.D3_FILIAL = '"+ xFilial("SD3")+"' "
+    _oSQL:_sQuery += " 	AND SD3.D3_FILIAL BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "' "
+    //_oSQL:_sQuery += " 	AND SD3.D3_FILIAL = '"+ xFilial("SD3")+"' "
     //_oSQL:_sQuery += " 	AND SD3.D3_EMISSAO >= '20240101'  " // NAO QUERO LER OPS ANTIGAS DEMAIS
     _oSQL:_sQuery += " 	AND SD3.D3_ESTORNO = ''
     _oSQL:_sQuery += " 	AND SD3.D3_OP != '' " "
@@ -213,7 +215,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 	AND SC2.C2_SEQUEN = SUBSTRING(SD3.D3_OP, 9, 3) "
     _oSQL:_sQuery += " 	AND SC2.C2_ITEMGRD = SUBSTRING(SD3.D3_OP, 12, 2) "
     _oSQL:_sQuery += " 	AND SC2.C2_PRODUTO != 'MANUTENCAO' "
-    _oSQL:_sQuery += " 	AND SD3.D3_EMISSAO BETWEEN '"+ dtos(mv_par01)+"' AND '"+dtos(mv_par02)+"' "
+    _oSQL:_sQuery += " 	AND SD3.D3_EMISSAO BETWEEN '" + dtos(mv_par01) + "' AND '" + dtos(mv_par02) + "' "
     _oSQL:_sQuery += " 	GROUP BY SD3.D3_FILIAL "
     _oSQL:_sQuery += " 			,SD3.D3_OP "
     _oSQL:_sQuery += " 			,SC2.C2_PRODUTO "
@@ -274,6 +276,8 @@ Static Function _ValidPerg()
 	
 	aadd(_aRegsPerg, {01, "Dt Inicial      ", "D", 8, 0,  "",   "   ", {}, ""})
     aadd(_aRegsPerg, {02, "Dt.Final        ", "D", 8, 0,  "",   "   ", {}, ""})
+    aadd(_aRegsPerg, {03, "Filial de       ", "C", 2, 0,  "",   "SM0", {}, ""})
+    aadd(_aRegsPerg, {04, "Filial até      ", "C", 2, 0,  "",   "SM0", {}, ""})
 
 	U_ValPerg(cPerg, _aRegsPerg, {}, _aDefaults)
 Return
