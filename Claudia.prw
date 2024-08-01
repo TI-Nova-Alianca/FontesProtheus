@@ -92,46 +92,46 @@ User Function claudia ()
 	// u_help(" margem-frete-ajuste")
 	// GLPI15648()
 
-	u_help("Atualiza produtos")
-	GLPI15796()
+	//u_help("Atualiza produtos")
+	//GLPI15796()
 Return
-//
-// -----------------------------------------------------------------------------------
-Static Function GLPI15796()
-	Local _aDados 	:= {}
-	Local _i 		:= 0
+// //
+// // -----------------------------------------------------------------------------------
+// Static Function GLPI15796()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:= 0
 
-	u_help("Ajusta custo")
-	_aDados = U_LeCSV('C:\Temp\SB1_Atualiza STD.csv', ';')
+// 	u_help("Ajusta custo")
+// 	_aDados = U_LeCSV('C:\Temp\SB1_Atualiza STD.csv', ';')
 
-	for _i := 1 to len(_aDados)
-		_sCod  := alltrim(_aDados[_i, 1])
-		_nVlr  := GetDToVal(_aDados[_i, 3])
+// 	for _i := 1 to len(_aDados)
+// 		_sCod  := alltrim(_aDados[_i, 1])
+// 		_nVlr  := GetDToVal(_aDados[_i, 3])
 
-		//_sPeso := strtran(_sPeso, '"', '')
-    	//_sPeso := strtran(_sPeso, ",", ".")
-    	//_nPeso := val(_sPeso) 
+// 		//_sPeso := strtran(_sPeso, '"', '')
+//     	//_sPeso := strtran(_sPeso, ",", ".")
+//     	//_nPeso := val(_sPeso) 
 
-		DbSelectArea("SB1")
-		DbSetOrder(1)
-		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
-			// Grava evento de alteracao
-			_oEvento := ClsEvent():new ()
-			_oEvento:Alias    = 'SB1'
-			_oEvento:Texto    = " Custo Stand alterado de " +  alltrim(str(sb1->b1_custd)) + " para " + _aDados[_i, 3]
-			_oEvento:CodEven  = "SB1001"
-			_oEvento:Produto  = sb1 -> b1_cod
-			_oEvento:Grava() 
+// 		DbSelectArea("SB1")
+// 		DbSetOrder(1)
+// 		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = " Custo Stand alterado de " +  alltrim(str(sb1->b1_custd)) + " para " + _aDados[_i, 3]
+// 			_oEvento:CodEven  = "SB1001"
+// 			_oEvento:Produto  = sb1 -> b1_cod
+// 			_oEvento:Grava() 
 
-			reclock("SB1", .F.)
-				sb1->b1_custd := _nVlr
-			MsUnLock()
+// 			reclock("SB1", .F.)
+// 				sb1->b1_custd := _nVlr
+// 			MsUnLock()
 
-		endif	
-	Next
-	u_help("Atualizado!")
+// 		endif	
+// 	Next
+// 	u_help("Atualizado!")
 
-Return
+// Return
 
 // Static Function GLPI15648()
 // 	Local _aDados 	:= {}
