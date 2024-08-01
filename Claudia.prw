@@ -89,61 +89,42 @@ User Function claudia ()
 	//u_help("associados")
     //u_va_integr()
 
-	u_help(" margem-frete-ajuste")
-	GLPI15648()
+	// u_help(" margem-frete-ajuste")
+	// GLPI15648()
 
+	u_help("Atualiza produtos")
+	GLPI15796()
 Return
-
-Static Function GLPI15648()
+//
+// -----------------------------------------------------------------------------------
+Static Function GLPI15796()
 	Local _aDados 	:= {}
 	Local _i 		:= 0
 
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " 	WITH C "
-	_oSQL:_sQuery += " AS "
-	_oSQL:_sQuery += " ( "
-	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 	   SC5.C5_FILIAL "
-	_oSQL:_sQuery += "    ,SC5.C5_NUM "
-	_oSQL:_sQuery += "    ,SC5.C5_CLIENTE "
-	_oSQL:_sQuery += "    ,SC5.C5_LOJACLI "
-	_oSQL:_sQuery += "    ,SC5.C5_EMISSAO "
-	_oSQL:_sQuery += "    ,round(C5_MVFRE,2) as C5_MVFRE "
-	_oSQL:_sQuery += "    ,isnull((SELECT SUM(FRETE_TOTAL) FROM VA_FPEDIDO_FRETE_TOTAL(SC5.C5_FILIAL,SC5.C5_NUM,SC5.C5_CLIENTE,SC5.C5_LOJACLI)),0) AS FRETE  "
-	_oSQL:_sQuery += " FROM SC5010 SC5 "
-	_oSQL:_sQuery += " WHERE SC5.D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND SC5.C5_EMISSAO >= '20240301' "
-	_oSQL:_sQuery += " AND SC5.C5_NOTA <> 'XXXXXXXXX' "
-	_oSQL:_sQuery += " AND SC5.C5_TPFRETE = 'C' "
-	_oSQL:_sQuery += " 	)
-	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 	* "
-	_oSQL:_sQuery += " FROM C "
-	_oSQL:_sQuery += " WHERE C5_MVFRE <> FRETE "
-	_oSQL:_sQuery += " ORDER BY C5_FILIAL, C5_EMISSAO "
-
-	_aDados := aclone(_oSQL:Qry2Array(.f., .f.))
+	u_help("Ajusta custo")
+	_aDados = U_LeCSV('C:\Temp\SB1_Atualiza STD.csv', ';')
 
 	for _i := 1 to len(_aDados)
-		_sFilial   := alltrim(_aDados[_i, 1])
-		_sPedido   := alltrim(_aDados[_i, 2])
-		_nFreteOld := _aDados[_i, 6]
-		_nFreteNew := _aDados[_i, 7]
+		_sCod  := alltrim(_aDados[_i, 1])
+		_nVlr  := GetDToVal(_aDados[_i, 3])
 
-		DbSelectArea("SC5")
-		DbSetOrder(1) // C5_FILIAL+C5_NUM                                                                                                                                                
-		if DbSeek(_sFilial + _sPedido,.F.)
-			// // Grava evento de alteracao
-			// _oEvento := ClsEvent():new ()
-			// _oEvento:Alias    = 'SC5'
-			// _oEvento:Texto    = " Peso alterado de " +  alltrim(str(sb1->b1_pesbru)) + " para " + _sPeso
-			// _oEvento:CodEven  = "SB1001"
-			// _oEvento:Produto  = sb1 -> b1_cod
-			// _oEvento:Grava() 
+		//_sPeso := strtran(_sPeso, '"', '')
+    	//_sPeso := strtran(_sPeso, ",", ".")
+    	//_nPeso := val(_sPeso) 
 
-			reclock("SC5", .F.)
-				SC5->C5_MVFRE := _nFreteNew
+		DbSelectArea("SB1")
+		DbSetOrder(1)
+		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
+			// Grava evento de alteracao
+			_oEvento := ClsEvent():new ()
+			_oEvento:Alias    = 'SB1'
+			_oEvento:Texto    = " Custo Stand alterado de " +  alltrim(str(sb1->b1_custd)) + " para " + _aDados[_i, 3]
+			_oEvento:CodEven  = "SB1001"
+			_oEvento:Produto  = sb1 -> b1_cod
+			_oEvento:Grava() 
+
+			reclock("SB1", .F.)
+				sb1->b1_custd := _nVlr
 			MsUnLock()
 
 		endif	
@@ -151,6 +132,64 @@ Static Function GLPI15648()
 	u_help("Atualizado!")
 
 Return
+
+// Static Function GLPI15648()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:= 0
+
+// 	_oSQL := ClsSQL ():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " 	WITH C "
+// 	_oSQL:_sQuery += " AS "
+// 	_oSQL:_sQuery += " ( "
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 	   SC5.C5_FILIAL "
+// 	_oSQL:_sQuery += "    ,SC5.C5_NUM "
+// 	_oSQL:_sQuery += "    ,SC5.C5_CLIENTE "
+// 	_oSQL:_sQuery += "    ,SC5.C5_LOJACLI "
+// 	_oSQL:_sQuery += "    ,SC5.C5_EMISSAO "
+// 	_oSQL:_sQuery += "    ,round(C5_MVFRE,2) as C5_MVFRE "
+// 	_oSQL:_sQuery += "    ,isnull((SELECT SUM(FRETE_TOTAL) FROM VA_FPEDIDO_FRETE_TOTAL(SC5.C5_FILIAL,SC5.C5_NUM,SC5.C5_CLIENTE,SC5.C5_LOJACLI)),0) AS FRETE  "
+// 	_oSQL:_sQuery += " FROM SC5010 SC5 "
+// 	_oSQL:_sQuery += " WHERE SC5.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " AND SC5.C5_EMISSAO >= '20240301' "
+// 	_oSQL:_sQuery += " AND SC5.C5_NOTA <> 'XXXXXXXXX' "
+// 	_oSQL:_sQuery += " AND SC5.C5_TPFRETE = 'C' "
+// 	_oSQL:_sQuery += " 	)
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 	* "
+// 	_oSQL:_sQuery += " FROM C "
+// 	_oSQL:_sQuery += " WHERE C5_MVFRE <> FRETE "
+// 	_oSQL:_sQuery += " ORDER BY C5_FILIAL, C5_EMISSAO "
+
+// 	_aDados := aclone(_oSQL:Qry2Array(.f., .f.))
+
+// 	for _i := 1 to len(_aDados)
+// 		_sFilial   := alltrim(_aDados[_i, 1])
+// 		_sPedido   := alltrim(_aDados[_i, 2])
+// 		_nFreteOld := _aDados[_i, 6]
+// 		_nFreteNew := _aDados[_i, 7]
+
+// 		DbSelectArea("SC5")
+// 		DbSetOrder(1) // C5_FILIAL+C5_NUM                                                                                                                                                
+// 		if DbSeek(_sFilial + _sPedido,.F.)
+// 			// // Grava evento de alteracao
+// 			// _oEvento := ClsEvent():new ()
+// 			// _oEvento:Alias    = 'SC5'
+// 			// _oEvento:Texto    = " Peso alterado de " +  alltrim(str(sb1->b1_pesbru)) + " para " + _sPeso
+// 			// _oEvento:CodEven  = "SB1001"
+// 			// _oEvento:Produto  = sb1 -> b1_cod
+// 			// _oEvento:Grava() 
+
+// 			reclock("SC5", .F.)
+// 				SC5->C5_MVFRE := _nFreteNew
+// 			MsUnLock()
+
+// 		endif	
+// 	Next
+// 	u_help("Atualizado!")
+
+// Return
 
 // static function _GLPI15199()
 //     u_va_xls66()
