@@ -102,15 +102,11 @@ Return
 // 	Local _i 		:= 0
 
 // 	u_help("Ajusta custo")
-// 	_aDados = U_LeCSV('C:\Temp\SB1_Atualiza STD.csv', ';')
+// 	_aDados = U_LeCSV('C:\Temp\SB1_Atualiza_STD.csv', ';')
 
 // 	for _i := 1 to len(_aDados)
 // 		_sCod  := alltrim(_aDados[_i, 1])
 // 		_nVlr  := GetDToVal(_aDados[_i, 3])
-
-// 		//_sPeso := strtran(_sPeso, '"', '')
-//     	//_sPeso := strtran(_sPeso, ",", ".")
-//     	//_nPeso := val(_sPeso) 
 
 // 		DbSelectArea("SB1")
 // 		DbSetOrder(1)
@@ -124,7 +120,8 @@ Return
 // 			_oEvento:Grava() 
 
 // 			reclock("SB1", .F.)
-// 				sb1->b1_custd := _nVlr
+// 				sb1->b1_custd  := _nVlr
+// 				sb1->b1_datref := date()
 // 			MsUnLock()
 
 // 		endif	
