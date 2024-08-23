@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 19/07/2024 - Claudia - Retirada trava de data para execução. GLPI:15733
 // 26/07/2024 - Claudia - Incluido filtro de filial. GLPI: 15778
+// 23/08/2024 - Claudia - Incluido filtro de tipo de produto. GLPI: 15787
 // 
 // --------------------------------------------------------------------------
 User Function VA_XLS67(_lAutomat)
@@ -22,8 +23,8 @@ User Function VA_XLS67(_lAutomat)
 	Local nOpca     := 0
 	Local lPerg     := .F.
 	private _lAuto  := iif(valtype(_lAutomat) == "L", _lAutomat, .F.)
-
 	Private cPerg   := "VAXLS67"
+
 	_ValidPerg()
 	If Pergunte(cPerg,.T.)
 
@@ -201,8 +202,6 @@ Static Function _Gera()
     _oSQL:_sQuery += " 		," + RetSQLName ("SC2") + " SC2 "
     _oSQL:_sQuery += " 	WHERE SD3.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 	AND SD3.D3_FILIAL BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "' "
-    //_oSQL:_sQuery += " 	AND SD3.D3_FILIAL = '"+ xFilial("SD3")+"' "
-    //_oSQL:_sQuery += " 	AND SD3.D3_EMISSAO >= '20240101'  " // NAO QUERO LER OPS ANTIGAS DEMAIS
     _oSQL:_sQuery += " 	AND SD3.D3_ESTORNO = ''
     _oSQL:_sQuery += " 	AND SD3.D3_OP != '' " "
     _oSQL:_sQuery += " 	AND SB1.D_E_L_E_T_ = ''
@@ -221,7 +220,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 			,SC2.C2_PRODUTO "
     _oSQL:_sQuery += " 			,SC2.C2_DATRF) "
     _oSQL:_sQuery += " SELECT "
-    _oSQL:_sQuery += " 	RTRIM(ZX5_39.ZX5_39DESC) AS LINHA_COML "
+    _oSQL:_sQuery += "     RTRIM(ZX5_39.ZX5_39DESC) AS LINHA_COML "
     _oSQL:_sQuery += "    ,B1_TIPO AS TIPO_PROD_FINAL "
     _oSQL:_sQuery += "    ,PRODUTO_FINAL "
     _oSQL:_sQuery += "    ,RTRIM(B1_DESC) AS DESC_PROD_FINAL "
@@ -253,17 +252,18 @@ Static Function _Gera()
     _oSQL:_sQuery += "    ,PERDA_OUTROS_CUSTO "
     _oSQL:_sQuery += "    ,CUSTO_TOT_PRODUCAO "
     _oSQL:_sQuery += " FROM C "
-    _oSQL:_sQuery += " 	," + RetSQLName ("SB1") + " SB1 "
-    _oSQL:_sQuery += " 	 LEFT JOIN " + RetSQLName ("ZX5") + " ZX5_39 " 
-    _oSQL:_sQuery += " 		 ON (ZX5_39.ZX5_TABELA = '39' "
-    _oSQL:_sQuery += " 				 AND ZX5_39.ZX5_39COD = SB1.B1_CODLIN) "
-    _oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += " AND SB1.B1_FILIAL = '  ' "
-    _oSQL:_sQuery += " AND SB1.B1_COD = C.PRODUTO_FINAL "
+    _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " SB1 "
+    _oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += " 		AND SB1.B1_FILIAL = '  ' "
+    _oSQL:_sQuery += " 		AND SB1.B1_COD = C.PRODUTO_FINAL "
+    _oSQL:_sQuery += " 		AND SB1.B1_TIPO BETWEEN '"+ mv_par05 +"' AND '"+ mv_par06 +"'"
+    _oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("ZX5") + " ZX5_39 " 
+    _oSQL:_sQuery += " 	ON ZX5_39.ZX5_TABELA = '39' "
+    _oSQL:_sQuery += " 			AND ZX5_39.ZX5_39COD = SB1.B1_CODLIN "
     _oSQL:_sQuery += " ORDER BY FILIAL, PRODUTO_FINAL, OP "
-
     _oSQL:Log()
     _oSQL:ArqDestXLS = 'VA_XLS67'
+    
     _oSQL:Qry2XLS (.F., .F., .F.)
 
 return
@@ -278,6 +278,8 @@ Static Function _ValidPerg()
     aadd(_aRegsPerg, {02, "Dt.Final        ", "D", 8, 0,  "",   "   ", {}, ""})
     aadd(_aRegsPerg, {03, "Filial de       ", "C", 2, 0,  "",   "SM0", {}, ""})
     aadd(_aRegsPerg, {04, "Filial até      ", "C", 2, 0,  "",   "SM0", {}, ""})
+    aadd(_aRegsPerg, {05, "Tipo Prod.de    ", "C", 2, 0,  "",   "02" , {}, ""})
+    aadd(_aRegsPerg, {06, "Tipo Prod.até   ", "C", 2, 0,  "",   "02" , {}, ""})
 
 	U_ValPerg(cPerg, _aRegsPerg, {}, _aDefaults)
 Return
