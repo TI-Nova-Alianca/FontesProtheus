@@ -21,6 +21,7 @@
 // 14/05/2019 - Catia   - na caixa tem que ser usada a conta 003 - teste para fazer fixo por aqui
 // 01/07/2020 - Claudia - Incluidas as filiais para subconta de banco do brasil. GLPI: 8103
 // 21/06/2023 - Claudia - Incluida validação para filial 08. GLPI 13751
+// 26/08/2024 - Claudia - Incluida msg de aviso quando pagamento não for boleto. GLPI: 15433
 //
 // --------------------------------------------------------------------------------------------------------
 user function BolAuto (_sSerie, _sNotaIni, _sNotaFim)
@@ -146,6 +147,8 @@ user function BolAuto (_sSerie, _sNotaIni, _sNotaFim)
 		if len (_aBoletos2) > 0
 			processa ({|| U_ML_BOLLSR (_aBoletos2)})
 		endif
+	else
+		u_help("Pagamento realizado com cartão credito, PIX ou deposito!")
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
