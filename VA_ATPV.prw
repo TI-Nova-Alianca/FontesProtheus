@@ -7,6 +7,7 @@
 // Historico de alteracoes:
 // 14/05/2014 - ?       - Gravacao de evento quando usado essa opcao.
 // 18/11/2016 - Robert  - Envia atualizacao para o sistema Mercanet.
+// 28/08/2024 - Claudia - Bloqueio alteração transportadora em pedidos sem frete. GLPI 15917
 //
 
 // --------------------------------------------------------------------------
@@ -29,21 +30,26 @@ user function VA_ATPV ()
 		_lContinua = U_ZZUVL ('002', __cUserId, .T.)
 	endif
 
-	sa4 -> (dbsetorder (1))
-	do while _lContinua
-		_sTransp = U_Get ("Informe a nova transportadora", "C", 6, "", "SA4", sc5 -> c5_transp, .F., '.t.')
-		if _sTransp = NIL  // Usuario cancelou
-			_lContinua = .F.
-			exit
-		endif
-		if _lContinua .and. ! empty (_sTransp) .and. ! sa4 -> (dbseek (xfilial ("SA4") + _sTransp, .F.))
-			u_help ("Transportadora '" + _sTransp + "' nao cadastrada.")
-			loop
-		else
-			exit
-		endif
-	enddo
-
+	if  _lContinua .and. sc5 -> C5_TPFRETE == 'S'
+		_lContinua := .F.
+		u_help ("Não é possivel incluir/alterar transportadoras de pedidos sem frete")
+	endif
+	if _lContinua
+		sa4 -> (dbsetorder (1))
+		do while _lContinua
+			_sTransp = U_Get ("Informe a nova transportadora", "C", 6, "", "SA4", sc5 -> c5_transp, .F., '.t.')
+			if _sTransp = NIL  // Usuario cancelou
+				_lContinua = .F.
+				exit
+			endif
+			if _lContinua .and. ! empty (_sTransp) .and. ! sa4 -> (dbseek (xfilial ("SA4") + _sTransp, .F.))
+				u_help ("Transportadora '" + _sTransp + "' nao cadastrada.")
+				loop
+			else
+				exit
+			endif
+		enddo
+	endif
 	if _lContinua
 		reclock ("SC5", .F.)
 		sc5 -> c5_transp = _sTransp 
