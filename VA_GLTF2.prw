@@ -18,19 +18,20 @@
 // 20/11/2020 - Claudia - Retirado o botão filtro conforme GLPI: 8663
 // 19/02/2021 - Cláudia - Incluida validação para retorno vazio da guia. GLPI: 9445
 // 21/03/2022 - Claudia - Incluido o grupo 4000 e validação pelo campo  "Vai p/ sisdec" (B5_VASISDE). GLPI: 11769
+// 29/08/2024 - Claudia - Incluido novo indice conforme GLPI: 15617
 //
 // -----------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
 User Function VA_GLTF2()  
-	Local _aCores     := U_GLTF2LG (.T.)
+	Local _aCores     := U_GLTF2LG(.T.)
 	Local aStruct     := {}
 	Local aHead       := {}
 	Local _aArqTrb    := {}
 	Local I			  := 0
 	Private aRotina   := {}
 	private cCadastro := "Guia Livre Transito - NF Saida"
-	private _sArqLog  := U_NomeLog ()
+	private _sArqLog  := U_NomeLog()
     
 	_cPerg   := "VA_GLTF2"
 	_ValidPerg()
@@ -38,17 +39,17 @@ User Function VA_GLTF2()
     if Pergunte(_cPerg,.T.) 
 	
 		//Campos que aparecerão na MBrowse, como não é baseado no SX3 deve ser criado.
-		AAdd( aHead, { "Emissao"         ,{|| TRB->EMISSAO}   ,"C", 10 , 0, "" } )
-		AAdd( aHead, { "Guia"            ,{|| TRB->GUIA}      ,"C", 11 , 0, "@# 999999/9999"  } )
-		AAdd( aHead, { "Produto"         ,{|| TRB->PRODUTO}   ,"C", 06 , 0, "" } )
-		AAdd( aHead, { "Descricao"       ,{|| TRB->DESCRICAO} ,"C", 30 , 0, "" } )
-		AAdd( aHead, { "Quantidade"      ,{|| TRB->QUANTIDADE},"N", 10 , 2, "@E 9999999.99" } )
-		AAdd( aHead, { "Cliente"      	 ,{|| TRB->CLIENTE}   ,"C", 06 , 0, "" } )
-		AAdd( aHead, { "Loja"      		 ,{|| TRB->LOJA}      ,"C", 02 , 0, "" } )
-		AAdd( aHead, { "Nome"            ,{|| TRB->NOME}      ,"C", 30 , 0, "" } )
-		AAdd( aHead, { "Numero"          ,{|| TRB->DOC}       ,"C", 09 , 0, "" } )
-		AAdd( aHead, { "Serie"           ,{|| TRB->SERIE}     ,"C", 03 , 0, "" } )
-		AAdd( aHead, { "Dt.Digitacao"    ,{|| TRB->DIGITACAO} ,"C", 10 , 0, "" } )
+		AAdd( aHead, { "Emissao"         ,{|| TRB->EMISSAO}   ,"C", 10 , 0, "" 					} )
+		AAdd( aHead, { "Guia"            ,{|| TRB->GUIA}      ,"C", 11 , 0, "@# 999999/9999"  	} )
+		AAdd( aHead, { "Produto"         ,{|| TRB->PRODUTO}   ,"C", 06 , 0, "" 					} )
+		AAdd( aHead, { "Descricao"       ,{|| TRB->DESCRICAO} ,"C", 30 , 0, "" 					} )
+		AAdd( aHead, { "Quantidade"      ,{|| TRB->QUANTIDADE},"N", 10 , 2, "@E 9999999.99" 	} )
+		AAdd( aHead, { "Cliente"      	 ,{|| TRB->CLIENTE}   ,"C", 06 , 0, "" 					} )
+		AAdd( aHead, { "Loja"      		 ,{|| TRB->LOJA}      ,"C", 02 , 0, ""					} )
+		AAdd( aHead, { "Nome"            ,{|| TRB->NOME}      ,"C", 30 , 0, "" 					} )
+		AAdd( aHead, { "Numero"          ,{|| TRB->DOC}       ,"C", 09 , 0, "" 					} )
+		AAdd( aHead, { "Serie"           ,{|| TRB->SERIE}     ,"C", 03 , 0, "" 					} )
+		AAdd( aHead, { "Dt.Digitacao"    ,{|| TRB->DIGITACAO} ,"C", 10 , 0, "" 					} )
 		
 		// define estrutura do arquivo de trabalho	
 		AAdd( aStruct, { "EMISSAO"    , "C", 10, 0 } )
@@ -63,7 +64,7 @@ User Function VA_GLTF2()
 		AAdd( aStruct, { "SERIE"      , "C", 03, 0 } )
 		AAdd( aStruct, { "DIGITACAO"  , "C", 10, 0 } )
 
-		U_ArqTrb ("Cria", "TRB", aStruct, {"DOC + SERIE + CLIENTE"}, @_aArqTrb)
+		U_ArqTrb("Cria", "TRB", aStruct, {"DOC + SERIE + CLIENTE","EMISSAO + PRODUTO + CLIENTE"}, @_aArqTrb)
 
 		// gera arquivo dados - carrega arquivo de trabalho
 		_sSQL := " " 
@@ -133,10 +134,10 @@ User Function VA_GLTF2()
 		_sSQL += "    ,SA2.A2_NOME"
 		_sSQL += "    ,SD2.D2_SERIE "
 		_sSQL += "    ,SD2.D2_DTDIGIT"
-		u_log (_sSQL)  
+		u_log(_sSQL)  
 		aDados := U_Qry2Array(_sSQL)
 	
-		if len (aDados) > 0
+		if len(aDados) > 0
 			for I=1 to len(aDados)
 				DbSelectArea("TRB")
 		        RecLock("TRB",.T.)
@@ -159,7 +160,6 @@ User Function VA_GLTF2()
 	    			  { "Visualizar"     , "U_VerNFSaida()"      , 0, 2},;
 	                  { "Legenda"        , "U_GLTF2LG (.F.)"     , 0, 5},;
 	                  { "Atualiz Guia"   , "U_AtuGuia2"          , 0, 4} }
-	                  	                  //{ "Visualizar"     , "MC090Visual"         , 0, 2},
 	
 	    dbSelectArea("TRB")
 		dbSetOrder(1)
@@ -168,13 +168,13 @@ User Function VA_GLTF2()
 			
 		TRB->(dbCloseArea())   
 		
-		u_arqtrb ("FechaTodos",,,, @_aArqTrb)           
+		u_arqtrb("FechaTodos",,,, @_aArqTrb)           
 	endif	
 Return   
 //                
 //-------------------------------------------------------------------------------------------------------------------------
 // Mostra legenda ou retorna array de cores, cfe. o caso.
-user function GLTF2LG (_lRetCores)
+user function GLTF2LG(_lRetCores)
 	local _aCores  := {}
 	local _aCores2 := {}
 	local _i	   := 0
@@ -183,13 +183,13 @@ user function GLTF2LG (_lRetCores)
 	aadd (_aCores, {"empty(TRB -> GUIA)",  'BR_VERDE',    'Guia nao Informada'})
 
 	if ! _lRetCores
-		for _i = 1 to len (_aCores)
-			aadd (_aCores2, {_aCores [_i, 2], _aCores [_i, 3]})
+		for _i = 1 to len(_aCores)
+			aadd(_aCores2, {_aCores [_i, 2], _aCores [_i, 3]})
 		next
 		BrwLegenda (cCadastro, "Legenda", _aCores2)
 	else
-		for _i = 1 to len (_aCores)
-			aadd (_aCores2, {_aCores [_i, 1], _aCores [_i, 2]})
+		for _i = 1 to len(_aCores)
+			aadd(_aCores2, {_aCores [_i, 1], _aCores [_i, 2]})
 		next
 		return _aCores
 	endif
@@ -210,27 +210,27 @@ User function AtuGuia2()
 	// Verifica se na nota informada tem algum produto do tipo granel para permitir informar a Guia
 	_sQuery := ""	
 	_sQuery += " SELECT count(D2_DOC)   "
-	_sQuery += " FROM " + RetSQLName ("SD2") + " SD2,  "
-	_sQuery +=          + RetSQLName ("SB1") + " SB1,  "
-	_sQuery +=          + RetSQLName ("SB5") + " SB5  "
+	_sQuery += " FROM " + RetSQLName("SD2") + " SD2,  "
+	_sQuery +=          + RetSQLName("SB1") + " SB1,  "
+	_sQuery +=          + RetSQLName("SB5") + " SB5  "
 	_sQuery += " WHERE SD2.D_E_L_E_T_ = ''"
 	_sQuery += " AND SB1.D_E_L_E_T_ = ''"
 	_sQuery += " AND SB5.D_E_L_E_T_ = ''"
-	_sQuery += " AND D2_FILIAL  = '" + xFilial ("SD2") + "'"
-	_sQuery += " AND B1_FILIAL  = '" + xFilial ("SB1") + "'"
-	_sQuery += " AND B5_FILIAL  = '" + xFilial ("SB5") + "'"
-	_sQuery += " AND D2_DOC  = '" + _Nota + "'"
-	_sQuery += " AND D2_SERIE  = '" + _Serie + "'"
-	_sQuery += " AND D2_CLIENTE  = '" + _Cliente + "'"
-	_sQuery += " AND D2_LOJA  = '" + _Loja + "'"
-	_sQuery += " AND D2_COD  = B1_COD "
-	_sQuery += " AND B5_COD  = B1_COD "
+	_sQuery += " AND D2_FILIAL  = '" + xFilial("SD2") + "'"
+	_sQuery += " AND B1_FILIAL  = '" + xFilial("SB1") + "'"
+	_sQuery += " AND B5_FILIAL  = '" + xFilial("SB5") + "'"
+	_sQuery += " AND D2_DOC     = '" + _Nota    + "'"
+	_sQuery += " AND D2_SERIE   = '" + _Serie   + "'"
+	_sQuery += " AND D2_CLIENTE = '" + _Cliente + "'"
+	_sQuery += " AND D2_LOJA    = '" + _Loja    + "'"
+	_sQuery += " AND D2_COD     = B1_COD "
+	_sQuery += " AND B5_COD     = B1_COD "
 	_sQuery += " AND (B1_GRPEMB  = '18' OR B5_VATPSIS IN ('24', '40'))"  // Borra ou acucar.
-	u_log (_squery)  
+	u_log(_squery)  
 	
-	if U_RetSQL (_sQuery) > 0
+	if U_RetSQL(_sQuery) > 0
         _sOldGuia = PADL(TRB -> GUIA,11)
-		_sNewGuia = U_Get ("Guia de Transito", "C", 11, "@# 999999/9999", "", _sOldGuia, .F., '.T.')
+		_sNewGuia = U_Get("Guia de Transito", "C", 11, "@# 999999/9999", "", _sOldGuia, .F., '.T.')
 		
 		If empty(_sNewGuia)
 			_sNewGuia := ""
@@ -240,43 +240,43 @@ User function AtuGuia2()
 		if _lRet 
 			DbSelectArea("SF2")                
 			DbSetOrder(1)
-			if SF2 -> (dbseek (xFilial("SF2") + _Nota + _Serie + _Cliente + _Loja))
+			if SF2 -> (dbseek(xFilial("SF2") + _Nota + _Serie + _Cliente + _Loja))
 					Reclock("SF2",.F.)
-					SF2->F2_VAGUIA  := _sNewGuia
+						SF2->F2_VAGUIA  := _sNewGuia
 					Msunlock()
 	        endif
 			u_help("Guia da nota "+Alltrim(_Nota)+" serie " +Alltrim(_Serie) + " foi alterada para "+_sNewGuia)
 	    endif
 	else 
-		u_help ("Esta nota nao tem produtos do tipo Granel / Açúcar. Não será permitido informar a Guia!")
+		u_help("Esta nota nao tem produtos do tipo Granel / Açúcar. Não será permitido informar a Guia!")
 	endif                                                                                     
 return
 //           
 // --------------------------------------------------------------------------
 // Consulta detalhes da movimentacao.
-user function VerNFSaida ()
+user function VerNFSaida()
 	// Variaveis para a rotina de visualizacao da nota.
 	Private aRotina    := {{ , , 0 , 2 }}
 	Private l103Auto   := .F.
 	Private aAutoCab   := {}
 	Private aAutoItens := {}
 
-	sf2 -> (dbsetorder (1))  // F1_FILIAL+F1_DOC+F1_SERIE+F1_FORNECE+F1_LOJA+F1_TIPO
-	if sf2 -> (dbseek (xfilial ("SF2") + TRB->DOC + TRB->SERIE + TRB->CLIENTE  + '01', .F.))
-		Mc090Visual ("SF2", recno (), 1)
+	sf2 -> (dbsetorder(1))  // F1_FILIAL+F1_DOC+F1_SERIE+F1_FORNECE+F1_LOJA+F1_TIPO
+	if sf2 -> (dbseek(xfilial ("SF2") + TRB->DOC + TRB->SERIE + TRB->CLIENTE  + '01', .F.))
+		Mc090Visual("SF2", recno (), 1)
 	else
-		u_help ("NF '" + TRB->DOC + "' nao encontrada.")
+		u_help("NF '" + TRB->DOC + "' nao encontrada.")
 	endif
 return 
 //       
 //-------------------------------------------------------------------------------------------------------------------------
 // Cria Perguntas no SX1
-Static Function _ValidPerg ()
+Static Function _ValidPerg()
     local _aRegsPerg := {}
     //                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
 	aadd (_aRegsPerg, {01, "Lista Notas        ?", "N", 1, 0,  "",   "   ", {"Granel/concentrado","Acuçar/Borra"}, ""})
 	aadd (_aRegsPerg, {02, "Guia               :", "N", 1, 0,  "",   "   ", {"Ambas","Informada","Não informada"}, ""})
 	
-	U_ValPerg (_cPerg, _aRegsPerg)
+	U_ValPerg(_cPerg, _aRegsPerg)
     
 Return
