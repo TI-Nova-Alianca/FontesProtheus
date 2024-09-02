@@ -17,7 +17,7 @@
 user function AmbTeste ()
 	local _lBaseTST := .F.
 	
-	if "TESTE" $ upper (GetEnvServer()) .or. "R22" $ upper (GetEnvServer()) .or. "R23" $ upper (GetEnvServer())
+	if "TESTE" $ upper (GetEnvServer()) .or. "PADRAO" $ upper (GetEnvServer()) 
 		U_Log2 ('debug', '[' + procname () + '.' + procname (1) + '.' + procname (2) + '.' + procname (3) + ']Entendo que estou operando em ambiente de teste / homologacao.')
 		_lBaseTST = .T.
 	endif
