@@ -102,11 +102,11 @@
 // 01/01/2024 - Sandra  - Alterado case 2 o setor de usuário de ENG para PCP. GLPI 14773.
 // 16/02/2024 - Robert  - Melhorias verificacao 28 (desconsiderar OS menut, extrapolar OP fora do mes)
 // 15/03/2024 - Robert  - Verificacao 23 inativada.
+// 03/09/2024 - Claudia - Alterado os setores no 46/47/49. 
 //
-
+// --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 
-// --------------------------------------------------------------------------------------------------------------------
 // Classe usada para verificacoes de inconsistencias em geral.
 CLASS ClsVerif
 
@@ -2174,7 +2174,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 46
 		::Ativa      = .T.
-		::Setores    = 'CUS'
+		::Setores    = 'ENG/CUS'
 		::ViaBatch  = .T.
 		::Descricao  = "Volume de acucar acima do limite"
 		::GrupoPerg  = "U_VALID046"
@@ -2212,7 +2212,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 47
 		::Ativa      = .T.
-		::Setores    = 'CUS'
+		::Setores    = 'ENG/CUS'
 		::ViaBatch  = .T.
 		::Descricao  = "Uva in natura com saldo (fora de período safra)"
 		::Sugestao   = ""
@@ -2280,7 +2280,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		
 	case ::Numero == 49
 		::Ativa      = .T.
-		::Setores    = 'CUS'
+		::Setores    = 'ENG/CUS'
 		::ViaBatch  = .T.
 		::Descricao  = "Produto deveria ter estrutura"
 		::Sugestao   = ""
