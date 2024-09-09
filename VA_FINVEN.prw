@@ -123,6 +123,9 @@ Static Function PrintReport(oReport)
 
     _oSQL:= ClsSQL ():New()
     _oSQL:_sQuery := ""
+    _oSQL:_sQuery += " WITH C "
+    _oSQL:_sQuery += " AS "
+    _oSQL:_sQuery += " ( "
     _oSQL:_sQuery += " SELECT "
     _oSQL:_sQuery += "     CASE "
     _oSQL:_sQuery += " 		    WHEN E1_PORT2 <> '   ' THEN LTRIM(E1_PORT2) "
@@ -154,7 +157,14 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " AND SE1.E1_PREFIXO = '"  + mv_par03 + "'"
     _oSQL:_sQuery += " AND SE1.E1_TIPO != 'NCC' "
     _oSQL:_sQuery += " GROUP BY E1_PORT2, C5_BANCO "
-    _oSQL:_sQuery += " ORDER BY E1_PORT2, C5_BANCO "
+    _oSQL:_sQuery += " ) "
+    _oSQL:_sQuery += " SELECT "
+    _oSQL:_sQuery += " 	   BANCO "
+    _oSQL:_sQuery += "    ,SUM(QTD) AS QTD "
+    _oSQL:_sQuery += "    ,SUM(TOTAL) AS TOTAL "
+    _oSQL:_sQuery += " FROM C "
+    _oSQL:_sQuery += " GROUP BY BANCO "
+    _oSQL:_sQuery += " ORDER BY BANCO "
     _aTot := aclone(_oSQL:Qry2Array())
 
     oReport:ThinLine()
