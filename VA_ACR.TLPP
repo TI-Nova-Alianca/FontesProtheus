@@ -26,6 +26,7 @@
 // 27/02/2024 - Robert - Criadas algumas colunas adicionais de custos por litro.
 // 03/03/2024 - Robert - Criado tratamento para custear VD pelo ultimo nivel (GLPI 15024)
 //                     - Criada coluna mostrando o tipo de calculo usado na estrutura
+// 13/09/2024 - Sandra - Retirado filtro itens inativos/ativos GLPI 16040
 //
 
 #include "protheus.ch"
@@ -196,7 +197,7 @@ static function _Gera ()
 			_oSQL:_sQuery +=   " AND SB1.B1_MRP     = 'S'"
 		endif
 	endif
-	_oSQL:_sQuery +=       " AND SB1.B1_MSBLQL != '1'"
+	//_oSQL:_sQuery +=       " AND SB1.B1_MSBLQL != '1'"
 	_oSQL:_sQuery += " )"
 	_oSQL:_sQuery += " , ULTIMOS_SB9 AS"
 	_oSQL:_sQuery += " ("
