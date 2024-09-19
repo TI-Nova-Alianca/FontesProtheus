@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 21/02/2024 - Claudia - Retirada as validações da importação.
+// 18/09/2024 - Claudia - Incluida a gravação do código matriz. GLPI: 15953
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -86,10 +87,13 @@ User Function BatZA4()
         _oSQL:_sQuery += " SELECT count(*) FROM ZA4010 WHERE D_E_L_E_T_='' AND ZA4_NUM='" + _sZA4Num + "'"
         _aOK := aclone(_oSQL:Qry2Array(.f.,.f.))
 
+        _oCtaRapel := ClsCtaRap():New ()
+		_sRede := _oCtaRapel:RetCodRede(_aVerbas[_x, 2], _aVerbas[_x, 3])
+
         if len(_aOK) > 0
             RecLock ("ZA4",.T.)
                 ZA4 -> ZA4_NUM      := _sZA4Num       
-                ZA4 -> ZA4_CLI      := _aVerbas[_x, 2]		
+                ZA4 -> ZA4_CLI      := _sRede		
                 ZA4 -> ZA4_LOJA     := _aVerbas[_x, 3]		
                 ZA4 -> ZA4_COD	    := _aVerbas[_x, 4]	
                 ZA4 -> ZA4_VLR	    := _aVerbas[_x, 5]	
