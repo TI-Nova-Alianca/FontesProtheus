@@ -38,6 +38,7 @@
 // 26/06/2022 - Sandra  - Incluso novas moedas. GLPI: 12211
 // 20/03/2023 - Claudia - Incluida nova obs. GLPI: 13324
 // 04/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 23/09/2024 - Sandra  - Alterado campo de busca da descrição prazo de pagamento (E4_DESCRI para E4_COND) GLPI - 16103
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 #include 'topconn.ch'
@@ -125,7 +126,8 @@ Static Function xPrintRel()
 	Private oFont13      := TFont():New('Tahoma',13,13,,.T.,,,,.T.,.F.)
 	Private oFont14      := TFont():New('Tahoma',14,14,,.T.,,,,.T.,.F.)
 	Private oFont14n     := TFont():New('Tahoma',14,14,,.F.,,,,.T.,.F.)
-	Private oFont15      := TFont():New('Tahoma',15,15,,.T.,,,,.T.,.F.)
+	//Private oFont15      := TFont():New('Tahoma',15,15,,.T.,,,,.T.,.F.)
+	Private oFont15      := TFont():New('Tahoma',50,15,,.T.,,,,.T.,.F.)
 	Private oFont16      := TFont():New('Tahoma',16,16,,.T.,,,,.T.,.F.)
 	Private oFont18      := TFont():New('Tahoma',18,18,,.T.,,,,.T.,.F.)
 	Private oFont20      := TFont():New('Arial',20,20,,.F.,,,,.T.,.F.)
@@ -281,7 +283,8 @@ Static Function xPrintRel()
 		SE4->(dbSetOrder(1))
 		SE4->(DbSeek(xFilial("SE4")+_cCond))
 		
-		_cDesCond := SE4->E4_DESCRI
+		//_cDesCond := SE4->E4_DESCRI
+		_cDesCond := SE4->E4_COND
 		IncProc()
 		
 		dbSelectArea("TRA")
