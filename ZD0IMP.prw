@@ -2,7 +2,9 @@
 // Autor......: Cláudia Lionço
 // Data.......: 16/09/2022
 // Descricao..: Baixa de registros do extrato Pagar.me
-//              https://docs.pagar.me/v4/docs/extrato
+//              https://docs.pagar.me/reference/retornando-recebíveis
+//              https://docs.pagar.me/reference/obter-histórico-das-operações
+//
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
