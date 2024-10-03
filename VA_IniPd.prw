@@ -53,6 +53,7 @@
 // 22/08/2022 - Robert  - Criado inicializador de browse para o campo ZI_VENCTO (GLPI 12503)
 // 27/06/2023 - Claudia - Incluido o usuario Franciele. GLPI 13786
 // 26/02/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 02/10/2024 - Sandra  - Incluso nome Franciele Borges
 //
 
 // -------------------------------------------------------------------------------------------------------
@@ -242,6 +243,8 @@ user function VA_IniPd (_sCampo, _lBrowse)
 							_xRet = 'Marcos'
 						case _sUser == '000822'
 							_xRet = 'Franciele'
+						case _sUser == '000896'
+							_xRet = 'Franciele'	
 						otherwise
 							_xRet = '' //_sUser + "(ajustar prog." + procname () + ")"
 					endcase
