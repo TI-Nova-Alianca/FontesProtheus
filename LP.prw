@@ -2,6 +2,7 @@
 // Autor....: Robert Koch - TCX021
 // Data.....: 10/03/2011
 // Descricao: Execblock generico para lancamentos padronizados.
+//            Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
@@ -83,9 +84,9 @@
 // 11/01/2024 - Robert  - Desabilitado envio de alguns avisos de acompanhamento.
 // 03/04/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 22/05/2024 - Claudia - Configuração lpad 520 002 para filial 08. GLPI: 15510
+// 02/10/2024 - Claudia - Tratamento de perdas de associados/ex-associados LPAD 597/005. GLPI: 16052
 //
 // -----------------------------------------------------------------------------------------------------------------
-// Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 	local _aAreaAnt := U_ML_SRArea ()
 	local _xRet     := NIL
@@ -95,10 +96,6 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 	local _oAviso   := NIL
 
 	_sQueRet = alltrim (upper (_sQueRet))
-
-//	U_Log2 ('debug', '[' + procname () + ']_sLPad   = ' + _sLPad)
-//	U_Log2 ('debug', '[' + procname () + ']_sSeq    = ' + _sSeq)
-//	U_Log2 ('debug', '[' + procname () + ']_sQueRet = ' + _sQueRet)
 
 	do case
 	case _sLPad == '500' .and. _sSeq='004' .and. IsInCallStack ("U_VA_ZA4")// Inclusao contas a receber
@@ -155,7 +152,6 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			_oSQL:_sQuery +=    " AND A3_FILIAL  = '" + xfilial ("SA3") + "'"
 			_oSQL:_sQuery +=    " AND A3_FORNECE = '" + se2 -> e2_fornece + "'"
 			_oSQL:_sQuery +=    " AND A3_LOJA    = '" + se2 -> e2_loja + "'"
-//			u_log (_oSQL:_sQuery)
 			_xRet = _oSQL:RetQry ()
 		endcase
 
@@ -324,7 +320,6 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				_xret := 0
 		EndCase	
 
-//	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL' .and. !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3'// descontos - estorna provisao de comissao
 	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL'
 		_xRet = 0
 		if !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3/ZD0'// descontos - estorna provisao de comissao
@@ -352,7 +347,6 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				_xRet = 0
 			endif
 		endif
-
 
 	case _sLPad == '520' .and. _sSeq='026'
 		if _sQueRet == 'CDEB'
@@ -501,7 +495,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			endcase
 		endif		
 		
-	case _sLPad == '597' .and. _sSeq='005' // Compensacao contas a pagar
+	case _sLPad == '597' .and. _sSeq='005' .AND. SE2->E2_PREFIXO <> 'RAT'// Compensacao contas a pagar
 		_wtipo := "NORMAL
 		
 		// Testa se é ASSOCIADO
@@ -552,20 +546,6 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 					_xRet = "101020601001" // Adiantamentos a Fornecedores
 				endif
 		endcase
-
-	// Teste
-	// case _sLPad + _sSeq == '610031' 
-
-	// 	u_log('610031' + ALLTRIM(SD2->D2_COD))
-	// 	u_log('610031' + alltrim(str(SD2->D2_TOTAL)))
-
-	// 	If ALLTRIM(SD2->D2_COD)$"7209/7210"
-	// 		_xRet:= SD2->D2_TOTAL
-	// 		u_log('610031 - entrou no total')
-	// 	Else
-	// 		_xRet:= 0
-	// 		u_log('610031 - zerado')
-	// 	endif
 
 	case _sLPad + _sSeq == '631000'  // contabilizacao venda cupons
 		_xRet   = ""
@@ -722,40 +702,20 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		if _sQueRet = "CDEB"
 			_xRet   = ""
 			do case
-			case SD3->D3_TIPO == 'CL'; _xRet = '701010301001'
-			case SD3->D3_TIPO == 'MT'; _xRet = '701010301008'
-			case SD3->D3_TIPO == 'MB'; _xRet = '701010301020'
-			case SD3->D3_TIPO == 'UC'; _xRet = '403010401016'
-			case SD3->D3_TIPO == 'II' .and. sd3 -> d3_grupo == '5000'; _xRet = '701010301009'  // Mat.aux.limpeza producao
-			case SD3->D3_TIPO $ 'II/MA' .and. sd3 -> d3_grupo $ '5001/7001'; _xRet = '701010301024'  // Mat.aux.producao + mat.perigosos
-			case SD3->D3_TIPO $ 'II/MA' .and. sd3 -> d3_grupo == '5002'; _xRet = '701010301018'  // Mat.aux.producao - acondicionamento (filme, etc.)
-			case SD3->D3_TIPO == 'EP' .and. substr (sd3 -> d3_cc, 3, 1) $ '1/2' ; _xRet = '701010201008'
-			case SD3->D3_TIPO == 'EP' .and. substr (sd3 -> d3_cc, 3,1) $ '3/4' ; _xRet = '403010101007'
-			case SD3->D3_TIPO == 'MM' .and. substr (sd3 -> d3_cc, 3, 1) $ '1/2' ; _xRet = '701010301011'
-			case SD3->D3_TIPO == 'MM' .and. substr (sd3 -> d3_cc, 3,1) $ '3/4' ; _xRet = '403010201049'
-			case SD3->D3_TIPO == 'MR' ; _xRet = '403010401010'
-			case SD3->D3_TIPO == 'IA' ; _xRet = '701010301017'
-			otherwise
-
-			// ninguem olha...	// Envia aviso para a TI
-			// ninguem olha...	_oAviso := ClsAviso ():New ()
-			// ninguem olha...	_oAviso:Tipo       = 'E'
-			// ninguem olha...	_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-			// ninguem olha...	_oAviso:Titulo     = "Sem tratamento no LPad/seq " + _sLPad + _sSeq
-			// ninguem olha...	_oAviso:Texto      = "Sem tratamento no LPad/seq '" + _sLPad + _sSeq
-			// ninguem olha...	_oAviso:Texto     += " filial=" + sd3 -> d3_filial
-			// ninguem olha...	_oAviso:Texto     += " tipo=" + sd3 -> d3_tipo
-			// ninguem olha...	_oAviso:Texto     += " produto=" + alltrim (sd3 -> d3_cod)
-			// ninguem olha...	_oAviso:Texto     += " grupo=" + sd3 -> d3_grupo
-			// ninguem olha...	_oAviso:Texto     += " CC='" + sd3 -> d3_cc
-			// ninguem olha...	_oAviso:Texto     += " recnoSD3=" + cvaltochar (sd3 -> (recno ()))
-			// ninguem olha...	_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
-			// ninguem olha...	_oAviso:Origem     = procname ()
-			// ninguem olha...	_oAviso:Grava ()
-
-			// ninguem olha...	// Copia do aviso para responsavel contabilidade.
-			// ninguem olha...	_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
-			// ninguem olha...	_oAviso:Grava ()
+				case SD3->D3_TIPO == 'CL'; _xRet = '701010301001'
+				case SD3->D3_TIPO == 'MT'; _xRet = '701010301008'
+				case SD3->D3_TIPO == 'MB'; _xRet = '701010301020'
+				case SD3->D3_TIPO == 'UC'; _xRet = '403010401016'
+				case SD3->D3_TIPO == 'II' .and. sd3 -> d3_grupo == '5000'; _xRet = '701010301009'  // Mat.aux.limpeza producao
+				case SD3->D3_TIPO $ 'II/MA' .and. sd3 -> d3_grupo $ '5001/7001'; _xRet = '701010301024'  // Mat.aux.producao + mat.perigosos
+				case SD3->D3_TIPO $ 'II/MA' .and. sd3 -> d3_grupo == '5002'; _xRet = '701010301018'  // Mat.aux.producao - acondicionamento (filme, etc.)
+				case SD3->D3_TIPO == 'EP' .and. substr (sd3 -> d3_cc, 3, 1) $ '1/2' ; _xRet = '701010201008'
+				case SD3->D3_TIPO == 'EP' .and. substr (sd3 -> d3_cc, 3,1) $ '3/4' ; _xRet = '403010101007'
+				case SD3->D3_TIPO == 'MM' .and. substr (sd3 -> d3_cc, 3, 1) $ '1/2' ; _xRet = '701010301011'
+				case SD3->D3_TIPO == 'MM' .and. substr (sd3 -> d3_cc, 3,1) $ '3/4' ; _xRet = '403010201049'
+				case SD3->D3_TIPO == 'MR' ; _xRet = '403010401010'
+				case SD3->D3_TIPO == 'IA' ; _xRet = '701010301017'
+				otherwise
 			endcase
 		endif
 
@@ -998,10 +958,8 @@ static function _BComis (_wnf, _wserie, _wcliente, _wloja, _wvalor)
 	_sQuery += "    AND SF2.F2_SERIE    =  '" + _wserie + "'"
 	_sQuery += "    AND SF2.F2_CLIENTE  =  '" + _wcliente + "'"
 	_sQuery += "    AND SF2.F2_LOJA     =  '" + _wloja + "'"
-    
-    //u_showmemo(_sQuery)
-    
     _Nota := U_Qry2Array(_sQuery)
+
     If len(_Nota) > 0
     	_brutoNota = _Nota[1,1]
     	_baseNota  = _Nota[1,1] - _Nota[1,2] - _Nota[1,3] - _Nota[1,4] - _Nota[1,5]
@@ -1018,11 +976,9 @@ static function _BComis (_wnf, _wserie, _wcliente, _wloja, _wvalor)
 		   	_sSQL += "    AND SE1A.E1_NUM     = '" + _wnf + "'"
 		   	_sSQL += "    AND SE1A.E1_PARCELA = 'A' "
 		   	_sSQL += "    AND SE1A.E1_NATUREZ = '110199' "
-		   	_sSQL += "    AND SE1A.D_E_L_E_T_ = ''"
-   	
-   			//u_showmemo(_sSQL)
-   			
+		   	_sSQL += "    AND SE1A.D_E_L_E_T_ = ''"		
     		_parcST := U_Qry2Array(_sSQL)
+
 	    	If len(_parcST) > 0
 	    		_wparcST = _parcST[1,1]
 	    	Endif
@@ -1056,7 +1012,6 @@ Static Function _BuscaZC0()
 	_oSQL:_sQuery +=   " AND D2_SERIE    = '"+ sd1 -> d1_seriori + "' "
 	_oSQL:_sQuery +=   " AND D2_COD      = '"+ sd1 -> d1_cod     + "' "
 	u_log(_oSQL:_sQuery)
-//	_aNfVen := aclone (_oSQL:Qry2Array ())
 	_aNfVen := aclone (_oSQL:Qry2Array (.f., .f.))
 
 	For _i:=1 to Len(_aNfVen)
