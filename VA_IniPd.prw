@@ -244,7 +244,7 @@ user function VA_IniPd (_sCampo, _lBrowse)
 						case _sUser == '000822'
 							_xRet = 'Franciele'
 						case _sUser == '000896'
-							_xRet = 'Franciele'	
+							_xRet = 'Franciele Borges'	
 						otherwise
 							_xRet = '' //_sUser + "(ajustar prog." + procname () + ")"
 					endcase
