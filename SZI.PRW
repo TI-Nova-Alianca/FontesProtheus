@@ -10,47 +10,47 @@
 // #Modulos           #COOP
 
 // Historico de alteracoes:
-// 28/03/2011 - Robert - Grava sequencial em funcao separada, com bloqueio via semaforo.
-// 30/03/2011 - Robert - Tratamento para ZI_TM passa a ser lido do SX5_10Gera.
-// 29/04/2011 - Robert - Gravacao do PA deixava E5_TIPODOC como 'BA'.
-// 01/07/2011 - Robert - Tratamento para campo memo (ZI_OBS).
-//                     - tratamento para tipos de movimento 08 e 09.
-//                     - Campo ZX510GERA dividido em ZX510GERI (Inclusao) e ZX510GERB (baixa).
-//                     - Implementado controle de quota capital.
-// 20/07/2011 - Robert - Funcao GeraSE2 passada para para 'user function'.
-// 10/08/2011 - Robert - Filtragem inicial de movimentos normais / capital.
-// 02/09/2011 - Robert - Passa a usar metodos Grava, PodeIncl, GeraAtrib da classe ClsCtaCorr.
-// 20/01/2012 - Robert - Definicao de contas para contabilizacao de resgates de quota capital.
-// 06/03/2012 - Robert - Quando baixa normal, nao manda conta a debito (pega depois do banco).
-// 27/04/2012 - Robert - Incluida chamada do VA_PSA em 'outras consultas'.
-// 04/05/2012 - Robert - Incluida chamada do fc050con em 'outras consultas'.
-// 06/09/2012 - Robert - Incluida chamada da consulta de saldo atual em 'outras consultas'.
-// 11/10/2012 - Robert - Implementado recalculo de saldo do lancamento atual.
-//                     - Implementada chamada de metodo de transferencia de saldo para outra filial.
-// 20/11/2012 - Robert - Criado tratamento para outros creditos com entrada de valor (gera SE5).
-// 03/03/2016 - Robert - Criada opcao de recalculo geral de saldos do associado.
-// 21/03/2016 - Robert - Valida se o usuario pertence ao grupo 059.
-// 01/04/2016 - Robert - Desabilitada chamada do prog. CADASSOC() por foi removido do projeto.
-// 12/09/2016 - Robert - Recalcula saldo lcto apos canc.baixa man. por que o P.E. generico FINA080 nao eh executado pela rot. de cancelamento.
-// 26/09/2016 - Robert - Executa o U_FINA080() apos baixa manual sontabilizando off-line (o P.E. nao eh executado nesse caso).
-// 03/01/2016 - Robert - Metodo AtuSaldo() da conta corrente nao recebe mais o saldo como parametro.
-// 06/02/2017 - Robert - Transferencias de saldos recebidas de outras filiais nao sao consideradas como 'calculado nesta filial'.
-// 05/09/2017 - Robert - Bloqueio emergencial para nao baixar movto 19
-// 28/11/2017 - Robert - Validacoes de existencia de corr.mon. e inclusao de tipos 08 e 09 passadas para a classe ClsCtaCorr.
-// 28/03/2018 - Catia  - Criada opção de fatura
-// 08/04/2019 - Catia  - include TbiConn.ch 
-// 21/01/2020 - Robert - Reabilitada consulta de cota capital.
-// 12/03/2020 - Robert - Ajustados parametros de chamada do relatorio IRAssoc (dados para fins de IR) - GLPI 7614.
-//                     - Comentariadas declaracoes de variaveis nao usadas; removidas algumas linhas jah comentariadas.
-// 27/03/2020 - Robert - Permite compensar titulos transferidos (em bordero) para atender adto.safra enviados via CNAB.
-// 01/04/2020 - Robert - Ajustados parametros de chamada do IRASSOC.PRW
-// 22/06/2020 - Robert - Criado parametro de filtro adicional para selecao de titulos a compensar.
-// 25/06/2020 - Robert - Para localizar o titulo no SE2 (baixar/canc.baixa), usa pref+num+parcela e nao nais o E2_VACHVEX.
-// 17/07/2020 - Robert - Inseridas tags para catalogacao de fontes
-//                     - Criada funcionalidade de alterar a data de vencimento (no finalceiro) do titulo correspondente (GLPI 8165).
-// 21/07/2020 - Robert - Filtro do browse inicial migrado para TOP (permite ao usuario criar filtros adicionais dentro da tela).
-// 23/07/2020 - Robert - Criada funcionalidade de cancelamento de fatura a pagar (GLPI 8221).
-// 29/07/2020 - Robert - Criado atalho para relatorio de fechamento de safra.
+// 28/03/2011 - Robert  - Grava sequencial em funcao separada, com bloqueio via semaforo.
+// 30/03/2011 - Robert  - Tratamento para ZI_TM passa a ser lido do SX5_10Gera.
+// 29/04/2011 - Robert  - Gravacao do PA deixava E5_TIPODOC como 'BA'.
+// 01/07/2011 - Robert  - Tratamento para campo memo (ZI_OBS).
+//                      - tratamento para tipos de movimento 08 e 09.
+//                      - Campo ZX510GERA dividido em ZX510GERI (Inclusao) e ZX510GERB (baixa).
+//                      - Implementado controle de quota capital.
+// 20/07/2011 - Robert  - Funcao GeraSE2 passada para para 'user function'.
+// 10/08/2011 - Robert  - Filtragem inicial de movimentos normais / capital.
+// 02/09/2011 - Robert  - Passa a usar metodos Grava, PodeIncl, GeraAtrib da classe ClsCtaCorr.
+// 20/01/2012 - Robert  - Definicao de contas para contabilizacao de resgates de quota capital.
+// 06/03/2012 - Robert  - Quando baixa normal, nao manda conta a debito (pega depois do banco).
+// 27/04/2012 - Robert  - Incluida chamada do VA_PSA em 'outras consultas'.
+// 04/05/2012 - Robert  - Incluida chamada do fc050con em 'outras consultas'.
+// 06/09/2012 - Robert  - Incluida chamada da consulta de saldo atual em 'outras consultas'.
+// 11/10/2012 - Robert  - Implementado recalculo de saldo do lancamento atual.
+//                      - Implementada chamada de metodo de transferencia de saldo para outra filial.
+// 20/11/2012 - Robert  - Criado tratamento para outros creditos com entrada de valor (gera SE5).
+// 03/03/2016 - Robert  - Criada opcao de recalculo geral de saldos do associado.
+// 21/03/2016 - Robert  - Valida se o usuario pertence ao grupo 059.
+// 01/04/2016 - Robert  - Desabilitada chamada do prog. CADASSOC() por foi removido do projeto.
+// 12/09/2016 - Robert  - Recalcula saldo lcto apos canc.baixa man. por que o P.E. generico FINA080 nao eh executado pela rot. de cancelamento.
+// 26/09/2016 - Robert  - Executa o U_FINA080() apos baixa manual sontabilizando off-line (o P.E. nao eh executado nesse caso).
+// 03/01/2016 - Robert  - Metodo AtuSaldo() da conta corrente nao recebe mais o saldo como parametro.
+// 06/02/2017 - Robert  - Transferencias de saldos recebidas de outras filiais nao sao consideradas como 'calculado nesta filial'.
+// 05/09/2017 - Robert  - Bloqueio emergencial para nao baixar movto 19
+// 28/11/2017 - Robert  - Validacoes de existencia de corr.mon. e inclusao de tipos 08 e 09 passadas para a classe ClsCtaCorr.
+// 28/03/2018 - Catia   - Criada opção de fatura
+// 08/04/2019 - Catia   - include TbiConn.ch 
+// 21/01/2020 - Robert  - Reabilitada consulta de cota capital.
+// 12/03/2020 - Robert  - Ajustados parametros de chamada do relatorio IRAssoc (dados para fins de IR) - GLPI 7614.
+//                      - Comentariadas declaracoes de variaveis nao usadas; removidas algumas linhas jah comentariadas.
+// 27/03/2020 - Robert  - Permite compensar titulos transferidos (em bordero) para atender adto.safra enviados via CNAB.
+// 01/04/2020 - Robert  - Ajustados parametros de chamada do IRASSOC.PRW
+// 22/06/2020 - Robert  - Criado parametro de filtro adicional para selecao de titulos a compensar.
+// 25/06/2020 - Robert  - Para localizar o titulo no SE2 (baixar/canc.baixa), usa pref+num+parcela e nao nais o E2_VACHVEX.
+// 17/07/2020 - Robert  - Inseridas tags para catalogacao de fontes
+//                      - Criada funcionalidade de alterar a data de vencimento (no finalceiro) do titulo correspondente (GLPI 8165).
+// 21/07/2020 - Robert  - Filtro do browse inicial migrado para TOP (permite ao usuario criar filtros adicionais dentro da tela).
+// 23/07/2020 - Robert  - Criada funcionalidade de cancelamento de fatura a pagar (GLPI 8221).
+// 29/07/2020 - Robert  - Criado atalho para relatorio de fechamento de safra.
 // 13/08/2020 - Cláudia - Ajustado o valor das consultas de faturas. GLPI: 8255
 // 16/10/2020 - Robert  - Baixa de titulos: Busca contas contabeis parra TM=29 iguais as do TM=01.
 // 23/10/2020 - Claudia - Ajuste de visualização do cadastro de fornecedores. GLPI: 8683
@@ -67,6 +67,7 @@
 // 03/08/2023 - Robert  - Rel. de IR nao tem mais o parametro de 'nucleo'.
 // 18/10/2023 - Robert  - Desabilitado botao 'compensar com titulos de outros fornecedores'
 // 15/05/2024 - Claudia - Incluido o campo de vencimento financeiro na gravação. GLPI:15476
+// 04/10/2024 - Claudia - Alterada a legenda de titulos parciais para azul.
 //
 // --------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -177,9 +178,9 @@ user function SZILG (_lRetCores)
 	local _aCores  := {}
 	local _aCores2 := {}
 	local _i       := 0
-	aadd (_aCores, {"zi_saldo==0",        'BR_VERMELHO', 'Baixado'})
-	aadd (_aCores, {"zi_saldo==zi_valor", 'BR_VERDE',    'Aberto'})
-	aadd (_aCores, {"zi_saldo< zi_valor", 'BR_AMARELO',  'Baix.parcial'})
+	aadd (_aCores, {"zi_saldo==0",        'BR_VERMELHO' , 'Baixado'		})
+	aadd (_aCores, {"zi_saldo==zi_valor", 'BR_VERDE'	, 'Aberto'		})
+	aadd (_aCores, {"zi_saldo< zi_valor", 'BR_AZUL'     , 'Baix.parcial'})
 	
 	if ! _lRetCores
 		for _i = 1 to len (_aCores)
