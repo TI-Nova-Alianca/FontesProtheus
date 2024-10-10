@@ -69,6 +69,7 @@
 // 15/05/2024 - Claudia - Incluido o campo de vencimento financeiro na gravação. GLPI:15476
 // 04/10/2024 - Claudia - Alterada a legenda de titulos parciais para azul.
 // 09/10/2024 - Claudia - Retirada a impressão de capital social do Protheus. GLPI: 16079
+// 10/10/2024 - Claudia - Opções financeiras serão executadas apenas no modulo financeiro. GLPI: 16122
 //
 // --------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -105,53 +106,58 @@ User Function szi()
 		return
 	endif
 
-	// Submenu de rotinas especificas para saldos.
-	aadd (_aRotSald, {"Transf.saldo p/outra filial", "U_SZIT()",0,2})
-	aadd (_aRotSald, {"Recalcular saldo deste lcto", "U_SZIRS(1)",0,2})
-	if U_ZZUVL ('051', __cUserID, .F.)
-		aadd (_aRotSald, {"Recalc.saldos acum.(anuais) associado", "U_SZIRS(2)",0,2})
-		aadd (_aRotSald, {"Recalc.saldo diversos lctos.do associado", "U_SZIRS(3)",0,2})
-	endif
+	If cModulo == 'FAT'
+		aadd (aRotina, {"&Pesquisar"        , "AxPesqui", 0,1})
+		aadd (aRotina, {"&Visualizar"       , "AxVisual", 0,1})
+	else
+		// Submenu de rotinas especificas para saldos.
+		aadd (_aRotSald, {"Transf.saldo p/outra filial", "U_SZIT()",0,2})
+		aadd (_aRotSald, {"Recalcular saldo deste lcto", "U_SZIRS(1)",0,2})
+		if U_ZZUVL ('051', __cUserID, .F.)
+			aadd (_aRotSald, {"Recalc.saldos acum.(anuais) associado", "U_SZIRS(2)",0,2})
+			aadd (_aRotSald, {"Recalc.saldo diversos lctos.do associado", "U_SZIRS(3)",0,2})
+		endif
 
-	// Submenu de rotinas especificas para atualizar parametros (principalmente 'contabiliza online') de telas padrao que vao ser chamadas via rotinas automatica.
-	aadd (_aRotParF, {"Incl/excl.ctas.pagar", 'Pergunte ("FIN050", .t.)', 0,4})
-	aadd (_aRotParF, {"Baixas pagar manuais", 'Pergunte ("FIN080", .t.)', 0,4})
-	aadd (_aRotParF, {"Baixas pagar autom.",  'Pergunte ("FIN090", .t.)', 0,4})
-	aadd (_aRotParF, {"Compensacao c.pagar",  'Pergunte ("AFI340", .t.)', 0,4})
-	aadd (_aRotParF, {"Movimento bancario",   'Pergunte ("AFI100", .t.)', 0,4})
+		// Submenu de rotinas especificas para atualizar parametros (principalmente 'contabiliza online') de telas padrao que vao ser chamadas via rotinas automatica.
+		aadd (_aRotParF, {"Incl/excl.ctas.pagar", 'Pergunte ("FIN050", .t.)', 0,4})
+		aadd (_aRotParF, {"Baixas pagar manuais", 'Pergunte ("FIN080", .t.)', 0,4})
+		aadd (_aRotParF, {"Baixas pagar autom.",  'Pergunte ("FIN090", .t.)', 0,4})
+		aadd (_aRotParF, {"Compensacao c.pagar",  'FINA340'					, 0,4})
+		aadd (_aRotParF, {"Movimento bancario",   'Pergunte ("AFI100", .t.)', 0,4})
 
-	// Submenu de rotinas adicionais
-	aadd (_aRotAdic, {"Extrato conta corrente",   "U_SZIR(1)",0,2})
-	aadd (_aRotAdic, {"Extr.producao associado",  "U_SZIR(2)",0,2})
-	aadd (_aRotAdic, {"Registros relacionados",   "U_SZIR(3)",0,2})
-	aadd (_aRotAdic, {"Posicao fornecedor",       "U_SZIR(4)",0,2})
-	aadd (_aRotAdic, {"Cadastro fornecedor",      "U_SZIR(5)",0,2})
-	aadd (_aRotAdic, {"Capital social",           "U_SZIR(6)",0,2})
-	aadd (_aRotAdic, {"Dados para fins de IR",    "U_SZIR(8)",0,2})
-	aadd (_aRotAdic, {"Cons. titulos CP",         "U_SZIR(9)",0,2})
-	aadd (_aRotAdic, {"Saldo na data base",       "U_SZIR(10)",0,2})
-	aadd (_aRotAdic, {"Rel.saldos c.corr.",       "U_SZIR(11)",0,2})
-	aadd (_aRotAdic, {"Consulta Fatura",          "U_SZIR(12)",0,2})
-	aadd (_aRotAdic, {"Rel.fechamento safra",     "U_SZIR(13)",0,2})
-	if alltrim (upper (cUserName)) $ "ROBERT.KOCH"
-		aadd (_aRotAdic, {"Robert-teste compensacoes", "U_SZIR(98)",0,2})
-		aadd (_aRotAdic, {"Robert-gera SE2",           "U_SZIR(97)",0,2})
-	endif
+		// Submenu de rotinas adicionais
+		aadd (_aRotAdic, {"Extrato conta corrente",   "U_SZIR(1)",0,2})
+		aadd (_aRotAdic, {"Extr.producao associado",  "U_SZIR(2)",0,2})
+		aadd (_aRotAdic, {"Registros relacionados",   "U_SZIR(3)",0,2})
+		aadd (_aRotAdic, {"Posicao fornecedor",       "U_SZIR(4)",0,2})
+		aadd (_aRotAdic, {"Cadastro fornecedor",      "U_SZIR(5)",0,2})
+		aadd (_aRotAdic, {"Capital social",           "U_SZIR(6)",0,2})
+		aadd (_aRotAdic, {"Dados para fins de IR",    "U_SZIR(8)",0,2})
+		aadd (_aRotAdic, {"Cons. titulos CP",         "U_SZIR(9)",0,2})
+		aadd (_aRotAdic, {"Saldo na data base",       "U_SZIR(10)",0,2})
+		aadd (_aRotAdic, {"Rel.saldos c.corr.",       "U_SZIR(11)",0,2})
+		aadd (_aRotAdic, {"Consulta Fatura",          "U_SZIR(12)",0,2})
+		aadd (_aRotAdic, {"Rel.fechamento safra",     "U_SZIR(13)",0,2})
+		if alltrim (upper (cUserName)) $ "ROBERT.KOCH"
+			aadd (_aRotAdic, {"Robert-teste compensacoes", "U_SZIR(98)",0,2})
+			aadd (_aRotAdic, {"Robert-gera SE2",           "U_SZIR(97)",0,2})
+		endif
 
-	// Menu principal
-	aadd (aRotina, {"&Pesquisar"        , "AxPesqui", 0,1})
-	aadd (aRotina, {"&Visualizar"       , "AxVisual", 0,1})
-	aadd (aRotina, {"&Incluir"          , "U_SZII",   0,3})
-	aadd (aRotina, {"&Alterar"          , "U_SZIA",   0,4})
-	aadd (aRotina, {"&Excluir"          , "U_SZIE",   0,4})
-	aadd (aRotina, {"&Baixar"           , "U_SZIB",   0,4})
-	aadd (aRotina, {"&Canc.baixa"       , "U_SZIC",   0,4})
-	aadd (aRotina, {"Al&terar dt.vencto", "U_SZIADV", 0,4})
-	aadd (aRotina, {"Cancelar &fatura"  , "U_SZICF (.F.)",  0,4})
-	aadd (aRotina, {"&Saldos"           , _aRotSald,  0,4})
-	aadd (aRotina, {"Parametros financ.", _aRotParF,  0,4})
-	aadd (aRotina, {"&Outras consultas" , _aRotAdic,  0,4})
-	aadd (aRotina, {"&Legenda"          , "U_SZILG (.F.)", 0,5})
+		// Menu principal
+		aadd (aRotina, {"&Pesquisar"        , "AxPesqui", 0,1})
+		aadd (aRotina, {"&Visualizar"       , "AxVisual", 0,1})
+		aadd (aRotina, {"&Incluir"          , "U_SZII",   0,3})
+		aadd (aRotina, {"&Alterar"          , "U_SZIA",   0,4})
+		aadd (aRotina, {"&Excluir"          , "U_SZIE",   0,4})
+		aadd (aRotina, {"&Baixar"           , "U_SZIB",   0,4})
+		aadd (aRotina, {"&Canc.baixa"       , "U_SZIC",   0,4})
+		aadd (aRotina, {"Al&terar dt.vencto", "U_SZIADV", 0,4})
+		aadd (aRotina, {"Cancelar &fatura"  , "U_SZICF (.F.)",  0,4})
+		aadd (aRotina, {"&Saldos"           , _aRotSald,  0,4})
+		aadd (aRotina, {"Parametros financ.", _aRotParF,  0,4})
+		aadd (aRotina, {"&Outras consultas" , _aRotAdic,  0,4})
+		aadd (aRotina, {"&Legenda"          , "U_SZILG (.F.)", 0,5})
+	EndIf
 
 	_ValidPerg ()
 	if ! pergunte (cPerg, .T.)
