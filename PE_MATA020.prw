@@ -17,6 +17,7 @@
 //                      - Botao consulta eventos do fornecedor
 // 09/10/2024 - Claudia - Criada a função _AlteraNAWeb para envio de dados do fornecedor
 //                        associado para NAWEB. GLPI: 10138
+// 14/10/2024 - Claudia - Alterada avalidação para inclusão de fornecedor-associado. GLPI: 16239
 //
 // --------------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -213,7 +214,10 @@ Static Function _AlteraNAWeb()
         _sSituacao:= str(_aRet[_x,3])
     Next
 
-    If alltrim(_sSituacao) $ ('1/2/3/4')
+    If (alltrim(_sSituacao) $ ('1/2/3/4')) .or. (alltrim(M->A2_NATUREZ) == '120201' .and. altrim(M->A2_CONTA) == '201030101001')
+
+		_sEmail :=	M->A2_EMAIL +';'+ M->A2_VAMDANF
+
         _sXML := '<?xml version="1.0" encoding="utf-8"?>'
         _sXML += '<SDT_AssociadoNovo>'
         _sXML +=    '<Item>'
@@ -223,12 +227,12 @@ Static Function _AlteraNAWeb()
         _sXML +=        '<A2_VADTNAS>'   + DTOS(M->A2_VADTNAS)  +'</A2_VADTNAS>' 
         _sXML +=        '<A2_TIPO>'      + M->A2_TIPO           +'</A2_TIPO>' 
         _sXML +=        '<A2_VASEXO>'    + M->A2_VASEXO         +'</A2_VASEXO>'
-        _sXML +=        '<A2_VAMDANF>'   + M->A2_VAMDANF        +'</A2_VAMDANF>' 
+        _sXML +=        '<A2_VAMDANF>'   + _sEmail              +'</A2_VAMDANF>' 
         _sXML +=        '<A2_END>'       + M->A2_END            +'</A2_END>' 
         _sXML +=        '<A2_CEP>'       + M->A2_CEP            +'</A2_CEP>'
         _sXML +=        '<A2_INSCR>'     + M->A2_INSCR          +'</A2_INSCR>' 
         _sXML +=        '<A2_LOJA>'      + M->A2_LOJA           +'</A2_LOJA>' 
-        _sXML +=        '<A2_CONTA>'     + M->A2_CONTA          +'</A2_CONTA>' 
+        _sXML +=        '<A2_CONTA>'     + M->A2_NUMCON         +'</A2_CONTA>' 
         _sXML +=        '<A2_AGENCIA>'   + M->A2_AGENCIA        +'</A2_AGENCIA>' 
         _sXML +=        '<A2_BANCO>'     + M->A2_BANCO          +'</A2_BANCO>' 
         _sXML +=        '<A2_TEL>'       + M->A2_TEL            +'</A2_TEL>' 
