@@ -183,9 +183,10 @@ user function SZILG (_lRetCores)
 	local _aCores  := {}
 	local _aCores2 := {}
 	local _i       := 0
-	aadd (_aCores, {"zi_saldo==0",        'BR_VERMELHO' , 'Baixado'		})
-	aadd (_aCores, {"zi_saldo==zi_valor", 'BR_VERDE'	, 'Aberto'		})
-	aadd (_aCores, {"zi_saldo< zi_valor", 'BR_AZUL'     , 'Baix.parcial'})
+	aadd (_aCores, {"zi_saldo==0"								  , 'BR_VERMELHO' , 'Baixado'	  })
+	aadd (_aCores, {"zi_saldo==zi_valor .and. empty(zi_bordero)"  , 'BR_VERDE'	  , 'Aberto'	  })
+	aadd (_aCores, {"zi_saldo< zi_valor "						  , 'BR_AZUL'     , 'Baix.parcial'})
+	aadd (_aCores, {"zi_saldo==zi_valor .and. !empty(zi_bordero)" , 'BR_PRETO'    , 'Em Borderô'  })
 	
 	if ! _lRetCores
 		for _i = 1 to len (_aCores)
