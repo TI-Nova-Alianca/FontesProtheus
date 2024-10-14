@@ -1,15 +1,15 @@
-// Programa:  CUSTOMERVENDOR
-// Autor:     Andre Alves
-// Data:      06/05/2019
+// Programa.: CUSTOMERVENDOR
+// Autor....: Andre Alves
+// Data.....: 06/05/2019
 // Descricao: Ponto entrada na tela cadastro de Fornecedores.
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #Ponto de entrada generico no cadastro de fornecedores.
 // #PalavasChave      #ponto_entrada
 // #TabelasPrincipais #SA2
 // #Modulos           #COM #EST #COOP
-
+//
 // Historico de alteracoes:
 // 15/07/2022 - Robert  - Impede exclusao se tiver movimentacao na conta corrente de associados.
 // 01/08/2023 - Robert  - Guardar motivo de alt.dados banc.assoc - GLPI 14026
@@ -214,7 +214,7 @@ Static Function _AlteraNAWeb()
         _sSituacao:= str(_aRet[_x,3])
     Next
 
-    If (alltrim(_sSituacao) $ ('1/2/3/4')) .or. (alltrim(M->A2_NATUREZ) == '120201' .and. altrim(M->A2_CONTA) == '201030101001')
+    If (alltrim(_sSituacao) $ ('1/2/3/4')) .or. (alltrim(M->A2_NATUREZ) == '120201' .and. alltrim(M->A2_CONTA) == '201030101001')
 
 		_sEmail :=	M->A2_EMAIL +';'+ M->A2_VAMDANF
 
