@@ -45,6 +45,7 @@
 // 08/12/2023 - Claudia - Não realizar a cópia dos campos B1_RASTRO e B1_LOCALIZ. GLPI: 14607
 // 08/03/2023 - Claudia - Retirada validação do campo b1_locprod
 // 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 17/10/2024 - Claudia - Incluido mensagem de alteração de custo. GLPI: 16026
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -55,6 +56,7 @@ User Function ITEM()
 	local oObj  := NIL
 	local nOper := 0
 	local _xRet := NIL
+	private _nCnt := 0
 
 	// Sugestao para obter o conteudo de ParamIXB: habilitar o parametro IXBLOG=LOGRUN no appserver.ini e consultar o log gerado na pasta \ixbpad
 	if paramixb <> NIL
@@ -105,10 +107,11 @@ User Function ITEM()
 			_xRet = NIL
 
 		ElseIf paramixb [2] == "FORMPOS"  			// Pós configurações do Formulário
-			_xRet = NIL			
+			_xRet := _A010FPOS () 		
 
 		ElseIf paramixb [2] == "MODELCANCEL"  		// Quando o usuario cancela a edicao (tenta sair sem salvar)
 			_xRet = .T.
+
 		ElseIf paramixb [2] == "FORMCOMMITTTSPOS"  	// Pós validações do Commit
 			_xRet = NIL
 
@@ -194,11 +197,6 @@ static function _A010TOk ()
 			u_help ("Campo '" + alltrim (RetTitle ("B1_LITROS")) + "' deve ser informado para este tipo de produto.")
 			_lRet = .F.
 		endif
-	// else
-	// 	if ! empty (m->b1_locprod)
-	// 		u_help ("Campo '" + alltrim (RetTitle ("B1_LOCPROD")) + "' nao deve ser informado para este tipo de produto.")
-	// 		_lRet = .F.
-	// 	endif
 	endif
 		
 	if ! m->b1_tipo $ "PA/MR"
@@ -367,6 +365,11 @@ static function _A010TOk ()
 		endif
 	endif
 
+	if _lRet .and. m->b1_msblql ='2' .and. empty(m->b1_custd) .and. m->b1_tipo=='PA'
+		u_help("Custo Stand. é obrigatório em produtos liberados. Verifique!")
+		_lRet := .F.
+	endif
+
 	if _lRet .and. paramixb [1]:nOperation == 4  // Se estou alterando um cadastro, gero evento de alteracao.
 		_aAreaSB1 := sb1 -> (getarea ())
 		sb1 -> (dbsetorder (1))
@@ -379,11 +382,17 @@ static function _A010TOk ()
 		restarea (_aAreaSB1)
 	endif
 
-	if _lRet .and. m->b1_msblql ='2' .and. empty(m->b1_custd) .and. m->b1_tipo=='PA'
-		u_help("Custo Stand. é obrigatório em produtos liberados. Verifique!")
-		_lRet := .F.
-	endif
 return _lRet
+//
+// --------------------------------------------------------------------------
+// validação de formulario - executa uma vez só
+Static Function _A010FPOS ()
+	if sb1->b1_custd <> m->b1_custd .and. sb1 -> b1_tipo == 'PA'
+		_sTitulo := "Alteração de custo produto " + alltrim(m->b1_cod) + ' - ' + alltrim(m->b1_desc)
+		_sMsg    := _sTitulo + " de " + cvaltochar(sb1->b1_custd) + " para " + cvaltochar(m->b1_custd)
+		U_ZZUNU ({"161"}, "Alteração de custo produto " + alltrim(m->b1_cod) + ' - ' + alltrim(m->b1_desc), _sMsg)
+	endif
+Return
 //
 // --------------------------------------------------------------------------
 // validação de alteração
@@ -394,7 +403,7 @@ static function _MT010Alt()
 	if sb1 -> b1_tipo == 'PA'  // A principio nao temos intencao de vender outros tipos de itens.
 		U_AtuMerc ('SB1', sb1 -> (recno ()))
 	endif
-	
+
 	// Avisos para logistica
 	_AvisaLog ()
 	
