@@ -4,15 +4,15 @@
 // Descricao..: P.E. apos a inclusao de pre-nota de entrada.
 //
 // Historico de alteracoes:
-// 30/09/2014 -        - incluida opcao para mandar email - se pre-nota estiver bloqueada
-// 03/03/2016 -        - alteracao para que nao solicite se deseja imprimir romaneio quando eh conhecimento de frete
-// 27/03/2018 -        - estava funcao _AtuZZX ('') nao encontrada
-// 23/11/2018 -        - tirado teste do bat de transferencias de filiais
-// 17/12/2018 -        - Incluida impressão de romaneio de entrada
-// 21/09/2022 - Robert - Log de impressao de romaneio.
-// 04/04/2024 - Robert - Chamar impressao de romaneio para qualquer filial.
+// 30/09/2014 -         - incluida opcao para mandar email - se pre-nota estiver bloqueada
+// 03/03/2016 -         - alteracao para que nao solicite se deseja imprimir romaneio quando eh conhecimento de frete
+// 27/03/2018 -         - estava funcao _AtuZZX ('') nao encontrada
+// 23/11/2018 -         - tirado teste do bat de transferencias de filiais
+// 17/12/2018 -         - Incluida impressão de romaneio de entrada
+// 21/09/2022 - Robert  - Log de impressao de romaneio.
+// 04/04/2024 - Robert  - Chamar impressao de romaneio para qualquer filial.
+// 16/10/2024 - Claudia - Retirado a chamada da impressão para a execução do totvs transmite. GLPI: 16255
 //
-
 // --------------------------------------------------------------------------------------------------------
 user function SF1140I ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -25,17 +25,17 @@ user function SF1140I ()
    //     U_GEmailPreNF (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
     //endif
    
-	// Imprime romaneio de entrada
-	if sf1 -> f1_especie !='CTR' .and. sf1 -> f1_especie !='CTE'
-		if ! isincallstack ('U_ZZXG') 
-			if ! (isincallstack ('U_TRS006IMP') .and. isincallstack ('REPALL'))  // Se foi chamado pelo botao 'reprocessa todos' do painel XML.
-			//	if cEmpAnt + cFilAnt == '0101' .and. U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
-				if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
-					U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
-				endif
-			endif
-		endif
-	endif
+	// // Imprime romaneio de entrada
+	// 	if sf1 -> f1_especie !='CTR' .and. sf1 -> f1_especie !='CTE'
+	// 		if ! isincallstack ('U_ZZXG') .and. ! isincallstack ('U_SCHEDCOMCOL') .and. ! isincallstack ('U_SCHEDUPDTRA') .and.  ! isincallstack ('U_SCHEDIMPTRA')
+	// 			if ! (isincallstack ('U_TRS006IMP') .and. isincallstack ('REPALL'))  // Se foi chamado pelo botao 'reprocessa todos' do painel XML.
+	// 			//	if cEmpAnt + cFilAnt == '0101' .and. U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
+	// 				if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
+	// 					U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
+	// 				endif
+	// 			endif
+	// 		endif
+	// 	endif
 	
 	// grava usuario que esta incluindo o documento de entrada
     RecLock("SF1",.F.)
