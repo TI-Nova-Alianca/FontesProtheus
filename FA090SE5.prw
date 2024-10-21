@@ -1,23 +1,22 @@
-// Programa:   FA090SE5
-// Autor:      Robert Koch
-// Data:       11/10/2012
-// Descricao:  P.E. apos gravacao do SE5 na tela FINA090 (baixa automatica de contas a pagar).
-//             Criado inicialmente para atualizar conta corrente associados.
- 
+// Programa.: FA090SE5
+// Autor....: Robert Koch
+// Data.....: 11/10/2012
+// Descricao: P.E. apos gravacao do SE5 na tela FINA090 (baixa automatica de contas a pagar).
+//            Criado inicialmente para atualizar conta corrente associados.
+// 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #P.E. apos gravacao do SE5 na tela FINA090 (baixa automatica de contas a pagar).
 // #PalavasChave      #baixa #contas_a_pagar
 // #TabelasPrincipais #SE5
 // #Modulos           #FIN
-
+//
 // Historico de alteracoes:
 // 03/01/2016 - Robert - Ajustes atualizacao SZI.
 // 12/03/2021 - Robert - Removidos logs desnecessarios.
 //
-
 // --------------------------------------------------------------------------
-user function FA090SE5 ()
+user function FA090SE5()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
@@ -30,12 +29,10 @@ user function FA090SE5 ()
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Atualiza (se for o caso) o arquivo SZI.
-static function _AtuSZI ()
+static function _AtuSZI()
     local _nRegSE5  := 0
     local _oCtaCorr := NIL
 
@@ -58,8 +55,8 @@ static function _AtuSZI ()
 			_oSQL:_sQuery +=   " AND SE5.E5_PARCELA = '" + se2 -> e2_parcela + "'"
 			_oSQL:_sQuery +=   " AND SE5.E5_TIPO    = '" + se2 -> e2_tipo    + "'"
 			_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
-			//_oSQL:Log ()
 			_nRegSE5 = _oSQL:RetQry ()
+
 			if _nRegSE5 > 0
 				se5 -> (dbgoto (_nRegSE5))
 				reclock ('SE5', .F.)
@@ -71,9 +68,7 @@ static function _AtuSZI ()
 			// Atualiza saldo conta corrente.
 			_oCtaCorr := ClsCtaCorr():New (szi -> (recno ()))
 			_oCtaCorr:AtuSaldo ()
-			
 		endif
-
 	endif
 return
 
