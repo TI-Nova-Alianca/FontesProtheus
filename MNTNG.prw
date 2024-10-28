@@ -45,7 +45,7 @@
 // 04/04/2024 - Robert  - Criado FILTER_EQUIPMENT (bens): ST9 somente bens com O.S. aberta no STJ.
 //                      - Acrescentado no FILTER_ORDER para O.S. preventivas: somente ultimos 30 e proximos 60 dias
 // 23/04/2024 - Robert  - Desabilitado filtro de equipamentos, por sugestao da Totvs (o proprio sistema jah faria a filtragem dos bend pelo campo 'ativo=S')
-//
+// 28/102024  - Sandra  - Atualizado para buscar (-60 dias) GLPI 15911
 
 #include "PROTHEUS.ch"
 
@@ -121,7 +121,7 @@ User Function MNTNG()
 		// muitas O.S. preventivas, programadas para varios meses adiante. Robert, 03/04/2024.
 		// Pelo que pude verificar, TJ_PLANO 000000 = corretiva (nao validar por data prevista, pois nao tem essa informacao)
 		_xRet += " and (TJ_PLANO = '000000'"
-		_xRet +=      " OR (TJ_DTMPINI >= FORMAT (DATEADD (DAY, -30, GETDATE ()), 'yyyyMMdd')"
+		_xRet +=      " OR (TJ_DTMPINI >= FORMAT (DATEADD (DAY, -60, GETDATE ()), 'yyyyMMdd')"
 		_xRet +=      " AND TJ_DTMPFIM <= FORMAT (DATEADD (DAY, 60,  GETDATE ()), 'yyyyMMdd')"
 		_xRet +=          ")"
 		_xRet +=      ")"
