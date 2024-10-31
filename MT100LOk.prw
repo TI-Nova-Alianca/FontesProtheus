@@ -2,14 +2,14 @@
 // Autor......: Jeferson Rech 
 // Data.......: 10/2004
 // Descricao..: Validacao LinhaOk da NF de Entrada 
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #Validacao LinhaOK da NF de Entrada
 // #PalavasChave      #Nf_de_entrada #linhaOK
 // #TabelasPrincipais #SD1 #SA1 #SA2 #SD2
 // #Modulos   		  #COM 
-
+//
 // Historico de alteracoes:
 // 13/10/2008 - Robert - Nao exige mais pedido de compra quando tiver NF original informada.
 // 16/10/2008 - Robert - Criada validacao de NF original/item/produto quando tipo NF = D.
@@ -82,8 +82,8 @@
 // 29/08/2022 - Robert  - Criada validacao para exigir F4_ESTOQUE=S quando tiver D1_ORDEM.
 // 30/11/2022 - Robert  - Passa a exigir dados de rastreabilidade para tipos de nota (antes era apenas cTipo=N)
 // 29/01/2024 - Robert  - Passa a exigir campo D1_DFABRIC quando item controla lotes.
+// 25/10/2024 - Claudia - Tratamento para frete - TOTVS Transmite. GLPI: 16297
 //
-
 // -------------------------------------------------------------------------------------------------------------------------
 User Function MT100LOK()
 	local _aAreaAnt    := U_ML_SRArea ()
@@ -92,7 +92,12 @@ User Function MT100LOK()
 	local _lTransFil   := .F.
 	Private _xLOJAPAT  := ""
 
-	If !IsInCallStack("MATA119") 
+	_sStatus := fBuscaCpo ('SF1', 1, xfilial('SF1') + PADL(alltrim(cNFiscal),9,'0') + cSerie + Ca100For + cLoja, "F1_STATUS")
+
+	If (empty(_sStatus) .and. (cEspecie == 'CTE' .or. cEspecie == 'CTR') .and. !IsInCallStack("MATA103"))
+		// neste caso esta gerando uma pré nota de frete, não será validado neste momento-> TOTVS TRANSMITE
+
+	elseif !IsInCallStack("MATA119") 
 		
 		// Como este ponto de entrada eh executado tanto durante o 'retornar' como durante o preenchimento
 		// manual da nota, preciso verificar em qual dos momentos estah sendo executado.
@@ -200,8 +205,7 @@ User Function MT100LOK()
 	EndIf
 	U_ML_SRArea (_aAreaAnt)
 Return(_lRet)
-
-
+//
 // ----------------------------------------------------------------------------------------
 // Validacoes ref. nota fiscal original.
 static function _ValNFOri ()
@@ -334,8 +338,7 @@ static function _ValNFOri ()
 		endif
 	endif
 return _lRet
-
-
+//
 // -------------------------------------------------------------------------------------------------
 // Validacoes ref. notas de entrada/compra de safra de uva.
 Static Function _ValSafra ()
@@ -391,8 +394,7 @@ Static Function _ValSafra ()
 		endif
 	endif
 return _lRetSafr
-
-
+//
 // -----------------------------------------------------------------------------------------------
 // Verificacoes sobre OP / item tipo BN
 static function _VerOPBN ()
@@ -435,7 +437,6 @@ static function _VerOPBN ()
 	endif
 
 	if _lRet .and. alltrim (GDFieldGet ("D1_CF")) $ '1124/2124'
-//		_sTpPrdInd = "BN/ME/PS/MP/VD"  // GLPI 12509
 		_sTpPrdInd = "BN/ME/PS/MP/VD/PP"  // GLPI 12509
 		if ! fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") $ _sTpPrdInd
 			u_help ("CFOP de industrializacao: o produto deve ser do tipo " + _sTpPrdInd,, .t.)
@@ -443,8 +444,7 @@ static function _VerOPBN ()
 		endif
 	endif
 return _lRet
-
-
+//
 // ---------------------------------------------------------------------------------------------------
 // Verificacoes integracao com Fullsoft.
 static function _VerFull (_lTransFil)
@@ -489,15 +489,12 @@ static function _VerFull (_lTransFil)
 		endif
 	endif
 return _lRet
-
-
+//
 // ------------------------------------------------------------------------------------------
 // Verificacoes para quando houver controle de lote.
 static function _VerLotes (_lTransFil, _lVA_Retor)
 	local _lRet    := .T.
 
-//	if _lRet .and. ! _lVA_Retor .and. cTipo == 'N' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
-//	if _lRet .and. ! _lVA_Retor .and. ! cTipo $ 'ICP' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
 	if _lRet .and. ! _lVA_Retor .and. ! cTipo $ 'ICP';
 		.and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID")) .or. empty (GDFieldGet ("D1_DFABRIC")));
 		.and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
@@ -507,8 +504,7 @@ static function _VerLotes (_lTransFil, _lVA_Retor)
 		endif
 	endif
 return _lRet
-
-
+//
 // -------------------------------------------------------------------------------------------------------
 // Verificacoes para datas.
 static function _VerData ()
@@ -527,8 +523,7 @@ static function _VerData ()
 		endif
 	endif
 return _lRet
-
-
+//
 // -----------------------------------------------------------------------------------------------
 // Verificacoes para OS (de manutencao).
 static function _VerOSMan ()

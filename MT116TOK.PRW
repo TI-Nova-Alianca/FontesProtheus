@@ -3,59 +3,66 @@
 // Data.......: 20/11/2015
 // Descricao..: P.E. 'Tudo OK' da tela de Conhecimentos de Fretes
 //
-// Historico de alteracoes:
-// 03/05/2016 - Catia  - Validar campo F4_FRETE - so podem ser usados TES com F4_FRETE = 1(SIM) nas especies CTR e CTe
-// 29/11/2016 - Robert - Layout de CT-e passa a ter nova tag <procCTe>
-// 07/03/2017 - Catia  - Validações no XML de CTEs
-// 05/01/2023 - Robert - Desabilitadas validacoes tabela ZZX (vamos comecar a usar o importador da TRS)
-// 14/03/2024 - Robert - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. 'Tudo OK' da tela de Conhecimentos de Fretes
+// #PalavasChave      #frete #conhecimento
+// #TabelasPrincipais #SD1 #SA1 #SA2 #SD2
+// #Modulos   		  #COM 
 //
-
-// --------------------------------------------------------------------------
+// Historico de alteracoes:
+// 03/05/2016 - Catia   - Validar campo F4_FRETE - so podem ser usados TES com F4_FRETE = 1(SIM) nas especies CTR e CTe
+// 29/11/2016 - Robert  - Layout de CT-e passa a ter nova tag <procCTe>
+// 07/03/2017 - Catia   - Validações no XML de CTEs
+// 05/01/2023 - Robert  - Desabilitadas validacoes tabela ZZX (vamos comecar a usar o importador da TRS)
+// 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 25/10/2024 - Claudia - Tratamento para frete - TOTVS Transmite. GLPI: 16297
+//
+// ---------------------------------------------------------------------------------------------------------------------
 User Function MT116TOK()
-	local _aAmbAnt   := U_SalvaAmb ()
-	local _aAreaAnt  := U_ML_SRArea ()
+	local _aAmbAnt   := U_SalvaAmb()
+	local _aAreaAnt  := U_ML_SRArea()
 	local _lRet      := .T.
 	local _nLinha	 := 0
 	private _aMatriz := {}
 	public _nRegZZX  := 0  // Deixar como 'public' para ser vista em outros pontos de entrada.
 	Public _vVlrTot  := 0
 
-	// valida TES de FRETE apenas para documento do tipo CTE ou CTR
-	For _nLinha := 1 to Len(aCols)
-		_xTES     := GDFieldGet( "D1_TES"     , _nLinha )
-		_wfrete = fBuscaCpo ('SF4', 1, xfilial('SF4') + _xTES, "F4_FRETE")
-		if _wfrete != '1'
-			u_help ("Tipo de documento é FRETE, porém TES não é de FRETE. Verifique!")
-			_lRet = .F.
+	_sStatus := fBuscaCpo('SF1', 1, xfilial('SF1') + PADL(alltrim(cNFiscal),9,'0') + cSerie + Ca100For + cLoja, "F1_STATUS")
+
+	If (empty(_sStatus) .and. (cEspecie == 'CTE' .or. cEspecie == 'CTR') .and. !IsInCallStack("MATA103"))
+		// neste caso esta gerando uma pré nota de frete, não será validado neste momento
+	else
+		// valida TES de FRETE apenas para documento do tipo CTE ou CTR
+		For _nLinha := 1 to Len(aCols)
+			_xTES     := GDFieldGet( "D1_TES", _nLinha )
+			_wfrete = fBuscaCpo ('SF4', 1, xfilial('SF4') + _xTES, "F4_FRETE")
+
+			if _wfrete != '1'
+				u_help("Tipo de documento é FRETE, porém TES não é de FRETE. Verifique!")
+				_lRet = .F.
+			endif
+		next		
+		
+		If _lRet
+			_vVlrTot  := MaFisRet(,"NF_TOTAL") 
 		endif
-	next		
-	
-	If _lRet
-	  _vVlrTot  := MaFisRet(,"NF_TOTAL") 
-	endif
-	
-	If _lRet .and. Alltrim(cEspecie) $ "CTE"
 		
-		if LEN(ALLTRIM(CNFISCAL))!=tamsx3("F1_DOC")[1]
-			u_help ("Numero da nota fiscal deve ser totalmente preenchido.")
-			_lRet = .F.
+		If _lRet .and. Alltrim(cEspecie) $ "CTE"
+			
+			if LEN(ALLTRIM(CNFISCAL))!=tamsx3("F1_DOC")[1]
+				u_help ("Numero da nota fiscal deve ser totalmente preenchido.")
+				_lRet = .F.
+			endif
+		
+			if _lRet
+				_lRet = _ValChvNFe()
+			endif			
 		endif
+	EndIf
 	
-		if _lRet
-			_lRet = _ValChvNFe ()
-		endif			
-		
-		/* Estamos migrando para o importador da TRS
-		if _lRet 
-			_lRet = _ValXML ()
-		endif			
-		*/
-		
-	endif
-	
-	U_ML_SRArea (_aAreaAnt)
-	U_SalvaAmb (_aAmbAnt)
+	U_ML_SRArea(_aAreaAnt)
+	U_SalvaAmb(_aAmbAnt)
 Return(_lRet)
 // --------------------------------------------------------------------------
 // Verifica preenchimento da chave NFe.
