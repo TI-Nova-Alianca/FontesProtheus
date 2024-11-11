@@ -163,7 +163,8 @@
 // 10/08/2021 - Cláudia - Incluida validação na transferencia, para que crie a movimentação de produtos 
 //                        de manutençao no AX 02. GLPI: 10379
 // 11/01/2022 - Robert  - Criada validacao campo C1_VANF
-// 07/03/2022 - Robert  - Melhorada validacao de etiq.jah apontada/estornada no campo D3_VAETIQ (antes olhava campo ZA1_APONT e agora faz query no SD3).
+// 07/03/2022 - Robert  - Melhorada validacao de etiq.jah apontada/estornada no campo D3_VAETIQ 
+//                        (antes olhava campo ZA1_APONT e agora faz query no SD3).
 // 25/03/2022 - Robert  - Validacoes adicionais do campos C2_PRODUTO e D3_VAETIQ - GLPI 11825.
 // 16/05/2022 - Robert  - Restaurada valid.etiq.jah apontada (ganta alguns segundos do usuario).
 // 15/07/2022 - Robert  - Valida grupo 140 do ZZU no campo D3_VAETIQ.
@@ -192,8 +193,9 @@
 // 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 22/03/2024 - Robert  - Criada validacao para canpo B1_VAFULLW (GLPI 15127)
 // 03/04/2024 - Claudia - Retirado campo C5_VADCO. GLPI: 14763
-
-// -------------------------------------------------------------------------------------------------------------------
+// 11/11/2024 - Claudia - Retirada validação ZZ2. GLPI: 16386
+//
+// ---------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
 	local _lRet      := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -300,28 +302,6 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-//		case _sCampo $ "M->A2_VACAVIS/M->A2_VALAVIS"
-//		if empty (m->a2_vaCAvis) .and. ! empty (m->a2_vaLAvis)
-//			u_help ("Codigo deve ser informado antes da loja.")
-//			_lRet = .F.
-//		endif
-//		sa2 -> (dbsetorder (1))
-//		if _lRet .and. ! sa2 -> (dbseek (xfilial ("SA2") + m->a2_vaCAvis, .F.))
-//			u_help ("Fornecedor '" + m->a2_vaCAvis + "' nao cadastrado!")
-//			_lRet = .F.
-//		endif
-//		if _lRet .and. ! empty (m->a2_vaLAvis)
-//			if ! sa2 -> (dbseek (xfilial ("SA2") + m->a2_vaCAvis + m->a2_vaLAvis, .F.))
-//				u_help ("Fornecedor/loja '" + m->a2_vaCAvis + '/' + m->a2_vaLAvis + "' nao cadastrado!")
-//				_lRet = .F.
-//			else
-//				if ! u_EhAssoc (m->a2_vaCAvis, m->a2_vaLAvis, dDataBase)
-//					u_help ("Avisador informado nao consta como associado nesta data.")
-//					_lRet = .F.
-//				endif
-//			endif
-//		endif
-
 		case _sCampo $ "M->A2_VACBASE/M->A2_VALBASE"
 			if m->a2_vaCBase != m->a2_cod .or. m->a2_vaLBase != m->a2_loja
 				if empty (m->a2_vaCBase) .and. ! empty (m->a2_vaLBase)
@@ -377,7 +357,6 @@ user function VA_VCpo (_sCampo)
 				_lRet = .F.
 			endif
 
-
 		case _sCampo == "M->TL_DTINICI"
 			if _lRet
 				if M->TL_TIPOREG == 'M'  // Mao de obra
@@ -394,10 +373,6 @@ user function VA_VCpo (_sCampo)
 			endif
 
 		case _sCampo == "M->TL_DTFIM"
-//			if _lRet .and. (M->TL_DTFIM < Date() -3 .or. dDataBase > date ())
-//				U_Help ("Data final nao pode ser menor do que 3 dias da data de hoje.")
-//				_lRet = .F.
-//			endif
 			if _lRet
 				if M->TL_TIPOREG == 'M'  // Mao de obra
 					if M->TL_DTFIM < getmv ("MV_ULMES") .or. dDataBase > date ()
@@ -457,7 +432,6 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-
 		case _sCampo $ "M->B1_RASTRO" .and. m->b1_rastro = 'L'
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
@@ -471,9 +445,7 @@ user function VA_VCpo (_sCampo)
 				_lRet = .f.
 			endif
 
-
 		case _sCampo $ "M->B1_VAFULLW"
-			// empty(m->b1_vafullw).or.sb1->b1_vafullw!='S'
 			_lRet = .T.
 			if altera .and. M->B1_VAFULLW != 'S' .and. sb1 -> b1_vafullw = 'S'
 				_oSQL := ClsSQL ():New ()
@@ -500,7 +472,6 @@ user function VA_VCpo (_sCampo)
 						_oSQL:_sQuery +=   " where empr_codemp       = 1"
 						_oSQL:_sQuery +=     " and item_cod_item_log = ''" + alltrim (m->b1_cod) + "''"
 						_oSQL:_sQuery += " ')"
-					//	_oSQL:Log ('[' + procname () + ']')
 						if _oSQL:RetQry (1, .f.) > 0
 							u_help ("Produto '" + alltrim (M->B1_COD) + "' consta no sistema FulLWMS. Campo nao pode ser voltado para N.", _oSQL:_sQuery, .t.)
 							_lRet = .F.
@@ -508,7 +479,6 @@ user function VA_VCpo (_sCampo)
 					endif
 				endif
 			endif
-
 
 		case _sCampo $ "M->B1_VALINEN/M->C2_VALINEN/M->C4_VALINEN/M->G5_VALINEN/M->HC_VALINEN"
 			sh1 -> (dbsetorder (1))
@@ -521,7 +491,6 @@ user function VA_VCpo (_sCampo)
 					_lRet = .F.
 				endif
 			endif
-
 
 		case _sCampo $ "M->B1_VARMAAL"
 			_oSQL := ClsSQL ():New ()
@@ -564,7 +533,6 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-
 		case _sCampo $ "M->C1_VANF"
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
@@ -578,7 +546,6 @@ user function VA_VCpo (_sCampo)
 			if ! empty (_sRetSQL)
 				_lRet = U_MsgNoYes ("Este numero de NF ja foi informado nas seguintes solicitacoes: " + alltrim (_sRetSQL) + ". Confirma assim mesmo?")
 			endif
-
 
 		case _sCampo $ "M->C2_PRODUTO/M->DA1_CODPRO"
 			if alltrim (&(_sCampo)) != 'MANUTENCAO' //necessario para O.S de manutencao.
@@ -598,10 +565,8 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-
 		case _sCampo == "M->C2_QUANT"
 			_lRet = _ValQtLote ()
-
 
 		case _sCampo == "M->C2_VABARCX"
 			// Por enquanto, somente me interessa se o produto da OP vai ser
@@ -649,7 +614,6 @@ user function VA_VCpo (_sCampo)
 					_lRet = .F.
 				endif
 			endif
-
 
 		case _sCampo == "M->C2_VAOPESP"
 			if altera
@@ -748,17 +712,6 @@ user function VA_VCpo (_sCampo)
 
 		case _sCampo == "M->C5_TPFRETE"
 			// desabilitado no inicio da implantacao				_lRet = _ValMNet ()
-
-		// case _sCampo == "M->C5_VADCO"
-		// 	zz8 -> (dbsetorder (1))
-		// 	if ! zz8 -> (dbseek (xfilial ("ZZ8") + M->C5_VADCO, .F.))
-		// 		U_Help ("DCO nao cadastrado.")
-		// 		_lRet = .F.
-		// 	endif
-		// 	if _lRet .and. ! zz8 -> zz8_status == "F"
-		// 		U_Help ("DCO nao se encontra em fase de faturamento.")
-		// 		_lRet = .F.
-		// 	endif
 
 		case _sCampo == "M->C5_VAFEMB"
 			// 20130712 - para colocar na variavel todas as filiais que sao depositos (04/14/15/...)
@@ -1075,7 +1028,6 @@ user function VA_VCpo (_sCampo)
 				Next
 			endif
 
-
 		case _sCampo $ "M->D3_EMISSAO"
 			_lRet = .T.
 			if M->D3_EMISSAO != date ()
@@ -1092,9 +1044,7 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-
 		case _sCampo == "M->D3_VAETIQ"
-				//u_logpcham ()
 			za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 			if ! za1 -> (dbseek (xfilial ("ZA1") + m->d3_vaetiq, .F.))
 				u_help ("Etiqueta nao encontrada.")
@@ -1113,8 +1063,8 @@ user function VA_VCpo (_sCampo)
 				_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
 				_oSQL:_sQuery +=   " AND SD3.D3_VAETIQ  = '" + m->d3_vaetiq + "'"
 				_oSQL:_sQuery +=   " AND SD3.D3_CF LIKE 'PR%'"
-				//_oSQL:Log ('[' + procname () + ']')
 				_aApontEtq = aclone (_oSQL:Qry2Array (.f., .f.))
+
 				if _aApontEtq [1, 1] > 0
 					u_help ("Essa etiqueta ja gerou apontamento de producao.",, .t.)
 					_lRet = .f.
@@ -1130,7 +1080,6 @@ user function VA_VCpo (_sCampo)
 					_lRet = U_ZZUVL ('140', __cUserId, .T.)
 				endif
 			endif
-
 
 		case _sCampo $ "M->DB_LOCALIZ/M->DB_QUANT"
 			if funname () != 'MATA805' 
@@ -1192,7 +1141,6 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-
 		case _sCampo $ "M->D4_COD"
 			if IsInCallStack ("MATA380") .and. m->d4_cod == fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d4_op, "C2_PRODUTO")
 				u_help ("Componente nao pode ser igual ao produto final da OP.")
@@ -1202,7 +1150,6 @@ user function VA_VCpo (_sCampo)
 				u_help ("Componente nao pode ser igual ao produto final da OP.")
 				_lRet = .F.
 			endif
-
 
 		case _sCampo $ "M->D4_OP"
 			if IsInCallStack ("MATA380") .and. m->d4_cod == fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d4_op, "C2_PRODUTO")
@@ -1468,8 +1415,6 @@ user function VA_VCpo (_sCampo)
 				.and. sze -> ze_lojcoop == m->ze_LojCoop ;
 				.and. sze -> ze_assoc   == m->ze_Assoc ;
 				.and. sze -> ze_lojAsso == m->ze_LojAsso
-					//			if sze -> ze_nfprod == m->ze_NFProd
-					//			if sze -> ze_nfprod == m->ze_NFProd .and. sze -> ze_status != 'C'
 					if sze -> ze_nfprod == m->ze_NFProd .and. sze -> ze_snfprod == m->ze_SNFProd .and. sze -> ze_status != 'C'
 						if m->ze_assoc == "999999"  // Associado 'outros': valida pelo nome.
 							_lRet = U_MsgNoYes ("NF de produtor '" + m->ze_NFProd + "' ja informada na carga '" + sze -> ze_carga + "'" + chr (13) + chr (10) + ;
@@ -1593,20 +1538,6 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-		case _sCampo == "_ZZ2COD"
-			if ! empty (fBuscaCpo ("ZZ2", 2, xfilial ("ZZ2") + _ZZ2Cod, "ZZ2_COD"))
-				U_Help ("Codigo ja' cadastrado.")
-				_lRet = .F.
-			endif
-
-		case _sCampo == "_ZZ2FILI"
-			for _i = 3 to len (alltrim (_zz2Fili)) step 3
-				if substr (_ZZ2Fili, _i, 1) != "/"
-					U_Help ("Codigos das filiais devem ter 2 posicoes e ser separados por barras (/).")
-					_lRet = .F.
-				endif
-			next
-
 		case _sCampo == "M->ZZ5_CODLOJ"
 			sb1 -> (dbsetorder (1))
 			if ! sb1 -> (dbseek (xfilial ("SB1") + M->zz5_codloj, .F.))
@@ -1620,8 +1551,7 @@ user function VA_VCpo (_sCampo)
 					if empty (sb1 -> b1_codpai)
 						U_Help ("Produto nao possui codigo pai informado (campo '" + alltrim (RetTitle ("B1_CODPAI")) + "').")
 						_lRet = .F.
-					ENDIF
-					//				endif
+					endif
 				endif
 			endif
 
@@ -1637,16 +1567,15 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-
 		case _sCampo == "M->ZZ6_SUSPEN"
 			// Monta pattern (padrao) de pesquisa usando a sintaxe das expressoes regulares.
-			_sPattern := '2[0-9]{3}'  // Ano: iniciar por 2 seguido de 3 algarismos
-			_sPattern += '(0[1-9]|1[012])'  // Mes: (0 seguido de [1-9] ou 1 seguido de [012])
-			_sPattern += '(0[1-9]|[12][0-9]|3[01])'  // Dia: (0 seguido de [1-9] ou [12] seguido de [0-9] ou 3 seguido de [0 ou 1])
-			_sPattern += ' '                   // Um espaco entre a data e a hora
-			_sPattern += '([01][0-9]|2[0-3])'  // Horas: de (00 a 19) ou (20 a 23)
-			_sPattern += ':'                   // : separando horas e minutos
-			_sPattern += '[0-5][0-9]'          // Minutos: de 00 a 59
+			_sPattern := '2[0-9]{3}'  					// Ano: iniciar por 2 seguido de 3 algarismos
+			_sPattern += '(0[1-9]|1[012])'  			// Mes: (0 seguido de [1-9] ou 1 seguido de [012])
+			_sPattern += '(0[1-9]|[12][0-9]|3[01])'  	// Dia: (0 seguido de [1-9] ou [12] seguido de [0-9] ou 3 seguido de [0 ou 1])
+			_sPattern += ' '                   			// Um espaco entre a data e a hora
+			_sPattern += '([01][0-9]|2[0-3])'  			// Horas: de (00 a 19) ou (20 a 23)
+			_sPattern += ':'                   			// : separando horas e minutos
+			_sPattern += '[0-5][0-9]'          			// Minutos: de 00 a 59
 			_oRegex := tlpp.regex.Regex():new ('')
 			_oRegex:setCaseSensitive (.F.)
 			_oRegex:SetPattern (_sPattern)
@@ -1654,15 +1583,6 @@ user function VA_VCpo (_sCampo)
 				u_help ("Data / hora deve estar no formato AAAAMMDD HH:MM",, .t.)
 				_lRet = .F.
 			endif
-
-
-	//Controle migrado para o NaWeb --->	case _sCampo $ "M->ZZK_ASSOC/M->ZZK_LOJA"
-	//Controle migrado para o NaWeb --->		if m->zzk_ano == '2012'
-	//Controle migrado para o NaWeb --->			if ! empty (m->zzk_assoc) .and. ! empty (m->zzk_loja) .and. fBuscaCpo ("SA2", 1, xfilial ("SA2") + m->zzk_assoc + m->zzk_loja, "A2_VASTDAP") != "C"
-	//Controle migrado para o NaWeb --->				u_help ("Associado deve ter DAP para este ano.")
-	//Controle migrado para o NaWeb --->				_lRet = .F.
-	//Controle migrado para o NaWeb --->			endif
-	//Controle migrado para o NaWeb --->		endif
 
 		case _sCampo $ "M->ZZT_PESENT/M->ZZT_PESSAI"
 			if ! empty (m->zzt_safra) .and. ! empty (m->zzt_carga)
@@ -1716,14 +1636,13 @@ user function VA_VCpo (_sCampo)
 			_oAviso:Origem     = procname ()
 			_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
 			_oAviso:Grava ()
-
 	endcase
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
-
-// --------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------
 static function _VerTel (_sTel)
 //	local _lErroTel := .F.
 	local _i := 0
@@ -1739,8 +1658,8 @@ static function _VerTel (_sTel)
 		endif
 	next
 return .T.
-
-// --------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------
 // Calcula quantidade da OP para fechar com quantidade de lotes.
 static function _ValQtLote ()
 	local _lRet     := .T.
@@ -1786,14 +1705,13 @@ static function _ValQtLote ()
 				endif
 			endif
 			_nQtSuger = max (1, int (_nQtLotes)) * _nLoteMult
-// desfeito em 14/04/20			_nQtSuger = max (1, int (int (_nQtLotes)) * _nLoteMult)  // GLPI 7649
+
 			if _nQtLotes != int (_nQtLotes)
 				if m->c2_quant != _nQtSuger  // Para evitar casos em que eu iria sugerir qt. com varios decimais por causa de lotes com decimais, e o usuario jah fez o devido ajuste na quantidade.
 					_sMsg += chr (13) + chr (10) + chr (13) + chr (10)
 					_sMsg += "A quantidade prevista da OP corresponde a " + alltrim (transform (_nQtLotes, "@E 999999999.9999")) + " lotes."
 					_sMsg += chr (13) + chr (10) + chr (13) + chr (10)
 					_sMsg += "Sugere-se alterar a quantidade da OP para " + alltrim (transform (_nQtSuger, "@E 999,999,999,999.99")) + " " + sb1 -> b1_um
-// desfeito em 14/04/20					_sMsg += "Sugere-se alterar a quantidade da OP para " + alltrim (transform (_nQtSuger, "@E 999,999,999,999")) + " " + sb1 -> b1_um
 					_sMsg += chr (13) + chr (10) + chr (13) + chr (10)
 					_sMsg += "Confirma assim mesmo?"
 					_lRet = U_MsgNoYes (_sMsg)
@@ -1802,8 +1720,8 @@ static function _ValQtLote ()
 		endif
 	endif
 return _lRet
-
-// --------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------
 // Validacoes para integracao com Mercanet.
 static function _ValMNet ()
 	local _lRet := .T.
@@ -1819,54 +1737,9 @@ static function _ValMNet ()
 			_lRet = .F.
 		endif
 	endif
-
 return _lRet
-/*
-// -------------------------------------------------------------------
-// Encontra campos no aHeader
-static function _AchaCol (_sCampo, _nQual)
-	local _nCol1 := 0
-	local _nCol2 := 0
-	local _nRet  := 0
-	for _nCol1 = 1 to len (aHeader)
-		if upper (alltrim (aHeader [_nCol1, 2])) == upper (alltrim (_sCampo))
-			if _nQual == 1
-				_nRet = _nCol1
-				exit
-			else
-				for _nCol2 = _nCol1 + 1 to len (aHeader)
-					if upper (alltrim (aHeader [_nCol2, 2])) == upper (alltrim (_sCampo))
-						_nRet = _nCol2
-						exit
-					endif
-				next
-				exit
-			endif
-		endif
-	next
-	return _nRet
-*/
-	//--------------------------------------------------------------------
-	// valida data de Condicoeso pagamento que obrigatoriamente tem que ser maior do que a data base do sistema
-
-	if _lRet .and. ! GDDeleted () .and. ! empty (GDFieldGet ("C5_CONPAG"))
-		_wTipo = fBuscaCpo ('SE4', 1, xfilial('SE4') + m->c5_cliente + m->c5_lojacli, "SE4_TIPO")
-		if _wTipo = '9'
-			u_help ("Data do vencimento da parcela deve ser obrigatoriamente maior do que a data base.",, .t.)
-			_lRet = .F.
-		endif
-		if GDFieldGet ("C5_DATA1") < ddatabase
-			u_help ("Data do vencimento da parcela deve ser obrigatoriamente maior do que a data base.",, .t.)
-			_lRet = .F.
-		endif
-		if GDFieldGet ("C5_DATA2") < ddatabase
-			u_help ("Data do vencimento da parcela deve ser obrigatoriamente maior do que a data base.",, .t.)
-			_lRet = .F.
-		endif
-
-	endif
-
-// -------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------
 // Valida desconto item sigaloja.
 static function _ValDescLj (_sQual)
 	local _lRet  := .F.
@@ -1881,15 +1754,6 @@ static function _ValDescLj (_sQual)
 	if _nPerc <= 1.5  // Sempre permitido
 		_lRet = .T.
 	endif
-	//	if alltrim (m->lr_produto) $ '8066/8067' .and. _nPerc <= 33.34 .and. date () == stod ('20171124')  // Black friday 24/11/2017
-	//		_lRet = .T.
-	//	endif
-	//	if alltrim (m->lr_produto) $ '8179' .and. _nPerc <= 50 .and. date () == stod ('20171124')  // Black friday 24/11/2017
-	//		_lRet = .T.
-	//	endif
-	//    if _nPerc <= 10 .and. date () >= stod ('20180504') .and. date () <= stod ('20180513')  // Dia das maes 2018
-	//    	_lRet = .T.
-	//	endif
 	if _nPerc <= 40 .and. date () >= stod ('20180622') .and. date () <= stod ('20180623')  // Promocao Pipa Store 2018
 		_lRet = .T.
 	endif
@@ -1917,14 +1781,12 @@ static function _ValDescLj (_sQual)
 		u_help ("Desconto acima do permitido")
 	endif
 return _lRet
-
-
-// -------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------
 // Verifica se o texto informado contem somente zeros.
 static function _SohZeros (_sStrOrig)
 	_lRetZeros := .T.
 	do while ! empty (_sStrOrig)
-//		U_Log2 ('debug', '[' + procname () + ']testando >>' + _sStrOrig + '<<')
 		if left (_sStrOrig, 1) != '0'
 			_lRetZeros = .F.
 			exit
