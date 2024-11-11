@@ -52,7 +52,8 @@
 // 15/05/2021 - Claudia - Criada função para typo de campo para tirar do loop, bug R27. GLPI: 8825
 // 17/05/2021 - Robert  - Grava ::Texto e nao mais _sTextoZN no arquivo de log.
 // 21/05/2021 - Robert  - Campo ZN_PILHA substituido pelo ZN_ORIGEM (GLPI 10072)
-// 19/08/2021 - Robert  - Inicializador para ::Origem, pois quando pilha de chamadas, excedia tamanho do campo (GLPI 10578).
+// 19/08/2021 - Robert  - Inicializador para ::Origem, pois quando pilha de chamadas, excedia 
+//                        tamanho do campo (GLPI 10578).
 // 02/05/2022 - Robert  - Incluidas chamadas de U_PerfMon() para acompanhar tempo de gravacao.
 // 20/07/2022 - Robert  - Criado tratamento para atributos ::DiasValid e ::ChaveNFe (GLPI 12336)
 // 01/08/2022 - Robert  - Criado atributo ::MotProrTit
@@ -64,17 +65,18 @@
 // 24/02/2023 - Robert  - Gera aviso quando receber chave antiga para evento de carga/safra.
 // 28/04/2023 - Robert  - Erro na leitura do campo ZN_DIASVLD
 // 30/08/2023 - Robert  - Nao envia mais e-mail de alter.cadastro para grupo 015 (auditoria) - GLPI 14099
-// 20/10/2023 - Robert  - Criados atributos ::Avisar e ::AvisarZZU, com respectiva funcionalidade de envio de aviso (GLPI 14397)
+// 20/10/2023 - Robert  - Criados atributos ::Avisar e ::AvisarZZU, com respectiva 
+//                        funcionalidade de envio de aviso (GLPI 14397)
 // 06/06/2024 - Sandra  - Retirado grupo 011, não será mais utilizado. GLPI: 15557
+// 11/11/2024 - Claudia - Retirado tabela ZZ2. GLPI: 16386
 //
-
+// ------------------------------------------------------------------------------------
 #include "protheus.ch"
 
 // Funcao declarada apenas para poder compilar este arquivo fonte.
 user function ClsEvent ()
 return
-
-
+//
 // ------------------------------------------------------------------------------------
 // Classe usada para armazenamento de dados de eventos do sistema (customizados).
 CLASS ClsEvent
@@ -134,9 +136,8 @@ CLASS ClsEvent
 	METHOD Log ()
 	METHOD SendMail ()
 ENDCLASS
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 METHOD New (_nRegSZN) Class ClsEvent
 	::Filial     := xfilial ("SZN")
 	::Alias      := ""
@@ -224,9 +225,8 @@ METHOD New (_nRegSZN) Class ClsEvent
 		::CargaSafra = szn -> zn_cargsaf
 	endif
 Return Self
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Gravacao de eventos
 METHOD Grava () Class ClsEvent
 	local _aArea    := U_ML_SRArea ()
@@ -331,16 +331,14 @@ METHOD Grava () Class ClsEvent
 
 	U_ML_SRArea (_aArea)
 return .t.
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Gravacao de eventos somente quando ainda nao existirem (evitar duplicidade)
 METHOD GravaNovo (_sPrecisao) Class ClsEvent
 	local _oSQL := ClsSQL ():New ()
 
 	// Nao quero considerar o metodo atual como parte da origem do evento
 	::Origem = iif (empty (::Origem), strtran (_Origem (), procname (), ''), ::Origem)
-//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Fiquei com origem = ' + ::Origem)
 
 	// A chamada pode especificar a precisao de tempo para que um exento seja
 	// considerado 'novo':
@@ -379,11 +377,6 @@ METHOD GravaNovo (_sPrecisao) Class ClsEvent
 	_oSQL:_sQuery +=   " AND SZN.ZN_ETIQ    = '" + ::Etiqueta + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_TRANSP  = '" + ::Transp + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_CHVNFE  = '" + ::ChaveNFe + "'"
-//	_oSQL:_sQuery +=   " AND SZN.ZN_REDESP  = '" + ::TranspReds + "'"
-//	_oSQL:_sQuery +=   " AND SZN.ZN_CODPROC = '" + ::CodProceda + "'"
-//	_oSQL:_sQuery +=   " AND SZN.ZN_ORIGEM  = '" + ::Origem + "'"
-//	_oSQL:_sQuery +=   " AND SZN.ZN_DIASVLD = " + cvaltochar (::DiasValid)
-//	_oSQL:_sQuery +=   " AND SZN.ZN_MOTPROR = '" + ::MotProrTit + "'"
 
 	if _sPrecisao == 'DHMS'  // Consistir tudo. Nem farei calculo algum.
 		_oSQL:_sQuery += " AND SZN.ZN_DATA = '" + dtos (::DtEvento) + "'"
@@ -410,7 +403,6 @@ METHOD GravaNovo (_sPrecisao) Class ClsEvent
 		endcase
 	endif
 	_oSQL:_sQuery += ") then 1 else 0 end"
-//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 
 	if _oSQL:RetQry (1, .f.) == 0
 		::Grava ()
@@ -418,9 +410,8 @@ METHOD GravaNovo (_sPrecisao) Class ClsEvent
 		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Evento nao vai ser gravado, pois jah existe registro com essa informacao no SZN, considerando uma precisao de ' + _sPrecisao)
 	endif
 return
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Verifica alteracao de cadastros e grava evento quando for o caso.
 // Deve ser disparado ANTES da alteracao, pois compara as variaveis M-> com os campos da tabela.
 METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEvent
@@ -506,29 +497,11 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 		::CodAlias  = _sCodAlias
 		::Recno     = _nRecno
 
-		// Alguns cadastros sao monitorados.
-		if ::Alias $ "SB1/SA1/SA2/SF4/SA3/ZZ2/CT5"
-			if _lNotif
-				// Liane disse (via Teams em 30/08/2023) que nao precisa mais  ---> aadd (::MailToZZU, '015')  // Controladoria
-			endif
-			if ::Alias == 'SF4'
-				if _lNotif
-					::MailTo = 'katia.nunes@novaalianca.coop.br'  // Responsavel pelo fiscal.
-				endif
-			endif
-		endif
-
 		if ::Alias $ "SB1"
 			if _lNotif
 				aadd (::MailToZZU, '069')  // Custos
 			endif
 		endif
-
-		//if ::Alias $ "SA1"
-			//if _lNotif
-				//aadd (::MailToZZU, '011')  // Supervisao comercial
-			//endif
-		//endif
 
 		::Self:Grava ()
 	endif
@@ -536,9 +509,8 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 	U_ML_SRArea (_aAreaAnt)
 
 return
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Exclusao do evento posicionado no SZN
 METHOD Exclui () Class ClsEvent
 	local _aArea    := U_ML_SRArea ()
@@ -553,9 +525,8 @@ METHOD Exclui () Class ClsEvent
 
 	U_ML_SRArea (_aArea)
 return
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Faz a leitura das respostas de determinado grupo de perguntas e grava no evento.
 METHOD LeParam (_sPerg) CLASS ClsEvent
 	local _aPerg := {}
@@ -567,9 +538,8 @@ METHOD LeParam (_sPerg) CLASS ClsEvent
 		::Texto += _aPerg [_nPerg, 3] + ' ' + _aPerg [_nPerg, 4] + ' ' + cvaltochar (_aPerg [_nPerg, 5]) + chr (13) + chr (10)
 	next
 return
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Grava dados do evento em arquivo de log
 METHOD Log () Class ClsEvent
 	local _sTxtlog := ''
@@ -599,9 +569,8 @@ METHOD Log () Class ClsEvent
 	_sTxtLog += "-----------------------------------------------------------" + chr (13) + chr (10)
 	u_log2 ('info', _sTxtLog)
 return
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Envia copia do evento por e-mail, quando solicitado.
 METHOD SendMail (_sDestin) Class ClsEvent
 	local _sTxtMail := ""
@@ -661,9 +630,8 @@ METHOD SendMail (_sDestin) Class ClsEvent
 	endif
 
 return
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Faz exportacao da pilha de chamadas para uma string.
 static function _PCham ()
 	local _i      := 3  // Inicia em 3 por que nao quero pegar o nome da funcao interna GRAVA()
@@ -673,9 +641,8 @@ static function _PCham ()
 		_i++
 	enddo
 return _sPilha
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Busca o tipo do campo
 static Function BuscaTipo(_sCampo)
 	local _sRet := ""
@@ -683,9 +650,8 @@ static Function BuscaTipo(_sCampo)
 	_sRet:= type("M->" + _sCampo) 
 
 return _sRet
-
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------
 // Tratamento para gerar o atributo Origem.
 static function _Origem (_sOrigDef)
 return left (iif (empty (_sOrigDef), _PCham (), _sOrigDef), TamSX3 ("ZN_ORIGEM") [1])
