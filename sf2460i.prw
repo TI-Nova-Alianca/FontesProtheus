@@ -161,6 +161,7 @@
 // 31/01/2024 - Claudia - Ajuste no email de devoluções. GLPI: 14830
 // 21/03/2024 - Claudia - Criado parâmetro de exceção de UF. GLPI: 15112 
 // 03/04/2024 - Claudia - Retirado campos. GLPI: 14763
+// 11/11/2024 - Claudia - Retirada consulta ZZ2. GLPI: 16386
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -185,13 +186,10 @@ User Function sf2460i ()
 	
 	// Grava campos adicionais na nota fiscal
 	RecLock("SF2",.F.)
-	//REPLACE SF2->F2_vaDCO   WITH SC5->C5_vaDCO
 	REPLACE SF2->F2_vaPeRap WITH SC5->C5_vaPeRap
 	REPLACE SF2->F2_VARAPEL WITH _wtotrapel
 	REPLACE SF2->F2_vaNFFD  WITH SC5->C5_vaNFFD
-	REPLACE SF2->F2_Veicul1 WITH SC5 -> C5_VEICULO  //SC5->C5_vaVeic1
-	//REPLACE SF2->F2_Veicul2 WITH SC5->C5_vaVeic2
-	//REPLACE SF2->F2_Veicul3 WITH SC5->C5_vaVeic3
+	REPLACE SF2->F2_Veicul1 WITH SC5 -> C5_VEICULO  
 	REPLACE SF2->F2_TPFRETE WITH SC5->C5_TPFRETE
 	REPLACE SF2->F2_VAFEMB  WITH SC5->C5_VAFEMB
 	REPLACE SF2->F2_VAUser  WITH cUserName
@@ -202,7 +200,6 @@ User Function sf2460i ()
 		RecLock("SF2",.F.)
 		REPLACE SF2->F2_TRANSP  WITH FN9->FN9_TRANSP
 		REPLACE SF2->F2_TPFRETE WITH FN9->FN9_TPFRETE
-		//REPLACE SF2->F2_COND    WITH FN9->FN9_COND
 		MsUnlock()
 	endif
 	
@@ -354,7 +351,6 @@ static function _DadosAdic ()
 	local _sMsgFisco := ""
 	local _sMsgContr := ""
 	local _sEndEnt   := ""
-	local _sMsgST    := ""
 	local _sQuery    := ""
 	local _aNFOri    := {}
 	local _sNFOri    := ""
@@ -362,28 +358,8 @@ static function _DadosAdic ()
 	local _MVNFEMSA1 := AllTrim(GetNewPar("MV_NFEMSA1",""))
 	local _MVNFEMSF4 := AllTrim(GetNewPar("MV_NFEMSF4",""))
 	local _lInfAdZF  := GetNewPar("MV_INFADZF",.F.)
-	local _oSQL      := NIL
 	local _nFormula	 := 0
 	local _nNFOri	 := 0
-
-	if sf2 -> f2_icmsret != 0
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " select distinct ZZ2_MSGNF"
-		_oSQL:_sQuery += " from " + RetSQLName ("ZZ2") + " ZZ2 "
-		_oSQL:_sQuery += " where ZZ2.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery += "   and ZZ2.ZZ2_FILIAL  = '" + xfilial ("ZZ2")   + "'"
-		_oSQL:_sQuery += "   and ZZ2.ZZ2_FILI   LIKE '%" + cFilAnt + "%'"
-		_oSQL:_sQuery += "   and ZZ2.ZZ2_UF      = '" + sf2 -> f2_est + "'"
-		_oSQL:_sQuery += "   and ZZ2.ZZ2_DTINI  <= '" + dtos (sf2 -> f2_emissao) + "'"
-		_oSQL:_sQuery += "   and ZZ2.ZZ2_DTFIM  >= '" + dtos (sf2 -> f2_emissao) + "'"
-		_oSQL:_sQuery += "   and ZZ2.ZZ2_ATIVO   = 'S'"
-		_oSQL:_sQuery += "   and ZZ2.ZZ2_MSGNF  != ''"
-		_sMsgST = _oSQL:RetQry ()
-		if ! empty (_sMsgST)
-			_SomaMsg (@_sMsgFisco, _sMsgST)
-		endif
-	endif
 
 	// Mensagens do pedido de venda.
 	if ! empty (sc5 -> c5_menpad)
@@ -823,11 +799,9 @@ static function _AtuSZIMudas ()
 						_sTxtEvent = ''
 						if _oCtaCorr:PodeIncl ()
 							if ! _oCtaCorr:Grava (.F., .F.)
-				//				U_AvisaTI ("Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
 								_sTxtEvent = "Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + alltrim (_oCtaCorr:UltMsg)
 							endif
 						else
-					//		U_AvisaTI ("Gravacao do SZI nao permitida na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
 							_sTxtEvent = "Gravacao do SZI nao permitida na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + alltrim (_oCtaCorr:UltMsg)
 						endif
 
