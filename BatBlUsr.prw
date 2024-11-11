@@ -27,6 +27,7 @@
 //                        autenticar pelo A.D., por que estamos tendo muitas
 //                        aplicacoes que nao usam mais A.D. (Meu Protheus, MntNG, Telnet, ...)
 // 11/09/2024 - Claudia - Retirada gravação de aviso. GLPI: 15906
+// 11/11/2024 - Claudia - retirado bloqueio de usuario em férias. GLPI: 16385
 //
 // -----------------------------------------------------------------------------------------------------------------
 user function BatBlUsr ()
@@ -114,12 +115,12 @@ user function BatBlUsr ()
 							_sEmFerias = alltrim(_aPessoa [_nPessoa, 3])
 							_sOp05     = alltrim(_aPessoa [_nPessoa, 5])
 							if _sOp05 == '1'
-								if _sSitFol != '1' .or. _sEmFerias == 'S'  // .and. ! _lUsaAD  // Se usa AD, jah foi bloqueado lah.
+								if _sSitFol != '1' 		//.or. _sEmFerias == 'S'  // .and. ! _lUsaAD  // Se usa AD, jah foi bloqueado lah.
 									_sQueFazer = 'B'
-									_sMotAlter = 'Cfe.sit.folha-em ferias'
+									_sMotAlter = 'Cfe.sit.folha'
 								else
 									_sQueFazer = 'L'
-									_sMotAlter = 'Cfe.sit.folha-nao esta em ferias'
+									_sMotAlter = 'Cfe.sit.folha'
 								endif
 							elseif _sOp05 == '2'
 								_sQueFazer = 'B'
