@@ -1,17 +1,17 @@
-// Programa:  ClsCarSaf
-// Autor:     Robert Koch
-// Data:      09/10/2022 (inicio)
+// Programa.: ClsCarSaf
+// Autor....: Robert Koch
+// Data.....: 09/10/2022 (inicio)
 // Descricao: Declaracao de classe de representacao de carga recebida na safra de uva.
 //            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
 //            apenas para poder incluir no projeto e manter na pasta dos fontes.
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Classe
 // #Descricao         #Representa carga recebida durante safra de uva.
 // #PalavasChave      #carga #safra
 // #TabelasPrincipais #SZD #SZE
 // #Modulos           #COOP
-
+//
 // Historico de alteracoes:
 // 17/01/2023 - Robert - Quando producao propria, gera apenas 1 via do ticket 2a.pesagem.
 // 20/01/2023 - Robert - Comecado a gravar arrays de itens (ItItem, ItProduto, ...)
@@ -36,8 +36,9 @@
 //                       e deixa de validar sistema de conducao das uvas comuns.
 // 12/02/2024 - Robert - Gravar evento quando usuario confirmar reenvio para grau (ocorre em determinadas situacoes)
 // 20/02/2024 - Robert - Metodo :Precifica() nao considerava variedade de menor valor quando havia mistura de variedades!
+// 14/11/2024 - Claudia - Incluida a tabela de preço 25A para safra 2025. Necessario para impressão/reimpressão de ticket. GLPI: 16362
 //
-
+// -------------------------------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 
 // --------------------------------------------------------------------------
@@ -118,8 +119,7 @@ CLASS ClsCarSaf from ClsBase
 	public METHOD StatusZZA ()
 	public METHOD TodasComp ()  // Gera lista de todas as cargas compartilhadas com a atual.
 ENDCLASS
-
-
+//
 // --------------------------------------------------------------------------
 // Construtor da classe.
 METHOD New (_xChvCar) Class ClsCarSaf
@@ -154,11 +154,9 @@ METHOD New (_xChvCar) Class ClsCarSaf
 		endif
 	endif
 
-//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciada carga p/ Filial ' + ::Filial + ' Safra ' + ::Safra + ' Carga ' + ::Carga + ' de ' + ::Fornece + '/' + ::Loja)
+	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciada carga p/ Filial ' + ::Filial + ' Safra ' + ::Safra + ' Carga ' + ::Carga + ' de ' + ::Fornece + '/' + ::Loja)
 	U_ML_SRArea (_aAreaAnt)
 Return ::self
-
-
 // --------------------------------------------------------------------------
 // Adiciona uma posicao em cada array de itens. Ao criar novo atributo ::It*
 // deve-se adicionar tratamento aqui.
@@ -178,8 +176,7 @@ METHOD AddItem () Class ClsCarSaf
 	aadd (::ItProduto,        '')
 	aadd (::ItPropRur,        '')
 return
-
-
+//
 // --------------------------------------------------------------------------
 static function _Arr2Str (_a)
 	local _n := 0
@@ -188,8 +185,7 @@ static function _Arr2Str (_a)
 		_sRet += cvaltochar (_a [_n]) + iif (_n < len (_a), '/', '')
 	next
 return _sRet
-
-
+//
 // --------------------------------------------------------------------------
 // Altera o status do agendamento relacionado a esta carga na agenda do NaWeb.
 METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
@@ -319,8 +315,7 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 		endif
 	endif
 return _lContinua
-
-
+//
 // --------------------------------------------------------------------------
 // Envia atualizacao para o sistema de medicao de grau.
 METHOD AtuZZA (_lReenvio as logical) Class ClsCarSaf
@@ -465,8 +460,7 @@ METHOD AtuZZA (_lReenvio as logical) Class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return _lRetAtZZA
-
-
+//
 // --------------------------------------------------------------------------
 // Gera uma string formatada para mostrar em tela as cargas compartilhadas.
 METHOD ConsCompar () Class ClsCarSaf
@@ -492,8 +486,7 @@ METHOD ConsCompar () Class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return _sConsComp
-
-
+//
 // --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
 METHOD DefImprTk (_sFilial, _sCamFixo) Class ClsCarSaf
@@ -519,8 +512,7 @@ METHOD DefImprTk (_sFilial, _sCamFixo) Class ClsCarSaf
 		_lRet = .F.
 	endif
 return _lRet
-
-
+//
 // --------------------------------------------------------------------------
 // Faz o enderecamento (ou estorno)dos lotes de uva no estoque
 METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
@@ -712,8 +704,7 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return _lContinua
-
-
+//
 // --------------------------------------------------------------------------
 // Exclusao definitiva (inclusive tabelas relacionadas).
 // Antes da safra eh comum fazermos muitas cargas para simulacao e ajuste de
@@ -822,8 +813,7 @@ METHOD ExclDef (_sOrigem) Class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return _lRetED
-
-
+//
 // --------------------------------------------------------------------------
 // Recebe o grau como numerico e retorna formatado em caracter.
 METHOD FormataGrau (_nGrau as numeric) Class ClsCarSaf
@@ -845,8 +835,7 @@ METHOD FormataGrau (_nGrau as numeric) Class ClsCarSaf
 	endif
 	_sGrau = _sInt + '.' + _sDec
 return _sGrau
-
-
+//
 // --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
 METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
@@ -1035,9 +1024,12 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 			::TipoPrecoParaNF = 1  // pos.2=preco de compra
 		case ::Safra $ '2020/2023'
 			::TipoPrecoParaNF = 5  // pos.5=preco MOC
-		case ::Safra $ '2024/'
+		case ::Safra $ '2024'
 			::TipoPrecoParaNF = 6  // Buscar no arquivo ZBI
 			::TabelaPreco = '24A '  // Codigo tabela precos (jah deve existir previamente no arquivo ZBI)
+		case ::Safra $ '2025'
+			::TipoPrecoParaNF = 6  // Buscar no arquivo ZBI
+			::TabelaPreco = '25A '  // Codigo tabela precos (jah deve existir previamente no arquivo ZBI)
 		otherwise
 			_Super:SomaMsg ("Sem definicao de qual preco devo usar para gerar contranota (entrada/compra/MOC/...)")
 			_lContinua = .F.
@@ -1075,8 +1067,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	//::Log ()
 	U_ML_SRArea (_aAreaAnt)
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Define em qual grupo de pagamentos a carga deve ser enquadrada.
 METHOD BuscaGrupoPagto () Class ClsCarSaf
@@ -1173,9 +1164,7 @@ METHOD BuscaGrupoPagto () Class ClsCarSaf
 	endif
 	U_ML_SRArea (_aAreaAnt)
 return _lContinua
-
-
-
+//
 // --------------------------------------------------------------------------
 // Grava evento padrao do sistema.
 METHOD GrvEvt (_sCodEvt as character, _sTxtEvt as character, _nDiasValid as numeric) Class ClsCarSaf
@@ -1195,8 +1184,7 @@ METHOD GrvEvt (_sCodEvt as character, _sTxtEvt as character, _nDiasValid as nume
 	_oEvento:DiasValid  = iif (_nDiasValid == NIL, 0, _nDiasValid)
 	_oEvento:Grava ()
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Gera (re)impressao do ticket da carga.
 METHOD ImprimeTk (_nQualTk as numeric) Class ClsCarSaf
@@ -1227,8 +1215,7 @@ METHOD ImprimeTk (_nQualTk as numeric) Class ClsCarSaf
 		U_VA_RusTk (_nQualTk, ::PortImpTk, _nQtVias, {}, 'bematech', .t.)
 	endif
 return _lRet
-
-
+//
 // --------------------------------------------------------------------------
 // Grava dados da carga em arquivo de log, para ajudar em rastreio de problemas.
 METHOD Log () Class ClsCarSaf
@@ -1275,8 +1262,7 @@ METHOD Log () Class ClsCarSaf
 	U_Log2 ('info', _sLogCar)
 	//U_Log2 ('info', '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
 return _sLogCar
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica se pode incluir a carga.
 METHOD PodeGravar () Class ClsCarSaf
@@ -1670,8 +1656,7 @@ METHOD Precifica_ant (_sQualPreco as character) class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return _lContinua
-
-
+//
 // --------------------------------------------------------------------------
 // Alimenta, nas arrays de itens da carga, o preco unitario de cada variedade.
 // Sao buscados 2 precos diferentes para cada variedade:
@@ -1870,8 +1855,7 @@ METHOD Precifica (_sQualPreco as character) class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return _lContinua
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica se 'tudo ok' na segunda pesagem da carga.
 METHOD SegPesTOk () Class ClsCarSaf
@@ -1934,8 +1918,7 @@ METHOD SegPesTOk () Class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return _l2PesTOK
-
-
+//
 // --------------------------------------------------------------------------
 // Altera o lote de estoque para 'NC' (nao conforme).
 // Tive tantos casos de 'esquecemos de segregar a carga' que resolvi automatizar um pouco.
@@ -2134,8 +2117,7 @@ METHOD SegregarLt () Class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Faz uma analise da integracao com o grau (pode ter mais de um item na carga)
 // e procura definir o status do ZZA 'como um todo' para a carga.
@@ -2182,8 +2164,7 @@ METHOD StatusZZA () Class ClsCarSaf
 
 	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retornando statusZZA = ' + _sRetStZZA + ' para a carga ' + ::Carga)
 return _sRetStZZA
-
-
+//
 // --------------------------------------------------------------------------
 // Adiciona (sempre no inicio, para que a mensagem mais recente seja vista
 // antes) uma mensagem na string ::ItObs
@@ -2193,8 +2174,7 @@ METHOD SomaObsItem (_nItem as numeric, _sMsg as character) Class ClsCarSaf
 		::ItObs [_nItem] = alltrim (_sMsgAux) + '; ' + ::ItObs [_nItem]
 	endif
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Uma vez que cargas podem ser compartilhadas (mais de um produtor rural
 // usando o mesmo veiculo, como se viesse de carona), preciso uma forma de
@@ -2223,8 +2203,7 @@ METHOD TodasComp (_sLista) Class ClsCarSaf
 		next
 	endif
 return _sLista
-
-
+//
 // --------------------------------------------------------------------------
 // Identifica a variedade de menor valor entre todas envolvidas nesta carga.
 // A lista de 'variedades envolvidas' considera, tambem, cargas compartilhadas.
