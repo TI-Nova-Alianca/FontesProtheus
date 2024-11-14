@@ -139,6 +139,7 @@
 // 27/05/2024 - Daiana  - Removido o n° da linha 3107 e 3110
 // 07/06/2024 - Claudia - Incluida a gravação de fornecedor no tipo 3, do 'GravaPgtoContaCorrente'.
 // 08/07/2024 - Claudia - Incluida nova ação GravaPgtoMudas. GLPI: 15688
+// 14/11/2024 - Claudia - Retirada validação de campo de data na <Acao>EntregaFaturamento</Acao>. GLPI: 16141
 //
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -2486,8 +2487,7 @@ Static Function _EnvMargem ()
 	_sMsgRetWS := _XmlRet
 //	u_logFim ()
 Return
-
-
+//
 // --------------------------------------------------------------------------
 // Grava data de entrega da nota de venda.
 // A ideia eh importar do Entregou, mas alguns casos podem precisar atualizacao manual.
@@ -2496,37 +2496,40 @@ Static function _DtEntFat ()
 	local _sSerie  := ''
 	local _dDtEntr := ctod ('')
 
-	if empty (_sErroWS) ; _sNF     = _ExtraiTag ("_oXML:_WSAlianca:_NF", .T., .F.) ; endif
-		if empty (_sErroWS) ; _sSerie  = _ExtraiTag ("_oXML:_WSAlianca:_Serie", .T., .F.) ; endif
-			if empty (_sErroWS) ; _dDtEntr = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtEntrega", .T., .T.)) ; endif
-				if empty (_sErroWS)
-					sf2 -> (dbsetorder (1))
-					if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
-						_SomaErro ("NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.')
-					else
+	if empty(_sErroWS)
+		_sNF     = _ExtraiTag("_oXML:_WSAlianca:_NF", .T., .F.)
+		_sSerie  = _ExtraiTag("_oXML:_WSAlianca:_Serie", .T., .F.)
+		_dDtEntr = stod(_ExtraiTag("_oXML:_WSAlianca:_DtEntrega", .F., .T.))
+	endif
 
-						// Grava evento temporario (nao estou descobrindo em que momento este campo eh atualizado)
-						_oEvento := ClsEvent():new ()
-						_oEvento:Filial     = SF2 -> F2_FILIAL
-						_oEvento:Texto     := 'Atualizando campo F2_DTENTR de ' + dtoc (sf2 -> f2_DtEntr) + ' para ' + dtoc (_dDtEntr)
-						_oEvento:Texto     += " Pilha: " + U_LogPCham ()
-						_oEvento:CodEven    = "DEBUG"
-						_oEvento:NFSaida    = sf2 -> f2_doc
-						_oEvento:SerieSaid  = sf2 -> f2_Serie
-						_oEvento:Cliente    = sf2 -> f2_cliente
-						_oEvento:LojaCli    = sf2 -> f2_loja
-						_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
-						_oEvento:Grava ()
+	if empty(_sErroWS)
+		sf2 -> (dbsetorder(1))
+		if ! sf2 -> (dbseek(xfilial("SF2") + _sNf + _sSerie, .F.))
+			_SomaErro ("NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.')
+		else
 
-						reclock ("SF2", .F.)
-						sf2 -> f2_DtEntr = _dDtEntr
-						msunlock ()
-						_sMsgRetWS = 'Registro atualizado.'
-					endif
-				endif
-				return
+			// Grava evento temporario (nao estou descobrindo em que momento este campo eh atualizado)
+			_oEvento := ClsEvent():new()
+			_oEvento:Filial     = SF2 -> F2_FILIAL
+			_oEvento:Texto     := 'Atualizando campo F2_DTENTR de ' + dtoc(sf2 -> f2_DtEntr) + ' para ' + dtoc(_dDtEntr)
+			_oEvento:Texto     += " Pilha: " + U_LogPCham()
+			_oEvento:CodEven    = "DEBUG"
+			_oEvento:NFSaida    = sf2 -> f2_doc
+			_oEvento:SerieSaid  = sf2 -> f2_Serie
+			_oEvento:Cliente    = sf2 -> f2_cliente
+			_oEvento:LojaCli    = sf2 -> f2_loja
+			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+			_oEvento:Grava()
 
+			reclock("SF2", .F.)
+			sf2 -> f2_DtEntr = _dDtEntr
+			msunlock()
 
+			_sMsgRetWS = 'Registro atualizado.'
+		endif
+	endif
+Return
+//
 // --------------------------------------------------------------------------
 // Associados - consulta fechamento de safra.
 static function _AsFecSaf ()
