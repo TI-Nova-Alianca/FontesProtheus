@@ -18,6 +18,7 @@
 // 09/10/2024 - Claudia - Criada a função _AlteraNAWeb para envio de dados do fornecedor
 //                        associado para NAWEB. GLPI: 10138
 // 14/10/2024 - Claudia - Alterada avalidação para inclusão de fornecedor-associado. GLPI: 16239
+// 14/11/2024 - Claudia - Alterada chamada da rotina para retornar data de entrada/saida de associados
 //
 // --------------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -196,8 +197,8 @@ Static Function _AlteraNAWeb()
     _oSQL := ClsSQL ():New ()
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += " SELECT "
-    _oSQL:_sQuery += "       dbo.VA_ASSOC_DT_ENTRADA('"+ M->A2_COD +"', '"+ M->A2_LOJA +"', FORMAT(GETDATE(), 'yyyyMMdd')) AS ENTRADA " 
-    _oSQL:_sQuery += "      ,dbo.VA_ASSOC_DT_SAIDA('"+ M->A2_COD +"', '"+ M->A2_LOJA +"', FORMAT(GETDATE(), 'yyyyMMdd')) AS SAIDA "
+    _oSQL:_sQuery += "       dbo.VA_ASSOC_DT_ENTRADA_SAIDA('"+ M->A2_COD +"', '"+ M->A2_LOJA +"', FORMAT(GETDATE(), 'yyyyMMdd'),'E') AS ENTRADA " 
+    _oSQL:_sQuery += "      ,dbo.VA_ASSOC_DT_ENTRADA_SAIDA('"+ M->A2_COD +"', '"+ M->A2_LOJA +"', FORMAT(GETDATE(), 'yyyyMMdd'),'S') AS SAIDA "
     _oSQL:_sQuery += "      ,CASE
 	_oSQL:_sQuery += "	        WHEN SUBSTRING(dbo.VA_FTIPO_FORNECEDOR_UVA('"+ M->A2_COD +"', '"+ M->A2_LOJA +"', FORMAT(GETDATE(), 'yyyyMMdd')), 1, 1)  = '1' THEN 1 " //'ASSOCIADO'
 	_oSQL:_sQuery += "	        WHEN SUBSTRING(dbo.VA_FTIPO_FORNECEDOR_UVA('"+ M->A2_COD +"', '"+ M->A2_LOJA +"', FORMAT(GETDATE(), 'yyyyMMdd')), 1, 1)  = '2' THEN 2 " //'FORNECEDOR/NÃO ASSOCIADO'   
