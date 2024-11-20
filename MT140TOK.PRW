@@ -3,17 +3,24 @@
 // Data.......: 08/10/2019
 // Descricao..: P.E. 'Tudo OK' da tela de pré notas de entrada.
 //
-// Historico de alteracoes:
-// 08/10/2019 - Andre  - Adicionado validação para não permitir alteração maior do que 5% no valor unitario do item.
-// 04/01/2023 - Robert - Nao vou validar preco por que estou executando de dentro do painel XML (GLPI 12979)
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. 'Tudo OK' da tela de pré notas de entrada.
+// #PalavasChave      #
+// #TabelasPrincipais #SD1 #SF1
+// #Modulos           #FAT 
 //
-
+// Historico de alteracoes:
+// 08/10/2019 - Andre   - Adicionado validação para não permitir alteração maior do que 5% no valor unitario do item.
+// 04/01/2023 - Robert  - Nao vou validar preco por que estou executando de dentro do painel XML (GLPI 12979)
+// 20/11/2024 - Claudia - Incluido o programa do importador Transmite para não validar sd quantidades. GLPI: 16424
+//
 // -----------------------------------------------------------------------------------------------------------------------
 User Function MT140TOK()
 	Local _lRet 	:= .T.
 	Local _nLinha	:= 0
 
-	if IsInCallStack ('U_FBTRS006')
+	if IsInCallStack ('U_FBTRS006') .or. IsInCallStack ('COMXCOL')
 		U_Log2 ('aviso', '[' + procname () + ']Nao vou validar preco por que estou executando de dentro do painel XML (GLPI 12979)')
 	else
 		For _nLinha := 1 to Len(aCols)
