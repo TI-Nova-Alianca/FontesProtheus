@@ -46,7 +46,7 @@
 // 08/03/2023 - Claudia - Retirada validação do campo b1_locprod
 // 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 17/10/2024 - Claudia - Incluido mensagem de alteração de custo. GLPI: 16026
-// 25/11/2024 - Claudia - Retirados alguns campos conforme GLPI:16 439
+// 25/11/2024 - Claudia - Retirados alguns campos conforme GLPI:16439
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
