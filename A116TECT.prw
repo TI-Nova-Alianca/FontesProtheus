@@ -16,28 +16,32 @@
 #Include 'Protheus.ch'
 
 User function A116TECT()
-    Local oXML   := Paramixb[1]
+    //Local oXML   := Paramixb[1]
     Local aRet   := {}
-    Local _sCond := ""
-    Local _sCNPJ := ""
+    //Local _sCond := ""
+    //Local _sCNPJ := ""
+    
+    aAdd(aRet, "" ) // Código da TES
+    aAdd(aRet, "") // Código da condição de pagamento
 
-    // Busca condição de pagamento
-    If (XmlChildEx( oXml ,"_CTEPROC")<>Nil)
-        _sCNPJ := oXml:_CTEPROC:_CTE:_INFCTE:_EMIT:_CNPJ:Text
 
-        _sCond := Posicione("SA2", 3, xFilial("SA2") + _sCNPJ, "A2_COND") // 3	A2_FILIAL + A2_CGC  
-        // Adiciona parametros
-        aAdd(aRet, "" ) // Código da TES
-        aAdd(aRet, _sCond)    // Código da condição de pagamento
+    // // Busca condição de pagamento
+    // If (XmlChildEx( oXml ,"_CTEPROC")<>Nil)
+    //     _sCNPJ := oXml:_CTEPROC:_CTE:_INFCTE:_EMIT:_CNPJ:Text
 
-    else
-        _sCNPJ := oXml:_INFCTE:_EMIT:_CNPJ:Text
+    //     _sCond := Posicione("SA2", 3, xFilial("SA2") + _sCNPJ, "A2_COND") // 3	A2_FILIAL + A2_CGC  
+    //     // Adiciona parametros
+    //     aAdd(aRet, "" ) // Código da TES
+    //     aAdd(aRet, _sCond)    // Código da condição de pagamento
 
-        _sCond := Posicione("SA2", 3, xFilial("SA2") + _sCNPJ, "A2_COND") // 3	A2_FILIAL + A2_CGC  
-        // Adiciona parametros
-        aAdd(aRet, "066" ) // Código da TES
-        aAdd(aRet, _sCond) // Código da condição de pagamento
-    Endif
+    // else
+    //     _sCNPJ := oXml:_INFCTE:_EMIT:_CNPJ:Text
+
+    //     _sCond := Posicione("SA2", 3, xFilial("SA2") + _sCNPJ, "A2_COND") // 3	A2_FILIAL + A2_CGC  
+    //     // Adiciona parametros
+    //     aAdd(aRet, "066" ) // Código da TES
+    //     aAdd(aRet, _sCond) // Código da condição de pagamento
+    // Endif
 Return aRet
 
 
