@@ -46,6 +46,7 @@
 // 08/03/2023 - Claudia - Retirada validação do campo b1_locprod
 // 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 17/10/2024 - Claudia - Incluido mensagem de alteração de custo. GLPI: 16026
+// 25/11/2024 - Claudia - Retirados alguns campos conforme GLPI:16 439
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -134,15 +135,15 @@ static function _NaoCopia ()
 	oModelB1 := oObj:GetModel("SB1MASTER")
 	if ! U_msgnoyes ("Deseja copiar os dados de impostos?")
 		oModelB1:LoadValue("B1_VALIPI",'')
-		oModelB1:LoadValue("B1_VAADEIP",'')
-		oModelB1:LoadValue("B1_VASTSP",'')
+		//oModelB1:LoadValue("B1_VAADEIP",'')
+		//oModelB1:LoadValue("B1_VASTSP",'')
 		oModelB1:LoadValue("B1_VLR_IPI",'')
 		oModelB1:LoadValue("B1_IPI",'')
 		oModelB1:LoadValue("B1_TAB_IPI",'')
 	endif
 	oModelB1:LoadValue("B1_CODBAR", '')
 	oModelB1:LoadValue("B1_CODPAI", '')
-	oModelB1:LoadValue("B1_VACUSEM", '')
+	//oModelB1:LoadValue("B1_VACUSEM", '')
 	oModelB1:LoadValue("B1_OPERPAD",'')
 	oModelB1:LoadValue("B1_CUSTD",'')
 	oModelB1:LoadValue("B1_PRV1",'')
