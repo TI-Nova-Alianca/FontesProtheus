@@ -1,23 +1,43 @@
-// Programa...: VA_CNABEV
+// Programa...: VA_FIN650
 // Autor......: Cláudia Lionço
 // Data.......: 10/08/2022
-// Descricao..: Tela para visualização de eventos Juros CNAB
+// Descricao..: Relatório retorno do CNAB 
+//              Customizado para poder trazer a tela de eventos de juros indevidos
 //
 // Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Tela #Atualizacao
-// #Descricao         #Tela para visualização de eventos Juros CNAB
-// #PalavasChave      #eventos_financeiros #titulos #cnab
-// #TabelasPrincipais #SZN 
+// #TipoDePrograma    #relatório
+// #Descricao         #Relatório retorno do CNAB 
+// #PalavasChave      #CNAB  
+// #TabelasPrincipais #SE1 #SE5 #ZB5
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
 // 10/08/2022 - Claudia - Incluida gravação de eventos de juros indevidos. GLPI: 12454
+// 18/01/2023 - Claudia - Verificação de juros indevido existente. GLPI: 10907
+// 28/11/2024 - Claudia - O relatorio FINR650 foi descontinuado pela TOTVS, 
+//                        sendo necessário utilizar o fonte disponibilizado. GLPI: 16165
 //
-// ---------------------------------------------------------------------------------------
-
+// ------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 #Include "PROTHEUS.CH"   
 
+User Function VA_FIN650()
+    local _cMens    := ""
+	Private _nValJuros := 0
+	
+    // chama relatorio
+    U_VA_FINR650()
+
+	If _nValJuros > 0
+		_cMens := "Deseja abrir a tela de eventos CNAB - Juros indevidos?"
+		If msgyesno(_cMens,"Confirmar")
+			U_VA_CNABEV()
+		EndIf
+	EndIf
+Return
+//
+// ------------------------------------------------------------------------------------------------
+// Eventos Financeiros - Juros indevidos
 User Function VA_CNABEV()
 	Local aStruct     := {}
 	Local aHead       := {}
