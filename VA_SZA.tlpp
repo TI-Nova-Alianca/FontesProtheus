@@ -3,6 +3,13 @@
 // Data.......: 17/01/2009
 // Descricao..: Tela de manutencao de listas de precos de uva para a safra.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Tela
+// #Descricao         #Tela de manutencao de listas de precos de uva para a safra.
+// #PalavasChave      #safra #tabelas_de_preco_uva #tabelas_de_preco 
+// #TabelasPrincipais #SZA
+// #Modulos   		  #COOP 
+//
 // Historico de alteracoes:
 // 27/03/2009 - Robert  - Verifica se estah rodando em TOP ou nao.
 // 05/11/2009 - Robert  - Nao executa se nao estiver rodando em TOP.
@@ -23,8 +30,9 @@
 // 23/04/2024 - Claudia - Incluida a criação de ZBI para Comuns em espaldeira. GLPI:15312.
 // 13/06/2024 - Claudia - Incluida exportação de tabela de preço em planilha. GLPI: 15594
 // 24/07/2024 - Claudia - Exportação de tabela de preço para planilha. GLPI: 15770
+// 29/11/2024 - Claudia - Incluida opção de excluir tabela de preço. GLPI: 15296
 //
-// ----------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 
 User Function VA_SZA()
@@ -75,7 +83,7 @@ User Function VA_SZA()
 			aadd(aRotina, {"&Pesquisar"         		, "AxPesqui"					, 0, 1})
 			aadd(aRotina, {"&Incluir"           		, "AxInclui"					, 0, 3})
 			aadd(aRotina, {"&Alterar"           		, "AxAltera"					, 0, 4})
-			//aadd(aRotina, {"&Excluir"           		, "U_SZA_E"						, 0, 5})
+			aadd(aRotina, {"&Excluir"           		, "U_SZA_E  (sza -> za_cod)"	, 0, 5})
 			aadd(aRotina, {"&Copiar itens da tabela"	, "U_SZA_RT (sza -> za_cod)"	, 0, 4})
 			aadd(aRotina, {"&Alterar grupos/preços"     , "U_ZX5_13 (sza -> za_cod)"	, 0, 4})
 			aadd(aRotina, {"&Alterar variedades"		, "U_ZX5_14 (sza -> za_cod)"	, 0, 4})
@@ -96,7 +104,7 @@ return
 //
 // --------------------------------------------------------------------------
 // Manutencao dos precos dos produtos.
-User Function VA_SZAP ()
+User Function VA_SZAP()
 
 	// Os precos ficam na tabela SZ1. Para que nao aparecam todas as tabelas, filtra
 	// o SZ1 e chama programa original de manutencao do SZ1.
@@ -110,9 +118,53 @@ return
 //
 // --------------------------------------------------------------------------
 // Excluir tabela
-// user function SZA_E ()
-// 	u_help ("Rotina ainda nao implementada. Lembrar de apagar junto os respectivos registros das tabelas 13 e 14 do ZX5 !!!",, .t.)
-// return
+ user function SZA_E(_sTabDel)
+
+	if ! U_ZZUVL ('162', __cUserID, .T.)
+		u_help(" Usuário " + __cUserID + " sem permissão para exclusão de tabelas de preço de uva! (Grupo 162)")
+	else
+
+		// deleta campo tabela 13
+		_oSQL := ClsSQL():New()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " UPDATE " + RetSqlName("ZX5")
+		_oSQL:_sQuery += " 		SET  D_E_L_E_T_ = '*' , R_E_C_D_E_L_ = R_E_C_N_O_	
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+		_oSQL:_sQuery += " AND ZX5_TABELA = '13' "
+		_oSQL:_sQuery += " AND ZX5_13SAFR = '"+ _sTabDel +"' "
+		_oSQL:Exec()
+
+		// deleta campo tabela 14
+		_oSQL := ClsSQL():New()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " UPDATE " + RetSqlName("ZX5")
+		_oSQL:_sQuery += " 		SET  D_E_L_E_T_ = '*' , R_E_C_D_E_L_ = R_E_C_N_O_	
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+		_oSQL:_sQuery += " AND ZX5_TABELA = '14' "
+		_oSQL:_sQuery += " AND ZX5_14SAFR = '"+ _sTabDel +"' "
+		_oSQL:Exec()
+
+		// deleta campo tabela ZBI
+		_oSQL := ClsSQL():New()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " UPDATE " + RetSqlName("ZBI")
+		_oSQL:_sQuery += " 		SET  D_E_L_E_T_ = '*' , R_E_C_D_E_L_ = R_E_C_N_O_	
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+		_oSQL:_sQuery += " AND ZBI_CODTAB = '"+ _sTabDel +"' "
+		_oSQL:Exec()
+
+		// deleta campo tabela SZA
+		_oSQL := ClsSQL():New()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " UPDATE " + RetSqlName("SZA")
+		_oSQL:_sQuery += " 		SET  D_E_L_E_T_ = '*' , R_E_C_D_E_L_ = R_E_C_N_O_	
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+		_oSQL:_sQuery += " AND ZA_COD = '"+ _sTabDel +"' "
+		_oSQL:Exec()
+
+		u_help("Tabela " + alltrim(_sTabDel) + " deletada com sucesso!")
+	endif
+ return
 //
 // --------------------------------------------------------------------------
 // Apenas para poder usar regua de processamento.
@@ -561,25 +613,26 @@ static function _GeraZBI(_sCodTab)
 						endif
 
 						for _nIdxListaVar = 1 to len(_aListaVar)
-							_GravaZBI( ;
-								_sCodTab       = _oTbUva:CodTabela ;
-								,_sProduto     = _aListaVar [_nIdxListaVar, 1] ;
-								,_sGrau        = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) ;
-								,_sConduc      = _oTbUva:Conducao ;
-								,_sClassif     = '' ;
-								,_nPreco       = _aListaVar [_nIdxListaVar, 2] ;
-								,_lRegerarTudo = (_nOperacao == 2) ;
-							)
+								_sCodTab      = _oTbUva:CodTabela 
+								_sProduto     = _aListaVar [_nIdxListaVar, 1] 
+								_sGrau        = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) 
+								_sConduc      = _oTbUva:Conducao 
+								_sClassif     = '' 
+								_nPreco       = _aListaVar [_nIdxListaVar, 2] 
+								_lRegerarTudo = (_nOperacao == 2) 
+
+							_GravaZBI(_sCodTab, _sProduto, _sGrau, _sConduc, _sClassif, _nPreco, _lRegerarTudo)
+
 							// Para uvas comuns em condução ESPALDEIRA
-							_GravaZBI( ;
-								_sCodTab       = _oTbUva:CodTabela ;
-								,_sProduto     = _aListaVar [_nIdxListaVar, 1] ;
-								,_sGrau        = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) ;
-								,_sConduc      = 'E';
-								,_sClassif     = '' ;
-								,_nPreco       = _aListaVar [_nIdxListaVar, 2] ;
-								,_lRegerarTudo = (_nOperacao == 2) ;
-							)
+							    _sCodTab      = _oTbUva:CodTabela 
+							  	_sProduto     = _aListaVar [_nIdxListaVar, 1] 
+								_sGrau        = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) 
+								_sConduc      = 'E'
+								_sClassif     = '' 
+								_nPreco       = _aListaVar [_nIdxListaVar, 2] 
+								_lRegerarTudo = (_nOperacao == 2) 
+
+							_GravaZBI(_sCodTab, _sProduto, _sGrau, _sConduc, _sClassif, _nPreco, _lRegerarTudo)
 						next
 
 					elseif _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried]['FinaOuComum'] == 'F'
@@ -603,15 +656,15 @@ static function _GeraZBI(_sCodTab)
 						endif
 
 						for _nIdxListaClass = 1 to len(_aListaClass)
-							_GravaZBI( ;
-								_sCodTab       = _oTbUva:CodTabela ;
-								,_sProduto     = _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase'] ;
-								, _sGrau       = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) ;
-								,_sConduc      = _oTbUva:Conducao ;
-								,_sClassif     = _aListaClass [_nIdxListaClass, 1] ;
-								,_nPreco       = _aListaClass [_nIdxListaClass, 2] ;
-								,_lRegerarTudo = (_nOperacao == 2) ;
-							)
+							_sCodTab       = _oTbUva:CodTabela 
+							_sProduto     = _oTbUva:Grupos [_nGrupo]['ListaDeVariedades'][_nVaried] ['CodBase'] 
+							 _sGrau       = ClsCarSaf():FormataGrau (_oTbUva:Grupos [_nGrupo]['ListaDeGraus'][_nGrau]['Grau']) 
+							_sConduc      = _oTbUva:Conducao 
+							_sClassif     = _aListaClass [_nIdxListaClass, 1] 
+							_nPreco       = _aListaClass [_nIdxListaClass, 2] 
+							_lRegerarTudo = (_nOperacao == 2) 
+
+							_GravaZBI(_sCodTab, _sProduto, _sGrau, _sConduc, _sClassif, _nPreco, _lRegerarTudo)
 						next
 					endif
 				next
@@ -650,15 +703,7 @@ return
 //
 // --------------------------------------------------------------------------
 // Grava a tabela ZBI
-static function _GravaZBI( ;
-	  _sCodTab      as character ;
-	, _sProduto     as character ;
-	, _sGrau        as character ;
-	, _sConduc      as character ;
-	, _sClassif     as character ;
-	, _nPreco       as numeric ;
-	, _lRegerarTudo as logical ;
-)
+static function _GravaZBI(_sCodTab as character, _sProduto as character, _sGrau as character, _sConduc as character, _sClassif as character, _nPreco as numeric, _lRegerarTudo as logical)
 	local _lContinua := .T.
 
 	// Se estou regerando tudo, nem perco tempo com dbseek, comparacoes, etc... jah chego atirando
