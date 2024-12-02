@@ -194,6 +194,7 @@
 // 22/03/2024 - Robert  - Criada validacao para canpo B1_VAFULLW (GLPI 15127)
 // 03/04/2024 - Claudia - Retirado campo C5_VADCO. GLPI: 14763
 // 11/11/2024 - Claudia - Retirada validação ZZ2. GLPI: 16386
+// 29/11/2024 - Claudia - Valida inclusão de tabela de preço. GLPI: 15297
 //
 // ---------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
@@ -1290,6 +1291,15 @@ user function VA_VCpo (_sCampo)
 				_lRet = .F.
 			endif
 
+			// Valida se já existe o código
+			DbSelectArea("SZA")
+			DbSetOrder(1)  // Ajuste conforme o índice relevante
+			dbseek(xfilial("SZA") + M->ZA_COD) // ZA_FILIAL+ZA_COD
+				
+			if Found() 
+				u_help("Tabela já existente. Verifique!")
+				_lRet := .F.
+			endif
 
 		case _sCampo $ "M->ZA4_CLI"
 			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_MSBLQL") = '1'
