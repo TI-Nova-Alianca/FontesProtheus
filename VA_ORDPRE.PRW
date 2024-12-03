@@ -14,6 +14,7 @@
 // 28/06/2023 - Sandra - Alterado campo TJ_DTMPFIM para campo TJ_DTMRFIM GLPI 13804
 // 28/06/2023 - Sandra - Incluso filtro para buscar somente manutentor realizado GLPI 13805
 // 10/07/2023 - Sandra - Incluso parametro para buscar ordens abertas / fechadas. GLPI 13806
+// 03/12/2024 - Sandra - Ajuste das datas para dia/mes/ano.  GLPI 16142
 // 
 //
 // ------------------------------------------------------------------------------------------------------------------------
@@ -81,9 +82,10 @@ _oSQL:_sQuery += "     ,STJ.TJ_CODBEM AS CODBEM "
 _oSQL:_sQuery += "     ,ST9.T9_NOME AS NOME_BEM "
 _oSQL:_sQuery += "     ,STJ.TJ_SERVICO AS SERVI "
 _oSQL:_sQuery += "     ,ST4.T4_NOME AS NOME_SERVICO "
-_oSQL:_sQuery += "     ,STJ.TJ_DTMPINI AS DT_INICIO "
-//_oSQL:_sQuery += "     ,STJ.TJ_DTMPFIM AS DT_FIM "
-_oSQL:_sQuery += "     ,STJ.TJ_DTMRFIM AS DT_FIM "
+//_oSQL:_sQuery += "     ,STJ.TJ_DTMPINI AS DT_INICIO "
+_oSQL:_sQuery += "     ,SUBSTRING(STJ.TJ_DTMPINI, 7, 2) + '/' + SUBSTRING(STJ.TJ_DTMPINI, 5, 2) + '/' + SUBSTRING(STJ.TJ_DTMPINI, 1, 4) AS DT_INICIO "
+//_SQL:_sQuery += "     ,STJ.TJ_DTMRFIM AS DT_FIM "
+_oSQL:_sQuery += "     ,SUBSTRING(STJ.TJ_DTMRFIM, 7, 2) + '/' + SUBSTRING(STJ.TJ_DTMRFIM, 5, 2) + '/' + SUBSTRING(STJ.TJ_DTMRFIM, 1, 4) AS DT_FIM "
 _oSQL:_sQuery += "     ,ST1.T1_NOME AS EXECUTANTE "
 _oSQL:_sQuery += "     ,ISNULL(CAST(CAST (STJ.TJ_OBSERVA AS VARBINARY (8000)) AS VARCHAR (8000)), '') AS OBSERV "
 _oSQL:_sQuery += " FROM " + RETSQLName ("STJ") + " STJ "
@@ -109,8 +111,8 @@ _oSQL:_sQuery += "			AND STL.TL_FILIAL = STJ.TJ_FILIAL "
 _oSQL:_sQuery += "			AND STL.TL_PLANO = STJ.TJ_PLANO) "
 _oSQL:_sQuery += " WHERE STJ.TJ_TIPO = 'PRE' "
 _oSQL:_sQuery += " AND STJ.D_E_L_E_T_ = '' "
-_oSQL:_sQuery += " AND STJ.TJ_DTMPINI >= '" + dtos (MV_PAR01) + "'"
-_oSQL:_sQuery += " AND STJ.TJ_DTMRFIM <= '" + dtos (MV_PAR02) + "'"
+_oSQL:_sQuery += " AND STJ.TJ_DTMPINI >= '" + DTOS(MV_PAR01) + "'"
+_oSQL:_sQuery += " AND STJ.TJ_DTMRFIM <= '" + DTOS(MV_PAR02) + "'"
 _oSQL:_sQuery += " AND STJ.TJ_CODBEM BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
 _oSQL:_sQuery += " AND ST1.T1_CODFUNC BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
 _oSQL:_sQuery += " AND ST1.T1_CODFUNC BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
@@ -119,7 +121,9 @@ if mv_par07 == 1
 elseif mv_par07 == 2
 	_oSQL:_sQuery += " AND STJ.TJ_TERMINO = 'S' "
 endif
-_oSQL:_sQuery += " ORDER BY STJ.TJ_DTMPINI "
+//_oSQL:_sQuery += " ORDER BY STJ.TJ_DTMPINI "
+
+_oSQL:_sQuery += " ORDER BY DT_INICIO "
 
 
 
@@ -216,8 +220,8 @@ _oSQL:_sQuery += " ORDER BY STJ.TJ_DTMPINI "
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| (_sAliasQ) -> NOME_BEM    	    })
 		oSection1:Cell("COLUNA6")	:SetBlock   ({|| (_sAliasQ) -> SERVI    	    })
 		oSection1:Cell("COLUNA7")	:SetBlock   ({|| (_sAliasQ) -> NOME_SERVICO     })
-		oSection1:Cell("COLUNA8")	:SetBlock   ({|| Stod((_sAliasQ)-> DT_INICIO    )})
-		oSection1:Cell("COLUNA9")	:SetBlock   ({|| Stod((_sAliasQ)-> DT_FIM       )})
+		oSection1:Cell("COLUNA8")	:SetBlock   ({|| (_sAliasQ)-> DT_INICIO         })
+		oSection1:Cell("COLUNA9")	:SetBlock   ({|| (_sAliasQ)-> DT_FIM            })
 		oSection1:Cell("COLUNA10")	:SetBlock   ({|| (_sAliasQ) -> EXECUTANTE       })
 		oSection1:Cell("COLUNA11")	:SetBlock   ({|| (_sAliasQ) -> OBSERV           })
 
