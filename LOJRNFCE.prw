@@ -2,11 +2,20 @@
 // Programa: lojrnfce
 // Autor...: catia cardoso
 // Data....: 23/05/2019
+// Descrição: Layout de cupom fiscal - impressão
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #cumpom
+// #Descricao         #Layout de cupom fiscal - impressão
+// #PalavasChave      #cupom  
+// #TabelasPrincipais #SF2 #SD2 #SL1 #SL2
+// #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
 // 23/05/2019 - Catia   - impressao customizada do cupom - procurar por CUSTOMIZADO
 // 23/02/2021 - Sandra  - Ajuste para nova versão
-// 06/05/2-24 - Claudia - Atualizada a versão. GLPI: 15154
+// 06/05/2024 - Claudia - Atualizada a versão. GLPI: 15154
+// 03/12/2024 - Claudia - Incluido 6 caracteres no código de produto. GLPI: 16479 
 //
 // -------------------------------------------------------------------------------------
 //
@@ -329,8 +338,8 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 	//4 - Mascara
 	//5 - Alinhamento
 	
-	aColDet := { { "Codigo", 0080, 15, "", "D"},;
-				 { "Descricao", 0430, 40, "", "D"},;		
+	aColDet := {{ "Codigo", 0080, 15, "", "D"},;
+				{ "Descricao", 0430, 40, "", "D"},;		
 				{ "Qtd", 1250, 6, "", "E"},;	
 				{ "UN", 1500, 2, "", "D"},;	
 				{ "VlUnit.", 1600, 14, '@E 999,999,999.99', "E"},;				
@@ -1063,7 +1072,7 @@ BEGIN SEQUENCE
 		//
 		cTexto += (TAG_NEGRITO_INI + TAG_CENTER_INI + cTagCondIni)
 		//cTexto += "Codigo          Desc. Qtd UN Vlr Unit. Vlr Total"	//48 colunas
-		cTexto += "Cod Descricao                    Qtde   Vlr Unit.  Vlr Total"	//60 colunas
+		cTexto += "Cod   Descricao                  Qtde   Vlr Unit.  Vlr Total"	//60 colunas
 		//         xxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxx    9999 XX   9.999,99  99.999,99																			   
 		cTexto +=  (cTagCondFim + TAG_CENTER_FIM + TAG_NEGRITO_FIM)
 		cTexto += cCRLF
@@ -1076,8 +1085,8 @@ BEGIN SEQUENCE
 		//Aadd(aColDiv2, 08)	// VlUnit.
 		//Aadd(aColDiv2, 10)	// VlTotal
 		// customizado
-		Aadd(aColDiv2, 04)	// Codigo
-		Aadd(aColDiv2, 25)	// Descricao
+		Aadd(aColDiv2, 06)	// Codigo
+		Aadd(aColDiv2, 29)	// Descricao
 		Aadd(aColDiv2, 04)	// Qtd
 		Aadd(aColDiv2, 02)	// Un
 		Aadd(aColDiv2, 08)	// VlUnit.
@@ -1096,7 +1105,7 @@ BEGIN SEQUENCE
 			nContItImp++
 
 			// Codigo			
-			cLinha := PadR( aItemNfce[nX]:_PROD:_CPROD:TEXT, aColDiv2[1] ) + " "
+			cLinha := PadR(alltrim(aItemNfce[nX]:_PROD:_CPROD:TEXT), aColDiv2[1] ) + " "
 
 			// Descricao				
 			cConteudo := aItemNfce[nX]:_PROD:_XPROD:TEXT
