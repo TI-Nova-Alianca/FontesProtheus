@@ -22,11 +22,11 @@
 #Include "PROTHEUS.CH"   
 
 User Function VA_FIN650()
-    local _cMens    := ""
+    local _cMens       := ""
 	Private _nValJuros := 0
 	
     // chama relatorio
-    U_VA_FINR650()
+    U_VA_CNAB()
 
 	If _nValJuros > 0
 		_cMens := "Deseja abrir a tela de eventos CNAB - Juros indevidos?"

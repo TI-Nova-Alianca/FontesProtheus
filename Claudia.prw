@@ -94,6 +94,14 @@ User Function claudia ()
 
 	//u_help("Atualiza produtos")
 	//GLPI15796()
+
+	//u_help("parametros safra")
+	//U_VA_SZT()
+	//AxCadastro("SZT","Parâmetro de Safra",,)
+
+	//u_help("rel fina")
+	//U_VA_CNAB()
+
 Return
 // //
 // // -----------------------------------------------------------------------------------
