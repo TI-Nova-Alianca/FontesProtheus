@@ -906,7 +906,6 @@ Static Function ReportPrint(oReport as Object) as Logical
 				EndIf	
 
 				lOk := .T.
--
 				// o array aValores ir  permitir 
 				// que qualquer exce‡„o ou neces
 				// sidade seja tratado no ponto  
@@ -958,8 +957,8 @@ Static Function ReportPrint(oReport as Object) as Logical
 					//cChave := Substr(cNumTit,1,10)
 
 					dbSelectArea(IIF(mv_par07==1,"SE1","SE2"))
-					dbSetOrder(IIF(mv_par07==1,1,13)) // E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO                                                                                                                 
-					cChave := IIF(mv_par07==1, cFilAnt + '10 ' + Substr(cNumTit,1,10), Substr(cNumTit,1,10))
+					dbSetOrder(1) // E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO                                                                                                           
+					cChave := cFilAnt + Substr(cNumTit,1,13)
 
 					If !Empty(cNumTit) .And. MsSeek(cChave)
 						If ( mv_par07 == 1 )
