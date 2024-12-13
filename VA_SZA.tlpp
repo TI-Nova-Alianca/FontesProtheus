@@ -31,6 +31,8 @@
 // 13/06/2024 - Claudia - Incluida exportação de tabela de preço em planilha. GLPI: 15594
 // 24/07/2024 - Claudia - Exportação de tabela de preço para planilha. GLPI: 15770
 // 29/11/2024 - Claudia - Incluida opção de excluir tabela de preço. GLPI: 15296
+// 11/12/2024 - Claudia - Incluida a opção de acrescimo de decrescimo 
+//                        por percentual sobre tabela. GLPI: 16530
 //
 // ------------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -85,6 +87,7 @@ User Function VA_SZA()
 			aadd(aRotina, {"&Alterar"           		, "AxAltera"					, 0, 4})
 			aadd(aRotina, {"&Excluir"           		, "U_SZA_E  (sza -> za_cod)"	, 0, 5})
 			aadd(aRotina, {"&Copiar itens da tabela"	, "U_SZA_RT (sza -> za_cod)"	, 0, 4})
+			aadd(aRotina, {"&Alterar % de tabelas"		, "U_SZA_PER (sza -> za_cod)"	, 0, 4})
 			aadd(aRotina, {"&Alterar grupos/preços"     , "U_ZX5_13 (sza -> za_cod)"	, 0, 4})
 			aadd(aRotina, {"&Alterar variedades"		, "U_ZX5_14 (sza -> za_cod)"	, 0, 4})
 			aadd(aRotina, {"&Gerar tabela em HTML"		, "U_SZA_HTM (sza -> za_cod)"	, 0, 4})
@@ -812,6 +815,72 @@ Static Function _GeraXLS(_sCodTab)
 
 	endif
 return
+//
+// --------------------------------------------------------------------------
+// Altera percentual tabela de preço
+User Function SZA_PER(_sTab)
+	local _oSQL   := NIL
+	local _aDados := {}
+	local _x      := 0
+	local _nVlr   := 0
+	local _lCont  := .T.
+	local _sTipo  := ""
+	local _nPerc  := 0
+
+	if ! U_ZZUVL ('162', __cUserID, .T.)
+		u_help(" Usuário " + __cUserID + " sem permissão para alteração de % de tabelas de preço de uva! (Grupo 162)")
+	else
+
+		_nPerc = U_Get('Percentual'			, 'N', 6, "@E 999.99", '', 0, .f., '.t.')
+		_sTipo = U_Get('Soma (+)/Subtrai(-)', 'C', 1, '', '', space(1), .f., '.t.')
+
+		if _nPerc <= 0
+			u_help("Percentual não definido")
+			_lCont := .F.
+		endif
+		if ! _sTipo $ ('+/-')
+			u_help("Tipo não definido. Deve ser + ou -")
+			_lCont := .F.
+		endif
+
+		if _lCont
+			_oSQL:= ClsSQL ():New ()
+			_oSQL:_sQuery := " SELECT "
+			_oSQL:_sQuery += " 		 ZX5_FILIAL "
+			_oSQL:_sQuery += " 		,ZX5_TABELA "
+			_oSQL:_sQuery += "    	,ZX5_13SAFR "
+			_oSQL:_sQuery += "    	,ZX5_13GRUP "
+			_oSQL:_sQuery += "    	,ZX5_13GBAS "
+			_oSQL:_sQuery += "    	,ZX5_13PBCO "
+			_oSQL:_sQuery += "    	,ZX5_13BAGC "
+			_oSQL:_sQuery += " FROM ZX5010 "
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " AND ZX5_TABELA = '13' "
+			_oSQL:_sQuery += " AND ZX5_13SAFR = '"+ _sTab +"' "
+			_oSQL:_sQuery += " AND ZX5_13PBCO <> 0 "
+			_aDados  = aclone(_oSQL:Qry2Array(.f., .f.))
+
+			DbSelectArea("ZX5")
+			DbSetOrder(7) // ZX5_FILIAL + ZX5_TABELA +  ZX5_13SAFR + ZX5_13GRUP                                                                                                              
+
+			for _x:=1 to Len(_aDados)
+				if DbSeek(_aDados[_x,1] + _aDados[_x,2] + _aDados[_x,3] + _aDados[_x,4],.F.)
+				
+					if _sTipo == '+'
+						_nVlr := _aDados[_x,6] + ((_aDados[_x,6] * _nPerc)/100)
+					else
+						_nVlr := _aDados[_x,6] - ((_aDados[_x,6] * _nPerc)/100)
+					endif
+
+					reclock("ZX5", .F.)
+						ZX5 -> ZX5_13PBCO := _nVlr
+						ZX5 -> ZX5_13BAGC := _nVlr
+					msunlock()
+				endif
+			next 
+		endif
+	endif
+Return
 //
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1

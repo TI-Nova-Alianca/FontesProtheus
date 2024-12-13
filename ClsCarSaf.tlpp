@@ -1128,7 +1128,7 @@ METHOD BuscaGrupoPagto () Class ClsCarSaf
 					_sRetGrpPg = 'C'
 				endif
 
-			case ::Safra $ '2021/2022/2023/2024'
+			case ::Safra $ '2021/2022/2023/2024/2025'
 				// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
 				if alltrim (sb1 -> b1_cod) $ '9925/9904/9922/9855'  // bordo, niagara, concord
 					_sRetGrpPg = 'A'

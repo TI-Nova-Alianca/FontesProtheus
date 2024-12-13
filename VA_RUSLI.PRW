@@ -209,6 +209,8 @@ user function va_rusLI (_nPesagem, _lSimular)
 						_aClasUva = aclone (U_ClUva23 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, _sInspBotr, _sInspGlom, _sInspAspe, _sInspPodr, _sInspAcid))
 					elseif sze -> ze_safra == '2024'
 						_aClasUva = aclone (U_ClUva24 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, _sInspBotr, _sInspGlom, _sInspAspe, _sInspPodr, _sInspAcid))
+					elseif sze -> ze_safra == '2025'
+						_aClasUva = aclone (U_ClUva25 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, _sInspBotr, _sInspGlom, _sInspAspe, _sInspPodr, _sInspAcid))
 					else
 						// A chamada com EVAL rodou bem, mas uma pesquisa nos fontes por CLUVA21, por exemplo, nao retorna nada. ---> _aClasUva = aclone (eval (&("{||U_ClUva" + right (sze -> ze_safra, 2) + " (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst)}")))
 						u_help ("Sem tratamento para leitura de classificacao de uvas no programa " + procname ())
