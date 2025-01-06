@@ -1029,7 +1029,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 			::TabelaPreco = '24A '  // Codigo tabela precos (jah deve existir previamente no arquivo ZBI)
 		case ::Safra $ '2025'
 			::TipoPrecoParaNF = 6  // Buscar no arquivo ZBI
-			::TabelaPreco = '25A '  // Codigo tabela precos (jah deve existir previamente no arquivo ZBI)
+			::TabelaPreco = '25B '  // Codigo tabela precos (jah deve existir previamente no arquivo ZBI)
 		otherwise
 			_Super:SomaMsg ("Sem definicao de qual preco devo usar para gerar contranota (entrada/compra/MOC/...)")
 			_lContinua = .F.
