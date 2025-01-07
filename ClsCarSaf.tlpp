@@ -37,6 +37,7 @@
 // 12/02/2024 - Robert - Gravar evento quando usuario confirmar reenvio para grau (ocorre em determinadas situacoes)
 // 20/02/2024 - Robert - Metodo :Precifica() nao considerava variedade de menor valor quando havia mistura de variedades!
 // 14/11/2024 - Claudia - Incluida a tabela de preço 25A para safra 2025. Necessario para impressão/reimpressão de ticket. GLPI: 16362
+// 07/01/2025 - Claudia - Incluida a tabela de preço 25B para safra 2025. GLPI: 16581
 //
 // -------------------------------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -1017,7 +1018,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 
 	// Define qual o tipo de preco a ser usado para geracao de contranota.
 	// Procuro usar as mesmas posicoes retornadas pelas funcoes de calculo do
-	// preco de cada ano: 1=entrada (em desuso);2=compra;5=MOC
+	// preco de cada ano: 1=entrada (em desuso);2=compra;5=MOC r
 	if _lContinua
 		do case
 		case ::Safra $ '2019/2021/2022'  // Para 2024 ainda nao tenho OK da direcao !!!
