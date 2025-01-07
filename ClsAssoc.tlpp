@@ -131,6 +131,8 @@
 // 09/05/2024 - Claudia - Incluida perdas no capital social.
 // 07/06/2024 - Claudia - Perdas será apenas mostrado no cap.social, não afetará o saldo. GLPI: 15568
 // 02/10/2024 - Claudia - Tratamento de perdas de associados/ex-associados. GLPI: 16052
+// 07/01/2025 - Claudia - Alterados percentuais de parcelas, ja que foi aumentado 
+//                        de 11 para 12 parcelas de safra. GLPI: 16582
 //
 // -------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -1297,7 +1299,7 @@ METHOD FechSafra () Class ClsAssoc
 			_sRetFechS += '<perc01>10</perc01><perc02>5.5</perc02><perc03>5.5</perc03><perc04>5.5</perc04><perc05>5.5</perc05><perc06>6.5</perc06><perc07>11.5</perc07><perc08>11.5</perc08><perc09>11.5</perc09><perc10>13.5</perc10><perc11>13.5</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades: 10+5.5+5.5+5.5+5.5+6.5+11.5+11.5+11.5+13.5+13.5</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
-		elseif ::FSSafra == '2023' .or. ::FSSafra == '2024' .or. ::FSSafra == '2025'
+		elseif ::FSSafra == '2023' .or. ::FSSafra == '2024' //.or. ::FSSafra == '2025'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 11 vezes</descricao>'
@@ -1315,6 +1317,25 @@ METHOD FechSafra () Class ClsAssoc
 			_sRetFechS += '<descricao>Demais variedades                 - 11 vezes</descricao>'
 			_sRetFechS += '<perc01>10</perc01><perc02>9</perc02><perc03>9</perc03><perc04>9</perc04><perc05>9</perc05><perc06>9</perc06><perc07>9</perc07><perc08>9</perc08><perc09>9</perc09><perc10>9</perc10><perc11>9</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades: 10+9+9+9+9+9+9+9+9+9+9</descComParc>'
+			_sRetFechS += '</regraPagamentoItem>'
+		elseif ::FSSafra == '2025'
+			_sRetFechS += '<regraPagamentoItem>'
+			_sRetFechS += '<grupo>A</grupo>'
+			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 12 vezes</descricao>'
+			_sRetFechS += '<perc01>9</perc01><perc02>9</perc02><perc03>9</perc03><perc04>9</perc04><perc05>8</perc05><perc06>8</perc06><perc07>8</perc07><perc08>8</perc08><perc09>8</perc09><perc10>8</perc10><perc11>8</perc11><perc12>8</perc12>'
+			_sRetFechS += '<descComParc>A-Bordo,niagara,concord e organicas: 9+9+9+9+8+8+8+8+8+8+8+8</descComParc>'
+			_sRetFechS += '</regraPagamentoItem>'
+			_sRetFechS += '<regraPagamentoItem>'
+			_sRetFechS += '<grupo>B</grupo>'
+			_sRetFechS += '<descricao>Tintorias e viniferas espaldeira  - 12 vezes</descricao>'
+			_sRetFechS += '<perc01>9</perc01><perc02>9</perc02><perc03>9</perc03><perc04>9</perc04><perc05>8</perc05><perc06>8</perc06><perc07>8</perc07><perc08>8</perc08><perc09>8</perc09><perc10>8</perc10><perc11>8</perc11><perc12>8</perc12>'
+			_sRetFechS += '<descComParc>B-Tintorias+vinif.espald: 9+9+9+9+8+8+8+8+8+8+8+8</descComParc>'
+			_sRetFechS += '</regraPagamentoItem>'
+			_sRetFechS += '<regraPagamentoItem>'
+			_sRetFechS += '<grupo>C</grupo>'
+			_sRetFechS += '<descricao>Demais variedades                 - 12 vezes</descricao>'
+			_sRetFechS += '<perc01>9</perc01><perc02>9</perc02><perc03>9</perc03><perc04>9</perc04><perc05>8</perc05><perc06>8</perc06><perc07>8</perc07><perc08>8</perc08><perc09>8</perc09><perc10>8</perc10><perc11>8</perc11><perc12>8</perc12>'
+			_sRetFechS += '<descComParc>C-Demais variedades: 9+9+9+9+8+8+8+8+8+8+8+8</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
 		else
 			_sRetFechS += '<regraPagamentoItem>'
