@@ -144,8 +144,8 @@
 // 22/02/2024 - Robert  - Chamadas de ClsSQL:Qry2Array() estavam sem parametros.
 // 13/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 06/06/2024 - Claudia - Incluido historicos de conta corrente via programa. GLPI: 15555
+// 10/01/2024 - Claudia - Incluido o programa ClUva25. GLPI: 16615
 //
-
 // ---------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 
@@ -786,7 +786,7 @@ user function VA_Gat (_sParCpo, _sParSeq)
 		elseif m->ze_safra == '2024'
 			_xRet = U_ClUva24 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), '0', '0', '0', '0', '0') [1]
 		elseif m->ze_safra == '2025'
-			_xRet = U_ClUva24 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), '0', '0', '0', '0', '0') [1]
+			_xRet = U_ClUva25 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), '0', '0', '0', '0', '0') [1]
 		else
 			u_help ("Sem tratamento para gerar o campo '" + _sCDomin + "' para esta safra.",, .T.)
 		endif
