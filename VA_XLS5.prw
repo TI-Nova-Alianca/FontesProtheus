@@ -96,6 +96,7 @@
 // 06/09/2023 - Claudia - Tratamento para descontos da zina franca. GLPI: 14152
 // 06/10/2023 - Claudia - Necessario incluir validação especifica para a NF de complemento '000229689'. GLPI: 14313
 // 22/01/2024 - Claudia - Acrescentado o novo Valor NET. GLPI: 14638	
+// 14/01/2025 - Claudia - Incluido campo Marca de terceiros. GLPI: 16614
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
@@ -313,6 +314,7 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Tipo bonificacao",         "CASE WHEN C5_VABTPO = '1' THEN '1=Negoc.Comercial' WHEN C5_VABTPO = '2' THEN '2=Doacao' WHEN C5_VABTPO = '3' THEN '3=Acao MKT' WHEN C5_VABTPO = '4' THEN '4=Merchandising' WHEN C5_VABTPO = '5' THEN '5=Introd.Produto ' ELSE '' END AS TIPO_BONIF"})
 		aadd (_aOpcoes, {.F., "Pedido venda bonificacao", "C5_VABREF AS PEDVEN_BONIF"})
 		aadd (_aOpcoes, {.F., "Valor NET(Novo)",          "VALOR_NET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALOR_NET"})
+		aadd (_aOpcoes, {.F., "Marca de terceiros",       "RTRIM (ISNULL (ZX5_40.ZX5_40TERC, '')) AS MARCA_TERCEIROS"})
 	endif
 	// Pre-seleciona opcoes cfe. conteudo anterior.
 	for _nOpcao = 1 to len (_aOpcoes)
