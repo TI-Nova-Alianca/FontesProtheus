@@ -1005,7 +1005,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 				::AxEntrada  = '03' // Almox.para o qual devo gerar contranota. Geralmente '03'.
 				::CxOuGranel = 'C'
 			case ::Filial == '07'
-				::RecebeOrg  = 'N'  // Nao recebe organicas (apenas convencionais).
+				::RecebeOrg  = 'S'  // Nao recebe organicas (apenas convencionais).
 				::RecebeVini = '2'  // Recepcao de viniferas: 1=nao recebe;2=classif.latada(A/B/D);3=classif.espaldeira(PR/AA/A/B/C/D/DS);4=recebe viniferas, mas classifica como comum
 				::AxEntrada  = '03' // Almox.para o qual devo gerar contranota. Geralmente '03'.
 				::CxOuGranel = 'G'
