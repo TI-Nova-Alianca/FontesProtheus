@@ -38,6 +38,7 @@
 // 20/02/2024 - Robert - Metodo :Precifica() nao considerava variedade de menor valor quando havia mistura de variedades!
 // 14/11/2024 - Claudia - Incluida a tabela de preço 25A para safra 2025. Necessario para impressão/reimpressão de ticket. GLPI: 16362
 // 07/01/2025 - Claudia - Incluida a tabela de preço 25B para safra 2025. GLPI: 16581
+// 16/01/2025 - Claudia - Alteração de recebe organicas na F7.
 //
 // -------------------------------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -1000,7 +1001,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 				::AxEntrada  = '03' // Almox.para o qual devo gerar contranota. Geralmente '03'.
 				::CxOuGranel = 'G'
 			case ::Filial == '03'
-				::RecebeOrg  = 'N'  // Nao recebe organicas (apenas convencionais)
+				::RecebeOrg  = 'S'  // Nao recebe organicas (apenas convencionais)
 				::RecebeVini = '3'  // Recepcao de viniferas: 1=nao recebe;2=classif.latada(A/B/D);3=classif.espaldeira(PR/AA/A/B/C/D/DS);4=recebe viniferas, mas classifica como comum
 				::AxEntrada  = '03' // Almox.para o qual devo gerar contranota. Geralmente '03'.
 				::CxOuGranel = 'C'
