@@ -13,14 +13,16 @@
 // #Modulos           #FAT #FIS
 //
 // Historico de alteracoes:
-// 27/10/2022 - Robert - Populados campos de pesos min/medio/max
-//                     - Varre arquivo gerado apontando inconsitencias
-// 21/11/2022 - Robert - Ajustado caminho das imagens no site.
-// 20/10/2023 - Robert - Exportava itens filhos (garrafas) mais de 1 vez, pois
-//                       o 'teste de paternidade' estava desabilitado.
+// 27/10/2022 - Robert  - Populados campos de pesos min/medio/max
+//                      - Varre arquivo gerado apontando inconsitencias
+// 21/11/2022 - Robert  - Ajustado caminho das imagens no site.
+// 20/10/2023 - Robert  - Exportava itens filhos (garrafas) mais de 1 vez, pois
+//                        o 'teste de paternidade' estava desabilitado.
+// 23/01/2025 - Claudia - Transformado o array de erros em um array multidimensional, 
+//                        para exportação da planilha pelo programa ShowArray. GLPI: 16736
 //
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------------
 User Function VA_XLS61 (_lAutomat)
 	Local cCadastro := "Exporta planilha com dados para cadastro nacional de produtos no GS1."
 	Local aSays     := {}
@@ -47,21 +49,21 @@ User Function VA_XLS61 (_lAutomat)
 		Endif
 	endif
 return
-
-
+//
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
 Static Function _TudoOk()
 	Local _lRet     := .T.
 Return _lRet
-
-
+//
 // --------------------------------------------------------------------------
+// Gera dados
 Static Function _Gera()
 	local _oSQL      := NIL
 	local _sWhereSB1 := ''
 	local _sAliasQ   := ''
 	local _aProbl    := {}
+	local _x         := 0
 
 	procregua (10)
 	incproc ("Gerando arquivo de exportacao")
@@ -69,10 +71,7 @@ Static Function _Gera()
 	// Como vou ler o SB1 em dois momentos (unidades e depois caixas), achei
 	// melhor criar um unico WHERE.
 	_sWhereSB1 := " WHERE D_E_L_E_T_ = ''"
-//	_sWhereSB1 +=   " AND B1_CODBAR NOT LIKE '000%'"
-//	_sWhereSB1 +=   " AND (LEN (B1_CODBAR) = 13 or LEN (B1_CODBAR) = 14)"
 	_sWhereSB1 +=   " AND B1_COD    BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
-//	_sWhereSB1 +=   " AND B1_TIPO   IN ('PA', 'PI', 'MR')"
 
 	// Busca dados
 	incproc ("Buscando dados")
@@ -163,7 +162,6 @@ Static Function _Gera()
 	_oSQL:_sQuery +=      " ,'ºC' AS UM_TEMPER"
 	_oSQL:_sQuery +=      " ,'Não' AS PERIGOSA"
 	_oSQL:_sQuery +=      " ,P.B1_POSIPI AS NCM"
-//	_oSQL:_sQuery +=      " ,P.B1_POSIPI AS TIPI"
 	_oSQL:_sQuery +=      " ,CASE WHEN SUBSTRING (P.B1_POSIPI, 1, 8) IN ('22029000') THEN '02' else '' end AS TIPI"  // 02 somente para nectares (orientacao Katia Nunes pelo e-mail em 05/07/23)
 	_oSQL:_sQuery +=      " ,P.B1_CEST AS CEST"
 	_oSQL:_sQuery +=      " ,P.B1_IPI AS ALIQ_IPI"
@@ -251,15 +249,22 @@ Static Function _Gera()
 		(_sAliasQ) -> (dbskip ())
 	enddo
 
+	_aProbl1 :={}
 	if len (_aProbl) > 0
-		U_Log2 ('erro', _aProbl)
-		u_showarray (_aProbl)
+	 	For _x:=1 to len(_aProbl)
+			aadd(_aProbl1, { _x			,;
+							_aProbl[_x]	})
+		Next
+	endif
+
+	if len (_aProbl1) > 0
+		U_Log2 ('erro', _aProbl1)
+		u_showarray (_aProbl1)
 	endif
 
 	u_help ("Sugestao: copie os dados da planilha gerada e cole-os na planilha modelo do portal GS1, usando a opcao de 'colar especial - somente valores' para manter a formatacao da planilha original. Alguns campos numericos como o codigo de barras poderao precisar de ajuste manual.")
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
