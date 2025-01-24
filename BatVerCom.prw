@@ -1,5 +1,5 @@
 
-// Programa...: VA_VERIFC
+// Programa...: BatVerCom
 // Autor......: Claudia Lionço
 // Data.......: 23/01/2025
 // Descricao..: Verificações Comerciais
@@ -14,16 +14,20 @@
 // Historico de alteracoes:
 //
 // ------------------------------------------------------------------------------------------
-User Function VA_VERIFC()
+User Function BatVerCom()
     Local _aAreaAnt := U_ML_SRArea()
 
+    // Verifica comissão não gerada
     _VerifComissao()
+
+    //Envia aviso de alteração de tabela de preço
+    _AltTabela()
 
     U_ML_SRArea(_aAreaAnt)
 Return
 //
 // ------------------------------------------------------------------------------------------
-// verifica titulos sem comissao
+// Verifica titulos sem comissao
 Static Function _VerifComissao()
     Local _oSQL     := NIL
 	Local _sMsg     := ""
@@ -63,3 +67,48 @@ Static Function _VerifComissao()
 		U_ZZUNU({'163'}, "Títulos sem comissão " + DTOC(_dData) , _sMsg, .F.)
 	EndIf
 Return
+//
+// ------------------------------------------------------------------------------------------
+// Envia e-mail de aviso de alteração de tabelas
+Static Function _AltTabela()
+	Local _aAreaAnt := U_ML_SRArea ()
+	Local _oSQL     := NIL
+	Local _sMsg     := ""
+	Local _dData    := Date()
+	
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT"
+    _oSQL:_sQuery += " 	     CODIGO_ALIAS "
+	_oSQL:_sQuery += "      ,DA0.DA0_DESCRI "
+    _oSQL:_sQuery += " 	    ,USUARIO "
+    _oSQL:_sQuery += " 	    ,TRIM(PRODUTO) "
+    _oSQL:_sQuery += " 	    ,TRIM(DESCRITIVO) "
+    _oSQL:_sQuery += " FROM VA_VEVENTOS "
+	_oSQL:_sQuery += " INNER JOIN DA0010 DA0 "
+	_oSQL:_sQuery += " 	ON DA0.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND DA0.DA0_FILIAL = FILIAL "
+	_oSQL:_sQuery += " 		AND DA0.DA0_CODTAB = CODIGO_ALIAS "
+    _oSQL:_sQuery += " WHERE (CODEVENTO LIKE ('%DA0%') "
+    _oSQL:_sQuery += " OR CODEVENTO LIKE ('%DA1%')) "
+    _oSQL:_sQuery += " AND DATA = '"+dtos(_dData)+"' "
+    _oSQL:_sQuery += " ORDER BY DATA, HORA, CODIGO_ALIAS "
+	
+	u_log (_oSQL:_sQuery)
+	
+	If Len (_oSQL:Qry2Array (.F., .F.)) > 0
+		_aCols := {}
+		
+	   AADD (_aCols, {'TABELA' 		, 'left',  ''})
+	   AADD (_aCols, {'DESCRICAO' 	, 'left',  ''})
+	   AADD (_aCols, {'USUARIO'		, 'left',  ''})
+	   AADD (_aCols, {'PRODUTO'		, 'left',  ''})
+       AADD (_aCols, {'OBS'    		, 'left',  ''})
+
+		_sMsg = _oSQL:Qry2HTM ("Alteração de tabela de preço  - Data " + DTOC(_dData), _aCols, "", .F.,.T.)
+		U_ZZUNU ({'156'}, "Alteração de tabela de preço  - Data " + DTOC(_dData) , _sMsg, .F.)
+	EndIf
+
+	U_ML_SRArea (_aAreaAnt)
+Return .T.
