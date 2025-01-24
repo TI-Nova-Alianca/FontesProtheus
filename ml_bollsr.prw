@@ -100,8 +100,8 @@
 // 18/01/2023 - Robert  - Nao gera boleto tipo IMP quando em modo de impressao automatica (GLPI 12779).
 // 27/02/2023 - Robert  - Passa a validar E1_VACHVEX e nao mais E1_TIPO na impr.boletos de cobranca de ST (GLPI 12779)
 // 08/03/2023 - Robert  - Nao imprimia tipo TRS (necessario para cobranca de ST)
+// 22/01/2025 - CLaudia - Ajuste no fator de vencimento. GLPI: 16722
 //
-
 // --------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
 	local _nBoleto := 0
@@ -1368,7 +1368,15 @@ static function _CodBar001 ()
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+
+	// if se1 -> e1_vencrea < stod('20250222')
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+	// else
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("20220529")
+	// endif
+
 	_sFatorVct = strzero (_nFatorVct, 4)
+
 	_aCodBar [6] = val (substr (_sFatorVct, 1, 1))
 	_aCodBar [7] = val (substr (_sFatorVct, 2, 1))
 	_aCodBar [8] = val (substr (_sFatorVct, 3, 1))
@@ -1461,7 +1469,15 @@ static function _CodBar041 ()
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+	
+	// if se1 -> e1_vencrea < stod('20250222')
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+	// else
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("20220529")
+	// endif
+
 	_sFatorVct = strzero (_nFatorVct, 4)
+
 	_aCodBar [6] = val (substr (_sFatorVct, 1, 1))
 	_aCodBar [7] = val (substr (_sFatorVct, 2, 1))
 	_aCodBar [8] = val (substr (_sFatorVct, 3, 1))
@@ -1672,7 +1688,15 @@ static function _CodBar104 ()
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+
+	// if se1 -> e1_vencrea < stod('20250222')
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+	// else
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("20220529")
+	// endif
+
 	_sFatorVct = strzero (_nFatorVct, 4)
+
 	_aCodBar [6] = val (substr (_sFatorVct, 1, 1))
 	_aCodBar [7] = val (substr (_sFatorVct, 2, 1))
 	_aCodBar [8] = val (substr (_sFatorVct, 3, 1))
@@ -1779,6 +1803,13 @@ Static Function _CodBar237 ()
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+
+	// if se1 -> e1_vencrea < stod('20250222')
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+	// else
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("20220529")
+	// endif
+
 	_sFatorVct = strzero (_nFatorVct, 4)
 	
 	_aCodBar [6] = val (substr (_sFatorVct, 1, 1))
@@ -1867,6 +1898,13 @@ Static Function _CodBarRED_237 ()
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+
+	// if se1 -> e1_vencrea < stod('20250222')
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+	// else
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("20220529")
+	// endif
+
 	_sFatorVct = strzero (_nFatorVct, 4)
 	
 	_aCodBar [6] = val (substr (_sFatorVct, 1, 1))
@@ -2144,6 +2182,13 @@ Static Function _CodBar422_422 ()
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+
+	// if se1 -> e1_vencrea < stod('20250222')
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+	// else
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("20220529")
+	// endif
+
 	_sFatorVct = strzero (_nFatorVct, 4)
 	
 	_aCodBar [6] = val (substr (_sFatorVct, 1, 1))
@@ -2233,6 +2278,13 @@ Static Function _CodBar033 ()
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+
+	// if se1 -> e1_vencrea < stod('20250222')
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
+	// else
+	// 	_nFatorVct = se1 -> e1_vencrea - stod ("20220529")
+	// endif
+	
 	_sFatorVct = strzero (_nFatorVct, 4)
 	
 	_aCodBar [6] = val (substr (_sFatorVct, 1, 1))
