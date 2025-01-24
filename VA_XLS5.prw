@@ -97,6 +97,7 @@
 // 06/10/2023 - Claudia - Necessario incluir validação especifica para a NF de complemento '000229689'. GLPI: 14313
 // 22/01/2024 - Claudia - Acrescentado o novo Valor NET. GLPI: 14638	
 // 14/01/2025 - Claudia - Incluido campo Marca de terceiros. GLPI: 16614
+// 24/01/2025 - Claudia - Incluido campo de regiao do representante. GLPI: 16759
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
@@ -315,6 +316,7 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Pedido venda bonificacao", "C5_VABREF AS PEDVEN_BONIF"})
 		aadd (_aOpcoes, {.F., "Valor NET(Novo)",          "VALOR_NET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALOR_NET"})
 		aadd (_aOpcoes, {.F., "Marca de terceiros",       "RTRIM (ISNULL (ZX5_40.ZX5_40TERC, '')) AS MARCA_TERCEIROS"})
+		aadd (_aOpcoes, {.F., "Região Representante",     "RTRIM(ISNULL(ZX5_59.ZX5_59DESC,'')) AS REGIAO_REPRESENTANTE"})
 	endif
 	// Pre-seleciona opcoes cfe. conteudo anterior.
 	for _nOpcao = 1 to len (_aOpcoes)
@@ -429,6 +431,19 @@ Static Function _Gera()
 		_sQuery +=                 " and ZX5_40.ZX5_FILIAL   = '" + xfilial ("ZX5") + "'"
 		_sQuery +=                 " and ZX5_40.ZX5_TABELA   = '40'"
 		_sQuery +=                 " and ZX5_40.ZX5_40COD = V.MARCA)"
+	endif
+	if "ZX5_59" $ upper (_sQuery)
+	  	if !("A3_") $ upper (_sQuery)
+			_sQuery +=            " left join " + RetSQLName ("SA3") + " SA3 "
+			_sQuery +=                 " on (SA3.D_E_L_E_T_ != '*'"
+			_sQuery +=                 " and SA3.A3_FILIAL   = '" + xfilial ("SA3") + "'"
+			_sQuery +=                 " and SA3.A3_COD      = V.VEND1)"
+		endif
+		_sQuery +=            " left join " + RetSQLName ("ZX5") + " ZX5_59 "
+		_sQuery +=                 " on (ZX5_59.D_E_L_E_T_ != '*'"
+		_sQuery +=                 " and ZX5_59.ZX5_FILIAL   = '" + xfilial ("ZX5") + "'"
+		_sQuery +=                 " and ZX5_59.ZX5_TABELA   = '59'"
+		_sQuery +=                 " and ZX5_59.ZX5_59COD    = SA3.A3_VAREPL)"
 	endif
 	_sQuery +=            " left join " + RetSQLName ("SF4") + " SF4 "
 	_sQuery +=                 " on (SF4.D_E_L_E_T_ != '*'"
