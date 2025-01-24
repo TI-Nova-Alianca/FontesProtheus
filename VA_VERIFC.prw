@@ -41,7 +41,7 @@ Static Function _VerifComissao()
     _oSQL:_sQuery += " 	ON SE1.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 		AND SE1.E1_VEND1 = SA3.A3_COD "
     _oSQL:_sQuery += " 		AND SE1.E1_COMIS1 = 0 "
-    _oSQL:_sQuery += " 		AND SE1.E1_EMISSAO >= '20240901' "
+    _oSQL:_sQuery += " 		AND SE1.E1_EMISSAO >= '20250101' "
     _oSQL:_sQuery += " 		AND SE1.E1_PREFIXO = '10' "
     _oSQL:_sQuery += " 		AND SE1.E1_PARCELA <> '1' "
     _oSQL:_sQuery += " 		AND SE1.E1_TIPO = 'NF' "
