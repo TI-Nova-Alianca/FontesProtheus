@@ -82,10 +82,10 @@ User Function MSE3440 ()
 
 	// busca dados do vendedor que esta lendo no SE3
 	If _lContinua
-		u_log("2. " + se3 -> e3_num)
-		If se3->e3_num == '000226055'
-			u_help("Nota")
-		EndIf
+		//u_log("2. " + se3 -> e3_num)
+		//If se3->e3_num == '000242888'
+		//	u_help("Nota")
+		//EndIf
 		_vend1     := se1 -> e1_vend1   
 		_vend2     := se1 -> e1_vend2   
 		_baseComis := se1 -> e1_bascom1 
