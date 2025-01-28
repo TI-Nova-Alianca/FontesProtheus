@@ -31,8 +31,9 @@
 // 19/06/2023 - Robert  - Melhorada mensagem campo A1_SAVBLQ (GLPI 13739)
 // 24/07/2023 - Claudia - Integração de cliente Protheus com CRM Simples. GLPI: 13963
 // 14/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
+// 28/01/2025 - Claudia - Retirado o envio de email de troca de vendedores e 
+//                        adicionada a gravação do evento. GLPI: 16768
 //
-
 // --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 #include "parmtype.ch"
@@ -59,9 +60,8 @@ User Function CRMA980()
 				_GeraLog ()
 				U_AtuMerc ('SA1', sa1 -> (recno ()))
 
-				//GLPI: 12756
-				if alltrim(sa1->a1_vend) <> alltrim(m->a1_vend) 
-					_EnvAvisoRep(sa1->a1_cod, sa1->a1_nome, sa1->a1_vend, m->a1_vend)
+				if alltrim(sa1->a1_vend) <> alltrim(m->a1_vend) // GLPI: 16768
+				 	_GrvEvento(sa1->a1_cod, sa1->a1_nome, sa1->a1_vend, m->a1_vend)
 				endif
 			endif
 			If nOper != 5  // operação exclusão
@@ -120,10 +120,10 @@ Return xRet
 static function _GeraLog ()
 	local _oEvento  := NIL
 
-		_oEvento := ClsEvent():new ()
-		_oEvento:Cliente = sa1->a1_cod
-		_oEvento:LojaCli = sa1->a1_loja
-		_oEvento:AltCadast ("SA1", sa1->a1_cod + sa1->a1_loja, sa1 -> (recno ()))
+	_oEvento := ClsEvent():new ()
+	_oEvento:Cliente = sa1->a1_cod
+	_oEvento:LojaCli = sa1->a1_loja
+	_oEvento:AltCadast ("SA1", sa1->a1_cod + sa1->a1_loja, sa1 -> (recno ()))
 	
 return
 //
@@ -320,20 +320,19 @@ Static Function AtuSuper(_sVend, _sCliente, _sLoja)
  Return
 //
 //----------------------------------------------------------------------------------
-// Envia e-mail de aviso
-Static Function _EnvAvisoRep(_sCliente, _sNome, _sVendOld, _sVendNew) 
-	local _sMsg := ""
+// Grava Aviso de alteração de vendedor
+Static Function _GrvEvento(_sCliente, _sNome, _sVendOld, _sVendNew)
+	local _oEvento  := NIL
 
 	_sVendN1 := Posicione("SA3",1,xFilial("SA3") + _sVendOld, "A3_NOME")
 	_sVendN2 := Posicione("SA3",1,xFilial("SA3") + _sVendNew, "A3_NOME")
 
-	_sMsg := "<br>CLIENTE:	" + alltrim(_sCliente) + " - " + alltrim(_sNome) + "</br>"
-    _sMsg += "<br>Alteração de vendedor de :" + alltrim(_sVendOld) +" - " + alltrim(_sVendN1) + " para " + alltrim(_sVendNew) +" - " + alltrim(_sVendN2) + "</br>"
-	_sMsg += "<br>Usuário de alteração:" +cUserName + "</br>"
-    _sMsg += "<br></br>"
-
-	_sTitulo := "Alteração de vendedor no cliente " + alltrim(_sNome)
-    U_ZZUNU ({'146'}, _sTitulo, _sMsg, .F., cEmpAnt, cFilAnt, "")
+	_oEvento := ClsEvent():new ()
+	_oEvento:Cliente = sa1->a1_cod
+	_oEvento:LojaCli = sa1->a1_loja
+	_oEvento:CodEven = "SA1007"
+	_oEvento:Texto   = "Alteração de vendedor de :" + alltrim(_sVendOld) +" - " + alltrim(_sVendN1) + " para " + alltrim(_sVendNew) +" - " + alltrim(_sVendN2)
+	_oEvento:Grava ()
 Return
 //
 //----------------------------------------------------------------------------------
