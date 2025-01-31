@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 21/02/2024 - Claudia - Retirada as validações da importação.
 // 18/09/2024 - Claudia - Incluida a gravação do código matriz. GLPI: 15953
+// 31/01/2025 - Claudia - Alterado campo de banco. GLPI: 16791
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -25,6 +26,7 @@ User Function BatZA4()
     _sLinkSrv = U_LkServer ('MERCANET')
 
     _oSQL := ClsSQL():New ()
+
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += " SELECT "
     _oSQL:_sQuery += " 	   PRC.CODIGO AS ZA4_NUMMER "
@@ -38,6 +40,7 @@ User Function BatZA4()
     _oSQL:_sQuery += "    ,ITE1.OPD_CODIGO AS ZA4_TLIB "
     _oSQL:_sQuery += "    ,PRC.DATA_1 AS ZA4_VENCTO "
     _oSQL:_sQuery += "    ,ZA3.ZA3_CTB AS ZA3_CTB "
+    //_oSQL:_sQuery += "    ,PRC.BANCO_AGENCIA_CONTA AS ZA4_DADDEP "
     _oSQL:_sQuery += "    ,'BANCO:' + TRIM(STR(BANCO.OPD_CODIGO)) + ' AGENCIA:' + TRIM(PRC.AGENCIA) + ' CONTA:' + TRIM(PRC.CONTA) AS ZA4_DADDEP "
     _oSQL:_sQuery += "    ,PRC.DOCUMENTO AS ZA4_DOC "
     _oSQL:_sQuery += "    ,CONVERT(VARCHAR(2000), PRC.DESCRICAO )AS ZA4_HG_OBS "
