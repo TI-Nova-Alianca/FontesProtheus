@@ -42,13 +42,10 @@
 // 14/05/2021 - Claudia - Retirado o Len(SX1->X1_GRUPO) devido a R27. GLPI: 8825
 // 12/03/2024 - Robert  - Chamadas de metodos de ClsSQL() nao recebiam parametros.
 // 15/04/2024 - Robert  - Passa a gravar evento com memoria de calculo (GLPI 15248)
+// 30/01/2025 - Claudia - Comentariada a query onde cria array com os produtos do tipo VD 
+//                        e seus saldos em estoque na data final do periodo. GLPI: 16791
 //
-
-//#include "colors.ch"
-//#Include "Protheus.ch"
-//#Include "RwMake.ch"
-//#Include "TbiConn.ch"
-
+// -----------------------------------------------------------------------------------------------------------
 #XTranslate .CCCodigo        => 1
 #XTranslate .CCDescricao     => 2
 #XTranslate .CCTipoMovimento => 3
@@ -61,7 +58,6 @@
 #XTranslate .CCVlDistribuir  => 10
 #XTranslate .CCQtColunas     => 10
 
-// ----------------------------------------------------------------------------------------------------------------
 User function ESXEST01 (_lAutomat)
 	Local cCadastro := "Rateio custo estocagem, recebimento e processamento"
 	Local aSays     := {}
@@ -72,16 +68,6 @@ User function ESXEST01 (_lAutomat)
 	private _lAuto  := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 	private _sCodEvtR := 'SD3007'
 
-//	if ! u_zzuvl ('103', __cUserId, .T.)
-//		return
-//	endif
-
-//	Private cPerg   := Padr("ESXEST01", 10)
-//	ValidPerg()
-
-//	if Pergunte(cPerg, .T.)
-//		processa ({|| _esxest01a()},"Processando ...")
-//	endif
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if U_ZZUVL ('103', __cUserID, .T.)
 
@@ -113,16 +99,15 @@ User function ESXEST01 (_lAutomat)
 	// Libera semaforo
 	U_Semaforo (_nLock)
 Return
-
-
+//
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
 Static Function _TudoOk ()
 	local _lRet := .T.
 return _lRet
-
-
+//
 // --------------------------------------------------------------------------
+// Rotina
 Static Function _esxest01a ()
 	local _nSaldo    := 0
 	local _sChaveSD3 := "U_ESXEST01"
@@ -170,6 +155,7 @@ Static Function _esxest01a ()
 		_aCC [len (_aCC), .CCTipoMovimento] = '300'
 		_aCC [len (_aCC), .CCObs]           = ''
 		_aCC [len (_aCC), .CCMetodo]        = ''
+		
 		aadd (_aCC, afill (array (.CCQtColunas), 0))
 		_aCC [len (_aCC), .CCCodigo]        = U_TamFixo (cFilAnt + '1102', tamsx3 ("CTT_CUSTO")[1], ' ')
 		_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
@@ -183,6 +169,7 @@ Static Function _esxest01a ()
 		_aCC [len (_aCC), .CCTipoMovimento] = '302'
 		_aCC [len (_aCC), .CCObs]           = ''
 		_aCC [len (_aCC), .CCMetodo]        = ''
+
 		aadd (_aCC, afill (array (.CCQtColunas), 0))
 		_aCC [len (_aCC), .CCCodigo]        = U_TamFixo (cFilAnt + '1202', tamsx3 ("CTT_CUSTO")[1], ' ')
 		_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
@@ -190,17 +177,6 @@ Static Function _esxest01a ()
 		_aCC [len (_aCC), .CCObs]           = ''
 		_aCC [len (_aCC), .CCMetodo]        = ''
 
-		// Linha adicional para o movimento de complemento de compra de uva. Apensar de nao ser um centro
-		// de custo, a maioria dos tratamentos neste programa eh igual.
-		//ainda nao bem definido --->		if mv_par03 > 0
-		//ainda nao bem definido --->			aadd (_aCC, afill (array (.CCQtColunas), 0))
-		//ainda nao bem definido --->			_aCC [len (_aCC), .CCCodigo]        = 'PROVISAOUVA'
-		//ainda nao bem definido --->			_aCC [len (_aCC), .CCDescricao]     = 'PROVISAO COMPRA UVA'
-		//ainda nao bem definido --->			_aCC [len (_aCC), .CCTipoMovimento] = '304'
-		//ainda nao bem definido --->			_aCC [len (_aCC), .CCSaldoSemGrupo] = mv_par03 * -1  // Como os CC tem saldo a debito, posteriormente o sinal vai ser invertido.
-		//ainda nao bem definido --->			_aCC [len (_aCC), .CCObs]           = ''
-		//ainda nao bem definido --->			_aCC [len (_aCC), .CCMetodo]        = ''
-		//ainda nao bem definido --->		endif
 		u_log2 ('info', _aCC)
 	endif
 
@@ -251,7 +227,6 @@ Static Function _esxest01a ()
 			enddo
 			(_sAliasQ)->(dbclosearea())
 
-
 			// Busca movimento de contas de GGF.
 			_sMemCalc += '   Buscando saldos contas grupo 0080' + chr (13) + chr (10)
 			_oSQL := ClsSQL ():New ()
@@ -275,7 +250,6 @@ Static Function _esxest01a ()
 			enddo
 			(_sAliasQ)->(dbclosearea())
 		
-
 			// Busca saldo de contas de apoio.
 			_sMemCalc += '   Buscando saldos contas grupo 0110' + chr (13) + chr (10)
 			_oSQL := ClsSQL ():New ()
@@ -296,7 +270,6 @@ Static Function _esxest01a ()
 				(_sAliasQ)->(dbskip())
 			enddo
 			(_sAliasQ)->(dbclosearea())
-
 
 			// Busca movimento de contas sem grupo (nem mao de obra, nem GGF).
 			_sMemCalc += '   Buscando saldos contas outros grupos' + chr (13) + chr (10)
@@ -322,7 +295,6 @@ Static Function _esxest01a ()
 		next
 	endif
 
-
 	// Cria array com os produtos do tipo VD e seus saldos em estoque na data final do periodo.
 	// Somente aqueles que nao tem mao de obra na estrutra (os demais custeiam pelo "AO-, GF- e AP-")
 	if _lContinua
@@ -342,15 +314,15 @@ Static Function _esxest01a ()
 		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL   = '"  + XFilial("SB1") + "' "
 		_oSQL:_sQuery +=   " AND SB1.B1_TIPO     = 'VD' "
 		_oSQL:_sQuery +=   " AND SB1.B1_AGREGCU != '1' "
-		_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *"
-		_oSQL:_sQuery +=                     " FROM " + RETSQLNAME ("SG1") + " SG1 "
-		_oSQL:_sQuery +=                    " WHERE SG1.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery +=                      " AND SG1.G1_FILIAL   = '" + xfilial ("SG1") + "'"
-		_oSQL:_sQuery +=                      " AND SG1.G1_COD      = SB1.B1_COD"
-		_oSQL:_sQuery +=                      " AND SG1.G1_INI     <= '" + _dDFim + "'"
-		_oSQL:_sQuery +=                      " AND SG1.G1_FIM     >= '" + _dDFim + "'"
-		_oSQL:_sQuery +=                      " AND SG1.G1_COMP    LIKE 'MMM%'"
-		_oSQL:_sQuery +=                    ")"
+		//_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *"
+		//_oSQL:_sQuery +=                     " FROM " + RETSQLNAME ("SG1") + " SG1 "
+		//_oSQL:_sQuery +=                    " WHERE SG1.D_E_L_E_T_ != '*'"
+		//_oSQL:_sQuery +=                      " AND SG1.G1_FILIAL   = '" + xfilial ("SG1") + "'"
+		//_oSQL:_sQuery +=                      " AND SG1.G1_COD      = SB1.B1_COD"
+		//_oSQL:_sQuery +=                      " AND SG1.G1_INI     <= '" + _dDFim + "'"
+		//_oSQL:_sQuery +=                      " AND SG1.G1_FIM     >= '" + _dDFim + "'"
+		//_oSQL:_sQuery +=                      " AND SG1.G1_COMP    LIKE 'MMM%'"
+		//_oSQL:_sQuery +=                    ")"
 		_oSQL:_sQuery += " )"
 		_oSQL:_sQuery += " SELECT C.*, SUM (SALDOESTQ) OVER () AS ESTQ_TOT"
 		_oSQL:_sQuery +=  " FROM C"
@@ -495,8 +467,6 @@ Static Function _esxest01a ()
 			elseif _aCC [_nCC, .CCMetodo] == 'ITEM'
 
 				U_Log2 ('debug', 'CC ' + _aCC [_nCC, .CCCodigo] + ' vai gerar valores por item')
-
-//				_aCC [_nCC, .CCVlDistribuir] = (_aCC [_nCC, .CCSaldoMO] + _aCC [_nCC, .CCSaldoGGF] + _aCC [_nCC, .CCSaldoSemGrupo] + _aCC [_nCC, .CCSaldoApoio]) * -1
 				u_log2 ('info', 'Valor a distribuir: ' + cvaltochar (_aCC [_nCC, .CCVlDistribuir]))
 			
 				for _nEstq = 1 to len (_aEstq)
@@ -593,8 +563,7 @@ Static Function _esxest01a ()
 
 	endif
 Return
-
-
+//
 // --------------------------------------------------------------------------
 // No momento em que estou implementando esta rotina, queremos aplicar retroativamente para jan/2020
 // e sei que naquela safra nao havia mao de obra nas OP de safra. Entao implementei essa verificacao
@@ -720,7 +689,6 @@ Static Function _ValidPerg()
 
 	//                     PERGUNT                           TIPO TAM DEC VALID F3  Opcoes          Help
 	aadd (_aRegsPerg, {01, "Ultimo dia mes processamento  ", "D", 8,  0,  "",   "", {},             ""})
-
 	aadd (_aDefaults, {"02", 2})
 
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
