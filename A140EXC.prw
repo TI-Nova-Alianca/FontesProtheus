@@ -16,6 +16,7 @@
 // 29/03/2021 - Robert  - Variavel _lRet estava com nome lRet cfe. importador XML da TRS.
 // 25/08/2021 - Robert  - Nova versao de ciencia e manifesto da TRS (GLPI 10822)
 // 23/11/2021 - Claudia - Gerar manifesto apenas para SPED. GLPI: 11183
+// 03/02/2025 - Claudia - Comentado trecho do importador xml. GLPI: 16693
 //
 //
 // ------------------------------------------------------------------------------------------
@@ -31,15 +32,15 @@ User Function A140EXC()
 		endif			
 	Endif
 
-	U_Log2 ('debug', 'Importador XML da TRS habilitado. Chamando rotinas de ciencia e manifesto.')
-	Private _aRet 	:= {}
+	// U_Log2 ('debug', 'Importador XML da TRS habilitado. Chamando rotinas de ciencia e manifesto.')
+	// Private _aRet 	:= {}
 
-	If alltrim(SF1->F1_ESPECIE) == 'SPED'
-		//Realiza ciência
-		U_FBTRS101({SF1->F1_CHVNFE}, 4, '')
-		//Abre tela do manifesto
-		U_FBTRS102(.F.)
-	EndIf
+	// If alltrim(SF1->F1_ESPECIE) == 'SPED'
+	// 	//Realiza ciência
+	// 	U_FBTRS101({SF1->F1_CHVNFE}, 4, '')
+	// 	//Abre tela do manifesto
+	// 	U_FBTRS102(.F.)
+	// EndIf
 
 	U_ML_SRArea (_aAreaAnt)
 Return _lRet
