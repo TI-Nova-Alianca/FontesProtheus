@@ -13,7 +13,7 @@
 // Historico de alteracoes:
 // 21/02/2024 - Claudia - Retirada as validações da importação.
 // 18/09/2024 - Claudia - Incluida a gravação do código matriz. GLPI: 15953
-// 31/01/2025 - Claudia - Alterado campo de banco. GLPI: 16791
+// 03/02/2025 - Claudia - Alterado campo de banco. GLPI: 16791
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -40,7 +40,6 @@ User Function BatZA4()
     _oSQL:_sQuery += "    ,ITE1.OPD_CODIGO AS ZA4_TLIB "
     _oSQL:_sQuery += "    ,PRC.DATA_1 AS ZA4_VENCTO "
     _oSQL:_sQuery += "    ,ZA3.ZA3_CTB AS ZA3_CTB "
-    //_oSQL:_sQuery += "    ,PRC.BANCO_AGENCIA_CONTA AS ZA4_DADDEP "
     _oSQL:_sQuery += "    ,'BANCO:' + TRIM(STR(BANCO.OPD_CODIGO)) + ' AGENCIA:' + TRIM(PRC.AGENCIA) + ' CONTA:' + TRIM(PRC.CONTA) AS ZA4_DADDEP "
     _oSQL:_sQuery += "    ,PRC.DOCUMENTO AS ZA4_DOC "
     _oSQL:_sQuery += "    ,CONVERT(VARCHAR(2000), PRC.DESCRICAO )AS ZA4_HG_OBS "
@@ -48,6 +47,7 @@ User Function BatZA4()
     _oSQL:_sQuery += "    ,PRC.SITUACAO AS ETAPA "
     _oSQL:_sQuery += "    ,ZA3_IND AS ZA3_IND "
     _oSQL:_sQuery += "    ,CONVERT(VARCHAR(2000), PRC.PRODUTOS_VERBAS ) AS ZA4_OBSPRO "
+    _oSQL:_sQuery += "    ,PRC.BANCO_AGENCIA_CONTA AS ZA4_DADDEP2 "
     _oSQL:_sQuery += " FROM "+ _sLinkSrv +".DB_OC_PRINCIPAL PRC "
     _oSQL:_sQuery += " LEFT JOIN "+ _sLinkSrv +".DB_OC_ITENS ITE "
     _oSQL:_sQuery += " 	ON ITE.CODIGO_OC = 37400002 "
@@ -93,6 +93,13 @@ User Function BatZA4()
         _oCtaRapel := ClsCtaRap():New ()
 		_sRede := _oCtaRapel:RetCodRede(_aVerbas[_x, 2], _aVerbas[_x, 3])
 
+        _sBanco := ''
+        if !empty(_aVerbas[_x,12])
+            _sBanco := _aVerbas[_x,12]
+        else
+            _sBanco := _aVerbas[_x,19]
+        endif
+
         if len(_aOK) > 0
             RecLock ("ZA4",.T.)
                 ZA4 -> ZA4_NUM      := _sZA4Num       
@@ -106,7 +113,7 @@ User Function BatZA4()
                 ZA4 -> ZA4_TLIB	    := alltrim(str(_aVerbas[_x, 9]))	
                 ZA4 -> ZA4_VENCTO   := _aVerbas[_x,10]	
                 ZA4 -> ZA4_CTB      := _aVerbas[_x,11]	
-                ZA4 -> ZA4_DADDEP   := _aVerbas[_x,12]
+                ZA4 -> ZA4_DADDEP   := _sBanco          //_aVerbas[_x,12]
                 ZA4 -> ZA4_DOC      := _aVerbas[_x,13]
                 ZA4 -> ZA4_HG_OBS	:= _aVerbas[_x,14]
                 ZA4 -> ZA4_VEND		:= alltrim(str(_aVerbas[_x,15])) 
