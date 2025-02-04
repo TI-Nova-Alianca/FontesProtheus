@@ -17,9 +17,11 @@
 //                      - Inseridas tags para catalogacao de fontes
 // 26/10/2021 - Claudia - Incluido o loop para solicitar mais produtos. (Não houve erro na versão)
 //                        GLPI: 10530
+// 04/02/2025 - Claudia - Incluinda a função de arredondamento no campo de custo, 
+//                        para 4 decimais. GLPI: 16830
 //
 // ------------------------------------------------------------------------------------------------------
-user function Aj_SB2 ()
+user function Aj_SB2()
 	local _oEvento   := NIL
 	local _nCustoAnt := 0
 	private cPerg    := "AJ_SB2"
@@ -41,12 +43,12 @@ user function Aj_SB2 ()
 				_nCustoAnt = sb2 -> b2_vacustr //0
 
 				reclock ("SB2", .F.)
-				sb2 -> b2_vacustr = mv_par03
+				sb2 -> b2_vacustr = Round(mv_par03, 4)  
 				msunlock ()
 				
 				_oEvento := ClsEvent ():New ()
 				_oEvento:CodEven   = "SB2001"
-				_oEvento:Texto     = "Custo p/transf alterado de " + cvaltochar (_nCustoAnt) + " para " + cvaltochar (mv_par03) + " no alm. " + sb2 -> b2_local
+				_oEvento:Texto     = "Custo p/transf alterado de " + cvaltochar (_nCustoAnt) + " para " + alltrim(Str( mv_par03, 14, 4 ))   + " no alm. " + sb2 -> b2_local
 				_oEvento:Produto   = sb2 -> b2_cod
 				_oEvento:Alias     = 'SB2'
 				_oEvento:CodAlias  = sb2 -> b2_cod + sb2 -> b2_local
@@ -60,6 +62,7 @@ user function Aj_SB2 ()
 		endif
 	enddo
 return
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 static function _ValidPerg ()
