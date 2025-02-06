@@ -3,19 +3,27 @@
 // Data.......: 21/12/2011
 // Descricao..: Impressao de tickets referentes recebimento de uva.
 //
-// Historico de alteracoes:
-// 16/01/2018 - Robert - Imprime tombador previsto na primeira pesagem.
-// 18/01/2019 - Robert - Ajustes mensagens cargas segregadas e coleta de amostras.
-// 13/12/2019 - Robert - Ajustes iniciais para safra 2020 (imprimir cod. barras com numero da carga).
-// 20/01/2020 - Robert - Melhorias para integracao com portaria.
-// 26/02/2020 - Robert - Campo ze_senhade passa a ser do tipo caracter.
-// 15/01/2021 - Robert - Grava campo ze_imptk no final da impressao.
-// 11/03/2022 - Robert - Melhorados logs.
-// 06/01/2023 - Robert - Desabilitada impr. da senha de descarga.
-// 16/02/2023 - Robert - Impressao mensagem velociade maxima.
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Impressao de tickets referentes recebimento de uva.
+// #PalavasChave      #ticket #recebimento_de_uva #safra
+// #TabelasPrincipais #SZF #SB1
+// #Modulos           #COOP 
 //
-
-// --------------------------------------------------------------------------
+// Historico de alteracoes:
+// 16/01/2018 - Robert  - Imprime tombador previsto na primeira pesagem.
+// 18/01/2019 - Robert  - Ajustes mensagens cargas segregadas e coleta de amostras.
+// 13/12/2019 - Robert  - Ajustes iniciais para safra 2020 (imprimir cod. barras com numero da carga)
+// 20/01/2020 - Robert  - Melhorias para integracao com portaria.
+// 26/02/2020 - Robert  - Campo ze_senhade passa a ser do tipo caracter.
+// 15/01/2021 - Robert  - Grava campo ze_imptk no final da impressao.
+// 11/03/2022 - Robert  -  Melhorados logs.
+// 06/01/2023 - Robert  - Desabilitada impr. da senha de descarga.
+// 16/02/2023 - Robert  - Impressao mensagem velociade maxima.
+// 04/02/2025 - Claudia - Alterada a descrição da carga, para facilitar a leitura. GLPI: 16826
+// 04/02/2025 - Claudia - Alterada a posição de impressão de códigos de barras. GLPI: 16832
+//
+// ----------------------------------------------------------------------------------------------------
 User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -28,7 +36,6 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	local _nHdl      := 0
 	local _sArq      := ""
 	local _nVia      := 0
-//	local _nLinha    := 0
 	local _aAmost    := {}
 	local _sAvaliac  := ""
 	local _nAmost	 := 0
@@ -38,15 +45,6 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	_sModelImp = upper (_sModelImp)
 	
 	U_Log2 ('debug', '[' + procname () + ']Qual ticket: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta) + ' Modelo impressora: ' + cvaltochar (_sModelImp))
-
-	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
-//	if type ("_oCarSaf") != 'O'
-//		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
-//	endif
-//	if empty (_oCarSaf:Carga)
-//		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
-//		_lContinua = .F.
-//	endif
 
 	// Busca os produtos da carga
 	if _lContinua .and. (_nQual == 1 .or. _nQual == 2)
@@ -70,30 +68,33 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		endif
 	endif
 
-
 	if _lContinua .and. (_nQual == 1 .or. _nQual == 2)
 		_sTicket := ""
 		if _sModelImp == 'BEMATECH'
 			_sTicket += chr(27) + '@' + _Enter
 		endif
 		_sTicket += padc (left (alltrim (sm0 -> m0_nomecom), _nTamLin), _nTamLin, ' ') + _Enter
-		_sTicket += padc (left ('***  ENTRADA SAFRA ' + sze -> ze_safra + '  ***', _nTamLin), _nTamLin, ' ') + _Enter
-	//	_sTicket += padc (left ('Local: ' + sze -> ze_local + '  (filial ' + alltrim (sm0 -> m0_filial) + ')', _nTamLin), _nTamLin, ' ') + _Enter
+		_sTicket += padc (left ('****  ENTRADA SAFRA ' + sze -> ze_safra + '  ****', _nTamLin), _nTamLin, ' ') + _Enter
 		_sTicket += padc (left ('Local: filial ' + alltrim (sm0 -> m0_filial), _nTamLin), _nTamLin, ' ') + _Enter
 		_sTicket += _Enter
-		_sTicket += 'Carga: ' + sze -> ze_carga + '   ' + dtoc (sze -> ze_data) + ' ' + sze -> ze_hora + '   ' + left (sze -> ze_placa, 3) + '-' + substr (sze -> ze_placa, 4, 4) + _Enter
-	
+		_sTicket += padc (left ('----->  C A R G A: ' + sze -> ze_carga + '  <-----', _nTamLin), _nTamLin, ' ') + _Enter
+		_sTicket += _Enter
+		_sTicket += 'Data:' + dtoc (sze -> ze_data) + ' ' + sze -> ze_hora + '   ' + left (sze -> ze_placa, 3) + '-' + substr (sze -> ze_placa, 4, 4) + _Enter
+
 		// Codigo de barras CODE128
 		_sCodBar = alltrim (sze -> ze_filial + '-' + sze -> ze_carga)
 		if _sModelImp == 'BEMATECH'
-			_sTicket += '  ' + chr(29)  // Comando para codigo de barras
-			_sTicket += 'H2'  // Habilita 'human readable information' no codigo de barras.
-			_sTicket += chr(29) + 'h' + chr (60)  // Altura do codigo de barras (entre 1 e 255. Default = 162)
-			_sTicket += chr(29) + 'kI'  // Seleciona CODE128
-			_sTicket += chr(11) + _Enter // Seta o 'tamanho' do que vai constar nas barras. Teoricamente seriam 9 posicoes, mas ele cortava os dois digitos finais, entao somei 2. vai saber...
-			_sTicket += _sCodBar + _Enter  // Conteudo do codigo de barras
+			_sTicket += '  ' + chr(29)  			// Comando para codigo de barras
+			_sTicket += 'H2'  						// Habilita 'human readable information' no codigo de barras.
+			_sTicket += chr(29) + 'h' + chr (60)  	// Altura do codigo de barras (entre 1 e 255. Default = 162)
+			//_sTicket += Chr(27) + Chr(97) + Chr(1)  // Comando ESC a 1 para centralizar
+			_sTicket += chr(29) + 'kI'  			// Seleciona CODE128
+			_sTicket += chr(11) + _Enter 			// Seta o 'tamanho' do que vai constar nas barras. Teoricamente seriam 9 posicoes, mas ele cortava os dois digitos finais, entao somei 2. vai saber...
+			_sTicket += _sCodBar + _Enter  			// Conteudo do codigo de barras
+
 		elseif _sModelImp == 'QUICKPRINTER'
-			_sTicket += '<BARCODE128>' + _sCodBar + '<BR>' + _Enter
+			_sTicket += '  ' + '<BARCODE128>' + _sCodBar + '<BR>' + _Enter
+			
 		endif
 	
 		_sTicket += padc (left (sze -> ze_assoc + '/' + sze -> ze_lojasso + ' - ' + alltrim (sze -> ze_nomasso), _nTamLin), _nTamLin, ' ') + _Enter
@@ -118,13 +119,16 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_sTicket += 'Peso tara.....: ' + transform (sze -> ze_pesotar, "@E 999,999") + ' Kg' + _Enter
 			_sTicket += 'Peso liquido..: ' + transform (sze -> ze_pesobru - sze -> ze_pesotar, "@E 999,999") + ' Kg' + _Enter
 		endif
+
 		_sTicket += _Enter
 		_sTicket += 'Variedade(s)                  Grau     Kg' + _Enter
+
 		if _sModelImp == 'BEMATECH'
 			_sTicket += replicate ('-', _nTamLin) + _Enter
 		elseif _sModelImp == 'QUICKPRINTER'
 			_sTicket += '<DLINE>' + _Enter
 		endif
+
 		for _nItem = 1 to len (_aItens)
 			_sTicket += U_TamFixo (alltrim (_aItens [_nItem, 1]) + '-' + _aItens [_nItem, 2], _nTamLin - 12) + ' '
 			_sTicket += iif (_nQual == 1, '    ', _aItens [_nItem, 3]) + ' '
@@ -136,14 +140,13 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_sTicket += _Enter
 		next
 
-
 		// Monta trecho do ticket para avaliacoes da qualidade.
 		if _nQual == 1  // Estou imprimindo a 1a.pesagem
 			_sAvaliac = ""
 			_aAmost = {}
 
 			// Se for uma carga nao conforme, solicita amostra de todas as variedades.
-		//	U_LOG2 ('debug', 'ZE_SEGREG: ' + sze->ze_segreg + '   ZE_AMOSTRA: ' + SZE -> ZE_AMOSTRA)
+			//	U_LOG2 ('debug', 'ZE_SEGREG: ' + sze->ze_segreg + '   ZE_AMOSTRA: ' + SZE -> ZE_AMOSTRA)
 			if sze->ze_segreg == 'S' .or. SZE -> ZE_AMOSTRA == 'S'  //(type ("_lColAmCar") == 'L' .and. _lColAmCar)
 				for _nItem = 1 to len (_aItens)
 					if ascan (_aAmost, {|_aVal| _aVal [1] == _aItens [_nItem, 1]}) == 0
@@ -163,6 +166,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 				_sAvaliac += '#########################################' + _Enter
 				_sAvaliac += _Enter
 			endif
+
 			if ! empty (_sAvaliac)
 				_sTicket += _Enter + _Enter
 				_sTicket += _sAvaliac
@@ -179,7 +183,6 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_sTicket += "  TOMBADOR" + iif (sze -> ze_filial != '01', " PREVISTO: " + sze -> ze_locdesc, "") + "   EFETIVO: ____" + _Enter
 			_sTicket += _Enter
 		endif
-
 	endif
 
 	// Solicitado pela CIPA em 16/02/2023
@@ -208,7 +211,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		endif
 	endif
 
-//	U_LOG2 ('info', _sTicket)
+	//	U_LOG2 ('info', _sTicket)
 
 	// Grava ticket em arquivo e copia para a porta destino.
 	if _lContinua .and. ! empty (_sTicket) .and. ! empty (_sPorta)
@@ -217,9 +220,11 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		fwrite (_nHdl, _sTicket)
 		fclose (_nHdl)
 		u_log2 ('debug', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Copiando ticket para a porta ' + alltrim (_sPorta))
+		
 		for _nVia = 1 to _nQtVias
 			copy file (_sArq) to (alltrim (_sPorta))
 		next
+
 		delete file (_sArq)
 	endif
 
