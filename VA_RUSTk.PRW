@@ -74,7 +74,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_sTicket += chr(27) + '@' + _Enter
 		endif
 		_sTicket += padc (left (alltrim (sm0 -> m0_nomecom), _nTamLin), _nTamLin, ' ') + _Enter
-		_sTicket += padc (left ('****  ENTRADA SAFRA ' + sze -> ze_safra + '  ****', _nTamLin), _nTamLin, ' ') + _Enter
+		_sTicket += padc (left ('***  ENTRADA SAFRA ' + sze -> ze_safra + '  ***', _nTamLin), _nTamLin, ' ') + _Enter
 		_sTicket += padc (left ('Local: filial ' + alltrim (sm0 -> m0_filial), _nTamLin), _nTamLin, ' ') + _Enter
 		_sTicket += _Enter
 		_sTicket += padc (left ('----->  C A R G A: ' + sze -> ze_carga + '  <-----', _nTamLin), _nTamLin, ' ') + _Enter
@@ -84,10 +84,11 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		// Codigo de barras CODE128
 		_sCodBar = alltrim (sze -> ze_filial + '-' + sze -> ze_carga)
 		if _sModelImp == 'BEMATECH'
+			_sTicket += Chr(27) + Chr(97) + Chr(1)  // Comando ESC a 1 para centralizar 
 			_sTicket += '  ' + chr(29)  			// Comando para codigo de barras
 			_sTicket += 'H2'  						// Habilita 'human readable information' no codigo de barras.
 			_sTicket += chr(29) + 'h' + chr (60)  	// Altura do codigo de barras (entre 1 e 255. Default = 162)
-			//_sTicket += Chr(27) + Chr(97) + Chr(1)  // Comando ESC a 1 para centralizar
+			_sTicket += Chr(27) + Chr(97) + Chr(1)  // Comando ESC a 1 para centralizar 
 			_sTicket += chr(29) + 'kI'  			// Seleciona CODE128
 			_sTicket += chr(11) + _Enter 			// Seta o 'tamanho' do que vai constar nas barras. Teoricamente seriam 9 posicoes, mas ele cortava os dois digitos finais, entao somei 2. vai saber...
 			_sTicket += _sCodBar + _Enter  			// Conteudo do codigo de barras
