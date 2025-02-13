@@ -1682,10 +1682,10 @@ static function _ValQtLote ()
 	sb1 -> (dbsetorder (1))
 	if ! empty (m->c2_produto) .and. sb1 -> (dbseek (xfilial ("SB1") + m->c2_produto, .F.))
 		_nQtBase = sb1 -> b1_qb
-		if _lRet .and. sb1 -> b1_vamaxop > 0 .and. m->c2_quant > sb1 -> b1_vamaxop
-			u_help ("Quantidade da OP nao pode ser maior que " + cvaltochar (sb1 -> b1_vamaxop) + " (informado no campo '" + alltrim (RetTitle ("B1_VAMAXOP")) + "' do cadastro do produto).")
-			_lRet = .F.
-		endif
+		// if _lRet .and. sb1 -> b1_vamaxop > 0 .and. m->c2_quant > sb1 -> b1_vamaxop
+		// 	u_help ("Quantidade da OP nao pode ser maior que " + cvaltochar (sb1 -> b1_vamaxop) + " (informado no campo '" + alltrim (RetTitle ("B1_VAMAXOP")) + "' do cadastro do produto).")
+		// 	_lRet = .F.
+		// endif
 		if _lRet
 			// Para sugestao de quantidade alinhada ao tamanho do lote, busca, antes,
 			// o lote da revisao da estrutura do subitem, se tiver.
