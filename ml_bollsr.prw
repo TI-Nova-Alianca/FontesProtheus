@@ -1369,9 +1369,9 @@ static function _CodBar001 ()
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct := se1 -> e1_vencrea - stod ("19971007")
 	
-	//if se1 -> e1_vencrea >= stod('20250222')
-	//	_nFatorVct := _nFatorVct - 9000
-	//endif
+	if se1 -> e1_vencrea >= stod('20250222')
+		_nFatorVct := _nFatorVct - 9000
+	endif
 	
 	_sFatorVct := strzero (_nFatorVct, 4)
 
@@ -1468,9 +1468,9 @@ static function _CodBar041 ()
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct := se1 -> e1_vencrea - stod ("19971007")
 	
-	//if se1 -> e1_vencrea >= stod('20250222')
-	//	_nFatorVct := _nFatorVct - 9000
-	//endif
+	if se1 -> e1_vencrea >= stod('20250222')
+		_nFatorVct := _nFatorVct - 9000
+	endif
 	
 	_sFatorVct := strzero (_nFatorVct, 4)
 
@@ -1685,9 +1685,9 @@ static function _CodBar104 ()
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct := se1 -> e1_vencrea - stod ("19971007")
 	
-	//if se1 -> e1_vencrea >= stod('20250222')
-	//	_nFatorVct := _nFatorVct - 9000
-	//endif
+	if se1 -> e1_vencrea >= stod('20250222')
+		_nFatorVct := _nFatorVct - 9000
+	endif
 	
 	_sFatorVct := strzero (_nFatorVct, 4)
 
@@ -1798,9 +1798,9 @@ Static Function _CodBar237 ()
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct := se1 -> e1_vencrea - stod ("19971007")
 	
-	//if se1 -> e1_vencrea >= stod('20250222')
-	//	_nFatorVct := _nFatorVct - 9000
-	//endif
+	if se1 -> e1_vencrea >= stod('20250222')
+		_nFatorVct := _nFatorVct - 9000
+	endif
 	
 	_sFatorVct := strzero (_nFatorVct, 4)
 	
@@ -1891,9 +1891,9 @@ Static Function _CodBarRED_237 ()
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct := se1 -> e1_vencrea - stod ("19971007")
 	
-	//if se1 -> e1_vencrea >= stod('20250222')
-	//	_nFatorVct := _nFatorVct - 9000
-	//endif
+	if se1 -> e1_vencrea >= stod('20250222')
+		_nFatorVct := _nFatorVct - 9000
+	endif
 	
 	_sFatorVct := strzero (_nFatorVct, 4)
 	
@@ -2173,9 +2173,9 @@ Static Function _CodBar422_422 ()
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct := se1 -> e1_vencrea - stod ("19971007")
 	
-	//if se1 -> e1_vencrea >= stod('20250222')
-	//	_nFatorVct := _nFatorVct - 9000
-	//endif
+	if se1 -> e1_vencrea >= stod('20250222')
+		_nFatorVct := _nFatorVct - 9000
+	endif
 	
 	_sFatorVct := strzero (_nFatorVct, 4)
 	
@@ -2356,7 +2356,17 @@ Static Function _CodBar748 ()
 	STR_NUM[2]:=4
 	STR_NUM[3]:=8
 	STR_NUM[4]:=9    // MOEDA
-	_XX := str(SE1->E1_VENCREA-ctod('07/10/1997'),4) + strzero(_nVlrTit*100,10,0)
+
+	//_XX := str(SE1->E1_VENCREA-ctod('07/10/1997'),4) + strzero(_nVlrTit*100,10,0)
+
+	// Passa o fator de vencimento para as devidas posicoes da array.
+	_nFatorVct := se1 -> e1_vencrea - stod ("19971007")
+	if se1 -> e1_vencrea >= stod('20250222')
+		_nFatorVct := _nFatorVct - 9000
+	endif
+
+	_XX := str(_nFatorVct,4) + strzero(_nVlrTit*100,10,0)
+
 	STR_NUM[6]:=VAL(SUBSTR(_XX,1,1))
 	STR_NUM[7]:=VAL(SUBSTR(_XX,2,1))
 	STR_NUM[8]:=VAL(SUBSTR(_XX,3,1))
