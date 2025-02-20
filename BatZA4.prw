@@ -14,8 +14,10 @@
 // 21/02/2024 - Claudia - Retirada as validações da importação.
 // 18/09/2024 - Claudia - Incluida a gravação do código matriz. GLPI: 15953
 // 03/02/2025 - Claudia - Alterado campo de banco. GLPI: 16791
+// 20/02/2025 - Claudia - Devido a inclusao da nova etapa, incluido 
+//                        ATI.ATIVIDADE = 6 na consulta. GLPI: 16924
 //
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #include 'parmtype.ch'
 #Include "totvs.ch"
@@ -59,6 +61,7 @@ User Function BatZA4()
     _oSQL:_sQuery += " 		AND ITE1.OPD_PERGUNTA = 106 "
     _oSQL:_sQuery += " LEFT JOIN "+ _sLinkSrv +".DB_OC_ATIVIDADES ATI "
     _oSQL:_sQuery += " 	ON ATI.CODIGO_OC = PRC.CODIGO "
+    _oSQL:_sQuery += " 	AND ATI.ATIVIDADE = 6 "
     _oSQL:_sQuery += " LEFT JOIN "+ _sLinkSrv +".DB_CLIENTE CLI "
     _oSQL:_sQuery += " 	ON CLI.DB_CLI_CODIGO = PRC.CLIENTE "
     _oSQL:_sQuery += " LEFT JOIN "+ _sLinkSrv +".DB_OC_ITENS BANCO "
@@ -178,7 +181,7 @@ User Function BatZA4()
     U_ML_SRArea (_aAreaAnt)
 Return
 //
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------
 // Gera financeiro
 Static Function _GeraFina(_aVerbas, _x, _sZA4Num)
     local _lRetFin := .T.
@@ -227,7 +230,7 @@ Static Function _GeraFina(_aVerbas, _x, _sZA4Num)
 
 Return _lRetFin
 //
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------
 // Grava rateio
 Static Function _GrvRateio(_sZA4Num, _sCliente, _sLoja)
     Local _aProd := {}
