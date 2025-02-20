@@ -76,6 +76,7 @@
 //                        pedido eh de faturamento ou remessa (GLPI 12036).
 // 10/02/2023 - Robert  - Validava lote e endereco mesmo quando a linha estava deletada na GetDados.
 // 29/11/2023 - Claudia - Validar lote apenas na liberação do pedido, nao na importação Mercanet. GLPI: 14568
+// 17/02/2025 - Claudia - Retirada customização de comissao. GLPI: 16921
 //
 // ----------------------------------------------------------------------------------------------------------
 User Function M410LIOK()
@@ -227,18 +228,12 @@ User Function M410LIOK()
 		_lRet = _VerMerc ()
 	endif
 
-	//Verifica comissao.
-	if _lRet
-// desab por robert para um quebra galho		_lRet = _VerComis ()
-	endif
-
 	// Verifica tabela de precos
 	if _lRet
 		_lRet = _VerTbPrc ()
 	endif
 
 	// Quando item controla rastreabilidade, exigir lote e endereço 
-//	If _lRet
 	If _lRet .and. ! GDDeleted ()
 		_sProduto   := GDFieldGet("C6_PRODUTO")
 		_sLote      := GDFieldGet("C6_LOTECTL")
@@ -428,59 +423,6 @@ static function _VerMerc ()
 		U_Help ("Pedido importado do sistema Mercanet. Inclusao de itens nao permitida.",, .t.)
 		_lRet = .F.
 	endif
-return _lRet
-//
-// --------------------------------------------------------------------------
-// Validacao da comissao.
-static function _VerComis ()
-	local _lRet     := .T.
-	local _lTemZAV  := .F.
-	local _sLinProd := ""
-
-	if _lRet .and. ! GDDeleted ()
-		sa3 -> (dbsetorder (1))
-		if sa3 -> (dbseek (xfilial ("SA3") + m->c5_vend1, .F.))
-
-			// Verifica antes no arquivo de comissoes por linha / produto.
-			zav -> (dbsetorder (2))  // ZAV_FILIAL+ZAV_VEND +ZAV_ITEM
-			if zav -> (dbseek (xfilial ("ZAV") + m->c5_vend1 + GDFieldGet ("C6_PRODUTO"), .F.))
-				_lTemZAV = .T.
-				if sa3 -> a3_vaTpCom == 'E' .and. GDFieldGet ("C6_COMIS1") != zav -> zav_pcom
-					u_help ("Repres. '" + alltrim (sa3 -> a3_cod) + "' tem comissao estatica de " + cvaltochar (zav -> zav_pcom) + "% para o produto '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "'.",, .t.)
-					_lRet = .F.
-				elseif sa3 -> a3_vaTpCom == 'D' .and. GDFieldGet ("C6_COMIS1") > zav -> zav_pcom
-					u_help ("Repres. '" + alltrim (sa3 -> a3_cod) + "' tem comissao dinamica limitada a " + cvaltochar (zav -> zav_pcom) + "% para o produto '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "'.",, .t.)
-					_lRet = .F.
-				endif
-			else
-				_sLinProd = fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C6_PRODUTO"), 'B1_CLINF')
-				if ! empty (_sLinProd)
-					zav -> (dbsetorder (1))  // ZAV_FILIAL+ZAV_VEND +ZAV_LINHA
-					if zav -> (dbseek (xfilial ("ZAV") + m->c5_vend1 + _sLinProd, .F.))
-						_lTemZAV = .T.
-						if sa3 -> a3_vaTpCom == 'E' .and. GDFieldGet ("C6_COMIS1") != zav -> zav_pcom
-							u_help ("Repres. '" + alltrim (sa3 -> a3_cod) + "' tem comissao estatica de " + cvaltochar (zav -> zav_pcom) + "% para a linha de produtos '" + _sLinProd + "' (" + alltrim (fBuscaCpo ("ZAZ", 1, xfilial ("ZAZ") + _sLinProd, "ZAZ_NLINF")) + ").",, .t.)
-							_lRet = .F.
-						elseif sa3 -> a3_vaTpCom == 'D' .and. GDFieldGet ("C6_COMIS1") > zav -> zav_pcom
-							u_help ("Repres. '" + alltrim (sa3 -> a3_cod) + "' tem comissao dinamica limitada a " + cvaltochar (zav -> zav_pcom) + "% para a linha de produtos '" + _sLinProd + "' (" + alltrim (fBuscaCpo ("ZAZ", 1, xfilial ("ZAZ") + _sLinProd, "ZAZ_NLINF")) + ").",, .t.)
-							_lRet = .F.
-						endif
-					endif
-				endif
-			endif
-			
-			// Se nao tinha nada especifico por linha / produto que tenha 'dado na trave'...
-			if _lRet .and. ! _lTemZAV
-				if sa3 -> a3_vaTpCom == 'E' .and. GDFieldGet ("C6_COMIS1") != sa3 -> a3_comis
-					u_help ("Repres. '" + alltrim (sa3 -> a3_cod) + "' tem comissao estatica de " + cvaltochar (sa3 -> a3_comis) + "%",, .t.)
-					_lRet = .F.
-				elseif sa3 -> a3_vaTpCom == 'D' .and. GDFieldGet ("C6_COMIS1") > sa3 -> a3_comis
-					u_help ("Repres. '" + alltrim (sa3 -> a3_cod) + "' tem comissao dinamica limitada a " + cvaltochar (sa3 -> a3_comis) + "%",, .t.)
-					_lRet = .F.
-				endif
-			endif
-		endif
-	endif 
 return _lRet
 //
 // --------------------------------------------------------------------------
