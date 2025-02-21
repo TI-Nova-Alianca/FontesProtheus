@@ -1,26 +1,33 @@
-// Programa:  VA_GNF1
-// Autor:     Robert Koch
-// Data:      30/04/2009
+// Programa.: VA_GNF1
+// Autor....: Robert Koch
+// Data.....: 30/04/2009
 // Descricao: Gera arquivo ZZ9 (previa das notas de compra de uva da safra)
 //            Criado com base no ML_GNFS de Jeferson Rech
 //
-// Historico de alteracoes:
-// 29/06/2009 - Robert - Criada a versao para uso sem DCO da CONAB.
-// 29/04/2010 - Robert - Criada opcao de selecionar qual dos precos da uva deve ser levado.
-// 06/09/2012 - Elaine - Alteracao na rotina _ValidPerg para tratar o tamanho do campo
-//                       da NF com a funcao TamSX3 (ref mudancas do tamanho do campo da NF de 6 p/9 posicoes) 
-// 20/05/2014 - Robert - Passa a ler notas da view VA_VNOTAS_SAFRA e nao mais do SD1.
-//                     - Criados parametros de filial de...ate
-// 09/06/2015 - Robert - Verifica se o usuario tem acesso pela tabela ZZU.
-// 18/06/2015 - Robert - View VA_NOTAS_SAFRA renomeada para VA_VNOTAS_SAFRA
-// 12/03/2016 - Robert - Criados filtros por grupo de variedades, coop.origem e tintoreas.
-// 21/03/2016 - Robert - Criado filtro por tipo (organica/em conversao/etc.)
-// 27/03/2018 - Robert - Criado tratamento para gravar campos de mistura de variedades e mensagens para NF.
-// 22/04/2020 - Robert - Criado tratamento para gravar campo ZZ9_TES
-// 22/04/2021 - Robert - Passa a usar a funcao U_TESSafra() para definicao do TES a usar (GLPI 9891)
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Gera arquivo ZZ9 (previa das notas de compra de uva da safra)
+// #PalavasChave      #contranotas #safra
+// #TabelasPrincipais #ZZ9
+// #Modulos           #COOP
 //
-
-// --------------------------------------------------------------------------
+// Historico de alteracoes:
+// 29/06/2009 - Robert  - Criada a versao para uso sem DCO da CONAB.
+// 29/04/2010 - Robert  - Criada opcao de selecionar qual dos precos da uva deve ser levado.
+// 06/09/2012 - Elaine  - Alteracao na rotina _ValidPerg para tratar o tamanho do campo
+//                        da NF com a funcao TamSX3 (ref mudancas do tamanho do campo da NF de 6 p/9 posicoes) 
+// 20/05/2014 - Robert  - Passa a ler notas da view VA_VNOTAS_SAFRA e nao mais do SD1.
+//                      - Criados parametros de filial de...ate
+// 09/06/2015 - Robert  - Verifica se o usuario tem acesso pela tabela ZZU.
+// 18/06/2015 - Robert  - View VA_NOTAS_SAFRA renomeada para VA_VNOTAS_SAFRA
+// 12/03/2016 - Robert  - Criados filtros por grupo de variedades, coop.origem e tintoreas.
+// 21/03/2016 - Robert  - Criado filtro por tipo (organica/em conversao/etc.)
+// 27/03/2018 - Robert  - Criado tratamento para gravar campos de mistura de variedades e mensagens para NF.
+// 22/04/2020 - Robert  - Criado tratamento para gravar campo ZZ9_TES
+// 22/04/2021 - Robert  - Passa a usar a funcao U_TESSafra() para definicao do TES a usar (GLPI 9891)
+// 21/02/2025 - Claudia - Alterado o tipo de nota de "C" para "E".
+//
+// -----------------------------------------------------------------------------------------------------------
 User Function VA_GNF1 (_lAuto)
 	Local cCadastro  := "Geracao Pre-NF Compra de Uva"
 	Local aSays      := {}
@@ -57,19 +64,17 @@ User Function VA_GNF1 (_lAuto)
 		Endif
 	endif
 return
-
-
-
-// --------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------------------------------------
+// Tudo OK
 Static Function _TudoOk ()
 	Local _aArea    := GetArea()
 	Local _lRet     := .T.
 	RestArea(_aArea)
 Return(_lRet)
-	
-	
-	
-// --------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------------------------------------
+// Gera ZZ9
 Static Function _Gera()
 	local _lContinua := .T.
 	local _sFilial   := ""
@@ -119,7 +124,7 @@ Static Function _Gera()
 		_sQuery +=        " FORMA_CLAS_UVA_FINA AS FCUVA, V.CLAS_ABD, SIST_CONDUCAO AS SIST_COND"
 		_sQuery +=        ",dbo.VA_FTIPO_FORNECEDOR_UVA (V.ASSOCIADO, V.LOJA_ASSOC, FORMAT(getdate(), 'yyyyMMdd')) AS TP_FORNEC"
 		_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
-		_sQuery +=  " WHERE V.TIPO_NF      = 'E'"  // Nao temos mais 'prod.propria' na F07 ---> OR (V.TIPO_NF = 'P' AND V.FILIAL = '07'))"
+		_sQuery +=  " WHERE V.TIPO_NF       = 'C'"  // Nao temos mais 'prod.propria' na F07 ---> OR (V.TIPO_NF = 'P' AND V.FILIAL = '07'))"
 		_sQuery +=    " AND V.SAFRA         = '" + mv_par05 + "'"
 		_sQuery +=    " AND V.ASSOCIADO + V.LOJA_ASSOC BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
 		_sQuery +=    " AND V.DOC           BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "'"
@@ -370,17 +375,13 @@ Static Function _Gera()
 	ORDER BY GRUPO_PAGTO, B1_VAORGAN, B1_VATTR, B1_VARUVA, B1_VAFCUVA, ZZ9_CONDUC, B1_DESC
 	*/
 Return
-
-
-
-// --------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------------------------------------
 // Gera as notas com 'vazios' entre elas para poder inserir alguma pre-nf manualmente depois, se precisar.
 Static Function _IncPreNF (_sPreNF)
 return soma1 (soma1 (soma1 (soma1 (soma1 (_sPreNF)))))
-
-
-
-// --------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------------------------------------
 // Acumula mensagens de erro.
 static function _Erro (_sMsg)
 	u_log (_sErro)
@@ -388,10 +389,8 @@ static function _Erro (_sMsg)
 		_sErros += _sMsg + chr (13) + chr (10)
 	endif
 return
-
-
-
-// --------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
